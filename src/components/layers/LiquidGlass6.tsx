@@ -1,9 +1,9 @@
 /**
- * LiquidGlass6 - Swirling Waves with Hot Kernel
+ * LiquidGlass6 - Tight Waves with Hard Edges
  *
- * Multiple soft waves/petals spiraling inward like a nautilus or rose.
- * Each wave: blue/purple outer → pink middle → fades toward center.
- * Bright yellow/orange kernel glowing at the core.
+ * Compact core with waves that have sharp outer edges and soft inner edges.
+ * Waves curl and overlap like petals/shells crashing inward.
+ * Tighter, more defined, more layers.
  */
 
 import React from 'react';
@@ -23,102 +23,170 @@ const LIQUID_GLASS_SHADER = Skia.RuntimeEffect.Make(`
 
   const float PI = 3.14159265359;
 
-  // Soft noise for organic variation
   float hash(vec2 p) {
     return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453);
   }
 
-  float noise(vec2 p) {
-    vec2 i = floor(p);
-    vec2 f = fract(p);
-    f = f * f * (3.0 - 2.0 * f);
-    float a = hash(i);
-    float b = hash(i + vec2(1.0, 0.0));
-    float c = hash(i + vec2(0.0, 1.0));
-    float d = hash(i + vec2(1.0, 1.0));
-    return mix(mix(a, b, f.x), mix(c, d, f.x), f.y);
+  float sdCircle(vec2 p, float r) {
+    return length(p) - r;
+  }
+
+  float smin(float a, float b, float k) {
+    float h = max(k - abs(a - b), 0.0) / k;
+    return min(a, b) - h * h * k * 0.25;
+  }
+
+  vec2 blobPos(float seed, float t) {
+    return vec2(
+      sin(t * 0.7 + seed * 6.28) * 0.3,
+      cos(t * 0.9 + seed * 4.17) * 0.3
+    );
   }
 
   vec4 main(vec2 fragCoord) {
     vec2 uv = (fragCoord * 2.0 - resolution) / min(resolution.x, resolution.y);
+    float t = time;
 
-    float t = time * 0.3;
-
-    // Light background
-    vec3 bgColor = vec3(0.96, 0.96, 0.98);
+    // Dark charcoal background
+    vec3 bgColor = vec3(0.06, 0.06, 0.08);
     vec3 color = bgColor;
 
-    // Polar coordinates
     float dist = length(uv);
     float angle = atan(uv.y, uv.x);
 
-    // === THE HOT KERNEL (center) ===
-    vec3 kernelColor = vec3(1.0, 0.85, 0.4); // Warm yellow
-    vec3 kernelCore = vec3(1.0, 1.0, 0.95);  // Almost white hot center
-    float kernelSize = 0.15;
-    float kernel = smoothstep(kernelSize + 0.1, kernelSize - 0.05, dist);
-    float kernelInner = smoothstep(0.08, 0.0, dist);
-    vec3 kernelFinal = mix(kernelColor, kernelCore, kernelInner);
+    // === COMPACT INNER CORE ===
+    float coreScale = 0.35; // Smaller, tighter
+    float boundaryRadius = 0.18;
+    boundaryRadius += sin(t * 0.8) * 0.01;
 
-    // === SWIRLING WAVE LAYERS ===
-    // Each wave is a soft petal that spirals around the center
+    float d1 = sdCircle(uv - blobPos(0.0, t) * coreScale * 0.5, 0.10);
+    float d2 = sdCircle(uv - blobPos(0.33, t * 1.1) * coreScale * 0.5, 0.08);
+    float d3 = sdCircle(uv - blobPos(0.66, t * 0.9) * coreScale * 0.5, 0.09);
 
-    float totalAlpha = 0.0;
-    vec3 waveColor = vec3(0.0);
+    float coreBlobs = smin(d1, smin(d2, d3, 0.2), 0.2);
+    float core = smin(coreBlobs, sdCircle(uv, boundaryRadius), 0.15);
 
-    // 4 wave layers at different phases
-    for (int i = 0; i < 4; i++) {
+    // Core colors - hot center
+    vec3 coreYellow = vec3(1.0, 0.92, 0.6);
+    vec3 coreOrange = vec3(1.0, 0.65, 0.4);
+    vec3 corePink = vec3(1.0, 0.5, 0.55);
+
+    float coreColorMix = sin(angle * 2.0 + t) * 0.5 + 0.5;
+    vec3 coreCol = mix(coreYellow, coreOrange, smoothstep(0.0, 0.12, dist));
+    coreCol = mix(coreCol, corePink, smoothstep(0.08, 0.2, dist));
+
+    // === MULTIPLE WAVE LAYERS with HARD + SOFT edges ===
+    vec3 waveAccum = vec3(0.0);
+    float waveAlphaAccum = 0.0;
+
+    // 8 waves for more density
+    for (int i = 0; i < 8; i++) {
       float fi = float(i);
-      float phase = fi * PI * 0.5; // 90 degrees apart
-      float speed = 0.4 + fi * 0.1;
 
-      // Spiral angle - waves curl inward
-      float spiralAngle = angle + dist * 2.5 - t * speed + phase;
+      // Each wave at different angle
+      float wavePhase = fi * PI * 0.25 + t * (0.15 + fi * 0.03);
 
-      // Wave shape using sin - creates the curling ribbon effect
-      float wave = sin(spiralAngle * 2.0 + fi) * 0.5 + 0.5;
+      // Wave center direction
+      float waveDir = wavePhase;
+      float angleFromWave = angle - waveDir;
 
-      // Add noise for organic edges
-      float n = noise(vec2(angle * 3.0 + fi, dist * 5.0 + t)) * 0.3;
-      wave += n;
+      // Wrap angle
+      angleFromWave = mod(angleFromWave + PI, 2.0 * PI) - PI;
 
-      // Soft falloff from center outward
-      float radialFade = smoothstep(0.8, 0.2, dist);
+      // Wave arc - how wide the petal/wave spans
+      float arcWidth = 0.8 + sin(fi * 1.5) * 0.3; // Varies per wave
 
-      // Wave visibility - only show wave "peaks"
-      float waveAlpha = smoothstep(0.3, 0.7, wave) * radialFade;
+      // Petal shape - hard edge on outside, soft on inside curl
+      float petalShape = 1.0 - abs(angleFromWave) / arcWidth;
+      petalShape = clamp(petalShape, 0.0, 1.0);
 
-      // Don't show waves in the kernel area
-      waveAlpha *= smoothstep(0.12, 0.25, dist);
+      // Sharpen one side (the leading edge)
+      float sharpEdge = smoothstep(-arcWidth, -arcWidth * 0.3, angleFromWave);
+      float softEdge = smoothstep(arcWidth, arcWidth * 0.5, angleFromWave);
+      petalShape *= sharpEdge * (1.0 - softEdge * 0.5);
 
-      // Color gradient for this wave: blue/purple outer → pink inner
-      vec3 outerColor = vec3(0.55, 0.45, 0.95); // Purple/blue
-      vec3 midColor = vec3(0.95, 0.5, 0.7);     // Pink
-      vec3 innerColor = vec3(1.0, 0.75, 0.6);   // Peachy/orange toward center
+      // Radial bounds - each wave at different distance, TIGHTER
+      float innerR = 0.20 + fi * 0.04;
+      float outerR = 0.28 + fi * 0.06;
 
-      // Vary colors slightly per wave
-      outerColor = mix(outerColor, vec3(0.4, 0.6, 0.95), fi * 0.2); // More blue/cyan
+      // Breathing
+      innerR += sin(t * 0.4 + fi * 0.8) * 0.015;
+      outerR += sin(t * 0.3 + fi * 0.5) * 0.02;
 
-      float colorDist = smoothstep(0.15, 0.6, dist);
-      vec3 thisWaveColor = mix(innerColor, midColor, colorDist);
-      thisWaveColor = mix(thisWaveColor, outerColor, smoothstep(0.4, 0.75, dist));
+      // HARD outer edge, SOFT inner edge
+      float radialMask = smoothstep(outerR + 0.01, outerR - 0.02, dist) * // Sharp outer
+                         smoothstep(innerR - 0.06, innerR + 0.03, dist);   // Soft inner
 
-      // Accumulate waves with transparency
-      waveColor = mix(waveColor, thisWaveColor, waveAlpha * 0.6);
-      totalAlpha = max(totalAlpha, waveAlpha);
+      float waveAlpha = petalShape * radialMask;
+
+      // Thin some waves, thicken others (use mod() instead of %)
+      int imod3 = i - (i / 3) * 3;
+      if (imod3 == 0) {
+        waveAlpha *= 1.3; // Thicker
+      } else if (imod3 == 1) {
+        waveAlpha *= 0.7; // Thinner, more ethereal
+      }
+
+      // Wave colors
+      vec3 waveOuter = vec3(0.4, 0.35, 0.85);  // Purple/indigo
+      vec3 waveMid = vec3(0.65, 0.4, 0.8);     // Violet
+      vec3 waveInner = vec3(0.9, 0.5, 0.65);   // Pink
+
+      // Some waves more blue/cyan
+      if (i == 2 || i == 5 || i == 7) {
+        waveOuter = vec3(0.35, 0.55, 0.9);  // Blue
+        waveMid = vec3(0.5, 0.7, 0.85);     // Cyan-ish
+      }
+
+      float colorT = smoothstep(outerR, innerR, dist);
+      vec3 waveColor = mix(waveOuter, waveMid, colorT);
+      waveColor = mix(waveColor, waveInner, colorT * colorT);
+
+      // Accumulate
+      waveAccum = mix(waveAccum, waveColor, waveAlpha * 0.65);
+      waveAlphaAccum = max(waveAlphaAccum, waveAlpha);
     }
 
-    // Combine: background → waves → kernel
-    color = mix(bgColor, waveColor, totalAlpha * 0.85);
-    color = mix(color, kernelFinal, kernel);
+    // === COMBINE ===
+    color = bgColor;
 
-    // Add soft glow around kernel
-    float glow = exp(-dist * 4.0) * 0.4;
-    color += kernelColor * glow;
+    // Waves
+    color = mix(color, waveAccum, waveAlphaAccum * 0.9);
 
-    // Subtle outer vignette to fade edges
-    float vignette = smoothstep(1.0, 0.5, dist);
-    color = mix(bgColor, color, vignette);
+    // Soft glow around everything
+    float outerGlow = exp(-dist * 3.0) * 0.2;
+    color += waveAccum * outerGlow;
+
+    // Core glow
+    float coreGlow = smoothstep(0.12, -0.05, core);
+    color = mix(color, coreCol * 0.5, coreGlow * 0.7);
+
+    // Core solid
+    float coreEdge = smoothstep(0.015, -0.015, core);
+    color = mix(color, coreCol, coreEdge);
+
+    // Hot white center
+    float hotSpot = smoothstep(0.08, 0.0, dist);
+    color = mix(color, vec3(1.0, 0.98, 0.9), hotSpot * 0.7);
+
+    // === SPARKLE PARTICLES ===
+    for (int i = 0; i < 20; i++) {
+      float fi = float(i);
+      float pAngle = hash(vec2(fi, 0.0)) * 2.0 * PI + t * 0.1 * (hash(vec2(fi, 1.0)) - 0.5);
+      float pDist = 0.25 + hash(vec2(fi, 2.0)) * 0.4;
+      vec2 pPos = vec2(cos(pAngle), sin(pAngle)) * pDist;
+
+      float pSize = 0.003 + hash(vec2(fi, 3.0)) * 0.004;
+      float p = smoothstep(pSize, 0.0, length(uv - pPos));
+
+      // Twinkle
+      float twinkle = sin(t * 3.0 + fi * 2.0) * 0.5 + 0.5;
+      p *= twinkle;
+
+      // Particle color
+      vec3 pCol = mix(vec3(0.8, 0.7, 1.0), vec3(0.5, 0.8, 1.0), hash(vec2(fi, 4.0)));
+      color += pCol * p * 0.8;
+    }
 
     return vec4(color, 1.0);
   }
