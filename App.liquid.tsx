@@ -1,9 +1,11 @@
 /**
  * Shader Development Toggle
  *
- * Two rows of tabs:
- * - TOP ROW (Orb): None, G1-G5, Petals (orb/foreground effects)
- * - BOTTOM ROW (BG): 1BG-7BG (background versions)
+ * Four rows of tabs:
+ * - ROW 1 (Glass): None, G1-G6 (glass/orb effects)
+ * - ROW 2 (Petals): P1 (petal effects)
+ * - ROW 3 (BG Row 1): 1-7 (original backgrounds)
+ * - ROW 4 (BG Row 2): 8-13 (William Mapan inspired)
  */
 
 import React, { useState } from 'react';
@@ -14,6 +16,7 @@ import { LiquidGlass2 } from './src/components/layers/LiquidGlass2';
 import { LiquidGlass3 } from './src/components/layers/LiquidGlass3';
 import { LiquidGlass4 } from './src/components/layers/LiquidGlass4';
 import { LiquidGlass5 } from './src/components/layers/LiquidGlass5';
+import { LiquidGlass6 } from './src/components/layers/LiquidGlass6';
 import { VibeMatrix } from './src/components/layers/VibeMatrix';
 import { VibeMatrix2 } from './src/components/layers/VibeMatrix2';
 import { VibeMatrix3 } from './src/components/layers/VibeMatrix3';
@@ -21,122 +24,201 @@ import { VibeMatrix4 } from './src/components/layers/VibeMatrix4';
 import { VibeMatrix5 } from './src/components/layers/VibeMatrix5';
 import { VibeMatrix6 } from './src/components/layers/VibeMatrix6';
 import { VibeMatrix7 } from './src/components/layers/VibeMatrix7';
+import { VibeMatrix8 } from './src/components/layers/VibeMatrix8';
+import { VibeMatrix9 } from './src/components/layers/VibeMatrix9';
+import { VibeMatrix10 } from './src/components/layers/VibeMatrix10';
+import { VibeMatrix11 } from './src/components/layers/VibeMatrix11';
+import { VibeMatrix12 } from './src/components/layers/VibeMatrix12';
+import { VibeMatrix13 } from './src/components/layers/VibeMatrix13';
 import { LiquidRosePetals } from './src/components/layers/LiquidRosePetals';
 
-// Orb/foreground modes
-type OrbMode = 'none' | 'G1' | 'G2' | 'G3' | 'G4' | 'G5' | 'petals';
+// Glass/orb modes
+type GlassMode = 'none' | 'G1' | 'G2' | 'G3' | 'G4' | 'G5' | 'G6';
 
-// Background modes (7 versions of VibeMatrix)
-type BgMode = '1BG' | '2BG' | '3BG' | '4BG' | '5BG' | '6BG' | '7BG';
+// Petal modes
+type PetalMode = 'none' | 'P1';
 
-const ORB_INFO: Record<OrbMode, { label: string; hint: string }> = {
-  none: { label: 'None', hint: 'Background only' },
-  G1: { label: 'G1', hint: 'Original flowing amoeba' },
-  G2: { label: 'G2', hint: 'Contained orb with organic edge' },
-  G3: { label: 'G3', hint: 'Core with orbiting satellites' },
-  G4: { label: 'G4', hint: 'Noisy organic breathing edges' },
-  G5: { label: 'G5', hint: 'Layered depth parallax' },
-  petals: { label: 'Petals', hint: 'Liquid petals with DoF' },
+// Background modes (13 versions)
+type BgMode = '1' | '2' | '3' | '4' | '5' | '6' | '7' | '8' | '9' | '10' | '11' | '12' | '13';
+
+const GLASS_INFO: Record<GlassMode, { label: string; hint: string }> = {
+  none: { label: '-', hint: 'No glass' },
+  G1: { label: 'G1', hint: 'Flowing amoeba' },
+  G2: { label: 'G2', hint: 'Contained orb' },
+  G3: { label: 'G3', hint: 'Orbiting satellites' },
+  G4: { label: 'G4', hint: 'Breathing edges' },
+  G5: { label: 'G5', hint: 'Depth parallax' },
+  G6: { label: 'G6', hint: 'Aura orb (domain warp)' },
+};
+
+const PETAL_INFO: Record<PetalMode, { label: string; hint: string }> = {
+  none: { label: '-', hint: 'No petals' },
+  P1: { label: 'P1', hint: 'Rose petals DoF' },
 };
 
 const BG_INFO: Record<BgMode, { label: string; hint: string }> = {
-  '1BG': { label: '1BG', hint: 'Tie-dye flow + pink' },
-  '2BG': { label: '2BG', hint: 'Fire swirls (red/orange/yellow)' },
-  '3BG': { label: '3BG', hint: 'Aurora spirals (pink/blue/cyan)' },
-  '4BG': { label: '4BG', hint: 'Cellular dreams (mint/teal)' },
-  '5BG': { label: '5BG', hint: 'Liquid marble (navy/gold)' },
-  '6BG': { label: '6BG', hint: 'Kaleidoscope bloom (fuchsia)' },
-  '7BG': { label: '7BG', hint: 'Flowing streams (lime/aqua)' },
+  '1': { label: '1', hint: 'Tie-dye pink' },
+  '2': { label: '2', hint: 'Fire swirls' },
+  '3': { label: '3', hint: 'Aurora spirals' },
+  '4': { label: '4', hint: 'Cellular teal' },
+  '5': { label: '5', hint: 'Liquid marble' },
+  '6': { label: '6', hint: 'Kaleidoscope' },
+  '7': { label: '7', hint: 'Flowing streams' },
+  '8': { label: '8', hint: 'Radial flow field' },
+  '9': { label: '9', hint: 'Blob metaballs' },
+  '10': { label: '10', hint: 'Chromatic bloom' },
+  '11': { label: '11', hint: 'Layered orbs' },
+  '12': { label: '12', hint: 'Stippled gradient' },
+  '13': { label: '13', hint: 'Breathing nebula' },
 };
 
 export default function AppLiquid() {
-  const [orbMode, setOrbMode] = useState<OrbMode>('none');
-  const [bgMode, setBgMode] = useState<BgMode>('1BG');
+  const [glassMode, setGlassMode] = useState<GlassMode>('none');
+  const [petalMode, setPetalMode] = useState<PetalMode>('none');
+  const [bgMode, setBgMode] = useState<BgMode>('1');
 
-  const renderOrb = () => {
-    switch (orbMode) {
-      case 'G1':
-        return <LiquidGlass />;
-      case 'G2':
-        return <LiquidGlass2 />;
-      case 'G3':
-        return <LiquidGlass3 />;
-      case 'G4':
-        return <LiquidGlass4 />;
-      case 'G5':
-        return <LiquidGlass5 />;
-      case 'petals':
-        return <LiquidRosePetals />;
-      case 'none':
-      default:
-        return null;
+  const renderGlass = () => {
+    switch (glassMode) {
+      case 'G1': return <LiquidGlass />;
+      case 'G2': return <LiquidGlass2 />;
+      case 'G3': return <LiquidGlass3 />;
+      case 'G4': return <LiquidGlass4 />;
+      case 'G5': return <LiquidGlass5 />;
+      case 'G6': return <LiquidGlass6 />;
+      default: return null;
+    }
+  };
+
+  const renderPetals = () => {
+    switch (petalMode) {
+      case 'P1': return <LiquidRosePetals />;
+      default: return null;
     }
   };
 
   const renderBackground = () => {
     switch (bgMode) {
-      case '1BG':
-        return <VibeMatrix />;
-      case '2BG':
-        return <VibeMatrix2 />;
-      case '3BG':
-        return <VibeMatrix3 />;
-      case '4BG':
-        return <VibeMatrix4 />;
-      case '5BG':
-        return <VibeMatrix5 />;
-      case '6BG':
-        return <VibeMatrix6 />;
-      case '7BG':
-        return <VibeMatrix7 />;
-      default:
-        return <VibeMatrix />;
+      case '1': return <VibeMatrix />;
+      case '2': return <VibeMatrix2 />;
+      case '3': return <VibeMatrix3 />;
+      case '4': return <VibeMatrix4 />;
+      case '5': return <VibeMatrix5 />;
+      case '6': return <VibeMatrix6 />;
+      case '7': return <VibeMatrix7 />;
+      case '8': return <VibeMatrix8 />;
+      case '9': return <VibeMatrix9 />;
+      case '10': return <VibeMatrix10 />;
+      case '11': return <VibeMatrix11 />;
+      case '12': return <VibeMatrix12 />;
+      case '13': return <VibeMatrix13 />;
+      default: return <VibeMatrix />;
     }
+  };
+
+  // Build hint text
+  const getHint = () => {
+    const parts = [];
+    if (glassMode !== 'none') parts.push(GLASS_INFO[glassMode].hint);
+    if (petalMode !== 'none') parts.push(PETAL_INFO[petalMode].hint);
+    parts.push(BG_INFO[bgMode].hint);
+    return parts.join(' + ');
+  };
+
+  // Build label text
+  const getLabel = () => {
+    const parts = [];
+    if (glassMode !== 'none') parts.push(glassMode);
+    if (petalMode !== 'none') parts.push(petalMode);
+    parts.push(`BG${bgMode}`);
+    return parts.join(' ');
   };
 
   return (
     <View style={styles.container}>
-      {/* Background layer (always rendered) - no pointer events */}
+      {/* Background layer */}
       <View style={styles.shaderLayer} pointerEvents="none">
         {renderBackground()}
       </View>
 
-      {/* Orb/foreground layer (optional) - no pointer events */}
+      {/* Petal layer */}
       <View style={styles.shaderLayer} pointerEvents="none">
-        {renderOrb()}
+        {renderPetals()}
       </View>
 
-      {/* TOP ROW - Orb tabs */}
-      <View style={styles.topRow}>
-        <Text style={styles.rowLabel}>Orb:</Text>
-        {(['none', 'G1', 'G2', 'G3', 'G4', 'G5', 'petals'] as OrbMode[]).map((m) => (
+      {/* Glass/orb layer (topmost) */}
+      <View style={styles.shaderLayer} pointerEvents="none">
+        {renderGlass()}
+      </View>
+
+      {/* ROW 1 - Glass tabs */}
+      <View style={styles.row1}>
+        <Text style={styles.rowLabel}>G:</Text>
+        {(['none', 'G1', 'G2', 'G3', 'G4', 'G5', 'G6'] as GlassMode[]).map((m) => (
           <Pressable
             key={m}
-            style={[styles.button, orbMode === m && styles.buttonActive]}
-            onPress={() => setOrbMode(m)}
+            style={[styles.btn, glassMode === m && styles.btnActive]}
+            onPress={() => setGlassMode(m)}
           >
-            <Text style={[styles.buttonText, orbMode === m && styles.buttonTextActive]}>
-              {ORB_INFO[m].label}
+            <Text style={[styles.btnText, glassMode === m && styles.btnTextActive]}>
+              {GLASS_INFO[m].label}
             </Text>
           </Pressable>
         ))}
       </View>
 
-      {/* BOTTOM ROW - Background tabs (scrollable) */}
-      <View style={styles.bottomRow}>
+      {/* ROW 2 - Petal tabs */}
+      <View style={styles.row2}>
+        <Text style={styles.rowLabel}>P:</Text>
+        {(['none', 'P1'] as PetalMode[]).map((m) => (
+          <Pressable
+            key={m}
+            style={[styles.btn, petalMode === m && styles.btnActive]}
+            onPress={() => setPetalMode(m)}
+          >
+            <Text style={[styles.btnText, petalMode === m && styles.btnTextActive]}>
+              {PETAL_INFO[m].label}
+            </Text>
+          </Pressable>
+        ))}
+      </View>
+
+      {/* ROW 3 - Background tabs (1-7) */}
+      <View style={styles.row3}>
         <Text style={styles.rowLabel}>BG:</Text>
         <ScrollView
           horizontal
           showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.bgScrollContent}
+          contentContainerStyle={styles.scrollContent}
         >
-          {(['1BG', '2BG', '3BG', '4BG', '5BG', '6BG', '7BG'] as BgMode[]).map((m) => (
+          {(['1', '2', '3', '4', '5', '6', '7'] as BgMode[]).map((m) => (
             <Pressable
               key={m}
-              style={[styles.button, bgMode === m && styles.buttonActive]}
+              style={[styles.btn, bgMode === m && styles.btnActive]}
               onPress={() => setBgMode(m)}
             >
-              <Text style={[styles.buttonText, bgMode === m && styles.buttonTextActive]}>
+              <Text style={[styles.btnText, bgMode === m && styles.btnTextActive]}>
+                {BG_INFO[m].label}
+              </Text>
+            </Pressable>
+          ))}
+        </ScrollView>
+      </View>
+
+      {/* ROW 4 - Background tabs (8-13) - Mapan inspired */}
+      <View style={styles.row4}>
+        <Text style={styles.rowLabel}>BG2:</Text>
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.scrollContent}
+        >
+          {(['8', '9', '10', '11', '12', '13'] as BgMode[]).map((m) => (
+            <Pressable
+              key={m}
+              style={[styles.btn, bgMode === m && styles.btnActive]}
+              onPress={() => setBgMode(m)}
+            >
+              <Text style={[styles.btnText, bgMode === m && styles.btnTextActive]}>
                 {BG_INFO[m].label}
               </Text>
             </Pressable>
@@ -146,12 +228,8 @@ export default function AppLiquid() {
 
       {/* Label showing current selection */}
       <View style={styles.label}>
-        <Text style={styles.text}>
-          {orbMode !== 'none' ? ORB_INFO[orbMode].label : ''} {BG_INFO[bgMode].label}
-        </Text>
-        <Text style={styles.hint}>
-          {orbMode !== 'none' ? ORB_INFO[orbMode].hint : BG_INFO[bgMode].hint}
-        </Text>
+        <Text style={styles.text}>{getLabel()}</Text>
+        <Text style={styles.hint}>{getHint()}</Text>
       </View>
 
       <StatusBar style="light" />
@@ -168,74 +246,97 @@ const styles = StyleSheet.create({
     ...StyleSheet.absoluteFillObject,
     zIndex: 0,
   },
-  topRow: {
+  row1: {
     position: 'absolute',
-    top: 60,
+    top: 55,
     left: 0,
     right: 0,
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
-    gap: 6,
+    gap: 4,
     zIndex: 100,
-    paddingHorizontal: 10,
+    paddingHorizontal: 8,
   },
-  bottomRow: {
+  row2: {
     position: 'absolute',
-    top: 105,
+    top: 88,
+    left: 0,
+    right: 0,
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: 4,
+    zIndex: 100,
+    paddingHorizontal: 8,
+  },
+  row3: {
+    position: 'absolute',
+    top: 121,
     left: 0,
     right: 0,
     flexDirection: 'row',
     alignItems: 'center',
     zIndex: 100,
-    paddingLeft: 10,
+    paddingLeft: 8,
   },
-  bgScrollContent: {
+  row4: {
+    position: 'absolute',
+    top: 154,
+    left: 0,
+    right: 0,
     flexDirection: 'row',
-    gap: 6,
-    paddingRight: 10,
+    alignItems: 'center',
+    zIndex: 100,
+    paddingLeft: 8,
+  },
+  scrollContent: {
+    flexDirection: 'row',
+    gap: 4,
+    paddingRight: 8,
   },
   rowLabel: {
     color: 'rgba(255,255,255,0.5)',
-    fontSize: 12,
+    fontSize: 10,
     fontWeight: '600',
-    marginRight: 4,
+    marginRight: 2,
+    minWidth: 24,
   },
-  button: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 16,
+  btn: {
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 12,
     backgroundColor: 'rgba(255,255,255,0.1)',
     borderWidth: 1,
     borderColor: 'rgba(255,255,255,0.2)',
   },
-  buttonActive: {
+  btnActive: {
     backgroundColor: 'rgba(255,255,255,0.25)',
     borderColor: 'rgba(255,255,255,0.5)',
   },
-  buttonText: {
+  btnText: {
     color: 'rgba(255,255,255,0.6)',
-    fontSize: 11,
+    fontSize: 10,
     fontWeight: '500',
   },
-  buttonTextActive: {
+  btnTextActive: {
     color: '#fff',
   },
   label: {
     position: 'absolute',
-    top: 155,
+    top: 191,
     left: 0,
     right: 0,
     alignItems: 'center',
   },
   text: {
     color: '#fff',
-    fontSize: 20,
+    fontSize: 18,
     fontWeight: '600',
   },
   hint: {
     color: 'rgba(255,255,255,0.6)',
-    fontSize: 12,
-    marginTop: 6,
+    fontSize: 11,
+    marginTop: 4,
   },
 });
