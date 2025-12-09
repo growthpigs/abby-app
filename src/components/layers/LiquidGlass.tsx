@@ -1,0 +1,131 @@
+/**
+ * LiquidGlass - William Candillon style liquid blob shader
+ *
+ * Uses SDFs (Signed Distance Functions) with smooth minimum
+ * to create organic, blobby shapes that merge together.
+ */
+
+import React from 'react';
+import { StyleSheet, useWindowDimensions } from 'react-native';
+import {
+  Canvas,
+  Fill,
+  Shader,
+  Skia,
+  useClock,
+} from '@shopify/react-native-skia';
+import { useDerivedValue } from 'react-native-reanimated';
+
+// Liquid Glass shader with metaballs/blobs
+const LIQUID_GLASS_SHADER = Skia.RuntimeEffect.Make(`
+  uniform float2 resolution;
+  uniform float time;
+
+  // SDF for a circle
+  float sdCircle(vec2 p, float r) {
+    return length(p) - r;
+  }
+
+  // Smooth minimum - the magic that makes blobs merge
+  float smin(float a, float b, float k) {
+    float h = max(k - abs(a - b), 0.0) / k;
+    return min(a, b) - h * h * k * 0.25;
+  }
+
+  // Create a moving blob position
+  vec2 blobPos(float seed, float t) {
+    return vec2(
+      sin(t * 0.7 + seed * 6.28) * 0.3,
+      cos(t * 0.9 + seed * 4.17) * 0.3
+    );
+  }
+
+  vec4 main(vec2 fragCoord) {
+    // Normalize to -1 to 1, centered
+    vec2 uv = (fragCoord * 2.0 - resolution) / min(resolution.x, resolution.y);
+
+    float t = time;
+
+    // Create multiple blobs with different movements
+    float d1 = sdCircle(uv - blobPos(0.0, t), 0.35);
+    float d2 = sdCircle(uv - blobPos(0.33, t * 1.1), 0.28);
+    float d3 = sdCircle(uv - blobPos(0.66, t * 0.9), 0.32);
+    float d4 = sdCircle(uv - blobPos(0.15, t * 1.2), 0.25);
+    float d5 = sdCircle(uv - blobPos(0.85, t * 0.8), 0.22);
+
+    // Smooth merge all blobs together
+    float d = d1;
+    d = smin(d, d2, 0.5);
+    d = smin(d, d3, 0.5);
+    d = smin(d, d4, 0.5);
+    d = smin(d, d5, 0.5);
+
+    // Colors
+    vec3 bgColor = vec3(0.02, 0.02, 0.08);  // Dark background
+    vec3 blobColor1 = vec3(0.2, 0.5, 1.0);   // Blue
+    vec3 blobColor2 = vec3(0.9, 0.3, 0.5);   // Pink/Red
+    vec3 blobColor3 = vec3(0.3, 0.9, 0.7);   // Cyan/Green
+
+    // Color based on position and time
+    float colorMix = sin(atan(uv.y, uv.x) * 2.0 + t) * 0.5 + 0.5;
+    float colorMix2 = sin(length(uv) * 5.0 - t * 2.0) * 0.5 + 0.5;
+
+    vec3 blobColor = mix(blobColor1, blobColor2, colorMix);
+    blobColor = mix(blobColor, blobColor3, colorMix2 * 0.5);
+
+    // Edge glow
+    float edge = smoothstep(0.02, -0.02, d);
+    float glow = smoothstep(0.15, -0.1, d);
+
+    // Inner gradient
+    float inner = smoothstep(-0.3, 0.0, d);
+
+    // Combine
+    vec3 color = bgColor;
+    color = mix(color, blobColor * 0.3, glow);  // Outer glow
+    color = mix(color, blobColor, edge);         // Blob fill
+    color += blobColor * (1.0 - inner) * 0.3;    // Inner brightness
+
+    // Add highlights
+    float highlight = pow(max(0.0, 1.0 - inner), 3.0) * 0.5;
+    color += vec3(highlight);
+
+    return vec4(color, 1.0);
+  }
+`);
+
+export const LiquidGlass: React.FC = () => {
+  const { width, height } = useWindowDimensions();
+
+  // useClock from Skia - returns milliseconds since first frame
+  const clock = useClock();
+
+  // Create uniforms - convert to seconds for shader
+  const uniforms = useDerivedValue(() => {
+    return {
+      resolution: [width, height],
+      time: clock.value / 1000, // Seconds
+    };
+  }, [clock]);
+
+  if (!LIQUID_GLASS_SHADER) {
+    console.error('[LiquidGlass] Shader failed to compile');
+    return null;
+  }
+
+  return (
+    <Canvas style={styles.canvas} mode="continuous">
+      <Fill>
+        <Shader source={LIQUID_GLASS_SHADER} uniforms={uniforms} />
+      </Fill>
+    </Canvas>
+  );
+};
+
+const styles = StyleSheet.create({
+  canvas: {
+    ...StyleSheet.absoluteFillObject,
+  },
+});
+
+export default LiquidGlass;
