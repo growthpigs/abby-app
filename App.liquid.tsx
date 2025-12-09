@@ -2,12 +2,12 @@
  * Shader Development Toggle
  *
  * Two rows of tabs:
- * - TOP ROW (Orb): Glass, Glass2, Petals (orb/foreground effects)
- * - BOTTOM ROW (BG): 1BG, 2BG, 3BG (background versions)
+ * - TOP ROW (Orb): None, G1-G5, Petals (orb/foreground effects)
+ * - BOTTOM ROW (BG): 1BG-7BG (background versions)
  */
 
 import React, { useState } from 'react';
-import { StyleSheet, View, Text, Pressable } from 'react-native';
+import { StyleSheet, View, Text, Pressable, ScrollView } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { LiquidGlass } from './src/components/layers/LiquidGlass';
 import { LiquidGlass2 } from './src/components/layers/LiquidGlass2';
@@ -17,13 +17,17 @@ import { LiquidGlass5 } from './src/components/layers/LiquidGlass5';
 import { VibeMatrix } from './src/components/layers/VibeMatrix';
 import { VibeMatrix2 } from './src/components/layers/VibeMatrix2';
 import { VibeMatrix3 } from './src/components/layers/VibeMatrix3';
+import { VibeMatrix4 } from './src/components/layers/VibeMatrix4';
+import { VibeMatrix5 } from './src/components/layers/VibeMatrix5';
+import { VibeMatrix6 } from './src/components/layers/VibeMatrix6';
+import { VibeMatrix7 } from './src/components/layers/VibeMatrix7';
 import { LiquidRosePetals } from './src/components/layers/LiquidRosePetals';
 
 // Orb/foreground modes
 type OrbMode = 'none' | 'G1' | 'G2' | 'G3' | 'G4' | 'G5' | 'petals';
 
-// Background modes (different versions of VibeMatrix)
-type BgMode = '1BG' | '2BG' | '3BG';
+// Background modes (7 versions of VibeMatrix)
+type BgMode = '1BG' | '2BG' | '3BG' | '4BG' | '5BG' | '6BG' | '7BG';
 
 const ORB_INFO: Record<OrbMode, { label: string; hint: string }> = {
   none: { label: 'None', hint: 'Background only' },
@@ -37,8 +41,12 @@ const ORB_INFO: Record<OrbMode, { label: string; hint: string }> = {
 
 const BG_INFO: Record<BgMode, { label: string; hint: string }> = {
   '1BG': { label: '1BG', hint: 'Tie-dye flow + pink' },
-  '2BG': { label: '2BG', hint: 'Warm fire swirls (red/orange/yellow)' },
-  '3BG': { label: '3BG', hint: 'Neon aurora spirals (pink/blue/cyan)' },
+  '2BG': { label: '2BG', hint: 'Fire swirls (red/orange/yellow)' },
+  '3BG': { label: '3BG', hint: 'Aurora spirals (pink/blue/cyan)' },
+  '4BG': { label: '4BG', hint: 'Cellular dreams (mint/teal)' },
+  '5BG': { label: '5BG', hint: 'Liquid marble (navy/gold)' },
+  '6BG': { label: '6BG', hint: 'Kaleidoscope bloom (fuchsia)' },
+  '7BG': { label: '7BG', hint: 'Flowing streams (lime/aqua)' },
 };
 
 export default function AppLiquid() {
@@ -73,6 +81,14 @@ export default function AppLiquid() {
         return <VibeMatrix2 />;
       case '3BG':
         return <VibeMatrix3 />;
+      case '4BG':
+        return <VibeMatrix4 />;
+      case '5BG':
+        return <VibeMatrix5 />;
+      case '6BG':
+        return <VibeMatrix6 />;
+      case '7BG':
+        return <VibeMatrix7 />;
       default:
         return <VibeMatrix />;
     }
@@ -106,20 +122,26 @@ export default function AppLiquid() {
         ))}
       </View>
 
-      {/* BOTTOM ROW - Background tabs */}
+      {/* BOTTOM ROW - Background tabs (scrollable) */}
       <View style={styles.bottomRow}>
         <Text style={styles.rowLabel}>BG:</Text>
-        {(['1BG', '2BG', '3BG'] as BgMode[]).map((m) => (
-          <Pressable
-            key={m}
-            style={[styles.button, bgMode === m && styles.buttonActive]}
-            onPress={() => setBgMode(m)}
-          >
-            <Text style={[styles.buttonText, bgMode === m && styles.buttonTextActive]}>
-              {BG_INFO[m].label}
-            </Text>
-          </Pressable>
-        ))}
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.bgScrollContent}
+        >
+          {(['1BG', '2BG', '3BG', '4BG', '5BG', '6BG', '7BG'] as BgMode[]).map((m) => (
+            <Pressable
+              key={m}
+              style={[styles.button, bgMode === m && styles.buttonActive]}
+              onPress={() => setBgMode(m)}
+            >
+              <Text style={[styles.buttonText, bgMode === m && styles.buttonTextActive]}>
+                {BG_INFO[m].label}
+              </Text>
+            </Pressable>
+          ))}
+        </ScrollView>
       </View>
 
       {/* Label showing current selection */}
@@ -154,8 +176,9 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
-    gap: 8,
+    gap: 6,
     zIndex: 100,
+    paddingHorizontal: 10,
   },
   bottomRow: {
     position: 'absolute',
@@ -163,10 +186,14 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     flexDirection: 'row',
-    justifyContent: 'center',
     alignItems: 'center',
-    gap: 8,
     zIndex: 100,
+    paddingLeft: 10,
+  },
+  bgScrollContent: {
+    flexDirection: 'row',
+    gap: 6,
+    paddingRight: 10,
   },
   rowLabel: {
     color: 'rgba(255,255,255,0.5)',
@@ -175,7 +202,7 @@ const styles = StyleSheet.create({
     marginRight: 4,
   },
   button: {
-    paddingHorizontal: 14,
+    paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 16,
     backgroundColor: 'rgba(255,255,255,0.1)',
@@ -188,7 +215,7 @@ const styles = StyleSheet.create({
   },
   buttonText: {
     color: 'rgba(255,255,255,0.6)',
-    fontSize: 12,
+    fontSize: 11,
     fontWeight: '500',
   },
   buttonTextActive: {
