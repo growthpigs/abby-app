@@ -68,7 +68,7 @@ float fieldLine(float2 uv, float time, float complexity) {
   field += float2(noise, snoise(uv * 3.0 + 100.0)) * 0.3;
 
   // Field line pattern - perpendicular to field direction
-  float angle = atan2(field.y, field.x);
+  float angle = atan(field.y, field.x);
   float linePattern = sin(angle * 20.0 * complexity + length(uv - pole1) * 15.0);
   linePattern *= sin(angle * 15.0 - length(uv - pole2) * 12.0);
 
@@ -128,7 +128,7 @@ half4 main(float2 fragCoord) {
   float particles = flowParticles(uv, time);
 
   // Color based on position and time
-  float colorAngle = atan2(uv.y - 0.5, uv.x - 0.5 * aspect) + time * 0.1;
+  float colorAngle = atan(uv.y - 0.5, uv.x - 0.5 * aspect) + time * 0.1;
   float colorMix = sin(colorAngle * 2.0) * 0.5 + 0.5;
   float colorMix2 = cos(length(uv - float2(0.5 * aspect, 0.5)) * 4.0 - time) * 0.5 + 0.5;
 

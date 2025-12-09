@@ -61,7 +61,7 @@ float inkDrop(float2 uv, float2 center, float size, float time, float seed) {
   float dist = length(delta);
 
   // Organic edge distortion
-  float angle = atan2(delta.y, delta.x);
+  float angle = atan(delta.y, delta.x);
   float edgeNoise = fbm(float2(angle * 3.0 + seed, time * 0.5), 4) * 0.3;
 
   // Spreading over time with noise
