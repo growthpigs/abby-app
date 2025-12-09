@@ -1,11 +1,11 @@
 /**
  * Shader Development Toggle
  *
- * Four rows of tabs:
- * - ROW 1 (Glass): None, G1-G6 (glass/orb effects)
- * - ROW 2 (Petals): P1 (petal effects)
- * - ROW 3 (BG Row 1): 1-7 (original backgrounds)
- * - ROW 4 (BG Row 2): 8-13 (William Mapan inspired)
+ * Four rows of tabs (all left-aligned):
+ * - ROW 1 (Glass): G1-G9 (glass/orb effects)
+ * - ROW 2 (BG): 1-7 (original backgrounds)
+ * - ROW 3 (BG2): 8-13 (William Mapan inspired)
+ * - ROW 4 (BG3): 14-18 (artistic effects)
  */
 
 import React, { useState } from 'react';
@@ -17,6 +17,9 @@ import { LiquidGlass3 } from './src/components/layers/LiquidGlass3';
 import { LiquidGlass4 } from './src/components/layers/LiquidGlass4';
 import { LiquidGlass5 } from './src/components/layers/LiquidGlass5';
 import { LiquidGlass6 } from './src/components/layers/LiquidGlass6';
+import { LiquidGlass7 } from './src/components/layers/LiquidGlass7';
+import { LiquidGlass8 } from './src/components/layers/LiquidGlass8';
+import { LiquidGlass9 } from './src/components/layers/LiquidGlass9';
 import { VibeMatrix } from './src/components/layers/VibeMatrix';
 import { VibeMatrix2 } from './src/components/layers/VibeMatrix2';
 import { VibeMatrix3 } from './src/components/layers/VibeMatrix3';
@@ -30,16 +33,17 @@ import { VibeMatrix10 } from './src/components/layers/VibeMatrix10';
 import { VibeMatrix11 } from './src/components/layers/VibeMatrix11';
 import { VibeMatrix12 } from './src/components/layers/VibeMatrix12';
 import { VibeMatrix13 } from './src/components/layers/VibeMatrix13';
-import { LiquidRosePetals } from './src/components/layers/LiquidRosePetals';
+import { VibeMatrix14 } from './src/components/layers/VibeMatrix14';
+import { VibeMatrix15 } from './src/components/layers/VibeMatrix15';
+import { VibeMatrix16 } from './src/components/layers/VibeMatrix16';
+import { VibeMatrix17 } from './src/components/layers/VibeMatrix17';
+import { VibeMatrix18 } from './src/components/layers/VibeMatrix18';
 
 // Glass/orb modes
-type GlassMode = 'none' | 'G1' | 'G2' | 'G3' | 'G4' | 'G5' | 'G6';
+type GlassMode = 'none' | 'G1' | 'G2' | 'G3' | 'G4' | 'G5' | 'G6' | 'G7' | 'G8' | 'G9';
 
-// Petal modes
-type PetalMode = 'none' | 'P1';
-
-// Background modes (13 versions)
-type BgMode = '1' | '2' | '3' | '4' | '5' | '6' | '7' | '8' | '9' | '10' | '11' | '12' | '13';
+// Background modes (18 versions)
+type BgMode = '1' | '2' | '3' | '4' | '5' | '6' | '7' | '8' | '9' | '10' | '11' | '12' | '13' | '14' | '15' | '16' | '17' | '18';
 
 const GLASS_INFO: Record<GlassMode, { label: string; hint: string }> = {
   none: { label: '-', hint: 'No glass' },
@@ -48,12 +52,10 @@ const GLASS_INFO: Record<GlassMode, { label: string; hint: string }> = {
   G3: { label: 'G3', hint: 'Orbiting satellites' },
   G4: { label: 'G4', hint: 'Breathing edges' },
   G5: { label: 'G5', hint: 'Depth parallax' },
-  G6: { label: 'G6', hint: 'Aura orb (domain warp)' },
-};
-
-const PETAL_INFO: Record<PetalMode, { label: string; hint: string }> = {
-  none: { label: '-', hint: 'No petals' },
-  P1: { label: 'P1', hint: 'Rose petals DoF' },
+  G6: { label: 'G6', hint: 'Wave shells + core' },
+  G7: { label: 'G7', hint: 'Crashing waves' },
+  G8: { label: 'G8', hint: 'Spiral nebula' },
+  G9: { label: 'G9', hint: 'Fluid ribbons' },
 };
 
 const BG_INFO: Record<BgMode, { label: string; hint: string }> = {
@@ -70,11 +72,15 @@ const BG_INFO: Record<BgMode, { label: string; hint: string }> = {
   '11': { label: '11', hint: 'Layered orbs' },
   '12': { label: '12', hint: 'Stippled gradient' },
   '13': { label: '13', hint: 'Breathing nebula' },
+  '14': { label: '14', hint: 'Magnetic fields' },
+  '15': { label: '15', hint: 'Crystalline facets' },
+  '16': { label: '16', hint: 'Ink bloom' },
+  '17': { label: '17', hint: 'Cellular membrane' },
+  '18': { label: '18', hint: 'Aurora curtains' },
 };
 
 export default function AppLiquid() {
   const [glassMode, setGlassMode] = useState<GlassMode>('none');
-  const [petalMode, setPetalMode] = useState<PetalMode>('none');
   const [bgMode, setBgMode] = useState<BgMode>('1');
 
   const renderGlass = () => {
@@ -85,13 +91,9 @@ export default function AppLiquid() {
       case 'G4': return <LiquidGlass4 />;
       case 'G5': return <LiquidGlass5 />;
       case 'G6': return <LiquidGlass6 />;
-      default: return null;
-    }
-  };
-
-  const renderPetals = () => {
-    switch (petalMode) {
-      case 'P1': return <LiquidRosePetals />;
+      case 'G7': return <LiquidGlass7 />;
+      case 'G8': return <LiquidGlass8 />;
+      case 'G9': return <LiquidGlass9 />;
       default: return null;
     }
   };
@@ -111,6 +113,11 @@ export default function AppLiquid() {
       case '11': return <VibeMatrix11 />;
       case '12': return <VibeMatrix12 />;
       case '13': return <VibeMatrix13 />;
+      case '14': return <VibeMatrix14 />;
+      case '15': return <VibeMatrix15 />;
+      case '16': return <VibeMatrix16 />;
+      case '17': return <VibeMatrix17 />;
+      case '18': return <VibeMatrix18 />;
       default: return <VibeMatrix />;
     }
   };
@@ -119,7 +126,6 @@ export default function AppLiquid() {
   const getHint = () => {
     const parts = [];
     if (glassMode !== 'none') parts.push(GLASS_INFO[glassMode].hint);
-    if (petalMode !== 'none') parts.push(PETAL_INFO[petalMode].hint);
     parts.push(BG_INFO[bgMode].hint);
     return parts.join(' + ');
   };
@@ -128,7 +134,6 @@ export default function AppLiquid() {
   const getLabel = () => {
     const parts = [];
     if (glassMode !== 'none') parts.push(glassMode);
-    if (petalMode !== 'none') parts.push(petalMode);
     parts.push(`BG${bgMode}`);
     return parts.join(' ');
   };
@@ -140,50 +145,35 @@ export default function AppLiquid() {
         {renderBackground()}
       </View>
 
-      {/* Petal layer */}
-      <View style={styles.shaderLayer} pointerEvents="none">
-        {renderPetals()}
-      </View>
-
       {/* Glass/orb layer (topmost) */}
       <View style={styles.shaderLayer} pointerEvents="none">
         {renderGlass()}
       </View>
 
-      {/* ROW 1 - Glass tabs */}
-      <View style={styles.row1}>
+      {/* ROW 1 - Glass tabs (scrollable, left-aligned) */}
+      <View style={styles.row}>
         <Text style={styles.rowLabel}>G:</Text>
-        {(['none', 'G1', 'G2', 'G3', 'G4', 'G5', 'G6'] as GlassMode[]).map((m) => (
-          <Pressable
-            key={m}
-            style={[styles.btn, glassMode === m && styles.btnActive]}
-            onPress={() => setGlassMode(m)}
-          >
-            <Text style={[styles.btnText, glassMode === m && styles.btnTextActive]}>
-              {GLASS_INFO[m].label}
-            </Text>
-          </Pressable>
-        ))}
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.scrollContent}
+        >
+          {(['none', 'G1', 'G2', 'G3', 'G4', 'G5', 'G6', 'G7', 'G8', 'G9'] as GlassMode[]).map((m) => (
+            <Pressable
+              key={m}
+              style={[styles.btn, glassMode === m && styles.btnActive]}
+              onPress={() => setGlassMode(m)}
+            >
+              <Text style={[styles.btnText, glassMode === m && styles.btnTextActive]}>
+                {GLASS_INFO[m].label}
+              </Text>
+            </Pressable>
+          ))}
+        </ScrollView>
       </View>
 
-      {/* ROW 2 - Petal tabs */}
-      <View style={styles.row2}>
-        <Text style={styles.rowLabel}>P:</Text>
-        {(['none', 'P1'] as PetalMode[]).map((m) => (
-          <Pressable
-            key={m}
-            style={[styles.btn, petalMode === m && styles.btnActive]}
-            onPress={() => setPetalMode(m)}
-          >
-            <Text style={[styles.btnText, petalMode === m && styles.btnTextActive]}>
-              {PETAL_INFO[m].label}
-            </Text>
-          </Pressable>
-        ))}
-      </View>
-
-      {/* ROW 3 - Background tabs (1-7) */}
-      <View style={styles.row3}>
+      {/* ROW 2 - Background tabs (1-7) */}
+      <View style={[styles.row, { top: 88 }]}>
         <Text style={styles.rowLabel}>BG:</Text>
         <ScrollView
           horizontal
@@ -204,8 +194,8 @@ export default function AppLiquid() {
         </ScrollView>
       </View>
 
-      {/* ROW 4 - Background tabs (8-13) - Mapan inspired */}
-      <View style={styles.row4}>
+      {/* ROW 3 - Background tabs (8-13) */}
+      <View style={[styles.row, { top: 121 }]}>
         <Text style={styles.rowLabel}>BG2:</Text>
         <ScrollView
           horizontal
@@ -213,6 +203,28 @@ export default function AppLiquid() {
           contentContainerStyle={styles.scrollContent}
         >
           {(['8', '9', '10', '11', '12', '13'] as BgMode[]).map((m) => (
+            <Pressable
+              key={m}
+              style={[styles.btn, bgMode === m && styles.btnActive]}
+              onPress={() => setBgMode(m)}
+            >
+              <Text style={[styles.btnText, bgMode === m && styles.btnTextActive]}>
+                {BG_INFO[m].label}
+              </Text>
+            </Pressable>
+          ))}
+        </ScrollView>
+      </View>
+
+      {/* ROW 4 - Background tabs (14-18) */}
+      <View style={[styles.row, { top: 154 }]}>
+        <Text style={styles.rowLabel}>BG3:</Text>
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.scrollContent}
+        >
+          {(['14', '15', '16', '17', '18'] as BgMode[]).map((m) => (
             <Pressable
               key={m}
               style={[styles.btn, bgMode === m && styles.btnActive]}
@@ -246,60 +258,26 @@ const styles = StyleSheet.create({
     ...StyleSheet.absoluteFillObject,
     zIndex: 0,
   },
-  row1: {
+  row: {
     position: 'absolute',
     top: 55,
     left: 0,
     right: 0,
     flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
-    gap: 4,
-    zIndex: 100,
-    paddingHorizontal: 8,
-  },
-  row2: {
-    position: 'absolute',
-    top: 88,
-    left: 0,
-    right: 0,
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
-    gap: 4,
-    zIndex: 100,
-    paddingHorizontal: 8,
-  },
-  row3: {
-    position: 'absolute',
-    top: 121,
-    left: 0,
-    right: 0,
-    flexDirection: 'row',
     alignItems: 'center',
     zIndex: 100,
-    paddingLeft: 8,
-  },
-  row4: {
-    position: 'absolute',
-    top: 154,
-    left: 0,
-    right: 0,
-    flexDirection: 'row',
-    alignItems: 'center',
-    zIndex: 100,
-    paddingLeft: 8,
+    paddingLeft: 12,
   },
   scrollContent: {
     flexDirection: 'row',
     gap: 4,
-    paddingRight: 8,
+    paddingRight: 12,
   },
   rowLabel: {
     color: 'rgba(255,255,255,0.5)',
     fontSize: 10,
     fontWeight: '600',
-    marginRight: 2,
+    marginRight: 4,
     minWidth: 24,
   },
   btn: {
@@ -325,9 +303,9 @@ const styles = StyleSheet.create({
   label: {
     position: 'absolute',
     top: 191,
-    left: 0,
-    right: 0,
-    alignItems: 'center',
+    left: 12,
+    right: 12,
+    alignItems: 'flex-start',
   },
   text: {
     color: '#fff',
