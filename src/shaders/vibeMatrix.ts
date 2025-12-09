@@ -20,6 +20,7 @@ uniform float2 u_resolution;
 uniform float u_complexity;
 uniform float3 u_colorA;
 uniform float3 u_colorB;
+uniform float3 u_colorC;  // Pink accent color
 
 // ============================================
 // SIMPLEX NOISE (2D)
@@ -124,6 +125,24 @@ float2 domainWarp(float2 p, float time, float intensity) {
 }
 
 // ============================================
+// TIE-DYE / OIL-IN-WATER FLOW
+// Nested sin/cos feedback creates organic multi-directional movement
+// ============================================
+
+float2 tieDyeFlow(float2 pos, float time, float strength) {
+  float2 result = pos;
+
+  // Each iteration feeds x into y and y into x
+  // LESS VISCOUS = faster internal dynamics
+  for (float k = 1.0; k < 6.0; k += 1.0) {
+    result.x += strength * sin(time * 1.6 + k * 1.8 * result.y);  // 2x faster
+    result.y += strength * cos(time * 1.8 + k * 1.6 * result.x);  // 2x faster
+  }
+
+  return result;
+}
+
+// ============================================
 // MAIN SHADER
 // ============================================
 
@@ -138,21 +157,37 @@ half4 main(float2 xy) {
   // Scale for nice pattern size
   uv *= 3.0;
 
-  // Time factor (slow it down for luxury feel)
-  float time = u_time * 0.0001; // Very slow
+  // Time factor - slightly slower for organic feel
+  float time = u_time * 0.00018; // Slowed down from 0.0003
 
   // Calculate octaves based on complexity (1-5)
   float octaves = 1.0 + u_complexity * 4.0;
 
   // Warp intensity based on complexity
-  float warpIntensity = 0.1 + u_complexity * 0.9;
+  float warpIntensity = 0.15 + u_complexity * 1.2;
 
   // Speed multiplier based on complexity
-  float speedMult = 0.5 + u_complexity * 2.0;
+  float speedMult = 0.7 + u_complexity * 2.0; // Slowed down
   float adjustedTime = time * speedMult;
 
-  // Apply domain warping
-  float2 warpedUV = domainWarp(uv, adjustedTime, warpIntensity);
+  // ============================================
+  // VARIABLE SCALE SWIRLS - bigger and smaller regions
+  // ============================================
+
+  // Create scale variation across the canvas using noise
+  float scaleNoise = snoise(uv * 0.5 + adjustedTime * 0.1);
+  float localScale = 0.7 + scaleNoise * 0.6; // Scale varies from 0.1 to 1.3
+
+  // ============================================
+  // TIE-DYE FLOW - Multi-directional organic movement
+  // ============================================
+
+  // Apply tie-dye flow with variable scale
+  float flowStrength = (0.22 + u_complexity * 0.29) * localScale;
+  float2 flowedUV = tieDyeFlow(uv * localScale, adjustedTime, flowStrength);
+
+  // Apply domain warping ON TOP of flow for compound organic motion
+  float2 warpedUV = domainWarp(flowedUV, adjustedTime, warpIntensity);
 
   // Sample noise at warped position
   float n = fbm(warpedUV, octaves);
@@ -171,8 +206,13 @@ half4 main(float2 xy) {
   float contrast = 0.8 + u_complexity * 0.4;
   blend = pow(blend, contrast);
 
-  // Mix colors based on noise
+  // Mix colors based on noise - A to B blend
   half3 color = mix(half3(u_colorA), half3(u_colorB), half(blend));
+
+  // Add pink accent in certain regions (based on third noise pattern)
+  float pinkNoise = fbm(warpedUV * 1.5 - adjustedTime * 0.3, 2.0);
+  pinkNoise = smoothstep(0.1, 0.6, pinkNoise * 0.5 + 0.5);
+  color = mix(color, half3(u_colorC), half(pinkNoise * 0.35));  // Subtle pink blend
 
   // Add subtle highlights
   float highlight = pow(max(0.0, n), 3.0) * 0.2;

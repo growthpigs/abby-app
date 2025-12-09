@@ -44,6 +44,10 @@ export const VibeMatrix: React.FC = () => {
   // Get complexity value
   const complexityValue = COMPLEXITY_VALUES[complexity];
 
+  // Pink accent color (normalized RGB 0-1)
+  // #E11D48 = [225, 29, 72] → [0.88, 0.11, 0.28]
+  const pinkAccent = [0.88, 0.11, 0.28];
+
   // Create animated uniforms using useDerivedValue
   // Pass raw milliseconds - shader multiplies by 0.0001 internally
   const uniforms = useDerivedValue(() => {
@@ -53,6 +57,7 @@ export const VibeMatrix: React.FC = () => {
       u_complexity: complexityValue,
       u_colorA: config.colorA,
       u_colorB: config.colorB,
+      u_colorC: pinkAccent, // Pink accent
     };
   }, [clock]);
 
