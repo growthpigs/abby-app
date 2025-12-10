@@ -16,11 +16,23 @@ import { useVibeController } from '../../store/useVibeController';
 import { DEMO_QUESTIONS } from '../../data/demo-questions';
 import { VibeColorTheme } from '../../types/vibe';
 
-// Returns the background index for shader progression (1-10)
-// Maps question index (0-9) directly to shader index (soft → hard)
+// Returns the background index for shader progression
+// Curated selection featuring the most beautiful shaders: 5, 1, 13, 8, 18, etc.
+const BACKGROUND_SEQUENCE = [
+  5,   // Q1: Liquid Marble - gorgeous opener
+  1,   // Q2: Domain Warping fBM - classic
+  13,  // Q3: Featured beautiful shader
+  2,   // Q4: Warm Fire Swirls
+  8,   // Q5: Deep Ocean - mid-point depth
+  3,   // Q6: Neon Aurora Spirals
+  18,  // Q7: Featured beautiful shader
+  6,   // Q8: Kaleidoscope Bloom
+  4,   // Q9: Aerial Reef
+  10,  // Q10: Chromatic Bloom - finale
+];
+
 const getBackgroundIndexForQuestion = (questionIndex: number): number => {
-  // Question 0 → shader 1, Question 9 → shader 10
-  return questionIndex + 1;
+  return BACKGROUND_SEQUENCE[questionIndex] || 1;
 };
 
 export interface InterviewScreenProps {

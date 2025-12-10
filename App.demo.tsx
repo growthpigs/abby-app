@@ -78,6 +78,19 @@ function DemoScreen() {
     setBackgroundIndex(index);
   }, []);
 
+  // Set background based on demo state
+  // Onboarding: BG1, Searching: BG8, Match/Payment/Reveal: BG5
+  useEffect(() => {
+    if (currentState === 'ONBOARDING') {
+      setBackgroundIndex(1);
+    } else if (currentState === 'SEARCHING') {
+      setBackgroundIndex(8); // Deep Ocean - mysterious searching
+    } else if (currentState === 'MATCH' || currentState === 'PAYMENT' || currentState === 'REVEAL') {
+      setBackgroundIndex(5); // Liquid Marble - beautiful for reveal
+    }
+    // INTERVIEW uses its own progression via handleBackgroundChange
+  }, [currentState]);
+
   // Start voice when entering interview state
   useEffect(() => {
     if (currentState === 'INTERVIEW') {

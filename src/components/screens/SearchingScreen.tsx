@@ -3,11 +3,12 @@
  *
  * Fake loading screen with status messages cycling.
  * Auto-advances after delay. Vibe: CAUTION (amber, anticipation)
+ * Glass aesthetic with blur backing.
  */
 
 import React, { useEffect, useState } from 'react';
-import { View, StyleSheet } from 'react-native';
-import { Headline, Body, Caption } from '../ui';
+import { View, Text, StyleSheet } from 'react-native';
+import { BlurView } from 'expo-blur';
 import { useDemoStore } from '../../store/useDemoStore';
 import { useVibeController } from '../../store/useVibeController';
 import { DEMO_MATCH } from '../../data/demo-match';
@@ -73,27 +74,30 @@ export const SearchingScreen: React.FC = () => {
 
   return (
     <View style={styles.container}>
-      <View style={styles.content}>
-        <Headline style={styles.headline}>
-          Searching{dots}
-        </Headline>
-        <Body style={styles.status}>
-          {STATUS_MESSAGES[statusIndex]}
-        </Body>
-        <View style={styles.progressDots}>
-          {STATUS_MESSAGES.map((_, index) => (
-            <View
-              key={index}
-              style={[
-                styles.dot,
-                index <= statusIndex && styles.dotActive,
-              ]}
-            />
-          ))}
-        </View>
-        <Caption style={styles.hint}>
-          This may take a moment
-        </Caption>
+      {/* Glassmorphic content card - positioned below orb */}
+      <View style={styles.cardWrapper}>
+        <BlurView intensity={60} tint="light" style={styles.card}>
+          <Text style={styles.headline}>
+            Searching{dots}
+          </Text>
+          <Text style={styles.status}>
+            {STATUS_MESSAGES[statusIndex]}
+          </Text>
+          <View style={styles.progressDots}>
+            {STATUS_MESSAGES.map((_, index) => (
+              <View
+                key={index}
+                style={[
+                  styles.dot,
+                  index <= statusIndex && styles.dotActive,
+                ]}
+              />
+            ))}
+          </View>
+          <Text style={styles.hint}>
+            This may take a moment
+          </Text>
+        </BlurView>
       </View>
     </View>
   );
@@ -102,41 +106,53 @@ export const SearchingScreen: React.FC = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: 'flex-end', // Push card to bottom, orb stays centered
     paddingHorizontal: 24,
+    paddingBottom: 80,
   },
-  content: {
+  cardWrapper: {
+    borderRadius: 20,
+    overflow: 'hidden',
+  },
+  card: {
+    paddingVertical: 32,
+    paddingHorizontal: 24,
     alignItems: 'center',
+    backgroundColor: 'rgba(0, 0, 0, 0.08)',
   },
   headline: {
-    fontSize: 32,
-    marginBottom: 24,
+    fontFamily: 'Merriweather_700Bold',
+    fontSize: 28,
+    color: '#333',
+    marginBottom: 16,
     textAlign: 'center',
-    minWidth: 200,
   },
   status: {
-    fontSize: 18,
+    fontFamily: 'Merriweather_400Regular',
+    fontSize: 16,
     textAlign: 'center',
-    color: 'rgba(255, 255, 255, 0.8)',
-    marginBottom: 32,
-    minHeight: 50,
+    color: '#555',
+    marginBottom: 24,
+    minHeight: 44,
   },
   progressDots: {
     flexDirection: 'row',
     gap: 8,
-    marginBottom: 24,
+    marginBottom: 16,
   },
   dot: {
     width: 8,
     height: 8,
     borderRadius: 4,
-    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    backgroundColor: 'rgba(0, 0, 0, 0.15)',
   },
   dotActive: {
-    backgroundColor: 'rgba(255, 255, 255, 0.8)',
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
   },
   hint: {
+    fontFamily: 'Merriweather_300Light',
+    fontSize: 12,
+    color: '#888',
     textAlign: 'center',
   },
 });
