@@ -106,10 +106,10 @@ half4 main(float2 fragCoord) {
   float sandMix = sandZone * fbm(flowedUV * 5.0, 3);
   color = mix(color, SAND, sandMix);
 
-  // Flowing veins of different colors
+  // Flowing veins of different colors (no multiplier > 1.0)
   float veins = fbm(flowedUV * 8.0 + time * 0.15, 4);
   veins = smoothstep(0.4, 0.6, veins);
-  color = mix(color, TURQUOISE * 1.1, veins * waterZone * 0.4);
+  color = mix(color, TURQUOISE, veins * waterZone * 0.35);
   color = mix(color, LAVENDER * 0.9, veins * lavenderZone * 0.3);
 
   // Foam edges
@@ -119,14 +119,17 @@ half4 main(float2 fragCoord) {
   foamMask *= smoothstep(0.0, 0.1, abs(shoreGrad - 0.5));
   color = mix(color, FOAM, foam * foamMask * 0.6 * complexity);
 
-  // Subtle texture
+  // Subtle texture (scaled down)
   float tex = fbm(uv * 30.0, 2) * 0.05;
-  color += tex;
+  color += tex * 0.5;
 
   // Soft vignette
   float2 center = float2(0.5 * aspect, 0.5);
   float vignette = 1.0 - length(uv - center) * 0.3;
   color *= vignette;
+
+  // Gamma correction for balanced output
+  color = pow(color, float3(0.95));
 
   return half4(half3(color), 1.0);
 }

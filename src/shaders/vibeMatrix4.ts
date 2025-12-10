@@ -97,14 +97,14 @@ half4 main(float2 fragCoord) {
   float darkSpots = smoothstep(0.55, 0.7, clusters);
   waterColor = mix(waterColor, REEF_DARK * 0.8, darkSpots * 0.5);
 
-  // Water caustics (light ripples)
+  // Water caustics (light ripples) - scaled down
   float caust = caustics(driftUV, time);
-  waterColor += float3(0.1, 0.15, 0.12) * caust * 0.3;
+  waterColor += float3(0.1, 0.15, 0.12) * caust * 0.15;
 
-  // Bright shallow areas
+  // Bright shallow areas (no multiplier > 1.0)
   float shallow = fbm(uv * 4.0 - time * 0.03, 3);
   shallow = smoothstep(0.5, 0.8, shallow);
-  waterColor = mix(waterColor, TURQUOISE * 1.2, shallow * 0.3);
+  waterColor = mix(waterColor, TURQUOISE, shallow * 0.25);
 
   // Subtle foam/sediment
   float foam = fbm(uv * 20.0 + time * 0.1, 2);
@@ -115,6 +115,9 @@ half4 main(float2 fragCoord) {
   float2 center = float2(0.5 * aspect, 0.5);
   float vignette = 1.0 - length(uv - center) * 0.4;
   waterColor *= vignette;
+
+  // Gamma correction for balanced output
+  waterColor = pow(waterColor, float3(0.95));
 
   return half4(half3(waterColor), 1.0);
 }

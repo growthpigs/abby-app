@@ -70,8 +70,44 @@ Darker, less saturated colors work better over animated shader backgrounds.
 
 ---
 
+### Shader Transition Flash Bug (2025-12-10)
+When switching shaders with crossfade, a flash appeared a split second AFTER transition completed.
+
+**Root Causes (MULTIPLE):**
+1. `completeTransition()` reset opacities BEFORE React rendered new shader
+2. Double `onBackgroundChange` calls (InterviewScreen handleAnswer + useEffect)
+3. Stale closure in useEffect (missing dependencies)
+
+**Fixes Applied:**
+1. **Opacity reset timing:** Move opacity reset INTO the cleanup useEffect, AFTER React renders
+2. **Single source of truth:** Remove duplicate `onBackgroundChange` from `handleAnswer()`
+3. **Fix stale closure:** Add `currentShader, isTransitioning` to useEffect deps
+
+**Correct Pattern:**
+```typescript
+const completeTransition = (newShader: string) => {
+  setCurrentShader(newShader);           // Schedule state update
+  pendingUnmountRef.current = newShader; // Mark for cleanup
+  // DON'T reset opacities here - React hasn't rendered yet!
+};
+
+useEffect(() => {
+  if (pendingUnmountRef.current === currentShader && nextShader) {
+    // NOW safe - React has rendered with new currentShader
+    currentOpacity.value = 1;  // Show current layer (now has NEW shader)
+    nextOpacity.value = 0;     // Hide next layer
+    setNextShader(null);
+    pendingUnmountRef.current = null;
+  }
+}, [currentShader, nextShader]);
+```
+
+**Key Insight:** Reanimated shared values update IMMEDIATELY (sync), but React state updates are ASYNC. Never mix them in the same function without accounting for render timing.
+
+---
+
 ## Open Questions
 
 1. **Speaking pulse wiring** - How to connect `isSpeaking` to orb `audioLevel`?
-2. **10 background switching** - Need shader switcher component
+2. ~~**10 background switching** - Need shader switcher component~~ (Done - AnimatedVibeLayer)
 3. **Gradient backgrounds** - Shaders need `u_gradientAngle` uniform

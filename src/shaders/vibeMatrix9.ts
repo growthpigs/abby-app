@@ -90,18 +90,18 @@ half4 main(float2 xy) {
   half3 blobColor = mix(half3(COLOR_BLUSH), half3(COLOR_LAVENDER), half(colorMix));
   blobColor = mix(blobColor, half3(COLOR_PEACH), half(colorMix2 * 0.5));
 
-  // Add inner brightness
-  blobColor += half3(0.15) * half(innerGlow);
+  // Add inner brightness (scaled down)
+  blobColor += half3(0.08) * half(innerGlow);
 
   // Combine
   half3 color = mix(bgColor, blobColor, half(blob));
 
-  // Rim highlight
-  color += half3(1.0, 0.95, 0.98) * half(edge * 0.5);
+  // Rim highlight (scaled down)
+  color += half3(1.0, 0.95, 0.98) * half(edge * 0.25);
 
-  // Subtle glow around blobs
+  // Subtle glow around blobs (scaled down)
   float glow = smoothstep(threshold - 1.0, threshold - 0.1, field) * (1.0 - blob);
-  color += half3(COLOR_BLUSH) * half(glow * 0.3);
+  color += half3(COLOR_BLUSH) * half(glow * 0.15);
 
   // Vignette
   float2 vigUV = xy / u_resolution;

@@ -72,10 +72,8 @@ export const InterviewScreen: React.FC<InterviewScreenProps> = ({
     const newCoverage = ((currentIndex + 1) / DEMO_QUESTIONS.length) * 100;
     setCoveragePercent(newCoverage);
 
-    // 4. Update background shader for next question
-    if (!isLastQuestion && onBackgroundChange) {
-      onBackgroundChange(getBackgroundIndexForQuestion(currentIndex + 1));
-    }
+    // 4. Background update handled by useEffect below (single source of truth)
+    // Removed duplicate onBackgroundChange call - was causing double transitions
 
     // 5. Next question or advance to searching
     if (isLastQuestion) {

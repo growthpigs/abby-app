@@ -104,11 +104,11 @@ half4 main(float2 xy) {
   bloomG += bloom(uvG, orbit2, time * 1.1) * 0.3;
   bloomB += bloom(uvB, orbit2, time * 0.9) * 0.3;
 
-  // Construct color with chromatic separation
+  // Construct color with chromatic separation (balanced, no base offsets)
   half3 color;
-  color.r = half(bloomR * 0.9 + 0.1);
-  color.g = half(bloomG * 0.85 + 0.05);
-  color.b = half(bloomB * 1.0 + 0.15);
+  color.r = half(bloomR * 0.7);
+  color.g = half(bloomG * 0.65);
+  color.b = half(bloomB * 0.75);
 
   // Add prismatic rainbow at edges
   float edgeRainbow = smoothstep(0.1, 0.4, dist) * smoothstep(0.7, 0.3, dist);
@@ -121,23 +121,26 @@ half4 main(float2 xy) {
 
   color += rainbow * half(edgeRainbow * 0.3);
 
-  // White hot core
+  // White hot core (reduced intensity)
   float coreIntensity = exp(-dist * 8.0);
-  color += half3(1.0, 0.98, 0.95) * half(coreIntensity * 0.5);
+  color += half3(1.0, 0.98, 0.95) * half(coreIntensity * 0.25);
 
   // Dark background falloff
   float bg = 1.0 - smoothstep(0.0, 0.8, dist);
   color *= half(0.3 + bg * 0.7);
 
-  // Subtle noise texture
+  // Subtle noise texture (scaled down)
   float noise = fbm(uv * 10.0, 2.0) * 0.05;
-  color += half(noise);
+  color += half(noise * 0.3);
 
   // Vignette
   float2 vigUV = xy / u_resolution;
   float vig = 1.0 - length((vigUV - 0.5) * 1.5);
   vig = smoothstep(0.0, 0.4, vig);
   color *= half(0.7 + 0.3 * vig);
+
+  // Gamma correction for balanced output
+  color = pow(color, half3(0.95));
 
   return half4(color, 1.0);
 }

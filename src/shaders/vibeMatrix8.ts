@@ -114,10 +114,10 @@ half4 main(float2 fragCoord) {
   clusters = smoothstep(0.6, 0.8, clusters);
   color = mix(color, DARK_DEPTHS * 0.5, clusters * 0.5 * complexity);
 
-  // Light caustic ripples
+  // Light caustic ripples (scaled down)
   float caustic = sin(warpedUV.x * 15.0 + time) * sin(warpedUV.y * 12.0 - time * 0.7);
   caustic = caustic * 0.5 + 0.5;
-  color += CYAN_BRIGHT * caustic * 0.1 * (1.0 - darkShapes);
+  color += CYAN_BRIGHT * caustic * 0.05 * (1.0 - darkShapes);
 
   // Organic flowing veins
   float veins = fbm(warpedUV * 8.0, 4);
@@ -125,10 +125,10 @@ half4 main(float2 fragCoord) {
   veins = smoothstep(0.7, 0.9, veins);
   color = mix(color, CYAN_BRIGHT * 0.8, veins * 0.2);
 
-  // Subtle white foam specks
+  // Subtle white foam specks (scaled down)
   float foam = fbm(uv * 25.0 + time * 0.1, 2);
   foam = smoothstep(0.75, 0.9, foam);
-  color += float3(0.3, 0.35, 0.4) * foam * 0.15;
+  color += float3(0.3, 0.35, 0.4) * foam * 0.08;
 
   // Vignette
   float2 center = float2(0.5 * aspect, 0.5);

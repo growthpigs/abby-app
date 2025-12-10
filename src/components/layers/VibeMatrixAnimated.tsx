@@ -12,7 +12,7 @@
  *   ref.current?.setShader(newShaderSource); // Crossfade to new shader
  */
 
-import React, { useMemo, useState, useEffect, forwardRef, useImperativeHandle } from 'react';
+import React, { useMemo, useState, useEffect, forwardRef, useImperativeHandle, useRef } from 'react';
 import { StyleSheet, useWindowDimensions, View } from 'react-native';
 import {
   Canvas,
@@ -129,6 +129,9 @@ export const VibeMatrixAnimated = forwardRef<VibeMatrixAnimatedRef, VibeMatrixAn
     const [nextShader, setNextShader] = useState<string | null>(null);
     const [isTransitioning, setIsTransitioning] = useState(false);
 
+    // Ref to track pending unmount (synchronized with React render)
+    const pendingUnmountRef = useRef<string | null>(null);
+
     // Opacity for crossfade
     const currentOpacity = useSharedValue(1);
     const nextOpacity = useSharedValue(0);
@@ -158,11 +161,12 @@ export const VibeMatrixAnimated = forwardRef<VibeMatrixAnimatedRef, VibeMatrixAn
     };
 
     // Handle prop-driven shader changes
+    // All dependencies included to prevent stale closure issues
     useEffect(() => {
       if (propShaderSource && propShaderSource !== currentShader && !isTransitioning) {
         startShaderTransition(propShaderSource);
       }
-    }, [propShaderSource]);
+    }, [propShaderSource, currentShader, isTransitioning]);
 
     // Crossfade transition logic
     const startShaderTransition = (newShader: string) => {
@@ -180,12 +184,33 @@ export const VibeMatrixAnimated = forwardRef<VibeMatrixAnimatedRef, VibeMatrixAn
     };
 
     const completeTransition = (newShader: string) => {
+      // ONLY update state - DON'T reset opacities yet!
+      // Opacities will be reset AFTER React renders with new currentShader
       setCurrentShader(newShader);
-      setNextShader(null);
-      setIsTransitioning(false);
-      currentOpacity.value = 1;
-      nextOpacity.value = 0;
+      pendingUnmountRef.current = newShader;
+      // Keep currentOpacity=0 and nextOpacity=1 until React renders
     };
+
+    // Cleanup effect - runs AFTER React renders with new currentShader
+    // This ensures the new shader is visible before we reset opacities
+    useEffect(() => {
+      if (pendingUnmountRef.current && pendingUnmountRef.current === currentShader && nextShader) {
+        // React has rendered with new currentShader - NOW safe to reset opacities
+        // The currentShader layer now contains the NEW shader, so showing it is correct
+        currentOpacity.value = 1;
+        nextOpacity.value = 0;
+        setNextShader(null);
+        setIsTransitioning(false);
+        pendingUnmountRef.current = null;
+      }
+    }, [currentShader, nextShader]);
+
+    // Cleanup ref on unmount (prevent stale refs)
+    useEffect(() => {
+      return () => {
+        pendingUnmountRef.current = null;
+      };
+    }, []);
 
     // Expose methods via ref
     useImperativeHandle(ref, () => ({

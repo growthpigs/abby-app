@@ -154,6 +154,7 @@ Technical notes:
 
 | Date | Change |
 |------|--------|
+| 2024-12-10 | Fixed overexposure in BG4, BG7, BG8, BG9, BG10 - removed base offsets, reduced additive ops, added gamma correction (Chi) |
 | 2024-12-10 | Fixed overexposure in BG2, BG3, BG5, BG6 - removed brightness multipliers |
 | 2024-12-10 | LOCKED IN: Demo flow uses BG1-10 only, mapped 1:1 to questions |
 | 2024-12-10 | LOCKED IN: Alpha-glow blending architecture for orb+background cohesion |
