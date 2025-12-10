@@ -91,19 +91,19 @@ const ABBY_ORB_SHADER = Skia.RuntimeEffect.Make(`
     return min(a, b) - h * h * k * 0.25;
   }
 
-  // Blob position - gentle organic drift (very subtle audio influence)
+  // Blob position - faster movement like G2
   vec2 blobPos(float seed, float t, float audio) {
-    float audioBoost = 1.0 + audio * 0.08; // Very subtle speed change
+    float audioBoost = 1.0 + audio * 0.15;
     return vec2(
-      sin(t * 0.4 * audioBoost + seed * 6.28) * 0.22,
-      cos(t * 0.5 * audioBoost + seed * 4.17) * 0.22
+      sin(t * 0.7 * audioBoost + seed * 6.28) * 0.3,
+      cos(t * 0.9 * audioBoost + seed * 4.17) * 0.3
     );
   }
 
   vec4 main(vec2 fragCoord) {
     vec2 uv = (fragCoord * 2.0 - resolution) / min(resolution.x, resolution.y);
 
-    float t = time * 0.3;
+    float t = time;  // Full speed like G2
     float audio = audioLevel;
 
     // === BREATHING: Uniform expansion from center ===
@@ -112,8 +112,8 @@ const ABBY_ORB_SHADER = Skia.RuntimeEffect.Make(`
     uv *= breath;
 
     // === PURE BLOB APPROACH (no hard boundary) ===
-    // Central large blob with gentle breathing
-    float breathe = sin(t * 0.8) * 0.015;
+    // Central large blob with pulsing boundary like G2
+    float breathe = sin(t * 0.8) * 0.03;  // Stronger pulse
     float core = sdCircle(uv, 0.35 + breathe);
 
     // Orbiting blobs - very slow, gentle drift
@@ -171,30 +171,30 @@ const ABBY_ORB_SHADER = Skia.RuntimeEffect.Make(`
     vec3 hotColor = vec3(0.992, 0.878, 0.278);
     vec3 whiteHot = vec3(1.0, 0.98, 0.95);
 
-    // Build color from noise
-    vec3 lavaColor = mix(coolColor, warmColor, smoothstep(0.2, 0.6, n));
-    lavaColor = mix(lavaColor, hotColor, smoothstep(0.55, 0.8, n));
+    // Pulsing color mix like G2 - this creates the magic
+    float colorPulse1 = sin(atan(uv.y, uv.x) * 2.0 + t) * 0.5 + 0.5;
+    float colorPulse2 = sin(length(uv) * 5.0 - t * 2.0) * 0.5 + 0.5;
+
+    // Build color from noise + pulse
+    vec3 lavaColor = mix(coolColor, warmColor, smoothstep(0.2, 0.6, n) * colorPulse1);
+    lavaColor = mix(lavaColor, hotColor, smoothstep(0.55, 0.8, n) * colorPulse2);
     lavaColor = mix(lavaColor, whiteHot, smoothstep(0.75, 0.95, n));
 
     // Audio brightness boost
     lavaColor += vec3(0.1, 0.08, 0.05) * audio;
 
     // === RENDER ===
-    vec3 bgColor = vec3(0.03, 0.03, 0.06);
-
     // Shape masks
     float edge = smoothstep(0.02, -0.02, shape);
     float glow = smoothstep(0.15, -0.1, shape);
     float inner = smoothstep(-0.25, 0.0, shape);
 
-    // Build final color
-    vec3 color = bgColor;
+    // Pulsing glow color like G2 - this is what affects the background
+    vec3 glowColor = mix(warmColor, coolColor, colorPulse1);
+    glowColor = mix(glowColor, hotColor, colorPulse2 * 0.3);
 
-    // Outer glow (uses vibe colors)
-    vec3 glowColor = mix(coolColor, warmColor, 0.3) * 0.4;
-    color = mix(color, glowColor, glow);
-
-    // Main fill with lava texture
+    // Build final color - glow for outer, lava for inner
+    vec3 color = glowColor;
     color = mix(color, lavaColor, edge);
 
     // Inner brightness
@@ -230,8 +230,8 @@ const ABBY_ORB_SHADER = Skia.RuntimeEffect.Make(`
       color += sparkColor * spark * twinkle * 0.5 * edge;
     }
 
-    // Alpha based on shape + glow
-    float alpha = edge + glow * 0.4;
+    // Alpha based on shape + glow (stronger glow for background tinting)
+    float alpha = edge + glow * 0.6;
 
     return vec4(color, alpha);
   }
