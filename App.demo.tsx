@@ -9,7 +9,7 @@
  * States: ONBOARDING → INTERVIEW → SEARCHING → MATCH → PAYMENT → REVEAL
  */
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { StyleSheet, View, SafeAreaView, ActivityIndicator, Text } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import {
@@ -91,19 +91,25 @@ function DemoScreen() {
     // INTERVIEW uses its own progression via handleBackgroundChange
   }, [currentState]);
 
-  // Start voice when entering interview state
+  // Track if voice session has been started to prevent infinite loop
+  const voiceStartedRef = useRef(false);
+
+  // Start voice when entering interview state (once only)
   useEffect(() => {
-    if (currentState === 'INTERVIEW') {
+    if (currentState === 'INTERVIEW' && !voiceStartedRef.current) {
+      voiceStartedRef.current = true;
       setVoiceStatus('Connecting...');
       startConversation().catch((err) => {
         console.error('[Demo] Failed to start voice:', err);
         setVoiceStatus('Voice unavailable');
+        voiceStartedRef.current = false; // Allow retry
       });
-    } else if (status === 'connected') {
+    } else if (currentState !== 'INTERVIEW' && voiceStartedRef.current) {
       // Left INTERVIEW state, end conversation
+      voiceStartedRef.current = false;
       endConversation();
     }
-  }, [currentState, startConversation, endConversation, status]);
+  }, [currentState]); // Only depend on currentState, not the functions
 
   // Render the appropriate screen based on state
   const renderScreen = () => {
