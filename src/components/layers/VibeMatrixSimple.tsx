@@ -4,7 +4,7 @@
  * Following William Candillon's exact pattern:
  * - useClock from Skia for time (ms since first frame)
  * - useDerivedValue for uniforms object
- * - mode="continuous" on Canvas
+ * - on Canvas
  */
 
 import React from 'react';
@@ -63,7 +63,7 @@ export const VibeMatrixSimple: React.FC = () => {
   }
 
   return (
-    <Canvas style={styles.canvas} mode="continuous">
+    <Canvas style={styles.canvas}>
       <Fill>
         <Shader source={SIMPLE_SHADER} uniforms={uniforms} />
       </Fill>

@@ -211,7 +211,7 @@ export const LiquidGlass6: React.FC = () => {
   }
 
   return (
-    <Canvas style={styles.canvas} mode="continuous">
+    <Canvas style={styles.canvas}>
       <Fill>
         <Shader source={LIQUID_GLASS_SHADER} uniforms={uniforms} />
       </Fill>

@@ -348,7 +348,7 @@ export const AbbyOrbUnified: React.FC<AbbyOrbUnifiedProps> = ({
   }
 
   return (
-    <Canvas style={styles.canvas} mode="continuous">
+    <Canvas style={styles.canvas}>
       <Fill>
         <Shader source={UNIFIED_ORB_SHADER} uniforms={uniforms} />
       </Fill>

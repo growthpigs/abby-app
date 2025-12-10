@@ -12,17 +12,45 @@ The living, procedural background that responds to app state. Domain-warped fBM 
 
 ## Current State
 
-- **18 background shader variations** (BG1-18)
+- **10 approved demo backgrounds** (BG1-10) - used in interview flow
+- **8 additional shaders** (BG11-18) - NOT approved for demo
 - **Dev toggle** in `App.liquid.tsx` for testing
 - **FPS Monitor** added for performance testing
 
-### Shader Inventory
+---
 
-| Range | Style | Complexity |
-|-------|-------|------------|
-| BG1-7 | Original (tie-dye, fire, aurora, marble) | Low-Medium |
-| BG8-13 | William Mapan inspired (deep ocean, metaballs) | Medium |
-| BG14-18 | Artistic (tidal pools, ink bloom, lagoon) | Medium-High |
+## Demo Flow Background Mapping (LOCKED IN)
+
+**10 questions → 10 backgrounds, soft → hard progression**
+
+| Question | Shader | Name | Vibe |
+|----------|--------|------|------|
+| 1 | BG1 | Domain Warping fBM | Soft, welcoming |
+| 2 | BG2 | Warm Fire Swirls | Warming up |
+| 3 | BG3 | Neon Aurora Spirals | Getting energetic |
+| 4 | BG4 | Aerial Reef | Building |
+| 5 | BG5 | Liquid Marble | Mid-point depth |
+| 6 | BG6 | Kaleidoscope Bloom | More intense |
+| 7 | BG7 | Ocean Shore | Deepening |
+| 8 | BG8 | Deep Ocean | Strong |
+| 9 | BG9 | Blob Metaballs | Very intense |
+| 10 | BG10 | Chromatic Bloom | Peak intensity |
+
+**Code**: `src/components/screens/InterviewScreen.tsx`
+```typescript
+const getBackgroundIndexForQuestion = (questionIndex: number): number => {
+  return questionIndex + 1; // Question 0 → BG1, Question 9 → BG10
+};
+```
+
+---
+
+### Full Shader Inventory
+
+| Range | Style | Status |
+|-------|-------|--------|
+| BG1-10 | Demo flow (soft → hard) | ✅ APPROVED |
+| BG11-18 | Extra variations | ❌ NOT in demo |
 
 ---
 
@@ -126,6 +154,8 @@ Technical notes:
 
 | Date | Change |
 |------|--------|
+| 2024-12-10 | Fixed overexposure in BG2, BG3, BG5, BG6 - removed brightness multipliers |
+| 2024-12-10 | LOCKED IN: Demo flow uses BG1-10 only, mapped 1:1 to questions |
 | 2024-12-10 | LOCKED IN: Alpha-glow blending architecture for orb+background cohesion |
 | 2024-12-10 | All G1-G10 orbs updated to proper alpha transparency |
 | 2024-12-10 | Dev UI switched to black text (better visibility on bright backgrounds) |

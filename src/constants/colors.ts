@@ -5,7 +5,7 @@
  * Hex values in comments for reference.
  */
 
-import { ColorPalette, VibeColorTheme } from '../types/vibe';
+import { ColorPalette, VibeColorTheme, VibeComplexity, OrbEnergy, ResponseQuality, RGBColor } from '../types/vibe';
 
 /**
  * Convert hex to normalized RGB
@@ -80,3 +80,84 @@ export const UI_COLORS = {
   buttonBorder: 'rgba(255,255,255,0.3)',
   buttonPressed: 'rgba(255,255,255,0.1)',
 } as const;
+
+/**
+ * Extended color palette with gradient info
+ */
+export interface GradientPalette extends ColorPalette {
+  gradient: {
+    angle: number;
+  };
+}
+
+/**
+ * Full vibe gradients with angle info for VibeController
+ */
+export const VIBE_GRADIENTS: Record<VibeColorTheme, GradientPalette> = {
+  TRUST: {
+    primary: VIBE_COLORS.TRUST.primary,
+    secondary: VIBE_COLORS.TRUST.secondary,
+    gradient: { angle: 135 },
+  },
+  PASSION: {
+    primary: VIBE_COLORS.PASSION.primary,
+    secondary: VIBE_COLORS.PASSION.secondary,
+    gradient: { angle: 45 },
+  },
+  CAUTION: {
+    primary: VIBE_COLORS.CAUTION.primary,
+    secondary: VIBE_COLORS.CAUTION.secondary,
+    gradient: { angle: 180 },
+  },
+  GROWTH: {
+    primary: VIBE_COLORS.GROWTH.primary,
+    secondary: VIBE_COLORS.GROWTH.secondary,
+    gradient: { angle: 90 },
+  },
+  DEEP: {
+    primary: VIBE_COLORS.DEEP.primary,
+    secondary: VIBE_COLORS.DEEP.secondary,
+    gradient: { angle: 225 },
+  },
+};
+
+/**
+ * Orb energy numeric values for shader uniform
+ */
+export const ORB_ENERGY_MAP: Record<OrbEnergy, number> = {
+  CALM: 0.0,
+  ENGAGED: 0.5,
+  EXCITED: 1.0,
+};
+
+/**
+ * Response quality → visual reward mapping
+ */
+export const RESPONSE_REWARD_MAP: Record<ResponseQuality, {
+  complexity: VibeComplexity;
+  orbEnergy: OrbEnergy;
+}> = {
+  BRIEF: {
+    complexity: 'FLOW',
+    orbEnergy: 'CALM',
+  },
+  THOUGHTFUL: {
+    complexity: 'OCEAN',
+    orbEnergy: 'ENGAGED',
+  },
+  PROFOUND: {
+    complexity: 'STORM',
+    orbEnergy: 'EXCITED',
+  },
+};
+
+/**
+ * Coverage percentage → theme progression
+ */
+export const getThemeFromCoverage = (percent: number): VibeColorTheme => {
+  if (percent < 20) return 'TRUST';      // Getting to know you
+  if (percent < 40) return 'DEEP';       // Going deeper
+  if (percent < 60) return 'GROWTH';     // Building understanding
+  if (percent < 80) return 'CAUTION';    // Almost there
+  return 'PASSION';                       // Ready to match
+};

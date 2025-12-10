@@ -185,7 +185,7 @@ export const LiquidGlass7: React.FC = () => {
   }
 
   return (
-    <Canvas style={styles.canvas} mode="continuous">
+    <Canvas style={styles.canvas}>
       <Fill>
         <Shader source={WAVE_SHELL_SHADER} uniforms={uniforms} />
       </Fill>

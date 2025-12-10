@@ -154,7 +154,7 @@ export const LiquidRosePetals: React.FC = () => {
   }
 
   return (
-    <Canvas style={styles.canvas} mode="continuous">
+    <Canvas style={styles.canvas}>
       <Fill>
         <Shader source={LIQUID_ROSE_SHADER} uniforms={uniforms} />
       </Fill>

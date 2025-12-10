@@ -71,3 +71,61 @@ export type AppState =
   | 'MATCH_FOUND'
   | 'COACH'
   | 'INTERVENTION';
+
+/**
+ * Who is currently active in the conversation
+ */
+export type ActiveParty = 'USER' | 'ABBY';
+
+/**
+ * User modes - what the user is doing
+ */
+export type UserMode =
+  | 'LISTENING'   // User is listening/reading
+  | 'EMPATHY'     // Deep emotional question
+  | 'CURIOSITY'   // Exploratory question
+  | 'REFLECTION'  // Thoughtful pause
+  | 'EXCITEMENT'; // High energy moment
+
+/**
+ * Abby modes - what Abby is doing
+ */
+export type AbbyMode =
+  | 'SPEAKING'    // Abby is talking
+  | 'PROCESSING'  // Thinking/analyzing
+  | 'ADVISING'    // Coaching mode
+  | 'REVEALING'   // Match reveal
+  | 'CELEBRATING'; // Success moment
+
+/**
+ * Combined active mode (either user or abby mode)
+ */
+export type ActiveMode = UserMode | AbbyMode;
+
+/**
+ * Orb energy levels - controls orb animation intensity
+ */
+export type OrbEnergy =
+  | 'CALM'     // 0.0 - Slow, contained
+  | 'ENGAGED'  // 0.5 - Medium activity
+  | 'EXCITED'; // 1.0 - High energy
+
+/**
+ * Response quality for visual rewards
+ */
+export type ResponseQuality =
+  | 'BRIEF'      // Short answer
+  | 'THOUGHTFUL' // Good answer
+  | 'PROFOUND';  // Deep/long answer
+
+/**
+ * Full vibe state with all 4 axes
+ */
+export interface FullVibeState {
+  activeParty: ActiveParty;
+  activeMode: ActiveMode;
+  colorTheme: VibeColorTheme;
+  complexity: VibeComplexity;
+  orbEnergy: OrbEnergy;
+  audioLevel: number;
+}

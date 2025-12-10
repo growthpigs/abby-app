@@ -55,7 +55,7 @@ export const VibeMatrix5: React.FC = () => {
   }
 
   return (
-    <Canvas style={styles.canvas} mode="continuous">
+    <Canvas style={styles.canvas}>
       <Fill>
         <Shader source={shader} uniforms={uniforms} />
       </Fill>

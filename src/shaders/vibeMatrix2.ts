@@ -166,9 +166,8 @@ half4 main(float2 xy) {
   color = mix(color, half3(COLOR_YELLOW), half(n2 * 0.6));
   color = mix(color, half3(COLOR_MAGENTA), half(n3 * 0.4));
 
-  // Boost saturation and brightness
-  color = pow(color, half3(0.9));
-  color *= 1.1;
+  // Balanced color output
+  color = pow(color, half3(0.95));
 
   // Subtle vignette
   float2 vignetteUV = xy / u_resolution;

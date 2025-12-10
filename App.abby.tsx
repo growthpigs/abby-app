@@ -11,11 +11,8 @@ import { View, Text, StyleSheet } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { ElevenLabsProvider, useConversation } from '@elevenlabs/react-native';
 
-// Background
-import VibeMatrix3 from './src/components/layers/VibeMatrix3';
-
-// Orb (G4 - audio reactive)
-import { LiquidGlass4 } from './src/components/layers/LiquidGlass4';
+// Orb (G4 - audio reactive) - DISABLED for now
+// import { LiquidGlass4 } from './src/components/layers/LiquidGlass4';
 
 const AGENT_ID = process.env.EXPO_PUBLIC_ELEVENLABS_AGENT_ID || '';
 
@@ -23,86 +20,108 @@ const AGENT_ID = process.env.EXPO_PUBLIC_ELEVENLABS_AGENT_ID || '';
 function AbbyScreen() {
   const [status, setStatus] = useState('Ready');
   const [abbyText, setAbbyText] = useState('');
+
+  // Refs for stable references
   const startedRef = useRef(false);
+  const mountedRef = useRef(true);
+  const conversationRef = useRef<ReturnType<typeof useConversation> | null>(null);
 
   const conversation = useConversation({
-    onConnect: useCallback(() => {
-      console.log('[Abby] Connected');
+    // Correct signatures per ElevenLabs docs
+    onConnect: useCallback(({ conversationId }: { conversationId: string }) => {
+      console.log('[Abby] Connected:', conversationId);
       setStatus('Listening...');
     }, []),
-    onDisconnect: useCallback(() => {
-      console.log('[Abby] Disconnected');
+    onDisconnect: useCallback((details: string) => {
+      console.log('[Abby] Disconnected:', details);
       setStatus('Disconnected');
     }, []),
-    onMessage: useCallback((msg: { type: string; text?: string }) => {
-      if (msg.type === 'agent_response' && msg.text) {
-        setAbbyText(msg.text);
+    onMessage: useCallback(({ message, source }: { message: any; source: string }) => {
+      console.log(`[Abby] Message from ${source}:`, message);
+      // Extract text from message object
+      if (source === 'agent' && message?.text) {
+        setAbbyText(message.text);
       }
     }, []),
-    onModeChange: useCallback((mode: { mode: string }) => {
-      if (mode.mode === 'speaking') {
+    onModeChange: useCallback(({ mode }: { mode: 'speaking' | 'listening' }) => {
+      console.log('[Abby] Mode:', mode);
+      if (mode === 'speaking') {
         setStatus('Abby speaking...');
-      } else if (mode.mode === 'listening') {
+      } else if (mode === 'listening') {
         setStatus('Listening...');
       }
     }, []),
-    onError: useCallback((err: Error) => {
-      console.error('[Abby] Error:', err);
-      setStatus(`Error: ${err.message}`);
+    onStatusChange: useCallback(({ status }: { status: string }) => {
+      console.log('[Abby] Status:', status);
+    }, []),
+    onError: useCallback((message: string, context?: Record<string, unknown>) => {
+      console.error('[Abby] Error:', message, context);
+      setStatus(`Error: ${message}`);
     }, []),
   });
 
-  // Auto-start on mount
-  useEffect(() => {
-    if (startedRef.current) return;
-    if (!AGENT_ID) {
-      setStatus('No Agent ID configured');
-      return;
-    }
-
-    startedRef.current = true;
-    setStatus('Connecting...');
-    console.log('[Abby] Auto-starting session with agentId:', AGENT_ID);
-
-    conversation.startSession({ agentId: AGENT_ID })
-      .then(() => {
-        console.log('[Abby] startSession completed successfully');
-      })
-      .catch((err: unknown) => {
-        console.error('[Abby] Start failed:', err);
-        console.error('[Abby] Error details:', JSON.stringify(err, null, 2));
-        const msg = err instanceof Error ? err.message : 'Connection failed';
-        setStatus(`Error: ${msg}`);
-        startedRef.current = false;
-      });
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []); // Only run once on mount
-
-  // Track conversation in ref for cleanup
-  const conversationRef = useRef(conversation);
+  // Keep ref updated
   conversationRef.current = conversation;
 
-  // Cleanup on unmount only
+  // Single effect: delayed auto-start + cleanup
   useEffect(() => {
+    mountedRef.current = true;
+    console.log('[Abby] Mount - scheduling start');
+
+    // Delay start to survive Strict Mode double-mount
+    const timer = setTimeout(() => {
+      if (!mountedRef.current) {
+        console.log('[Abby] Aborted - unmounted before start');
+        return;
+      }
+      if (startedRef.current) {
+        console.log('[Abby] Already started');
+        return;
+      }
+      if (!AGENT_ID) {
+        setStatus('No Agent ID');
+        return;
+      }
+
+      startedRef.current = true;
+      setStatus('Connecting...');
+      console.log('[Abby] Starting with agentId:', AGENT_ID);
+
+      conversationRef.current?.startSession({
+        agentId: AGENT_ID,
+        // Full voice mode - no textOnly override
+      })
+        .then(() => {
+          if (mountedRef.current) {
+            console.log('[Abby] Session started');
+          }
+        })
+        .catch((err: unknown) => {
+          if (mountedRef.current) {
+            console.error('[Abby] Failed:', err);
+            const msg = err instanceof Error ? err.message : 'Failed';
+            setStatus(`Error: ${msg}`);
+            startedRef.current = false;
+          }
+        });
+    }, 500);
+
     return () => {
-      console.log('[Abby] Cleanup - status:', conversationRef.current.status);
-      if (conversationRef.current.status === 'connected') {
-        conversationRef.current.endSession();
+      console.log('[Abby] Unmount - cleaning up');
+      mountedRef.current = false;
+      clearTimeout(timer);
+      // Only end if actually connected
+      const conv = conversationRef.current;
+      if (conv && conv.status === 'connected') {
+        console.log('[Abby] Ending session');
+        conv.endSession();
       }
     };
-  }, []); // Empty deps - only run cleanup on unmount
+  }, []);
 
   return (
     <View style={styles.container}>
-      {/* Background */}
-      <View style={styles.backgroundLayer} pointerEvents="none">
-        <VibeMatrix3 />
-      </View>
-
-      {/* Orb */}
-      <View style={styles.orbLayer} pointerEvents="none">
-        <LiquidGlass4 />
-      </View>
+      {/* Plain black background - no shaders */}
 
       {/* Status at bottom */}
       <View style={styles.statusContainer}>
@@ -132,21 +151,12 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#000',
   },
-  backgroundLayer: {
-    ...StyleSheet.absoluteFillObject,
-    zIndex: 0,
-  },
-  orbLayer: {
-    ...StyleSheet.absoluteFillObject,
-    zIndex: 10,
-  },
   statusContainer: {
     position: 'absolute',
     bottom: 60,
     left: 20,
     right: 20,
     alignItems: 'center',
-    zIndex: 20,
   },
   abbyText: {
     color: 'rgba(255,255,255,0.9)',

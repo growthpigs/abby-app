@@ -136,7 +136,7 @@ export const OrbPetalsShader: React.FC<OrbPetalsProps> = ({
 
   // Use a circular mask to clip the shader output
   return (
-    <Canvas style={[styles.canvas, { width: size, height: size }]} mode="continuous">
+    <Canvas style={[styles.canvas, { width: size, height: size }]}>
       <Mask
         mask={
           <Circle cx={size / 2} cy={size / 2} r={size / 2} color="white" />

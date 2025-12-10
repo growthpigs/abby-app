@@ -205,9 +205,8 @@ half4 main(float2 xy) {
   shimmer = pow(shimmer, 4.0);
   color += half3(COLOR_GOLD) * half(shimmer * goldMask * 0.15);
 
-  // Gamma correction and contrast
-  color = pow(color, half3(0.95));
-  color *= 1.1;
+  // Balanced color output
+  color = pow(color, half3(0.98));
 
   // Vignette
   float2 vignetteUV = xy / u_resolution;

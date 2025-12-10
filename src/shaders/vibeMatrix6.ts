@@ -204,9 +204,8 @@ half4 main(float2 xy) {
   float pulse = sin(time * 3.0) * 0.5 + 0.5;
   color *= half(0.9 + pulse * 0.1);
 
-  // Boost saturation
-  color = pow(color, half3(0.85));
-  color *= 1.15;
+  // Balanced color output
+  color = pow(color, half3(0.95));
 
   // Vignette
   float2 vignetteUV = xy / u_resolution;

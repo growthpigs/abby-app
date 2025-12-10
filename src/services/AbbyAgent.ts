@@ -75,40 +75,43 @@ export function useAbbyAgent(config: AbbyAgentConfig = {}) {
   }, [setAudioLevel]);
 
   // Initialize conversation with ElevenLabs SDK
+  // Using correct callback signatures per ElevenLabs React Native docs
   const conversation = useConversation({
-    onConnect: () => {
-      if (__DEV__) console.log('[AbbyAgent] Connected');
+    onConnect: ({ conversationId }: { conversationId: string }) => {
+      if (__DEV__) console.log('[AbbyAgent] Connected:', conversationId);
       setAbbyMode('SPEAKING');
       config.onConnect?.();
     },
 
-    onDisconnect: () => {
-      if (__DEV__) console.log('[AbbyAgent] Disconnected');
+    onDisconnect: (details: string) => {
+      if (__DEV__) console.log('[AbbyAgent] Disconnected:', details);
       stopSpeakingPulse();
       stopAudioPulse();
       config.onDisconnect?.();
     },
 
-    onMessage: (message: { type: string; text?: string }) => {
-      if (__DEV__) console.log('[AbbyAgent] Message:', message.type);
+    onMessage: ({ message, source }: { message: any; source: string }) => {
+      if (__DEV__) console.log(`[AbbyAgent] Message from ${source}:`, message);
 
-      if (message.type === 'user_transcript' && message.text) {
+      // User transcript
+      if (source === 'user' && message?.text) {
         config.onUserTranscript?.(message.text);
       }
 
-      if (message.type === 'agent_response' && message.text) {
+      // Agent response
+      if (source === 'agent' && message?.text) {
         config.onAbbyResponse?.(message.text);
       }
     },
 
-    onModeChange: (mode: { mode: string }) => {
-      if (__DEV__) console.log('[AbbyAgent] Mode:', mode.mode);
+    onModeChange: ({ mode }: { mode: 'speaking' | 'listening' }) => {
+      if (__DEV__) console.log('[AbbyAgent] Mode:', mode);
 
-      if (mode.mode === 'speaking') {
+      if (mode === 'speaking') {
         startSpeakingPulse();
         startAudioPulse();
         setAbbyMode('SPEAKING');
-      } else if (mode.mode === 'listening') {
+      } else if (mode === 'listening') {
         stopSpeakingPulse();
         stopAudioPulse();
         setAbbyMode('PROCESSING'); // User is talking
@@ -119,10 +122,14 @@ export function useAbbyAgent(config: AbbyAgentConfig = {}) {
       }
     },
 
-    onError: (error: Error) => {
-      console.error('[AbbyAgent] Error:', error);
+    onStatusChange: ({ status }: { status: string }) => {
+      if (__DEV__) console.log('[AbbyAgent] Status:', status);
+    },
+
+    onError: (message: string, context?: Record<string, unknown>) => {
+      console.error('[AbbyAgent] Error:', message, context);
       stopAudioPulse();
-      config.onError?.(error);
+      config.onError?.(new Error(message));
     },
   });
 

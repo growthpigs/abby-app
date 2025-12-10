@@ -282,7 +282,7 @@ export const LiquidGlass4: React.FC<LiquidGlass4Props> = ({
   }
 
   return (
-    <Canvas style={styles.canvas} mode="continuous">
+    <Canvas style={styles.canvas}>
       <Fill>
         <Shader source={ABBY_ORB_SHADER} uniforms={uniforms} />
       </Fill>

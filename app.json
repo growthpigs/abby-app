@@ -14,8 +14,18 @@
     },
     "ios": {
       "supportsTablet": false,
-      "bundleIdentifier": "com.abby.app"
+      "bundleIdentifier": "com.abby.app",
+      "infoPlist": {
+        "NSMicrophoneUsageDescription": "Abby needs your microphone to have a conversation with you.",
+        "UIBackgroundModes": [
+          "audio"
+        ]
+      }
     },
-    "plugins": []
+    "plugins": [
+      "@livekit/react-native-expo-plugin",
+      "@config-plugins/react-native-webrtc",
+      "expo-font"
+    ]
   }
 }

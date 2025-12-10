@@ -176,9 +176,8 @@ half4 main(float2 xy) {
   float glow = pow(bands, 2.0) * 0.3;
   color += half3(glow * 0.5, glow * 0.8, glow);
 
-  // Boost saturation and vibrancy
-  color = pow(color, half3(0.85));
-  color *= 1.15;
+  // Balanced color output
+  color = pow(color, half3(0.95));
 
   // Subtle radial darkening at edges
   float radialFade = 1.0 - smoothstep(0.3, 0.8, distFromCenter);

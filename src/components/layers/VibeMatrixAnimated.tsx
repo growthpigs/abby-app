@@ -4,13 +4,16 @@
  * Same shader as VibeMatrix but with Reanimated-driven color uniforms
  * for smooth transitions between vibe themes.
  *
+ * Now supports dynamic shader switching with crossfade transitions.
+ *
  * Usage:
  *   const ref = useRef<VibeMatrixAnimatedRef>(null);
  *   ref.current?.setVibe('PASSION'); // Smooth transition to red/pink
+ *   ref.current?.setShader(newShaderSource); // Crossfade to new shader
  */
 
-import React, { useMemo, forwardRef, useImperativeHandle } from 'react';
-import { StyleSheet, useWindowDimensions } from 'react-native';
+import React, { useMemo, useState, useEffect, forwardRef, useImperativeHandle } from 'react';
+import { StyleSheet, useWindowDimensions, View } from 'react-native';
 import {
   Canvas,
   Fill,
@@ -18,7 +21,14 @@ import {
   Skia,
   useClock,
 } from '@shopify/react-native-skia';
-import { useDerivedValue, useSharedValue, withTiming } from 'react-native-reanimated';
+import Animated, {
+  useDerivedValue,
+  useSharedValue,
+  withTiming,
+  useAnimatedStyle,
+  runOnJS,
+  SharedValue,
+} from 'react-native-reanimated';
 import { VIBE_MATRIX_SHADER } from '../../shaders/vibeMatrix';
 import { VIBE_COLORS, COMPLEXITY_VALUES } from '../../constants/colors';
 import { VibeColorTheme, VibeComplexity } from '../../types/vibe';
@@ -28,13 +38,79 @@ export interface VibeMatrixAnimatedRef {
   setVibe: (theme: VibeColorTheme) => void;
   setComplexity: (level: VibeComplexity) => void;
   setVibeAndComplexity: (theme: VibeColorTheme, level: VibeComplexity) => void;
+  setShader: (shaderSource: string) => void;
 }
 
 interface VibeMatrixAnimatedProps {
   initialTheme?: VibeColorTheme;
   initialComplexity?: VibeComplexity;
   transitionDuration?: number;
+  shaderSource?: string;
 }
+
+// Single shader layer component
+const ShaderLayer = React.memo(({
+  shaderSource,
+  colors,
+  complexity,
+  opacity,
+}: {
+  shaderSource: string;
+  colors: {
+    colorA_r: SharedValue<number>;
+    colorA_g: SharedValue<number>;
+    colorA_b: SharedValue<number>;
+    colorB_r: SharedValue<number>;
+    colorB_g: SharedValue<number>;
+    colorB_b: SharedValue<number>;
+  };
+  complexity: SharedValue<number>;
+  opacity: SharedValue<number>;
+}) => {
+  const { width, height } = useWindowDimensions();
+  const clock = useClock();
+  const pinkAccent: [number, number, number] = [0.88, 0.11, 0.28];
+
+  // Compile shader
+  const shader = useMemo(() => {
+    const effect = Skia.RuntimeEffect.Make(shaderSource);
+    if (!effect) {
+      console.error('[ShaderLayer] SHADER COMPILE FAILED');
+      return null;
+    }
+    return effect;
+  }, [shaderSource]);
+
+  // Create animated uniforms
+  const uniforms = useDerivedValue(() => {
+    return {
+      u_time: clock.value,
+      u_resolution: [width, height],
+      u_complexity: complexity.value,
+      u_colorA: [colors.colorA_r.value, colors.colorA_g.value, colors.colorA_b.value],
+      u_colorB: [colors.colorB_r.value, colors.colorB_g.value, colors.colorB_b.value],
+      u_colorC: pinkAccent,
+    };
+  }, [clock]);
+
+  const animatedStyle = useAnimatedStyle(() => ({
+    opacity: opacity.value,
+  }));
+
+  if (!shader) {
+    return null;
+  }
+
+  return (
+    <Animated.View style={[styles.canvas, animatedStyle]}>
+      <Canvas style={styles.canvas}>
+        <Fill>
+          <Shader source={shader} uniforms={uniforms} />
+        </Fill>
+      </Canvas>
+    </Animated.View>
+  );
+});
 
 export const VibeMatrixAnimated = forwardRef<VibeMatrixAnimatedRef, VibeMatrixAnimatedProps>(
   (
@@ -42,23 +118,20 @@ export const VibeMatrixAnimated = forwardRef<VibeMatrixAnimatedRef, VibeMatrixAn
       initialTheme = 'TRUST',
       initialComplexity = 'FLOW',
       transitionDuration = 1000,
+      shaderSource: propShaderSource,
     },
     ref
   ) => {
     const { width, height } = useWindowDimensions();
-    const clock = useClock();
 
-    // Compile shader once
-    const shader = useMemo(() => {
-      console.log('[VibeMatrixAnimated] Compiling shader...');
-      const effect = Skia.RuntimeEffect.Make(VIBE_MATRIX_SHADER);
-      if (!effect) {
-        console.error('[VibeMatrixAnimated] SHADER COMPILE FAILED');
-        return null;
-      }
-      console.log('[VibeMatrixAnimated] Shader compiled successfully');
-      return effect;
-    }, []);
+    // Current and transitioning shader sources
+    const [currentShader, setCurrentShader] = useState(propShaderSource || VIBE_MATRIX_SHADER);
+    const [nextShader, setNextShader] = useState<string | null>(null);
+    const [isTransitioning, setIsTransitioning] = useState(false);
+
+    // Opacity for crossfade
+    const currentOpacity = useSharedValue(1);
+    const nextOpacity = useSharedValue(0);
 
     // Get initial values
     const initialPalette = VIBE_COLORS[initialTheme];
@@ -73,10 +146,46 @@ export const VibeMatrixAnimated = forwardRef<VibeMatrixAnimatedRef, VibeMatrixAn
     const colorB_g = useSharedValue(initialPalette.secondary[1]);
     const colorB_b = useSharedValue(initialPalette.secondary[2]);
 
-    const complexity = useSharedValue(initialComplexityValue);
+    const complexity = useSharedValue<number>(initialComplexityValue);
 
-    // Pink accent color (static)
-    const pinkAccent: [number, number, number] = [0.88, 0.11, 0.28];
+    const colors = {
+      colorA_r,
+      colorA_g,
+      colorA_b,
+      colorB_r,
+      colorB_g,
+      colorB_b,
+    };
+
+    // Handle prop-driven shader changes
+    useEffect(() => {
+      if (propShaderSource && propShaderSource !== currentShader && !isTransitioning) {
+        startShaderTransition(propShaderSource);
+      }
+    }, [propShaderSource]);
+
+    // Crossfade transition logic
+    const startShaderTransition = (newShader: string) => {
+      if (newShader === currentShader) return;
+
+      setNextShader(newShader);
+      setIsTransitioning(true);
+      nextOpacity.value = 0;
+
+      // Fade in new shader, fade out current
+      currentOpacity.value = withTiming(0, { duration: transitionDuration * 0.8 });
+      nextOpacity.value = withTiming(1, { duration: transitionDuration * 0.8 }, () => {
+        runOnJS(completeTransition)(newShader);
+      });
+    };
+
+    const completeTransition = (newShader: string) => {
+      setCurrentShader(newShader);
+      setNextShader(null);
+      setIsTransitioning(false);
+      currentOpacity.value = 1;
+      nextOpacity.value = 0;
+    };
 
     // Expose methods via ref
     useImperativeHandle(ref, () => ({
@@ -110,39 +219,42 @@ export const VibeMatrixAnimated = forwardRef<VibeMatrixAnimatedRef, VibeMatrixAn
 
         complexity.value = withTiming(complexityValue, { duration: transitionDuration * 0.8 });
       },
+
+      setShader: (newShaderSource: string) => {
+        if (!isTransitioning) {
+          startShaderTransition(newShaderSource);
+        }
+      },
     }));
 
-    // Create animated uniforms
-    const uniforms = useDerivedValue(() => {
-      return {
-        u_time: clock.value,
-        u_resolution: [width, height],
-        u_complexity: complexity.value,
-        u_colorA: [colorA_r.value, colorA_g.value, colorA_b.value],
-        u_colorB: [colorB_r.value, colorB_g.value, colorB_b.value],
-        u_colorC: pinkAccent,
-      };
-    }, [clock]);
-
-    if (!shader) {
-      return (
-        <Canvas style={styles.canvas}>
-          <Fill color="#0a0a1a" />
-        </Canvas>
-      );
-    }
-
     return (
-      <Canvas style={styles.canvas} mode="continuous">
-        <Fill>
-          <Shader source={shader} uniforms={uniforms} />
-        </Fill>
-      </Canvas>
+      <View style={styles.container}>
+        {/* Current shader layer */}
+        <ShaderLayer
+          shaderSource={currentShader}
+          colors={colors}
+          complexity={complexity}
+          opacity={currentOpacity}
+        />
+
+        {/* Next shader layer (only during transition) */}
+        {nextShader && (
+          <ShaderLayer
+            shaderSource={nextShader}
+            colors={colors}
+            complexity={complexity}
+            opacity={nextOpacity}
+          />
+        )}
+      </View>
     );
   }
 );
 
 const styles = StyleSheet.create({
+  container: {
+    ...StyleSheet.absoluteFillObject,
+  },
   canvas: {
     ...StyleSheet.absoluteFillObject,
   },
