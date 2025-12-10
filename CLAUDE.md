@@ -26,19 +26,6 @@ ABBY is a high-end matchmaking app where users interact with an AI entity (Abby)
 |---------|------|-------|
 | VibeMatrix | `docs/features/vibematrix.md` | Chi - Background shaders |
 | AbbyOrb | `docs/features/abbyorb.md` | CC1 - Orb + voice |
-| Abby Agent | `docs/plans/abby-agent.md` | Chi - ElevenLabs + unified vision |
-
-### Plans
-
-| Plan | Path | Status |
-|------|------|--------|
-| Visual System | `~/.claude/plans/abby-visual-system.md` | Active - 750-state architecture |
-
-### Project Knowledge
-
-| Document | Path | Purpose |
-|----------|------|---------|
-| Learnings | `docs/learnings.md` | Project-specific discoveries, patterns |
 
 **Rule**: Update these documents as features evolve. One document per system. One file per feature - all work goes in that file.
 

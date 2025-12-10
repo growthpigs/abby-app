@@ -4,67 +4,36 @@
  * Toggle between test screens at runtime:
  * - SHADERS: Background + Orb shader testing (App.liquid)
  * - ABBY: Voice/TTS testing (App.abby)
- * - VIBES: Color transition testing (App.transition-test)
- * - 750: Full 4-axis vibe system (App.vibe-test)
  */
 
 import React, { useState } from 'react';
 import { View, Text, Pressable, StyleSheet } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 
-// Import all test apps
+// Import both test apps
 import AppLiquid from './App.liquid';
 import AppAbby from './App.abby';
-import AppTransition from './App.transition-test';
-import AppVibeTest from './App.vibe-test';
 
-type DevMode = 'shaders' | 'abby' | 'vibes' | '750';
-
-const MODE_ORDER: DevMode[] = ['shaders', 'abby', 'vibes', '750'];
-const MODE_LABELS: Record<DevMode, string> = {
-  shaders: 'SHADERS',
-  abby: 'ABBY',
-  vibes: 'VIBES',
-  '750': '750-STATE',
-};
+type DevMode = 'shaders' | 'abby';
 
 export default function AppDev() {
-  const [mode, setMode] = useState<DevMode>('750'); // Start on 750 to test new system
+  const [mode, setMode] = useState<DevMode>('shaders');
 
   const toggleMode = () => {
-    const currentIndex = MODE_ORDER.indexOf(mode);
-    const nextIndex = (currentIndex + 1) % MODE_ORDER.length;
-    setMode(MODE_ORDER[nextIndex]);
-  };
-
-  const renderApp = () => {
-    switch (mode) {
-      case 'shaders':
-        return <AppLiquid />;
-      case 'abby':
-        return <AppAbby />;
-      case 'vibes':
-        return <AppTransition />;
-      case '750':
-        return <AppVibeTest />;
-    }
-  };
-
-  const getNextMode = () => {
-    const currentIndex = MODE_ORDER.indexOf(mode);
-    const nextIndex = (currentIndex + 1) % MODE_ORDER.length;
-    return MODE_LABELS[MODE_ORDER[nextIndex]];
+    setMode(mode === 'shaders' ? 'abby' : 'shaders');
   };
 
   return (
     <View style={styles.container}>
       {/* Render active screen */}
-      {renderApp()}
+      {mode === 'shaders' ? <AppLiquid /> : <AppAbby />}
 
       {/* Mode toggle - top left, where time normally shows */}
       <Pressable style={styles.toggle} onPress={toggleMode}>
         <Text style={styles.toggleLabel}>SWITCH TO</Text>
-        <Text style={styles.toggleValue}>{getNextMode()}</Text>
+        <Text style={styles.toggleValue}>
+          {mode === 'shaders' ? 'ABBY' : 'SHADERS'}
+        </Text>
       </Pressable>
 
       {/* Hide status bar */}
