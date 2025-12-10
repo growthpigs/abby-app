@@ -1,208 +1,133 @@
 /**
- * VibeMatrix7 Shader - FLOWING STREAMS
+ * VibeMatrix7 - OCEAN SHORE
  *
- * Perlin worms / flowing lines that snake through space
- * (electric lime, aqua, white, deep purple)
+ * Where turquoise water meets sandy shore with fluid swirling
+ * (turquoise, lavender, sandy beige, white foam)
  */
 
 export const VIBE_MATRIX_7_SHADER = `
-// Uniforms
 uniform float u_time;
 uniform float2 u_resolution;
 uniform float u_complexity;
 
-// Neon stream palette
-const float3 COLOR_LIME = float3(0.7, 1.0, 0.2);
-const float3 COLOR_AQUA = float3(0.2, 0.9, 1.0);
-const float3 COLOR_WHITE = float3(1.0, 1.0, 1.0);
-const float3 COLOR_PURPLE = float3(0.3, 0.1, 0.4);
+// Shore palette
+const float3 DEEP_BLUE = float3(0.15, 0.35, 0.55);
+const float3 TURQUOISE = float3(0.25, 0.75, 0.72);
+const float3 LAVENDER = float3(0.65, 0.58, 0.75);
+const float3 SAND = float3(0.82, 0.72, 0.62);
+const float3 FOAM = float3(0.95, 0.97, 0.98);
 
-// ============================================
-// SIMPLEX NOISE
-// ============================================
-
-float3 mod289_3(float3 x) {
-  return x - floor(x * (1.0 / 289.0)) * 289.0;
+float hash(float2 p) {
+  return fract(sin(dot(p, float2(127.1, 311.7))) * 43758.5453);
 }
 
-float2 mod289_2(float2 x) {
-  return x - floor(x * (1.0 / 289.0)) * 289.0;
-}
+float noise(float2 p) {
+  float2 i = floor(p);
+  float2 f = fract(p);
+  f = f * f * (3.0 - 2.0 * f);
 
-float3 permute(float3 x) {
-  return mod289_3(((x * 34.0) + 1.0) * x);
-}
-
-float snoise(float2 v) {
-  const float4 C = float4(
-    0.211324865405187,
-    0.366025403784439,
-    -0.577350269189626,
-    0.024390243902439
+  return mix(
+    mix(hash(i), hash(i + float2(1.0, 0.0)), f.x),
+    mix(hash(i + float2(0.0, 1.0)), hash(i + float2(1.0, 1.0)), f.x),
+    f.y
   );
-
-  float2 i = floor(v + dot(v, C.yy));
-  float2 x0 = v - i + dot(i, C.xx);
-
-  float2 i1;
-  i1 = (x0.x > x0.y) ? float2(1.0, 0.0) : float2(0.0, 1.0);
-  float4 x12 = x0.xyxy + C.xxzz;
-  x12.xy -= i1;
-
-  i = mod289_2(i);
-  float3 p = permute(permute(i.y + float3(0.0, i1.y, 1.0))
-                    + i.x + float3(0.0, i1.x, 1.0));
-
-  float3 m = max(0.5 - float3(dot(x0, x0), dot(x12.xy, x12.xy), dot(x12.zw, x12.zw)), 0.0);
-  m = m * m;
-  m = m * m;
-
-  float3 x = 2.0 * fract(p * C.www) - 1.0;
-  float3 h = abs(x) - 0.5;
-  float3 ox = floor(x + 0.5);
-  float3 a0 = x - ox;
-
-  m *= 1.79284291400159 - 0.85373472095314 * (a0 * a0 + h * h);
-
-  float3 g;
-  g.x = a0.x * x0.x + h.x * x0.y;
-  g.yz = a0.yz * x12.xz + h.yz * x12.yw;
-  return 130.0 * dot(m, g);
 }
 
-// ============================================
-// CURL NOISE - Creates flow field
-// ============================================
-
-float2 curlNoise(float2 p, float time) {
-  float eps = 0.01;
-
-  // Sample noise at neighboring points
-  float n1 = snoise(float2(p.x, p.y + eps) + time);
-  float n2 = snoise(float2(p.x, p.y - eps) + time);
-  float n3 = snoise(float2(p.x + eps, p.y) + time);
-  float n4 = snoise(float2(p.x - eps, p.y) + time);
-
-  // Compute curl (perpendicular to gradient)
-  float dx = (n1 - n2) / (2.0 * eps);
-  float dy = (n3 - n4) / (2.0 * eps);
-
-  return float2(dx, -dy);
-}
-
-// ============================================
-// STREAM LINE FUNCTION
-// Creates flowing line patterns
-// ============================================
-
-float streamLine(float2 uv, float2 flowDir, float time, float frequency, float width) {
-  // Warp position along flow direction
-  float2 warpedUV = uv + flowDir * time * 0.3;
-
-  // Create sine-based streams
-  float stream = sin(warpedUV.x * frequency + warpedUV.y * frequency * 0.5 + time);
-  stream += sin(warpedUV.y * frequency * 0.7 - warpedUV.x * frequency * 0.3 - time * 0.8);
-
-  // Sharp line effect
-  stream = abs(stream);
-  stream = 1.0 - smoothstep(0.0, width, stream);
-
-  return stream;
-}
-
-// ============================================
-// fBM
-// ============================================
-
-float fbm(float2 p, float octaves) {
+float fbm(float2 p, int octaves) {
   float value = 0.0;
   float amplitude = 0.5;
   float frequency = 1.0;
-  float maxValue = 0.0;
 
-  for (float i = 0.0; i < 5.0; i += 1.0) {
+  for (int i = 0; i < 6; i++) {
     if (i >= octaves) break;
-    value += amplitude * snoise(p * frequency);
-    maxValue += amplitude;
-    amplitude *= 0.5;
+    value += amplitude * noise(p * frequency);
     frequency *= 2.0;
+    amplitude *= 0.5;
   }
-
-  return value / maxValue;
+  return value;
 }
 
-// ============================================
-// MAIN SHADER
-// ============================================
+// Fluid mixing function
+float2 fluidFlow(float2 uv, float time) {
+  float2 flow = float2(
+    fbm(uv * 2.0 + time * 0.2, 3),
+    fbm(uv * 2.0 + float2(50.0, 0.0) - time * 0.15, 3)
+  );
+  return flow * 0.3;
+}
 
-half4 main(float2 xy) {
-  float2 uv = xy / u_resolution;
+// Marble/fluid swirl
+float marbleSwirl(float2 uv, float time) {
+  float2 p = uv * 3.0;
+
+  // Add swirling motion
+  float angle = fbm(p + time * 0.1, 3) * 6.28;
+  p += float2(cos(angle), sin(angle)) * 0.3;
+
+  float swirl = sin(p.x * 2.0 + fbm(p * 2.0, 4) * 4.0 + time * 0.3);
+  swirl += sin(p.y * 1.5 + fbm(p * 1.5 + 100.0, 4) * 3.0 - time * 0.2);
+
+  return swirl * 0.5 + 0.5;
+}
+
+half4 main(float2 fragCoord) {
+  float2 uv = fragCoord / u_resolution;
   float aspect = u_resolution.x / u_resolution.y;
   uv.x *= aspect;
 
-  float time = u_time * 0.0003;
-  float octaves = 2.0 + u_complexity * 3.0;
+  float time = u_time / 1000.0;
+  float complexity = mix(0.6, 1.4, u_complexity);
 
-  // Get flow field direction
-  float2 flow = curlNoise(uv * 1.5, time * 0.5);
+  // Apply fluid flow distortion
+  float2 flowedUV = uv + fluidFlow(uv, time);
 
-  // Apply flow-based distortion
-  float2 flowedUV = uv + flow * 0.15;
+  // Base gradient - diagonal shore
+  float shoreGrad = uv.x * 0.4 + uv.y * 0.6;
+  shoreGrad += fbm(flowedUV * 2.0 + time * 0.1, 4) * 0.3;
 
-  // Multiple stream layers at different scales
-  float stream1 = streamLine(flowedUV, flow, time, 8.0, 0.15);
-  float stream2 = streamLine(flowedUV * 1.3, flow * 0.8, time * 1.2, 12.0, 0.12);
-  float stream3 = streamLine(flowedUV * 0.7, flow * 1.2, time * 0.8, 6.0, 0.18);
-  float stream4 = streamLine(flowedUV * 2.0, flow * 0.6, time * 1.5, 15.0, 0.08);
+  // Marble swirling
+  float swirl = marbleSwirl(flowedUV, time);
 
-  // Combine streams with different weights
-  float streams = stream1 * 0.35 + stream2 * 0.25 + stream3 * 0.25 + stream4 * 0.15;
+  // Zone mixing
+  float waterZone = smoothstep(0.3, 0.5, shoreGrad);
+  float sandZone = smoothstep(0.5, 0.7, shoreGrad);
+  float lavenderZone = smoothstep(0.15, 0.35, shoreGrad) * (1.0 - waterZone);
 
-  // Noise for color variation
-  float n1 = fbm(flowedUV * 2.0 + time * 0.2, octaves);
-  float n2 = fbm(flowedUV * 3.0 - time * 0.15, octaves * 0.7);
-  n1 = n1 * 0.5 + 0.5;
-  n2 = n2 * 0.5 + 0.5;
+  // Build color
+  float3 color = DEEP_BLUE;
 
-  // Base color - deep purple background
-  half3 color = half3(COLOR_PURPLE);
+  // Add turquoise water
+  color = mix(color, TURQUOISE, waterZone * swirl);
 
-  // Add lime streams
-  float limeIntensity = streams * n1;
-  color = mix(color, half3(COLOR_LIME), half(limeIntensity * 0.7));
+  // Add lavender tones (like in right reference image)
+  color = mix(color, LAVENDER, lavenderZone * (1.0 - swirl) * 0.7);
 
-  // Add aqua streams
-  float aquaIntensity = streams * n2;
-  color = mix(color, half3(COLOR_AQUA), half(aquaIntensity * 0.5));
+  // Add sandy areas
+  float sandMix = sandZone * fbm(flowedUV * 5.0, 3);
+  color = mix(color, SAND, sandMix);
 
-  // White highlights on brightest streams
-  float whiteIntensity = pow(streams, 3.0);
-  color = mix(color, half3(COLOR_WHITE), half(whiteIntensity * 0.4));
+  // Flowing veins of different colors
+  float veins = fbm(flowedUV * 8.0 + time * 0.15, 4);
+  veins = smoothstep(0.4, 0.6, veins);
+  color = mix(color, TURQUOISE * 1.1, veins * waterZone * 0.4);
+  color = mix(color, LAVENDER * 0.9, veins * lavenderZone * 0.3);
 
-  // Glow effect around streams
-  float glow = streams * 0.5;
-  color += half3(COLOR_LIME) * half(glow * 0.2);
-  color += half3(COLOR_AQUA) * half(glow * 0.15);
+  // Foam edges
+  float foam = fbm(flowedUV * 15.0 + time * 0.2, 3);
+  foam = smoothstep(0.65, 0.85, foam);
+  float foamMask = abs(shoreGrad - 0.5) < 0.15 ? 1.0 : 0.0;
+  foamMask *= smoothstep(0.0, 0.1, abs(shoreGrad - 0.5));
+  color = mix(color, FOAM, foam * foamMask * 0.6 * complexity);
 
-  // Add subtle background movement
-  float bgNoise = fbm(uv * 1.5 + time * 0.1, 2.0);
-  bgNoise = bgNoise * 0.5 + 0.5;
-  color = mix(color, color * 1.3, half(bgNoise * 0.2 * (1.0 - streams)));
+  // Subtle texture
+  float tex = fbm(uv * 30.0, 2) * 0.05;
+  color += tex;
 
-  // Pulsing brightness on streams
-  float pulse = sin(time * 4.0) * 0.5 + 0.5;
-  color += half3(COLOR_WHITE) * half(streams * pulse * 0.1);
+  // Soft vignette
+  float2 center = float2(0.5 * aspect, 0.5);
+  float vignette = 1.0 - length(uv - center) * 0.3;
+  color *= vignette;
 
-  // Boost saturation and vibrancy
-  color = pow(color, half3(0.9));
-  color *= 1.15;
-
-  // Vignette
-  float2 vignetteUV = xy / u_resolution;
-  float vignette = 1.0 - length((vignetteUV - 0.5) * 1.4);
-  vignette = smoothstep(0.0, 0.5, vignette);
-  color *= half(0.7 + 0.3 * vignette);
-
-  return half4(color, 1.0);
+  return half4(half3(color), 1.0);
 }
 `;

@@ -20,6 +20,7 @@ import { LiquidGlass6 } from './src/components/layers/LiquidGlass6';
 import { LiquidGlass7 } from './src/components/layers/LiquidGlass7';
 import { LiquidGlass8 } from './src/components/layers/LiquidGlass8';
 import { LiquidGlass9 } from './src/components/layers/LiquidGlass9';
+import { LiquidGlass10 } from './src/components/layers/LiquidGlass10';
 import { VibeMatrix } from './src/components/layers/VibeMatrix';
 import { VibeMatrix2 } from './src/components/layers/VibeMatrix2';
 import { VibeMatrix3 } from './src/components/layers/VibeMatrix3';
@@ -38,9 +39,10 @@ import { VibeMatrix15 } from './src/components/layers/VibeMatrix15';
 import { VibeMatrix16 } from './src/components/layers/VibeMatrix16';
 import { VibeMatrix17 } from './src/components/layers/VibeMatrix17';
 import { VibeMatrix18 } from './src/components/layers/VibeMatrix18';
+import { FPSMonitor } from './src/components/dev/FPSMonitor';
 
 // Glass/orb modes
-type GlassMode = 'none' | 'G1' | 'G2' | 'G3' | 'G4' | 'G5' | 'G6' | 'G7' | 'G8' | 'G9';
+type GlassMode = 'none' | 'G1' | 'G2' | 'G3' | 'G4' | 'G5' | 'G6' | 'G7' | 'G8' | 'G9' | 'G10';
 
 // Background modes (18 versions)
 type BgMode = '1' | '2' | '3' | '4' | '5' | '6' | '7' | '8' | '9' | '10' | '11' | '12' | '13' | '14' | '15' | '16' | '17' | '18';
@@ -50,33 +52,34 @@ const GLASS_INFO: Record<GlassMode, { label: string; hint: string }> = {
   G1: { label: 'G1', hint: 'Flowing amoeba' },
   G2: { label: 'G2', hint: 'Contained orb' },
   G3: { label: 'G3', hint: 'Orbiting satellites' },
-  G4: { label: 'G4', hint: 'Breathing edges' },
+  G4: { label: 'G4', hint: 'Abby talking orb' },
   G5: { label: 'G5', hint: 'Depth parallax' },
   G6: { label: 'G6', hint: 'Wave shells + core' },
   G7: { label: 'G7', hint: 'Crashing waves' },
   G8: { label: 'G8', hint: 'Spiral nebula' },
   G9: { label: 'G9', hint: 'Fluid ribbons' },
+  G10: { label: 'G10', hint: 'Lava orb' },
 };
 
 const BG_INFO: Record<BgMode, { label: string; hint: string }> = {
   '1': { label: '1', hint: 'Tie-dye pink' },
   '2': { label: '2', hint: 'Fire swirls' },
   '3': { label: '3', hint: 'Aurora spirals' },
-  '4': { label: '4', hint: 'Cellular teal' },
+  '4': { label: '4', hint: 'Aerial reef' },
   '5': { label: '5', hint: 'Liquid marble' },
   '6': { label: '6', hint: 'Kaleidoscope' },
-  '7': { label: '7', hint: 'Flowing streams' },
-  '8': { label: '8', hint: 'Radial flow field' },
+  '7': { label: '7', hint: 'Ocean shore' },
+  '8': { label: '8', hint: 'Deep ocean' },
   '9': { label: '9', hint: 'Blob metaballs' },
   '10': { label: '10', hint: 'Chromatic bloom' },
-  '11': { label: '11', hint: 'Layered orbs' },
+  '11': { label: '11', hint: 'Coral reef' },
   '12': { label: '12', hint: 'Stippled gradient' },
-  '13': { label: '13', hint: 'Breathing nebula' },
-  '14': { label: '14', hint: 'Magnetic fields' },
-  '15': { label: '15', hint: 'Crystalline facets' },
+  '13': { label: '13', hint: 'Fluid shoreline' },
+  '14': { label: '14', hint: 'Tidal pools' },
+  '15': { label: '15', hint: 'Seafoam' },
   '16': { label: '16', hint: 'Ink bloom' },
-  '17': { label: '17', hint: 'Cellular membrane' },
-  '18': { label: '18', hint: 'Aurora curtains' },
+  '17': { label: '17', hint: 'Lagoon' },
+  '18': { label: '18', hint: 'Ocean currents' },
 };
 
 export default function AppLiquid() {
@@ -94,6 +97,7 @@ export default function AppLiquid() {
       case 'G7': return <LiquidGlass7 />;
       case 'G8': return <LiquidGlass8 />;
       case 'G9': return <LiquidGlass9 />;
+      case 'G10': return <LiquidGlass10 />;
       default: return null;
     }
   };
@@ -150,15 +154,11 @@ export default function AppLiquid() {
         {renderGlass()}
       </View>
 
-      {/* ROW 1 - Glass tabs (scrollable, left-aligned) */}
+      {/* ROW 1 - Glass tabs (G1-G6) */}
       <View style={styles.row}>
         <Text style={styles.rowLabel}>G:</Text>
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.scrollContent}
-        >
-          {(['none', 'G1', 'G2', 'G3', 'G4', 'G5', 'G6', 'G7', 'G8', 'G9'] as GlassMode[]).map((m) => (
+        <View style={styles.rowContent}>
+          {(['none', 'G1', 'G2', 'G3', 'G4', 'G5', 'G6'] as GlassMode[]).map((m) => (
             <Pressable
               key={m}
               style={[styles.btn, glassMode === m && styles.btnActive]}
@@ -169,17 +169,31 @@ export default function AppLiquid() {
               </Text>
             </Pressable>
           ))}
-        </ScrollView>
+        </View>
       </View>
 
-      {/* ROW 2 - Background tabs (1-7) */}
+      {/* ROW 2 - Glass tabs (G7-G10) */}
       <View style={[styles.row, { top: 88 }]}>
+        <Text style={styles.rowLabel}>G2:</Text>
+        <View style={styles.rowContent}>
+          {(['G7', 'G8', 'G9', 'G10'] as GlassMode[]).map((m) => (
+            <Pressable
+              key={m}
+              style={[styles.btn, glassMode === m && styles.btnActive]}
+              onPress={() => setGlassMode(m)}
+            >
+              <Text style={[styles.btnText, glassMode === m && styles.btnTextActive]}>
+                {GLASS_INFO[m].label}
+              </Text>
+            </Pressable>
+          ))}
+        </View>
+      </View>
+
+      {/* ROW 3 - Background tabs (1-7) */}
+      <View style={[styles.row, { top: 121 }]}>
         <Text style={styles.rowLabel}>BG:</Text>
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.scrollContent}
-        >
+        <View style={styles.rowContent}>
           {(['1', '2', '3', '4', '5', '6', '7'] as BgMode[]).map((m) => (
             <Pressable
               key={m}
@@ -191,17 +205,13 @@ export default function AppLiquid() {
               </Text>
             </Pressable>
           ))}
-        </ScrollView>
+        </View>
       </View>
 
-      {/* ROW 3 - Background tabs (8-13) */}
-      <View style={[styles.row, { top: 121 }]}>
+      {/* ROW 4 - Background tabs (8-13) */}
+      <View style={[styles.row, { top: 154 }]}>
         <Text style={styles.rowLabel}>BG2:</Text>
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.scrollContent}
-        >
+        <View style={styles.rowContent}>
           {(['8', '9', '10', '11', '12', '13'] as BgMode[]).map((m) => (
             <Pressable
               key={m}
@@ -213,17 +223,13 @@ export default function AppLiquid() {
               </Text>
             </Pressable>
           ))}
-        </ScrollView>
+        </View>
       </View>
 
-      {/* ROW 4 - Background tabs (14-18) */}
-      <View style={[styles.row, { top: 154 }]}>
+      {/* ROW 5 - Background tabs (14-18) */}
+      <View style={[styles.row, { top: 187 }]}>
         <Text style={styles.rowLabel}>BG3:</Text>
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.scrollContent}
-        >
+        <View style={styles.rowContent}>
           {(['14', '15', '16', '17', '18'] as BgMode[]).map((m) => (
             <Pressable
               key={m}
@@ -235,7 +241,7 @@ export default function AppLiquid() {
               </Text>
             </Pressable>
           ))}
-        </ScrollView>
+        </View>
       </View>
 
       {/* Label showing current selection */}
@@ -243,6 +249,9 @@ export default function AppLiquid() {
         <Text style={styles.text}>{getLabel()}</Text>
         <Text style={styles.hint}>{getHint()}</Text>
       </View>
+
+      {/* FPS Monitor for performance testing */}
+      <FPSMonitor />
 
       <StatusBar style="light" />
     </View>
@@ -273,8 +282,12 @@ const styles = StyleSheet.create({
     gap: 4,
     paddingRight: 12,
   },
+  rowContent: {
+    flexDirection: 'row',
+    gap: 4,
+  },
   rowLabel: {
-    color: 'rgba(255,255,255,0.5)',
+    color: 'rgba(0,0,0,0.5)',
     fontSize: 10,
     fontWeight: '600',
     marginRight: 4,
@@ -284,36 +297,36 @@ const styles = StyleSheet.create({
     paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: 12,
-    backgroundColor: 'rgba(255,255,255,0.1)',
+    backgroundColor: 'rgba(0,0,0,0.1)',
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.2)',
+    borderColor: 'rgba(0,0,0,0.2)',
   },
   btnActive: {
-    backgroundColor: 'rgba(255,255,255,0.25)',
-    borderColor: 'rgba(255,255,255,0.5)',
+    backgroundColor: 'rgba(0,0,0,0.25)',
+    borderColor: 'rgba(0,0,0,0.5)',
   },
   btnText: {
-    color: 'rgba(255,255,255,0.6)',
+    color: 'rgba(0,0,0,0.6)',
     fontSize: 10,
     fontWeight: '500',
   },
   btnTextActive: {
-    color: '#fff',
+    color: '#000',
   },
   label: {
     position: 'absolute',
-    top: 191,
+    top: 224,
     left: 12,
     right: 12,
     alignItems: 'flex-start',
   },
   text: {
-    color: '#fff',
+    color: '#000',
     fontSize: 18,
     fontWeight: '600',
   },
   hint: {
-    color: 'rgba(255,255,255,0.6)',
+    color: 'rgba(0,0,0,0.6)',
     fontSize: 11,
     marginTop: 4,
   },

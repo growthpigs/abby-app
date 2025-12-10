@@ -1,31 +1,15 @@
 import { registerRootComponent } from 'expo';
 
 /**
- * TEST MODE SELECTOR
+ * DEV MODE
  *
- * Switch between different test configurations:
- * - 'liquid'  : William Candillon style liquid glass blobs
- * - 'simple'  : Minimal shader animation test
- * - 'shader'  : CC1's VibeMatrix shader test
- * - 'orb'     : CC2's AbbyOrb + VibeMatrix test
- * - 'full'    : Full Glass Sandwich (when ready)
+ * Uses App.dev.tsx which has a runtime toggle between:
+ * - SHADERS: Background + Orb testing (App.liquid)
+ * - ABBY: Voice/TTS testing (App.abby)
+ *
+ * Toggle button in top-right corner of screen.
  */
-const TEST_MODE: 'liquid' | 'simple' | 'shader' | 'orb' | 'full' = 'liquid';
-
-// Import based on test mode
-const getApp = () => {
-  switch (TEST_MODE) {
-    case 'liquid':
-      return require('./App.liquid').default;
-    case 'simple':
-      return require('./App.simple').default;
-    case 'orb':
-      return require('./App.orb').default;
-    default:
-      return require('./App').default;
-  }
-};
-const App = getApp();
+import App from './App.dev';
 
 // registerRootComponent calls AppRegistry.registerComponent('main', () => App);
 // It also ensures that whether you load the app in Expo Go or in a native build,

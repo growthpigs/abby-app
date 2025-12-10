@@ -1,8 +1,8 @@
 /**
- * VibeMatrix15 - CRYSTALLINE FACETS
+ * VibeMatrix15 - SEAFOAM
  *
- * Geometric low-poly style with shifting colors
- * (gem tones: amethyst, sapphire, emerald, ruby)
+ * White foam patterns on deep teal water
+ * (deep blue-teal, cyan, white foam, sea spray)
  */
 
 export const VIBE_MATRIX_15_SHADER = `
@@ -10,70 +10,68 @@ uniform float u_time;
 uniform float2 u_resolution;
 uniform float u_complexity;
 
-// Hash for randomness
-float2 hash2(float2 p) {
-  p = float2(dot(p, float2(127.1, 311.7)), dot(p, float2(269.5, 183.3)));
-  return fract(sin(p) * 43758.5453);
+// Seafoam palette
+const float3 DEEP_OCEAN = float3(0.02, 0.18, 0.28);
+const float3 TEAL = float3(0.08, 0.42, 0.48);
+const float3 CYAN = float3(0.18, 0.62, 0.68);
+const float3 FOAM = float3(0.92, 0.95, 0.96);
+const float3 SPRAY = float3(0.75, 0.85, 0.88);
+
+float hash(float2 p) {
+  return fract(sin(dot(p, float2(127.1, 311.7))) * 43758.5453);
 }
 
-// Voronoi for crystalline facets
-float3 voronoi(float2 x, float time) {
-  float2 n = floor(x);
-  float2 f = fract(x);
+float noise(float2 p) {
+  float2 i = floor(p);
+  float2 f = fract(p);
+  f = f * f * (3.0 - 2.0 * f);
 
-  float minDist = 1.0;
-  float2 minPoint = float2(0.0);
-  float cellId = 0.0;
-
-  for (int j = -1; j <= 1; j++) {
-    for (int i = -1; i <= 1; i++) {
-      float2 neighbor = float2(float(i), float(j));
-      float2 point = hash2(n + neighbor);
-
-      // Subtle movement
-      point = 0.5 + 0.4 * sin(time * 0.3 + 6.2831 * point);
-
-      float2 diff = neighbor + point - f;
-      float dist = length(diff);
-
-      if (dist < minDist) {
-        minDist = dist;
-        minPoint = point;
-        cellId = hash2(n + neighbor).x;
-      }
-    }
-  }
-
-  return float3(minDist, cellId, minPoint.x);
+  return mix(
+    mix(hash(i), hash(i + float2(1.0, 0.0)), f.x),
+    mix(hash(i + float2(0.0, 1.0)), hash(i + float2(1.0, 1.0)), f.x),
+    f.y
+  );
 }
 
-// Second pass for edges
-float voronoiEdge(float2 x, float time) {
-  float2 n = floor(x);
-  float2 f = fract(x);
+float fbm(float2 p, int octaves) {
+  float value = 0.0;
+  float amplitude = 0.5;
+  float frequency = 1.0;
 
-  float minDist1 = 1.0;
-  float minDist2 = 1.0;
-
-  for (int j = -1; j <= 1; j++) {
-    for (int i = -1; i <= 1; i++) {
-      float2 neighbor = float2(float(i), float(j));
-      float2 point = hash2(n + neighbor);
-      point = 0.5 + 0.4 * sin(time * 0.3 + 6.2831 * point);
-
-      float2 diff = neighbor + point - f;
-      float dist = length(diff);
-
-      if (dist < minDist1) {
-        minDist2 = minDist1;
-        minDist1 = dist;
-      } else if (dist < minDist2) {
-        minDist2 = dist;
-      }
-    }
+  for (int i = 0; i < 6; i++) {
+    if (i >= octaves) break;
+    value += amplitude * noise(p * frequency);
+    frequency *= 2.0;
+    amplitude *= 0.5;
   }
+  return value;
+}
 
-  return minDist2 - minDist1;
+// Turbulent foam pattern
+float foamPattern(float2 uv, float time, float scale) {
+  float2 p = uv * scale;
+
+  // Moving foam
+  p += float2(time * 0.1, time * 0.05);
+
+  float n1 = fbm(p, 4);
+  float n2 = fbm(p * 2.0 + 50.0, 3);
+  float n3 = fbm(p * 0.5 + 100.0, 4);
+
+  // Create foam clusters
+  float foam = n1 * n2;
+  foam = smoothstep(0.2, 0.5, foam);
+  foam *= smoothstep(0.3, 0.6, n3);
+
+  return foam;
+}
+
+// Wave pattern
+float wavePattern(float2 uv, float time) {
+  float wave = sin(uv.x * 8.0 + time + fbm(uv * 3.0, 3) * 2.0);
+  wave += sin(uv.y * 6.0 - time * 0.7 + fbm(uv * 2.0 + 50.0, 3) * 2.0);
+  wave *= 0.5;
+  return wave * 0.5 + 0.5;
 }
 
 half4 main(float2 fragCoord) {
@@ -82,82 +80,64 @@ half4 main(float2 fragCoord) {
   uv.x *= aspect;
 
   float time = u_time / 1000.0;
-  float complexity = mix(3.0, 8.0, u_complexity);
+  float complexity = mix(0.6, 1.4, u_complexity);
 
-  // Background - deep dark
-  float3 bgColor = float3(0.02, 0.02, 0.05);
+  // Warped UV for organic flow
+  float2 warpedUV = uv;
+  warpedUV += float2(
+    fbm(uv * 2.0 + time * 0.1, 3) * 0.1,
+    fbm(uv * 2.0 + 50.0 - time * 0.08, 3) * 0.1
+  );
 
-  // Gem colors
-  float3 amethyst = float3(0.58, 0.27, 0.71);
-  float3 sapphire = float3(0.15, 0.23, 0.66);
-  float3 emerald = float3(0.20, 0.57, 0.40);
-  float3 ruby = float3(0.70, 0.11, 0.24);
-  float3 diamond = float3(0.85, 0.88, 0.95);
+  // Base water depth
+  float depth = fbm(warpedUV * 3.0 + time * 0.05, 4);
 
-  // Create crystalline pattern
-  float2 scaledUV = uv * complexity;
-  float3 vor = voronoi(scaledUV, time);
-  float edge = voronoiEdge(scaledUV, time);
+  // Build water color
+  float3 color = DEEP_OCEAN;
+  color = mix(color, TEAL, smoothstep(0.3, 0.6, depth));
+  color = mix(color, CYAN, smoothstep(0.5, 0.8, depth) * 0.5);
 
-  // Second layer at different scale
-  float2 scaledUV2 = uv * complexity * 0.5 + float2(100.0, 0.0);
-  float3 vor2 = voronoi(scaledUV2, time * 0.7);
-  float edge2 = voronoiEdge(scaledUV2, time * 0.7);
+  // Wave highlights
+  float wave = wavePattern(warpedUV, time);
+  color = mix(color, CYAN * 1.1, wave * 0.2);
 
-  // Color each cell based on its ID
-  float cellHue = vor.y;
-  float3 cellColor = amethyst;
+  // Main foam patterns
+  float foam1 = foamPattern(warpedUV, time, 8.0 * complexity);
+  float foam2 = foamPattern(warpedUV + 30.0, time * 0.8, 12.0);
+  float foam3 = foamPattern(warpedUV + 60.0, time * 1.2, 6.0);
 
-  if (cellHue < 0.25) {
-    cellColor = mix(amethyst, sapphire, cellHue * 4.0);
-  } else if (cellHue < 0.5) {
-    cellColor = mix(sapphire, emerald, (cellHue - 0.25) * 4.0);
-  } else if (cellHue < 0.75) {
-    cellColor = mix(emerald, ruby, (cellHue - 0.5) * 4.0);
-  } else {
-    cellColor = mix(ruby, amethyst, (cellHue - 0.75) * 4.0);
-  }
+  // Combine foam layers
+  float totalFoam = max(foam1, foam2 * 0.7);
+  totalFoam = max(totalFoam, foam3 * 0.5);
 
-  // Time-based color shift
-  float colorShift = sin(time * 0.2 + vor.y * 6.28) * 0.5 + 0.5;
-  cellColor = mix(cellColor, cellColor.zxy, colorShift * 0.3);
+  // Apply foam
+  color = mix(color, SPRAY, totalFoam * 0.6);
+  color = mix(color, FOAM, smoothstep(0.5, 0.8, totalFoam) * 0.8);
 
-  // Facet shading - simulate light reflection
-  float facetShade = 0.5 + vor.z * 0.5;
-  facetShade *= 0.7 + sin(vor.y * 100.0 + time) * 0.3;
+  // Fine spray particles
+  float spray = fbm(uv * 30.0 + time * 0.3, 2);
+  spray = smoothstep(0.65, 0.85, spray);
+  color = mix(color, FOAM, spray * 0.3 * complexity);
 
-  // Edge highlighting
-  float edgeFactor = smoothstep(0.0, 0.05, edge);
-  float edgeFactor2 = smoothstep(0.0, 0.08, edge2);
+  // Foam bubble texture
+  float bubbles = fbm(warpedUV * 40.0 + time * 0.2, 2);
+  bubbles = smoothstep(0.6, 0.8, bubbles);
+  color += FOAM * bubbles * totalFoam * 0.2;
 
-  // Sparkle effect
-  float sparkle = pow(1.0 - vor.x, 8.0) * (0.5 + 0.5 * sin(time * 5.0 + vor.y * 50.0));
+  // Dark water showing through foam gaps
+  float gaps = fbm(warpedUV * 15.0, 3);
+  gaps = smoothstep(0.4, 0.6, gaps);
+  color = mix(color, DEEP_OCEAN * 0.8, gaps * totalFoam * 0.3);
 
-  // Compose layers
-  float3 color = bgColor;
+  // Subtle caustics in clear water
+  float caustic = sin(warpedUV.x * 20.0 + time) * sin(warpedUV.y * 18.0 - time * 0.7);
+  caustic = caustic * 0.5 + 0.5;
+  color += CYAN * caustic * (1.0 - totalFoam) * 0.1;
 
-  // Base facet color
-  color = mix(bgColor, cellColor * facetShade, 0.8);
-
-  // Second layer overlay
-  float3 layer2Color = sapphire;
-  if (vor2.y > 0.5) layer2Color = amethyst;
-  color = mix(color, layer2Color * 0.5, (1.0 - edgeFactor2) * 0.3);
-
-  // Edge glow
-  float edgeGlow = (1.0 - edgeFactor) * 0.8;
-  color = mix(color, diamond * 0.8, edgeGlow);
-
-  // Sparkle
-  color += diamond * sparkle * 0.5;
-
-  // Depth effect - darker at edges of screen
-  float depth = 1.0 - length(uv - float2(0.5 * aspect, 0.5)) * 0.4;
-  color *= depth;
-
-  // Subtle refraction lines
-  float refraction = sin(uv.x * 50.0 + uv.y * 30.0 + time * 2.0) * 0.02;
-  color += diamond * refraction;
+  // Vignette
+  float2 center = float2(0.5 * aspect, 0.5);
+  float vignette = 1.0 - length(uv - center) * 0.35;
+  color *= vignette;
 
   return half4(half3(color), 1.0);
 }

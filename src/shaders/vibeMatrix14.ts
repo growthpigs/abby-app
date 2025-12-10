@@ -1,8 +1,8 @@
 /**
- * VibeMatrix14 - MAGNETIC FIELD LINES
+ * VibeMatrix14 - TIDAL POOLS
  *
- * Curved field lines like iron filings around magnets
- * (earth tones: copper, bronze, forest, cream)
+ * Interconnected pools of varying depth with rock edges
+ * (deep teal, turquoise, cyan, dark rock)
  */
 
 export const VIBE_MATRIX_14_SHADER = `
@@ -10,93 +10,79 @@ uniform float u_time;
 uniform float2 u_resolution;
 uniform float u_complexity;
 
-// Simplex noise for field distortion
-float3 mod289(float3 x) { return x - floor(x * (1.0 / 289.0)) * 289.0; }
-float2 mod289(float2 x) { return x - floor(x * (1.0 / 289.0)) * 289.0; }
-float3 permute(float3 x) { return mod289(((x*34.0)+1.0)*x); }
+// Tidal pool palette
+const float3 DEEP_TEAL = float3(0.02, 0.28, 0.35);
+const float3 TURQUOISE = float3(0.18, 0.68, 0.68);
+const float3 CYAN_SHALLOW = float3(0.35, 0.85, 0.82);
+const float3 ROCK_DARK = float3(0.08, 0.12, 0.14);
+const float3 ALGAE = float3(0.05, 0.22, 0.18);
 
-float snoise(float2 v) {
-  const float4 C = float4(0.211324865405187, 0.366025403784439, -0.577350269189626, 0.024390243902439);
-  float2 i = floor(v + dot(v, C.yy));
-  float2 x0 = v - i + dot(i, C.xx);
-  float2 i1;
-  i1 = (x0.x > x0.y) ? float2(1.0, 0.0) : float2(0.0, 1.0);
-  float4 x12 = x0.xyxy + C.xxzz;
-  x12.xy -= i1;
-  i = mod289(i);
-  float3 p = permute(permute(i.y + float3(0.0, i1.y, 1.0)) + i.x + float3(0.0, i1.x, 1.0));
-  float3 m = max(0.5 - float3(dot(x0,x0), dot(x12.xy,x12.xy), dot(x12.zw,x12.zw)), 0.0);
-  m = m*m;
-  m = m*m;
-  float3 x = 2.0 * fract(p * C.www) - 1.0;
-  float3 h = abs(x) - 0.5;
-  float3 ox = floor(x + 0.5);
-  float3 a0 = x - ox;
-  m *= 1.79284291400159 - 0.85373472095314 * (a0*a0 + h*h);
-  float3 g;
-  g.x = a0.x * x0.x + h.x * x0.y;
-  g.yz = a0.yz * x12.xz + h.yz * x12.yw;
-  return 130.0 * dot(m, g);
+float hash(float2 p) {
+  return fract(sin(dot(p, float2(127.1, 311.7))) * 43758.5453);
 }
 
-// Magnetic field from a pole
-float2 magneticField(float2 p, float2 pole, float strength) {
-  float2 delta = p - pole;
-  float dist = length(delta) + 0.1;
-  return normalize(delta) * strength / (dist * dist);
+float2 hash2(float2 p) {
+  p = float2(dot(p, float2(127.1, 311.7)), dot(p, float2(269.5, 183.3)));
+  return fract(sin(p) * 43758.5453);
 }
 
-// Trace a field line
-float fieldLine(float2 uv, float time, float complexity) {
-  float acc = 0.0;
+float noise(float2 p) {
+  float2 i = floor(p);
+  float2 f = fract(p);
+  f = f * f * (3.0 - 2.0 * f);
 
-  // Two magnetic poles that orbit
-  float2 pole1 = float2(
-    0.3 + sin(time * 0.2) * 0.15,
-    0.5 + cos(time * 0.15) * 0.2
+  return mix(
+    mix(hash(i), hash(i + float2(1.0, 0.0)), f.x),
+    mix(hash(i + float2(0.0, 1.0)), hash(i + float2(1.0, 1.0)), f.x),
+    f.y
   );
-  float2 pole2 = float2(
-    0.7 + cos(time * 0.25) * 0.15,
-    0.5 + sin(time * 0.18) * 0.2
-  );
-
-  // Calculate combined field
-  float2 field = magneticField(uv, pole1, 1.0) - magneticField(uv, pole2, 1.0);
-
-  // Add noise distortion
-  float noise = snoise(uv * 3.0 + time * 0.1);
-  field += float2(noise, snoise(uv * 3.0 + 100.0)) * 0.3;
-
-  // Field line pattern - perpendicular to field direction
-  float angle = atan(field.y, field.x);
-  float linePattern = sin(angle * 20.0 * complexity + length(uv - pole1) * 15.0);
-  linePattern *= sin(angle * 15.0 - length(uv - pole2) * 12.0);
-
-  // Field intensity affects line thickness
-  float intensity = length(field);
-  float lines = smoothstep(0.7, 0.9, abs(linePattern)) * intensity * 0.5;
-
-  return lines;
 }
 
-// Flowing particles along field lines
-float flowParticles(float2 uv, float time) {
-  float particles = 0.0;
+float fbm(float2 p, int octaves) {
+  float value = 0.0;
+  float amplitude = 0.5;
+  float frequency = 1.0;
 
-  for (int i = 0; i < 8; i++) {
-    float fi = float(i);
-    float2 offset = float2(
-      sin(fi * 1.7 + time * 0.5) * 0.3,
-      cos(fi * 2.1 + time * 0.4) * 0.3
-    );
-    float2 p = uv + offset;
+  for (int i = 0; i < 6; i++) {
+    if (i >= octaves) break;
+    value += amplitude * noise(p * frequency);
+    frequency *= 2.0;
+    amplitude *= 0.5;
+  }
+  return value;
+}
 
-    // Particle glow
-    float d = length(p - float2(0.5, 0.5 + sin(time + fi) * 0.2));
-    particles += 0.02 / (d * d + 0.01);
+// Voronoi for pool shapes
+float2 voronoi(float2 p, float time) {
+  float2 n = floor(p);
+  float2 f = fract(p);
+
+  float minDist = 1.0;
+  float secondDist = 1.0;
+  float cellId = 0.0;
+
+  for (int j = -1; j <= 1; j++) {
+    for (int i = -1; i <= 1; i++) {
+      float2 g = float2(float(i), float(j));
+      float2 o = hash2(n + g);
+
+      // Animate slightly
+      o = 0.5 + 0.4 * sin(time * 0.3 + 6.28 * o);
+
+      float2 r = g + o - f;
+      float d = dot(r, r);
+
+      if (d < minDist) {
+        secondDist = minDist;
+        minDist = d;
+        cellId = hash(n + g);
+      } else if (d < secondDist) {
+        secondDist = d;
+      }
+    }
   }
 
-  return particles * 0.1;
+  return float2(sqrt(minDist), cellId);
 }
 
 half4 main(float2 fragCoord) {
@@ -105,50 +91,66 @@ half4 main(float2 fragCoord) {
   uv.x *= aspect;
 
   float time = u_time / 1000.0;
-  float complexity = mix(0.5, 1.5, u_complexity);
+  float complexity = mix(0.6, 1.4, u_complexity);
 
-  // Background gradient - warm earth tones
-  float3 bgColor1 = float3(0.15, 0.08, 0.05);  // Dark earth
-  float3 bgColor2 = float3(0.12, 0.10, 0.08);  // Dark brown
-  float3 bg = mix(bgColor1, bgColor2, uv.y);
+  // Create pool cells
+  float2 vor = voronoi(uv * 5.0 * complexity, time);
+  float poolDist = vor.x;
+  float poolId = vor.y;
 
-  // Field line colors
-  float3 copper = float3(0.72, 0.45, 0.20);
-  float3 bronze = float3(0.55, 0.47, 0.33);
-  float3 forest = float3(0.13, 0.35, 0.22);
-  float3 cream = float3(0.96, 0.94, 0.88);
+  // Larger pools
+  float2 vorLarge = voronoi(uv * 3.0, time * 0.7);
 
-  // Calculate field lines
-  float lines = fieldLine(uv, time, complexity);
+  // Pool depth based on cell ID
+  float depth = poolId;
+  depth += fbm(uv * 4.0 + time * 0.05, 3) * 0.3;
 
-  // Secondary field layer
-  float lines2 = fieldLine(uv * 0.8 + 0.1, time * 0.7 + 100.0, complexity * 0.8);
+  // Build pool colors
+  float3 color = DEEP_TEAL;
 
-  // Flowing particles
-  float particles = flowParticles(uv, time);
+  // Vary depth per pool
+  color = mix(DEEP_TEAL, TURQUOISE, smoothstep(0.3, 0.6, depth));
+  color = mix(color, CYAN_SHALLOW, smoothstep(0.6, 0.9, depth) * 0.7);
 
-  // Color based on position and time
-  float colorAngle = atan(uv.y - 0.5, uv.x - 0.5 * aspect) + time * 0.1;
-  float colorMix = sin(colorAngle * 2.0) * 0.5 + 0.5;
-  float colorMix2 = cos(length(uv - float2(0.5 * aspect, 0.5)) * 4.0 - time) * 0.5 + 0.5;
+  // Rock edges (between pools)
+  float edge = smoothstep(0.08, 0.15, poolDist);
+  float rockEdge = 1.0 - edge;
+  color = mix(color, ROCK_DARK, rockEdge * 0.9);
 
-  float3 lineColor = mix(copper, bronze, colorMix);
-  lineColor = mix(lineColor, forest, colorMix2 * 0.4);
+  // Add algae to some edges
+  float algaeMask = fbm(uv * 10.0, 3);
+  algaeMask = smoothstep(0.4, 0.6, algaeMask);
+  color = mix(color, ALGAE, algaeMask * rockEdge * 0.6);
 
-  float3 lineColor2 = mix(bronze, cream, colorMix2);
+  // Water surface ripples inside pools
+  float ripple = sin(poolDist * 40.0 - time * 2.0 + poolId * 10.0);
+  ripple = ripple * 0.5 + 0.5;
+  ripple *= edge; // Only inside pools
+  color += float3(0.08, 0.12, 0.1) * ripple * 0.2;
 
-  // Compose
-  float3 color = bg;
-  color = mix(color, lineColor, lines * 0.8);
-  color = mix(color, lineColor2, lines2 * 0.5);
-  color += cream * particles;
+  // Caustic light patterns
+  float caustic = fbm(uv * 15.0 + time * 0.3, 3);
+  caustic = smoothstep(0.4, 0.7, caustic);
+  color += CYAN_SHALLOW * caustic * edge * 0.15;
 
-  // Subtle center glow
-  float centerGlow = exp(-length(uv - float2(0.5 * aspect, 0.5)) * 2.0) * 0.1;
-  color += copper * centerGlow;
+  // Dark organic matter in deep pools
+  float organic = fbm(uv * 8.0 + float2(50.0, 0.0), 4);
+  organic = smoothstep(0.5, 0.7, organic);
+  float deepMask = smoothstep(0.5, 0.3, depth);
+  color = mix(color, DEEP_TEAL * 0.5, organic * deepMask * edge * 0.5);
+
+  // Scattered debris/sediment
+  float debris = fbm(uv * 25.0 + time * 0.05, 2);
+  debris = smoothstep(0.7, 0.9, debris);
+  color += float3(0.1, 0.12, 0.1) * debris * 0.1 * edge;
+
+  // Subtle overall texture
+  float tex = fbm(uv * 50.0, 2) * 0.03;
+  color += tex;
 
   // Vignette
-  float vignette = 1.0 - length(uv - float2(0.5 * aspect, 0.5)) * 0.5;
+  float2 center = float2(0.5 * aspect, 0.5);
+  float vignette = 1.0 - length(uv - center) * 0.35;
   color *= vignette;
 
   return half4(half3(color), 1.0);

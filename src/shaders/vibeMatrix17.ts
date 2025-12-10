@@ -1,8 +1,8 @@
 /**
- * VibeMatrix17 - CELLULAR MEMBRANE
+ * VibeMatrix17 - LAGOON
  *
- * Organic cell-like structures with soft boundaries
- * (biological: salmon, sage, cream, coral)
+ * Crystal clear turquoise with sandy bottom visible
+ * (crystal turquoise, aqua, sandy beige, white sand)
  */
 
 export const VIBE_MATRIX_17_SHADER = `
@@ -10,65 +10,64 @@ uniform float u_time;
 uniform float2 u_resolution;
 uniform float u_complexity;
 
-// Hash function
-float2 hash2(float2 p) {
-  p = float2(dot(p, float2(127.1, 311.7)), dot(p, float2(269.5, 183.3)));
-  return fract(sin(p) * 43758.5453);
+// Lagoon palette
+const float3 CRYSTAL_TURQ = float3(0.28, 0.82, 0.78);
+const float3 AQUA_LIGHT = float3(0.45, 0.92, 0.88);
+const float3 TEAL_DEEP = float3(0.12, 0.52, 0.55);
+const float3 SAND_WET = float3(0.72, 0.65, 0.52);
+const float3 SAND_DRY = float3(0.88, 0.82, 0.72);
+
+float hash(float2 p) {
+  return fract(sin(dot(p, float2(127.1, 311.7))) * 43758.5453);
 }
 
-// Smooth minimum for organic blending
-float smin(float a, float b, float k) {
-  float h = max(k - abs(a - b), 0.0) / k;
-  return min(a, b) - h * h * k * 0.25;
+float noise(float2 p) {
+  float2 i = floor(p);
+  float2 f = fract(p);
+  f = f * f * (3.0 - 2.0 * f);
+
+  return mix(
+    mix(hash(i), hash(i + float2(1.0, 0.0)), f.x),
+    mix(hash(i + float2(0.0, 1.0)), hash(i + float2(1.0, 1.0)), f.x),
+    f.y
+  );
 }
 
-// Soft voronoi - cells with membrane edges
-float4 softVoronoi(float2 x, float time) {
-  float2 n = floor(x);
-  float2 f = fract(x);
+float fbm(float2 p, int octaves) {
+  float value = 0.0;
+  float amplitude = 0.5;
+  float frequency = 1.0;
 
-  float minDist1 = 8.0;
-  float minDist2 = 8.0;
-  float2 minPoint = float2(0.0);
-  float cellId = 0.0;
-
-  for (int j = -2; j <= 2; j++) {
-    for (int i = -2; i <= 2; i++) {
-      float2 neighbor = float2(float(i), float(j));
-      float2 randPoint = hash2(n + neighbor);
-
-      // Organic cell movement
-      float2 point = 0.5 + 0.45 * sin(time * 0.4 * (randPoint - 0.5) + 6.2831 * randPoint);
-
-      float2 diff = neighbor + point - f;
-      float dist = length(diff);
-
-      if (dist < minDist1) {
-        minDist2 = minDist1;
-        minDist1 = dist;
-        minPoint = point;
-        cellId = randPoint.x;
-      } else if (dist < minDist2) {
-        minDist2 = dist;
-      }
-    }
+  for (int i = 0; i < 6; i++) {
+    if (i >= octaves) break;
+    value += amplitude * noise(p * frequency);
+    frequency *= 2.0;
+    amplitude *= 0.5;
   }
-
-  // Membrane thickness
-  float membrane = minDist2 - minDist1;
-
-  return float4(minDist1, membrane, cellId, minPoint.x);
+  return value;
 }
 
-// Organelle-like internal structures
-float organelle(float2 uv, float2 center, float size, float time, float seed) {
-  float2 delta = uv - center;
-  float dist = length(delta);
+// Water caustics on sandy bottom
+float caustics(float2 uv, float time) {
+  float2 p = uv * 15.0;
 
-  // Pulsing
-  float pulse = 1.0 + sin(time * 2.0 + seed * 10.0) * 0.1;
+  float c1 = sin(p.x * 2.0 + time * 1.5 + noise(p) * 3.0);
+  float c2 = sin(p.y * 2.0 - time * 1.2 + noise(p + 50.0) * 3.0);
+  float c3 = sin((p.x + p.y) * 1.5 + time * 0.8);
 
-  return smoothstep(size * pulse, size * pulse * 0.5, dist);
+  float caustic = c1 * c2 + c3 * 0.3;
+  return caustic * 0.5 + 0.5;
+}
+
+// Sand ripple pattern
+float sandRipples(float2 uv, float time) {
+  float2 p = uv * 20.0;
+  p += float2(time * 0.05, time * 0.03);
+
+  float ripple = sin(p.x + fbm(uv * 5.0, 3) * 3.0);
+  ripple += sin(p.y * 0.8 + fbm(uv * 4.0 + 50.0, 3) * 2.0) * 0.5;
+
+  return ripple * 0.5 + 0.5;
 }
 
 half4 main(float2 fragCoord) {
@@ -77,88 +76,70 @@ half4 main(float2 fragCoord) {
   uv.x *= aspect;
 
   float time = u_time / 1000.0;
-  float complexity = mix(3.0, 7.0, u_complexity);
+  float complexity = mix(0.6, 1.4, u_complexity);
 
-  // Background - warm cream
-  float3 bgColor = float3(0.98, 0.96, 0.92);
+  // Gentle water distortion
+  float2 waterUV = uv;
+  waterUV += float2(
+    sin(time * 0.5 + uv.y * 5.0) * 0.01,
+    cos(time * 0.4 + uv.x * 4.0) * 0.01
+  );
+  waterUV += float2(
+    fbm(uv * 3.0 + time * 0.1, 3) * 0.03,
+    fbm(uv * 3.0 + 50.0 - time * 0.08, 3) * 0.03
+  );
 
-  // Cell colors
-  float3 salmon = float3(0.98, 0.70, 0.65);
-  float3 sage = float3(0.68, 0.78, 0.65);
-  float3 cream = float3(0.96, 0.92, 0.84);
-  float3 coral = float3(0.95, 0.55, 0.50);
-  float3 membrane = float3(0.35, 0.30, 0.28);
+  // Water depth variation
+  float depth = fbm(waterUV * 2.0 + time * 0.03, 4);
+  depth = depth * 0.5 + 0.25; // 0.25 to 0.75 range
 
-  // Create cell pattern
-  float2 scaledUV = uv * complexity;
-  float4 cells = softVoronoi(scaledUV, time);
+  // Sandy bottom pattern
+  float sandPattern = fbm(waterUV * 8.0, 4);
+  float sandRipple = sandRipples(waterUV, time);
 
-  // Second layer - smaller cells
-  float2 scaledUV2 = uv * complexity * 1.8 + 50.0;
-  float4 cells2 = softVoronoi(scaledUV2, time * 0.8);
+  // Build sandy bottom
+  float3 sandColor = mix(SAND_WET, SAND_DRY, sandPattern);
+  sandColor = mix(sandColor, SAND_WET * 0.9, sandRipple * 0.3);
 
-  // Cell interior color based on ID
-  float3 cellColor = salmon;
-  float cellHue = cells.z;
+  // Caustic light on sand
+  float caust = caustics(waterUV, time);
+  sandColor += float3(0.15, 0.18, 0.12) * caust * 0.4;
 
-  if (cellHue < 0.33) {
-    cellColor = mix(salmon, sage, cellHue * 3.0);
-  } else if (cellHue < 0.66) {
-    cellColor = mix(sage, cream, (cellHue - 0.33) * 3.0);
-  } else {
-    cellColor = mix(cream, coral, (cellHue - 0.66) * 3.0);
-  }
+  // Water color based on depth
+  float3 waterColor = mix(AQUA_LIGHT, CRYSTAL_TURQ, depth);
+  waterColor = mix(waterColor, TEAL_DEEP, smoothstep(0.5, 0.8, depth) * 0.4);
 
-  // Membrane rendering
-  float membraneThickness = 0.15;
-  float membraneAlpha = smoothstep(membraneThickness, 0.0, cells.y);
+  // Blend water over sand (deeper = more water color, less sand visible)
+  float waterOpacity = smoothstep(0.2, 0.6, depth);
+  float3 color = mix(sandColor, waterColor, waterOpacity * 0.7);
 
-  // Inner membrane glow
-  float innerGlow = smoothstep(0.3, 0.0, cells.y) * 0.5;
+  // Add water surface highlights
+  float surface = fbm(waterUV * 6.0 + time * 0.2, 3);
+  surface = smoothstep(0.5, 0.7, surface);
+  color = mix(color, AQUA_LIGHT * 1.1, surface * 0.2);
 
-  // Cell interior shading (cytoplasm effect)
-  float cytoplasm = 1.0 - cells.x * 0.3;
-  cytoplasm *= 0.7 + cells.w * 0.3;
+  // Bright shallow areas
+  float shallow = smoothstep(0.4, 0.2, depth);
+  color = mix(color, AQUA_LIGHT * 1.15, shallow * 0.3);
 
-  // Small organelles inside cells
-  float3 organelleColor = float3(0.0);
-  float organelleAlpha = 0.0;
+  // Deeper teal patches
+  float deepPatch = fbm(uv * 4.0 + time * 0.02, 4);
+  deepPatch = smoothstep(0.55, 0.75, deepPatch);
+  color = mix(color, TEAL_DEEP, deepPatch * 0.3 * complexity);
 
-  // Only show organelles inside cells (not on membrane)
-  if (cells.y > membraneThickness) {
-    // Nucleus-like structure
-    float2 nucleusCenter = floor(scaledUV) + 0.5 + hash2(floor(scaledUV)) * 0.3 - 0.15;
-    nucleusCenter += sin(time * 0.5 + hash2(floor(scaledUV)) * 6.28) * 0.1;
-    float nucleus = organelle(scaledUV, nucleusCenter, 0.15, time, cells.z);
-    organelleColor = mix(coral, salmon, 0.5) * 0.8;
-    organelleAlpha = nucleus * 0.6;
-  }
+  // Scattered sand particles in water
+  float particles = fbm(uv * 40.0 + time * 0.1, 2);
+  particles = smoothstep(0.7, 0.9, particles);
+  color += float3(0.1, 0.12, 0.08) * particles * 0.1;
 
-  // Compose layers
-  float3 color = bgColor;
+  // Light sparkles on surface
+  float sparkle = fbm(uv * 50.0 + time * 0.5, 2);
+  sparkle = smoothstep(0.85, 0.95, sparkle);
+  color += float3(0.3, 0.35, 0.3) * sparkle * 0.3;
 
-  // Base cell color with cytoplasm shading
-  color = mix(bgColor, cellColor * cytoplasm, 0.9);
-
-  // Organelles
-  color = mix(color, organelleColor, organelleAlpha);
-
-  // Inner glow near membrane
-  color = mix(color, cellColor * 1.2, innerGlow * 0.3);
-
-  // Membrane
-  color = mix(color, membrane, membraneAlpha * 0.7);
-
-  // Overlay smaller cells with transparency
-  float membrane2Alpha = smoothstep(0.1, 0.0, cells2.y) * 0.3;
-  color = mix(color, membrane * 0.8, membrane2Alpha);
-
-  // Subtle animation highlight
-  float highlight = sin(cells.z * 20.0 + time * 2.0) * 0.5 + 0.5;
-  color += float3(0.05) * highlight * (1.0 - membraneAlpha);
-
-  // Soft vignette
-  float vignette = 1.0 - length(uv - float2(0.5 * aspect, 0.5)) * 0.25;
+  // Gentle vignette
+  float2 center = float2(0.5 * aspect, 0.5);
+  float vignette = 1.0 - length(uv - center) * 0.3;
   color *= vignette;
 
   return half4(half3(color), 1.0);

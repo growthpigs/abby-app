@@ -115,7 +115,11 @@ const LIQUID_GLASS_SHADER = Skia.RuntimeEffect.Make(`
     // Subtle overall color shift based on time
     finalColor *= 1.0 + sin(t * 0.3) * 0.05;
 
-    return vec4(finalColor, 1.0);
+    // Alpha based on layers
+    float alpha = max(max(edge0 * 0.5, edge1 * 0.7), max(edge2 * 0.85, edge3));
+    alpha = max(alpha, glow3 * 0.5);
+
+    return vec4(finalColor, alpha);
   }
 `);
 

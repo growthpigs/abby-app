@@ -1,9 +1,8 @@
 /**
- * VibeMatrix8 Shader - RADIAL FLOW FIELD
+ * VibeMatrix8 - DEEP OCEAN
  *
- * William Mapan style - strokes/particles following noise-based
- * flow field emanating from center. Organic, biological feel.
- * (warm earth tones: terracotta, sand, rust, cream)
+ * Deep blue-teal water with organic flowing patterns
+ * (deep blue, teal, cyan, dark accents)
  */
 
 export const VIBE_MATRIX_8_SHADER = `
@@ -11,119 +10,131 @@ uniform float u_time;
 uniform float2 u_resolution;
 uniform float u_complexity;
 
-// Earth palette - warm, organic
-const float3 COLOR_TERRACOTTA = float3(0.8, 0.45, 0.35);
-const float3 COLOR_SAND = float3(0.95, 0.88, 0.75);
-const float3 COLOR_RUST = float3(0.6, 0.25, 0.2);
-const float3 COLOR_CREAM = float3(0.98, 0.95, 0.9);
+// Deep ocean palette
+const float3 DEEP_BLUE = float3(0.02, 0.15, 0.35);
+const float3 OCEAN_TEAL = float3(0.05, 0.45, 0.55);
+const float3 CYAN_BRIGHT = float3(0.15, 0.65, 0.72);
+const float3 DARK_DEPTHS = float3(0.01, 0.08, 0.15);
 
-// Simplex noise
-float3 mod289_3(float3 x) { return x - floor(x * (1.0 / 289.0)) * 289.0; }
-float2 mod289_2(float2 x) { return x - floor(x * (1.0 / 289.0)) * 289.0; }
-float3 permute(float3 x) { return mod289_3(((x * 34.0) + 1.0) * x); }
-
-float snoise(float2 v) {
-  const float4 C = float4(0.211324865405187, 0.366025403784439, -0.577350269189626, 0.024390243902439);
-  float2 i = floor(v + dot(v, C.yy));
-  float2 x0 = v - i + dot(i, C.xx);
-  float2 i1 = (x0.x > x0.y) ? float2(1.0, 0.0) : float2(0.0, 1.0);
-  float4 x12 = x0.xyxy + C.xxzz;
-  x12.xy -= i1;
-  i = mod289_2(i);
-  float3 p = permute(permute(i.y + float3(0.0, i1.y, 1.0)) + i.x + float3(0.0, i1.x, 1.0));
-  float3 m = max(0.5 - float3(dot(x0, x0), dot(x12.xy, x12.xy), dot(x12.zw, x12.zw)), 0.0);
-  m = m * m; m = m * m;
-  float3 x = 2.0 * fract(p * C.www) - 1.0;
-  float3 h = abs(x) - 0.5;
-  float3 ox = floor(x + 0.5);
-  float3 a0 = x - ox;
-  m *= 1.79284291400159 - 0.85373472095314 * (a0 * a0 + h * h);
-  float3 g;
-  g.x = a0.x * x0.x + h.x * x0.y;
-  g.yz = a0.yz * x12.xz + h.yz * x12.yw;
-  return 130.0 * dot(m, g);
+float hash(float2 p) {
+  return fract(sin(dot(p, float2(127.1, 311.7))) * 43758.5453);
 }
 
-// Flow field angle from noise
-float flowAngle(float2 p, float time) {
-  float n1 = snoise(p * 0.8 + time * 0.1);
-  float n2 = snoise(p * 1.5 - time * 0.15);
-  return (n1 + n2 * 0.5) * 3.14159;
+float noise(float2 p) {
+  float2 i = floor(p);
+  float2 f = fract(p);
+  f = f * f * (3.0 - 2.0 * f);
+
+  return mix(
+    mix(hash(i), hash(i + float2(1.0, 0.0)), f.x),
+    mix(hash(i + float2(0.0, 1.0)), hash(i + float2(1.0, 1.0)), f.x),
+    f.y
+  );
 }
 
-// Trace a streamline from point
-float streamline(float2 uv, float2 center, float time, float seed) {
-  float2 p = uv;
-  float intensity = 0.0;
+float fbm(float2 p, int octaves) {
+  float value = 0.0;
+  float amplitude = 0.5;
+  float frequency = 1.0;
 
-  // Distance from center affects flow strength
-  float distFromCenter = length(uv - center);
-
-  // Trace backward along flow field
-  for (float i = 0.0; i < 20.0; i += 1.0) {
-    float angle = flowAngle(p * 3.0 + seed, time);
-
-    // Add radial component - flow outward from center
-    float2 toCenter = normalize(center - p);
-    float radialAngle = atan(toCenter.y, toCenter.x);
-    angle = mix(angle, radialAngle + 3.14159, 0.3); // Bias outward
-
-    float2 dir = float2(cos(angle), sin(angle));
-    p -= dir * 0.02;
-
-    // Accumulate intensity based on proximity to original point
-    float d = length(p - uv);
-    intensity += exp(-d * 30.0) * (1.0 - i / 20.0);
+  for (int i = 0; i < 6; i++) {
+    if (i >= octaves) break;
+    value += amplitude * noise(p * frequency);
+    frequency *= 2.0;
+    amplitude *= 0.5;
   }
-
-  return intensity;
+  return value;
 }
 
-half4 main(float2 xy) {
-  float2 uv = xy / u_resolution;
+// Turbulent flow
+float turbulence(float2 p, int octaves) {
+  float value = 0.0;
+  float amplitude = 0.5;
+  float frequency = 1.0;
+
+  for (int i = 0; i < 6; i++) {
+    if (i >= octaves) break;
+    value += amplitude * abs(noise(p * frequency) * 2.0 - 1.0);
+    frequency *= 2.0;
+    amplitude *= 0.5;
+  }
+  return value;
+}
+
+// Domain warping for organic flow
+float2 warp(float2 p, float time) {
+  float2 q = float2(
+    fbm(p + float2(0.0, 0.0) + time * 0.1, 4),
+    fbm(p + float2(5.2, 1.3) - time * 0.08, 4)
+  );
+
+  float2 r = float2(
+    fbm(p + 4.0 * q + float2(1.7, 9.2) + time * 0.05, 4),
+    fbm(p + 4.0 * q + float2(8.3, 2.8) - time * 0.06, 4)
+  );
+
+  return p + r * 0.5;
+}
+
+half4 main(float2 fragCoord) {
+  float2 uv = fragCoord / u_resolution;
   float aspect = u_resolution.x / u_resolution.y;
   uv.x *= aspect;
 
-  float time = u_time * 0.0002;
+  float time = u_time / 1000.0;
+  float complexity = mix(0.6, 1.4, u_complexity);
+
+  // Apply domain warping
+  float2 warpedUV = warp(uv * 2.0, time);
+
+  // Base pattern with turbulence
+  float turb = turbulence(warpedUV * 3.0, int(4.0 * complexity));
+  float pattern = fbm(warpedUV * 2.0 + time * 0.1, 5);
+
+  // Depth layers
+  float depth1 = fbm(uv * 3.0 + time * 0.05, 4);
+  float depth2 = fbm(uv * 5.0 - time * 0.08, 3);
+
+  // Build color from depths
+  float3 color = DEEP_BLUE;
+
+  // Add teal mid-tones
+  color = mix(color, OCEAN_TEAL, smoothstep(0.3, 0.6, pattern));
+
+  // Add bright cyan highlights
+  color = mix(color, CYAN_BRIGHT, smoothstep(0.5, 0.8, turb * pattern) * 0.6);
+
+  // Dark organic shapes
+  float darkShapes = fbm(warpedUV * 4.0 + float2(100.0, 50.0), 4);
+  darkShapes = smoothstep(0.55, 0.7, darkShapes);
+  color = mix(color, DARK_DEPTHS, darkShapes * 0.7);
+
+  // Scattered dark clusters (like the reference)
+  float clusters = fbm(uv * 12.0 + time * 0.03, 3);
+  clusters = smoothstep(0.6, 0.8, clusters);
+  color = mix(color, DARK_DEPTHS * 0.5, clusters * 0.5 * complexity);
+
+  // Light caustic ripples
+  float caustic = sin(warpedUV.x * 15.0 + time) * sin(warpedUV.y * 12.0 - time * 0.7);
+  caustic = caustic * 0.5 + 0.5;
+  color += CYAN_BRIGHT * caustic * 0.1 * (1.0 - darkShapes);
+
+  // Organic flowing veins
+  float veins = fbm(warpedUV * 8.0, 4);
+  veins = abs(veins - 0.5) * 2.0;
+  veins = smoothstep(0.7, 0.9, veins);
+  color = mix(color, CYAN_BRIGHT * 0.8, veins * 0.2);
+
+  // Subtle white foam specks
+  float foam = fbm(uv * 25.0 + time * 0.1, 2);
+  foam = smoothstep(0.75, 0.9, foam);
+  color += float3(0.3, 0.35, 0.4) * foam * 0.15;
+
+  // Vignette
   float2 center = float2(0.5 * aspect, 0.5);
+  float vignette = 1.0 - length(uv - center) * 0.4;
+  color *= vignette;
 
-  // Multiple streamline layers
-  float stream1 = streamline(uv, center, time, 0.0);
-  float stream2 = streamline(uv, center, time * 1.1, 100.0);
-  float stream3 = streamline(uv, center, time * 0.9, 200.0);
-
-  float streams = stream1 * 0.4 + stream2 * 0.35 + stream3 * 0.25;
-  streams = pow(streams, 0.7);
-
-  // Distance for radial gradient
-  float dist = length(uv - center);
-  float radialGrad = 1.0 - smoothstep(0.0, 0.6, dist);
-
-  // Noise for color variation
-  float n = snoise(uv * 2.0 + time * 0.3) * 0.5 + 0.5;
-
-  // Base color - cream background
-  half3 color = half3(COLOR_CREAM);
-
-  // Add terracotta in flow areas
-  color = mix(color, half3(COLOR_TERRACOTTA), half(streams * 0.6));
-
-  // Rust accents
-  float rustMask = streams * n * radialGrad;
-  color = mix(color, half3(COLOR_RUST), half(rustMask * 0.4));
-
-  // Sand mid-tones
-  color = mix(color, half3(COLOR_SAND), half((1.0 - streams) * 0.3));
-
-  // Central glow
-  color += half3(COLOR_SAND) * half(radialGrad * 0.2);
-
-  // Soft vignette
-  float2 vigUV = xy / u_resolution;
-  float vig = 1.0 - length((vigUV - 0.5) * 1.2);
-  vig = smoothstep(0.0, 0.6, vig);
-  color *= half(0.85 + 0.15 * vig);
-
-  return half4(color, 1.0);
+  return half4(half3(color), 1.0);
 }
 `;

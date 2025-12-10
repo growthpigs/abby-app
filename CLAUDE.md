@@ -20,7 +20,21 @@ ABBY is a high-end matchmaking app where users interact with an AI entity (Abby)
 | FSD | `docs/FSD.md` | Technical spec, state machine, shader logic |
 | Design System | `docs/DESIGN-SYSTEM.md` | Colors, typography, components, motion |
 
-**Rule**: Update these documents as features evolve. One document per system.
+### Feature Docs
+
+| Feature | Path | Owner |
+|---------|------|-------|
+| VibeMatrix | `docs/features/vibematrix.md` | Chi - Background shaders |
+| AbbyOrb | `docs/features/abbyorb.md` | CC1 - Orb + voice |
+
+**Rule**: Update these documents as features evolve. One document per system. One file per feature - all work goes in that file.
+
+### Documentation Protocol (PAI System)
+
+1. **Living Documents Only** - Never create new files for existing features. Add to the existing file.
+2. **Feature files live in `docs/features/`** - One file per feature (e.g., `vibematrix.md`, `abbyorb.md`)
+3. **CLAUDE.md is the table of contents** - Link new docs here so future AIs can find them
+4. **On `wrap up`** - Update feature docs with session work, log errors to patterns, update open tasks
 
 ---
 

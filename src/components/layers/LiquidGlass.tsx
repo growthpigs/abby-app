@@ -81,16 +81,17 @@ const LIQUID_GLASS_SHADER = Skia.RuntimeEffect.Make(`
     float inner = smoothstep(-0.3, 0.0, d);
 
     // Combine
-    vec3 color = bgColor;
-    color = mix(color, blobColor * 0.3, glow);  // Outer glow
-    color = mix(color, blobColor, edge);         // Blob fill
+    vec3 color = blobColor;
     color += blobColor * (1.0 - inner) * 0.3;    // Inner brightness
 
     // Add highlights
     float highlight = pow(max(0.0, 1.0 - inner), 3.0) * 0.5;
     color += vec3(highlight);
 
-    return vec4(color, 1.0);
+    // Alpha based on edge + glow
+    float alpha = edge + glow * 0.4;
+
+    return vec4(color, alpha);
   }
 `);
 

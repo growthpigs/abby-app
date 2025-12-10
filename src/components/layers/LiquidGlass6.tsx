@@ -188,7 +188,11 @@ const LIQUID_GLASS_SHADER = Skia.RuntimeEffect.Make(`
       color += pCol * p * 0.8;
     }
 
-    return vec4(color, 1.0);
+    // Alpha based on waves + core
+    float alpha = max(waveAlphaAccum * 0.9, coreEdge);
+    alpha = max(alpha, coreGlow * 0.6);
+
+    return vec4(color, alpha);
   }
 `);
 

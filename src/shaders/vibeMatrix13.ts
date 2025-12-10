@@ -1,9 +1,8 @@
 /**
- * VibeMatrix13 Shader - BREATHING NEBULA
+ * VibeMatrix13 - FLUID SHORELINE
  *
- * Soft pulsing cloud formations - gaseous, ethereal.
- * Like looking into a living, breathing cosmic orb.
- * (nebula: violet, magenta, cyan, white)
+ * Purple/lavender meeting turquoise meeting sand - fluid art style
+ * (lavender, violet, turquoise, sand, white)
  */
 
 export const VIBE_MATRIX_13_SHADER = `
@@ -11,142 +10,127 @@ uniform float u_time;
 uniform float2 u_resolution;
 uniform float u_complexity;
 
-// Nebula palette
-const float3 COLOR_VIOLET = float3(0.4, 0.2, 0.6);
-const float3 COLOR_MAGENTA = float3(0.8, 0.3, 0.6);
-const float3 COLOR_CYAN = float3(0.3, 0.7, 0.9);
-const float3 COLOR_WHITE = float3(1.0, 0.98, 0.95);
+// Fluid art palette
+const float3 VIOLET = float3(0.45, 0.38, 0.62);
+const float3 LAVENDER = float3(0.68, 0.62, 0.78);
+const float3 TURQUOISE = float3(0.28, 0.75, 0.72);
+const float3 AQUA = float3(0.42, 0.85, 0.82);
+const float3 SAND = float3(0.85, 0.75, 0.65);
+const float3 WHITE_FOAM = float3(0.96, 0.97, 0.98);
 
-// Simplex noise
-float3 mod289_3(float3 x) { return x - floor(x * (1.0 / 289.0)) * 289.0; }
-float2 mod289_2(float2 x) { return x - floor(x * (1.0 / 289.0)) * 289.0; }
-float3 permute(float3 x) { return mod289_3(((x * 34.0) + 1.0) * x); }
-
-float snoise(float2 v) {
-  const float4 C = float4(0.211324865405187, 0.366025403784439, -0.577350269189626, 0.024390243902439);
-  float2 i = floor(v + dot(v, C.yy));
-  float2 x0 = v - i + dot(i, C.xx);
-  float2 i1 = (x0.x > x0.y) ? float2(1.0, 0.0) : float2(0.0, 1.0);
-  float4 x12 = x0.xyxy + C.xxzz;
-  x12.xy -= i1;
-  i = mod289_2(i);
-  float3 p = permute(permute(i.y + float3(0.0, i1.y, 1.0)) + i.x + float3(0.0, i1.x, 1.0));
-  float3 m = max(0.5 - float3(dot(x0, x0), dot(x12.xy, x12.xy), dot(x12.zw, x12.zw)), 0.0);
-  m = m * m; m = m * m;
-  float3 x = 2.0 * fract(p * C.www) - 1.0;
-  float3 h = abs(x) - 0.5;
-  float3 ox = floor(x + 0.5);
-  float3 a0 = x - ox;
-  m *= 1.79284291400159 - 0.85373472095314 * (a0 * a0 + h * h);
-  float3 g;
-  g.x = a0.x * x0.x + h.x * x0.y;
-  g.yz = a0.yz * x12.xz + h.yz * x12.yw;
-  return 130.0 * dot(m, g);
+float hash(float2 p) {
+  return fract(sin(dot(p, float2(127.1, 311.7))) * 43758.5453);
 }
 
-// fBM with breathing modulation
-float breathingFbm(float2 p, float time, float octaves) {
+float noise(float2 p) {
+  float2 i = floor(p);
+  float2 f = fract(p);
+  f = f * f * (3.0 - 2.0 * f);
+
+  return mix(
+    mix(hash(i), hash(i + float2(1.0, 0.0)), f.x),
+    mix(hash(i + float2(0.0, 1.0)), hash(i + float2(1.0, 1.0)), f.x),
+    f.y
+  );
+}
+
+float fbm(float2 p, int octaves) {
   float value = 0.0;
-  float amp = 0.5;
-  float freq = 1.0;
+  float amplitude = 0.5;
+  float frequency = 1.0;
 
-  // Breathing rate - different for each octave
-  for (float i = 0.0; i < 5.0; i += 1.0) {
+  for (int i = 0; i < 6; i++) {
     if (i >= octaves) break;
-
-    // Each layer breathes at different rate
-    float breathe = sin(time * (0.5 + i * 0.15)) * 0.3;
-    float layerAmp = amp * (1.0 + breathe);
-
-    value += layerAmp * snoise(p * freq);
-    amp *= 0.5;
-    freq *= 2.0;
+    value += amplitude * noise(p * frequency);
+    frequency *= 2.0;
+    amplitude *= 0.5;
   }
-
   return value;
 }
 
-// Cloud layer
-float cloud(float2 uv, float time, float scale, float speed) {
-  float2 p = uv * scale;
-
-  // Drift
-  p += float2(time * speed * 0.5, time * speed * 0.3);
-
-  float n = breathingFbm(p, time, 4.0);
-  n = n * 0.5 + 0.5;
-
-  // Soft threshold for cloud edges
-  n = smoothstep(0.3, 0.7, n);
-
-  return n;
+// Marble swirl function
+float2 marbleWarp(float2 p, float time) {
+  float angle = fbm(p * 2.0 + time * 0.1, 4) * 6.28;
+  float radius = fbm(p * 1.5 - time * 0.08, 3) * 0.4;
+  return p + float2(cos(angle), sin(angle)) * radius;
 }
 
-half4 main(float2 xy) {
-  float2 uv = xy / u_resolution;
+// Fluid mixing
+float fluidMix(float2 uv, float time, float scale) {
+  float2 p = uv * scale;
+
+  float swirl1 = fbm(p + time * 0.15, 4);
+  float swirl2 = fbm(p * 1.3 + float2(100.0, 0.0) - time * 0.1, 4);
+
+  return sin(swirl1 * 4.0 + swirl2 * 3.0 + time * 0.2) * 0.5 + 0.5;
+}
+
+half4 main(float2 fragCoord) {
+  float2 uv = fragCoord / u_resolution;
   float aspect = u_resolution.x / u_resolution.y;
   uv.x *= aspect;
 
-  float time = u_time * 0.00025;
-  float2 center = float2(0.5 * aspect, 0.5);
-  float dist = length(uv - center);
+  float time = u_time / 1000.0;
+  float complexity = mix(0.6, 1.4, u_complexity);
 
-  // Multiple cloud layers at different scales and speeds
-  float cloud1 = cloud(uv, time, 2.0, 0.3);
-  float cloud2 = cloud(uv + 10.0, time * 1.2, 3.0, 0.4);
-  float cloud3 = cloud(uv + 20.0, time * 0.8, 4.0, 0.25);
-  float cloud4 = cloud(uv + 30.0, time * 1.5, 5.0, 0.5);
+  // Apply marble warping
+  float2 warpedUV = marbleWarp(uv, time);
 
-  // Deep space background
-  half3 color = half3(0.02, 0.02, 0.05);
+  // Multiple fluid layers
+  float fluid1 = fluidMix(warpedUV, time, 3.0);
+  float fluid2 = fluidMix(warpedUV + 50.0, time * 0.8, 4.0);
+  float fluid3 = fluidMix(warpedUV + 100.0, time * 1.2, 2.5);
 
-  // Layer clouds with different colors
-  // Deepest - violet
-  color = mix(color, half3(COLOR_VIOLET), half(cloud1 * 0.6));
+  // Zone gradients (diagonal flow)
+  float diag = uv.x * 0.5 + uv.y * 0.5;
+  diag += fbm(warpedUV * 2.0, 3) * 0.25;
 
-  // Magenta mid-layer
-  color = mix(color, half3(COLOR_MAGENTA), half(cloud2 * 0.5));
+  // Build color zones
+  float3 color = VIOLET;
 
-  // Cyan highlights
-  color = mix(color, half3(COLOR_CYAN), half(cloud3 * 0.4));
+  // Lavender zone (top area in reference)
+  float lavenderZone = smoothstep(0.2, 0.5, diag) * fluid1;
+  color = mix(color, LAVENDER, lavenderZone);
 
-  // Bright wisps
-  color = mix(color, half3(COLOR_WHITE), half(cloud4 * 0.3));
+  // Turquoise water zone
+  float turqZone = smoothstep(0.35, 0.6, diag) * (1.0 - fluid2 * 0.5);
+  color = mix(color, TURQUOISE, turqZone * 0.8);
 
-  // Radial breathing glow
-  float pulse = sin(time * 2.0) * 0.5 + 0.5;
-  float radialGlow = exp(-dist * 3.0) * (0.7 + pulse * 0.3);
+  // Bright aqua highlights
+  float aquaZone = fluid2 * smoothstep(0.4, 0.7, diag);
+  color = mix(color, AQUA, aquaZone * 0.5);
 
-  // Core color shifts
-  half3 coreColor = mix(half3(COLOR_MAGENTA), half3(COLOR_CYAN), half(pulse));
-  color += coreColor * half(radialGlow * 0.4);
+  // Sandy areas
+  float sandZone = smoothstep(0.55, 0.8, diag) * fluid3;
+  color = mix(color, SAND, sandZone * 0.7);
 
-  // Hot white center
-  float coreIntensity = exp(-dist * 6.0);
-  color += half3(COLOR_WHITE) * half(coreIntensity * 0.5 * (0.8 + pulse * 0.2));
+  // Flowing veins between zones
+  float veins = fbm(warpedUV * 6.0 + time * 0.12, 4);
+  veins = smoothstep(0.45, 0.55, veins);
 
-  // Star field (tiny bright points)
-  float stars = snoise(uv * 50.0);
-  stars = pow(max(0.0, stars), 10.0);
-  color += half3(COLOR_WHITE) * half(stars * 0.3 * (1.0 - radialGlow));
+  float3 veinColor = mix(TURQUOISE, LAVENDER, fluid1);
+  color = mix(color, veinColor, veins * 0.3 * complexity);
 
-  // Swirling motion
-  float angle = atan(uv.y - center.y, uv.x - center.x);
-  float swirl = sin(angle * 3.0 + dist * 5.0 - time * 3.0) * 0.5 + 0.5;
-  swirl *= smoothstep(0.0, 0.3, dist) * smoothstep(0.6, 0.2, dist);
+  // White foam/froth edges
+  float foam = fbm(warpedUV * 12.0 + time * 0.2, 3);
+  foam = smoothstep(0.65, 0.85, foam);
+  float foamMask = abs(diag - 0.5);
+  foamMask = smoothstep(0.0, 0.3, foamMask) * (1.0 - smoothstep(0.3, 0.5, foamMask));
+  color = mix(color, WHITE_FOAM, foam * foamMask * 0.5);
 
-  half3 swirlColor = mix(half3(COLOR_VIOLET), half3(COLOR_CYAN), half(swirl));
-  color = mix(color, swirlColor, half(swirl * 0.2));
+  // Subtle texture overlay
+  float tex = fbm(uv * 35.0, 2) * 0.04;
+  color += tex;
 
-  // Gamma and saturation
-  color = pow(color, half3(0.9));
+  // Soft glow in water areas
+  float glow = smoothstep(0.3, 0.6, turqZone);
+  color += AQUA * glow * 0.1;
 
   // Vignette
-  float2 vigUV = xy / u_resolution;
-  float vig = 1.0 - length((vigUV - 0.5) * 1.5);
-  vig = smoothstep(0.0, 0.4, vig);
-  color *= half(0.7 + 0.3 * vig);
+  float2 center = float2(0.5 * aspect, 0.5);
+  float vignette = 1.0 - length(uv - center) * 0.3;
+  color *= vignette;
 
-  return half4(color, 1.0);
+  return half4(half3(color), 1.0);
 }
 `;

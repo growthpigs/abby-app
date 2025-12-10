@@ -75,9 +75,7 @@ const LIQUID_GLASS_SHADER = Skia.RuntimeEffect.Make(`
     float glow = smoothstep(0.2, -0.15, d);
     float inner = smoothstep(-0.3, 0.0, d);
 
-    vec3 color = bgColor;
-    color = mix(color, blobColor * 0.3, glow);
-    color = mix(color, blobColor, edge);
+    vec3 color = blobColor;
     color += blobColor * (1.0 - inner) * 0.3;
 
     // Core highlight - extra bright center
@@ -87,7 +85,10 @@ const LIQUID_GLASS_SHADER = Skia.RuntimeEffect.Make(`
     float highlight = pow(max(0.0, 1.0 - inner), 3.0) * 0.5;
     color += vec3(highlight);
 
-    return vec4(color, 1.0);
+    // Alpha based on edge + glow
+    float alpha = edge + glow * 0.4;
+
+    return vec4(color, alpha);
   }
 `);
 
