@@ -93,14 +93,16 @@ export function useAbbyAgent(config: AbbyAgentConfig = {}) {
     onMessage: ({ message, source }: { message: any; source: string }) => {
       if (__DEV__) console.log(`[AbbyAgent] Message from ${source}:`, message);
 
-      // User transcript
-      if (source === 'user' && message?.text) {
-        config.onUserTranscript?.(message.text);
+      // User transcript - SDK uses nested structure per types.d.ts
+      if (message.type === 'user_transcript') {
+        const text = message.user_transcription_event?.user_transcript;
+        if (text) config.onUserTranscript?.(text);
       }
 
-      // Agent response
-      if (source === 'agent' && message?.text) {
-        config.onAbbyResponse?.(message.text);
+      // Agent response - SDK uses nested structure per types.d.ts
+      if (message.type === 'agent_response') {
+        const text = message.agent_response_event?.agent_response;
+        if (text) config.onAbbyResponse?.(text);
       }
     },
 

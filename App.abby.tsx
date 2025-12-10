@@ -38,9 +38,10 @@ function AbbyScreen() {
     }, []),
     onMessage: useCallback(({ message, source }: { message: any; source: string }) => {
       console.log(`[Abby] Message from ${source}:`, message);
-      // Extract text from message object
-      if (source === 'agent' && message?.text) {
-        setAbbyText(message.text);
+      // SDK uses nested structure per types.d.ts
+      if (message.type === 'agent_response') {
+        const text = message.agent_response_event?.agent_response;
+        if (text) setAbbyText(text);
       }
     }, []),
     onModeChange: useCallback(({ mode }: { mode: 'speaking' | 'listening' }) => {
