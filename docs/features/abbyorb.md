@@ -10,19 +10,28 @@ Abby is the AI matchmaker represented as a living orb. She transforms between st
 
 ---
 
-## Current State (2024-12-10)
+## Current State (2025-12-10)
 
 **Working:**
-- G4 orb shader with audio-reactive breathing
+- AbbyOrbUnified with energy morphing (0.0→1.0)
+- All orbs (G1/G2/G4) support colorA/colorB vibe colors
+- G4 optimized: fBM 4→2 octaves, warping 3→2 passes, sparkles 15→8
+- Smooth 1000ms color transitions via Reanimated
 - TTS via Fal.ai Orpheus (Tara voice) - works but 3-5s latency
 - Demo UI in `App.abby.tsx` with phrase buttons
 - Vibe color switching (TRUST/PASSION/CAUTION/GROWTH/DEEP)
 - Reanimated worklets for audio→shader (CC2 recommendation)
 
+**Energy States:**
+- CALM (energy=0.0): Contained, slow, domain-warped lava texture
+- ENGAGED (energy=0.5): More blob drift, medium speed
+- EXCITED (energy=1.0): Free-flowing blobs, fast, no boundary
+
 **Issues:**
 - Amplitude simulation not synced to actual syllables
 - TTS latency too slow for conversational AI
 - expo-av deprecated, need to switch audio library
+- Need to wire `startSpeakingPulse()`/`stopSpeakingPulse()` from VibeController
 
 ---
 
@@ -106,21 +115,47 @@ const finalAudioLevel = useDerivedValue(() => {
 
 ---
 
-## Full Conversational Stack (Planned)
+## Conversational AI Architecture
+
+### Decision: ElevenLabs Agent SDK (2024-12-10)
+
+After validating custom stack approach, pivoted to ElevenLabs all-in-one solution.
+
+**Why**: Faster to ship, less complexity, works on iOS.
 
 ```
-User speaks → Whisper/Deepgram (STT)
-           → GPT-4/Claude + Mem0 (conversation + memory)
-           → ElevenLabs Flash (TTS with streaming)
-           → Real amplitude from audio stream → Shader
+User speaks → ElevenLabs Agent SDK → Abby responds → agentState → Shader orb
 ```
 
-### Components
-- **STT**: Whisper or Deepgram
-- **LLM**: GPT-4 or Claude for conversation
-- **Memory**: Mem0 for cross-session persistence
-- **TTS**: ElevenLabs with streaming
-- **Audio Analysis**: Real amplitude extraction for shader
+### ElevenLabs Agent SDK
+
+```bash
+npx expo install @elevenlabs/react-native @livekit/react-native @livekit/react-native-webrtc
+```
+
+**What it handles:**
+- STT (speech-to-text) - built-in
+- LLM (configurable via dashboard) - hosted by ElevenLabs
+- TTS (text-to-speech) - ElevenLabs Flash ~75ms
+- Turn-taking - built-in
+
+**Files to create:**
+- `src/services/AbbyAgent.ts` - SDK wrapper
+- `src/components/AbbyConversation.tsx` - Conversation UI
+
+### Alternative: Custom Stack (If Needed Later)
+
+Only build custom if ElevenLabs Agent has limitations:
+
+```
+User speaks → Deepgram STT → Claude + Mem0 → ElevenLabs TTS → Simulated amplitude → Shader
+```
+
+**Required services:**
+- `AbbySTT.ts` - Deepgram WebSocket
+- `AbbyBrain.ts` - Claude manual SSE parsing (Anthropic SDK is Node-only)
+- `AbbyMemory.ts` - Mem0 REST API (not MCP)
+- `AbbyVoice.ts` - ElevenLabs TTS
 
 ---
 
@@ -162,13 +197,19 @@ User speaks → Whisper/Deepgram (STT)
 
 ## Open Tasks
 
+**ElevenLabs Agent SDK Approach:**
+- [ ] Create ElevenLabs Agent in dashboard (configure Abby personality)
+- [ ] Install SDK dependencies (elevenlabs + livekit)
+- [ ] Create `src/services/AbbyAgent.ts` - SDK wrapper
+- [ ] Create `src/components/AbbyConversation.tsx` - conversation UI
+- [ ] Bridge `agentState` to shader audioLevel
+- [ ] Test full voice conversation on iOS device
+
+**If Custom Stack Needed Later:**
 - [ ] Switch TTS from Fal.ai to ElevenLabs
-- [ ] Implement streaming audio with real amplitude extraction
-- [ ] Add STT (Whisper/Deepgram) for user voice input
-- [ ] Connect LLM (GPT-4/Claude) for conversation
-- [ ] Integrate Mem0 for persistent memory
-- [ ] Create production AbbyOrb.tsx component
-- [ ] Test full stack with background shader
+- [ ] Add Deepgram STT (WebSocket streaming)
+- [ ] Add Claude LLM (manual SSE parsing)
+- [ ] Add Mem0 REST API integration
 
 ---
 
@@ -183,3 +224,34 @@ User speaks → Whisper/Deepgram (STT)
 | 2024-12-10 | Added diaphragm breathing effect (CC1) |
 | 2024-12-10 | Researched TTS providers, decided ElevenLabs (CC1) |
 | 2024-12-10 | Documented full conversational stack plan (CC1) |
+| 2024-12-10 | **Validated custom stack** - found critical issues (Chi) |
+| 2024-12-10 | **Pivoted to ElevenLabs Agent SDK** - simpler, all-in-one (Chi) |
+
+---
+
+## Validation Findings (2024-12-10)
+
+### Custom Stack Issues Found
+
+| Original Claim | Reality | Decision |
+|----------------|---------|----------|
+| Whisper for STT | Batch-only, 500ms-2s delay | Would need Deepgram |
+| Real PCM amplitude | ElevenLabs returns MP3 | Keep simulated (works fine) |
+| Mem0 via MCP | MCP is CLI-only, not React Native | Would need REST API |
+| Anthropic SDK | Node.js only | Would need manual SSE parsing |
+
+### Why ElevenLabs Agent SDK Instead
+
+- **All-in-one**: STT + LLM + TTS in one package
+- **Less code**: ~50 lines vs ~500+ lines custom
+- **Faster to ship**: 1 day vs 1 week
+- **Works on iOS**: React Native SDK with livekit
+- **Just one API key**: Agent ID from dashboard
+
+### Risks with Agent SDK
+
+| Risk | Mitigation |
+|------|------------|
+| LLM not customizable enough | Can configure system prompt in dashboard |
+| No Mem0 integration | Can add webhook later, or switch to custom |
+| No raw audio amplitude | Use `isSpeaking` boolean, simulate pulsing |

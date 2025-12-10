@@ -22,7 +22,7 @@ import {
   Skia,
   useClock,
 } from '@shopify/react-native-skia';
-import { useDerivedValue, useSharedValue } from 'react-native-reanimated';
+import { useDerivedValue, useSharedValue, withTiming } from 'react-native-reanimated';
 
 // Default vibe colors (PASSION: pink/red)
 const DEFAULT_COLOR_A = [0.957, 0.447, 0.714]; // #F472B6 Hot Pink
@@ -72,7 +72,8 @@ const ABBY_ORB_SHADER = Skia.RuntimeEffect.Make(`
   float fbm(vec3 p) {
     float value = 0.0;
     float amp = 0.5;
-    for (int i = 0; i < 4; i++) {
+    // Optimized: 2 octaves (was 4) for performance
+    for (int i = 0; i < 2; i++) {
       value += amp * noise3D(p);
       p *= 2.0;
       amp *= 0.5;
@@ -148,7 +149,7 @@ const ABBY_ORB_SHADER = Skia.RuntimeEffect.Make(`
     // Speed up noise when speaking
     float noiseSpeed = 0.15 + audio * 0.3;
 
-    // Domain warping layers
+    // Domain warping layers (optimized: 2 passes, was 3)
     vec3 p1 = vec3(rotUV * 1.5 + vec2(t * 0.2, t * 0.3), t * noiseSpeed);
     float noise1 = fbm(p1);
 
@@ -156,11 +157,8 @@ const ABBY_ORB_SHADER = Skia.RuntimeEffect.Make(`
     vec3 p2 = vec3(warpedUV * 2.0, t * noiseSpeed * 1.3);
     float noise2 = fbm(p2);
 
-    vec2 warpedUV2 = warpedUV + (noise2 - 0.5) * 0.4;
-    vec3 p3 = vec3(warpedUV2 * 1.2, t * noiseSpeed * 0.7);
-    float noise3 = fbm(p3);
-
-    float n = noise2 * 0.6 + noise3 * 0.4;
+    // Skip third pass - blend noise1 and noise2 directly
+    float n = noise1 * 0.4 + noise2 * 0.6;
 
     // === COLOR PALETTE (vibe-driven) ===
     // Create gradient from colorA (warm) to colorB (cool)
@@ -213,8 +211,8 @@ const ABBY_ORB_SHADER = Skia.RuntimeEffect.Make(`
     float highlight = pow(max(0.0, 1.0 - inner), 3.0) * 0.4;
     color += vec3(highlight);
 
-    // === SPARKLES (subtle) ===
-    for (int i = 0; i < 15; i++) {
+    // === SPARKLES (optimized: 8, was 15) ===
+    for (int i = 0; i < 8; i++) {
       float fi = float(i);
       float sparkAngle = hash(vec2(fi, 0.0)) * 6.28;
       float sparkDist = 0.1 + hash(vec2(fi, 1.0)) * 0.4;
@@ -243,10 +241,13 @@ interface LiquidGlass4Props {
   colorB?: [number, number, number]; // Secondary vibe color
 }
 
+// Color transition duration (match VibeMatrixAnimated)
+const COLOR_TRANSITION_MS = 1000;
+
 export const LiquidGlass4: React.FC<LiquidGlass4Props> = ({
   audioLevel = 0,
-  colorA = DEFAULT_COLOR_A,
-  colorB = DEFAULT_COLOR_B,
+  colorA = DEFAULT_COLOR_A as [number, number, number],
+  colorB = DEFAULT_COLOR_B as [number, number, number],
 }) => {
   const { width, height } = useWindowDimensions();
   const clock = useClock();
@@ -254,10 +255,31 @@ export const LiquidGlass4: React.FC<LiquidGlass4Props> = ({
   // Convert React prop to shared value for Reanimated
   const audioLevelShared = useSharedValue(0);
 
+  // Animated color values (separate channels for smooth transitions)
+  const colorA_r = useSharedValue(colorA[0]);
+  const colorA_g = useSharedValue(colorA[1]);
+  const colorA_b = useSharedValue(colorA[2]);
+  const colorB_r = useSharedValue(colorB[0]);
+  const colorB_g = useSharedValue(colorB[1]);
+  const colorB_b = useSharedValue(colorB[2]);
+
   // Update shared value when prop changes
   React.useEffect(() => {
     audioLevelShared.value = audioLevel;
   }, [audioLevel]);
+
+  // Animate colors when props change
+  React.useEffect(() => {
+    colorA_r.value = withTiming(colorA[0], { duration: COLOR_TRANSITION_MS });
+    colorA_g.value = withTiming(colorA[1], { duration: COLOR_TRANSITION_MS });
+    colorA_b.value = withTiming(colorA[2], { duration: COLOR_TRANSITION_MS });
+  }, [colorA[0], colorA[1], colorA[2]]);
+
+  React.useEffect(() => {
+    colorB_r.value = withTiming(colorB[0], { duration: COLOR_TRANSITION_MS });
+    colorB_g.value = withTiming(colorB[1], { duration: COLOR_TRANSITION_MS });
+    colorB_b.value = withTiming(colorB[2], { duration: COLOR_TRANSITION_MS });
+  }, [colorB[0], colorB[1], colorB[2]]);
 
   // Compute final audio level (with idle breathing when silent)
   const finalAudioLevel = useDerivedValue(() => {
@@ -272,9 +294,9 @@ export const LiquidGlass4: React.FC<LiquidGlass4Props> = ({
     resolution: [width, height],
     time: clock.value / 1000,
     audioLevel: finalAudioLevel.value,
-    colorA: colorA,
-    colorB: colorB,
-  }), [clock, finalAudioLevel, colorA, colorB]);
+    colorA: [colorA_r.value, colorA_g.value, colorA_b.value],
+    colorB: [colorB_r.value, colorB_g.value, colorB_b.value],
+  }), [clock, finalAudioLevel]);
 
   if (!ABBY_ORB_SHADER) {
     console.error('[LiquidGlass4] Shader failed to compile');

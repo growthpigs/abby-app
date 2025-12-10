@@ -112,6 +112,54 @@ Technical notes:
 
 ---
 
+## 10-Mode Background Shader Mapping
+
+The background shader changes based on **Active Party + Active Mode** from VibeController.
+
+### USER Modes (5 backgrounds)
+
+| Mode | Shader | Visual Style | Emotional Context |
+|------|--------|--------------|-------------------|
+| **LISTENING** | vibeMatrix5 | Liquid marble (navy/gold/cream) | "I'm absorbing what you said" |
+| **EMPATHY** | vibeMatrix8 | Deep ocean (blue/teal/cyan) | "I feel that" |
+| **CURIOSITY** | vibeMatrix3 | Aurora spirals (neon pink/blue/cyan) | "Tell me more" |
+| **REFLECTION** | vibeMatrix1 | Domain warping fBM (oil-on-water) | "Let me think about that" |
+| **EXCITEMENT** | vibeMatrix2 | Fire swirls (red/orange/yellow) | "Wow, that's great!" |
+
+### ABBY Modes (5 backgrounds)
+
+| Mode | Shader | Visual Style | Emotional Context |
+|------|--------|--------------|-------------------|
+| **SPEAKING** | vibeMatrix9 | Blob metaballs (soft pastels) | Abby is talking (TTS active) |
+| **PROCESSING** | vibeMatrix14 | Tidal pools (voronoi cells, teal) | "Analyzing your profile..." |
+| **ADVISING** | vibeMatrix17 | Lagoon (crystal turquoise, sand) | Coach mode, giving guidance |
+| **REVEALING** | vibeMatrix10 | Chromatic bloom (prismatic RGB) | Showing match info |
+| **CELEBRATING** | vibeMatrix15 | Seafoam (white foam on teal) | "You got a match!" |
+
+### Shader Source Files
+
+| Shader | File | Complexity |
+|--------|------|------------|
+| vibeMatrix1 | `src/shaders/vibeMatrix.ts` | Medium - domain warping |
+| vibeMatrix2 | `src/shaders/vibeMatrix2.ts` | Medium - multi-swirl |
+| vibeMatrix3 | `src/shaders/vibeMatrix3.ts` | Medium - polar spirals |
+| vibeMatrix5 | `src/shaders/vibeMatrix5.ts` | Medium - marble turbulence |
+| vibeMatrix8 | `src/shaders/vibeMatrix8.ts` | Medium - deep ocean |
+| vibeMatrix9 | `src/shaders/vibeMatrix9.ts` | Low - metaballs |
+| vibeMatrix10 | `src/shaders/vibeMatrix10.ts` | Medium - chromatic bloom |
+| vibeMatrix14 | `src/shaders/vibeMatrix14.ts` | Medium - voronoi pools |
+| vibeMatrix15 | `src/shaders/vibeMatrix15.ts` | Medium - seafoam |
+| vibeMatrix17 | `src/shaders/vibeMatrix17.ts` | Low - lagoon |
+
+### Implementation Notes
+
+- Colors are driven by VibeController's `colorA` and `colorB`
+- Complexity value modulates shader intensity (0.0-1.0)
+- Transitions: Cross-fade between shaders over 800ms
+- Future: `VibeMatrixAnimated.tsx` will handle shader switching
+
+---
+
 ## Decisions Log
 
 | Date | Decision | Rationale |

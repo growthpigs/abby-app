@@ -16,10 +16,16 @@ import {
 } from '@shopify/react-native-skia';
 import { useDerivedValue } from 'react-native-reanimated';
 
+// Default colors (TRUST: Blue/Cyan)
+const DEFAULT_COLOR_A = [0.231, 0.510, 1.0]; // #3B82F6 Blue
+const DEFAULT_COLOR_B = [0.063, 0.725, 0.506]; // #10B981 Green
+
 // Liquid Glass shader with metaballs/blobs
 const LIQUID_GLASS_SHADER = Skia.RuntimeEffect.Make(`
   uniform float2 resolution;
   uniform float time;
+  uniform float3 colorA;
+  uniform float3 colorB;
 
   // SDF for a circle
   float sdCircle(vec2 p, float r) {
@@ -60,11 +66,10 @@ const LIQUID_GLASS_SHADER = Skia.RuntimeEffect.Make(`
     d = smin(d, d4, 0.5);
     d = smin(d, d5, 0.5);
 
-    // Colors
-    vec3 bgColor = vec3(0.02, 0.02, 0.08);  // Dark background
-    vec3 blobColor1 = vec3(0.2, 0.5, 1.0);   // Blue
-    vec3 blobColor2 = vec3(0.9, 0.3, 0.5);   // Pink/Red
-    vec3 blobColor3 = vec3(0.3, 0.9, 0.7);   // Cyan/Green
+    // Colors - driven by uniforms
+    vec3 blobColor1 = colorA;   // Primary vibe color
+    vec3 blobColor2 = colorB;   // Secondary vibe color
+    vec3 blobColor3 = mix(colorA, colorB, 0.5);  // Accent blend
 
     // Color based on position and time
     float colorMix = sin(atan(uv.y, uv.x) * 2.0 + t) * 0.5 + 0.5;
@@ -95,7 +100,15 @@ const LIQUID_GLASS_SHADER = Skia.RuntimeEffect.Make(`
   }
 `);
 
-export const LiquidGlass: React.FC = () => {
+interface LiquidGlassProps {
+  colorA?: [number, number, number];
+  colorB?: [number, number, number];
+}
+
+export const LiquidGlass: React.FC<LiquidGlassProps> = ({
+  colorA = DEFAULT_COLOR_A as [number, number, number],
+  colorB = DEFAULT_COLOR_B as [number, number, number],
+}) => {
   const { width, height } = useWindowDimensions();
 
   // useClock from Skia - returns milliseconds since first frame
@@ -106,8 +119,10 @@ export const LiquidGlass: React.FC = () => {
     return {
       resolution: [width, height],
       time: clock.value / 1000, // Seconds
+      colorA: colorA,
+      colorB: colorB,
     };
-  }, [clock]);
+  }, [clock, colorA, colorB]);
 
   if (!LIQUID_GLASS_SHADER) {
     console.error('[LiquidGlass] Shader failed to compile');
