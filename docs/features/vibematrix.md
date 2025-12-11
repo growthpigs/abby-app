@@ -140,6 +140,56 @@ Technical notes:
 
 ---
 
+## Morph Transitions (NEW)
+
+**Organic "ink spreading" effect between background shaders.**
+
+### Problem with Crossfade
+Simple opacity crossfade (`mix(shaderA, shaderB, t)`) creates a uniform dissolve effect that looks digital/artificial.
+
+### Solution: Noise-Based Per-Pixel Blending
+Instead of uniform opacity, use fBM noise to determine per-pixel visibility:
+
+```
+Each pixel samples noise(uv) → value 0-1
+As progress 0→1, threshold sweeps through noise range
+Pixel shows shaderA where noise < threshold
+Pixel shows shaderB where noise > threshold
+smoothstep creates soft edges at boundary
+```
+
+### Result
+- Old shader shrinks in organic blob shapes
+- New shader grows into those same shapes
+- Complementary alphas ensure no gaps or overlaps
+- Creates "ink spreading through water" visual effect
+
+### Architecture
+```
+┌─────────────────────────────────────────┐
+│         VibeMatrixAnimated              │
+│  ┌─────────────┐  ┌─────────────┐       │
+│  │  Current    │  │  Next       │       │
+│  │ (dir=-1)    │  │ (dir=+1)    │       │
+│  └──────┬──────┘  └──────┬──────┘       │
+│         │ morphProgress (0→1)           │
+│         ▼                               │
+│  Same noise pattern, opposite alphas    │
+│  alpha_current = 1 - alpha_next         │
+└─────────────────────────────────────────┘
+```
+
+### Files
+- `src/shaders/morphWrapper.ts` - Injects noise-based alpha into any shader
+- `src/components/layers/VibeMatrixAnimated.tsx` - Orchestrates morph transitions
+
+### Parameters (Tunable)
+- Blob size: `uv * 3.0` in morphFbm (lower = larger blobs)
+- Edge softness: `edge = 0.15` in getMorphAlpha
+- Duration: `transitionDuration` prop (default 1000ms)
+
+---
+
 ## Decisions Log
 
 | Date | Decision | Rationale |
@@ -154,6 +204,7 @@ Technical notes:
 
 | Date | Change |
 |------|--------|
+| 2024-12-10 | MORPH TRANSITIONS: Replaced uniform crossfade with noise-based per-pixel blending. Creates organic "ink spreading" effect between shaders. See `morphWrapper.ts` (Chi) |
 | 2024-12-10 | Fixed overexposure in BG4, BG7, BG8, BG9, BG10 - removed base offsets, reduced additive ops, added gamma correction (Chi) |
 | 2024-12-10 | Fixed overexposure in BG2, BG3, BG5, BG6 - removed brightness multipliers |
 | 2024-12-10 | LOCKED IN: Demo flow uses BG1-10 only, mapped 1:1 to questions |

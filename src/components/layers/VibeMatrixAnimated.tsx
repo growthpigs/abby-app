@@ -4,12 +4,13 @@
  * Same shader as VibeMatrix but with Reanimated-driven color uniforms
  * for smooth transitions between vibe themes.
  *
- * Now supports dynamic shader switching with crossfade transitions.
+ * Now supports dynamic shader switching with MORPH transitions.
+ * Uses noise-based per-pixel blending for organic "ink spreading" effect.
  *
  * Usage:
  *   const ref = useRef<VibeMatrixAnimatedRef>(null);
  *   ref.current?.setVibe('PASSION'); // Smooth transition to red/pink
- *   ref.current?.setShader(newShaderSource); // Crossfade to new shader
+ *   ref.current?.setShader(newShaderSource); // Morph to new shader
  */
 
 import React, { useMemo, useState, useEffect, forwardRef, useImperativeHandle, useRef } from 'react';
@@ -21,17 +22,17 @@ import {
   Skia,
   useClock,
 } from '@shopify/react-native-skia';
-import Animated, {
+import {
   useDerivedValue,
   useSharedValue,
   withTiming,
-  useAnimatedStyle,
   runOnJS,
   SharedValue,
 } from 'react-native-reanimated';
 import { VIBE_MATRIX_SHADER } from '../../shaders/vibeMatrix';
 import { VIBE_COLORS, COMPLEXITY_VALUES } from '../../constants/colors';
 import { VibeColorTheme, VibeComplexity } from '../../types/vibe';
+import { wrapWithMorph } from '../../shaders/morphWrapper';
 
 // Ref interface for external control
 export interface VibeMatrixAnimatedRef {
@@ -48,12 +49,13 @@ interface VibeMatrixAnimatedProps {
   shaderSource?: string;
 }
 
-// Single shader layer component
+// Single shader layer component with morph transition support
 const ShaderLayer = React.memo(({
   shaderSource,
   colors,
   complexity,
-  opacity,
+  morphProgress,
+  morphDirection,
 }: {
   shaderSource: string;
   colors: {
@@ -65,23 +67,26 @@ const ShaderLayer = React.memo(({
     colorB_b: SharedValue<number>;
   };
   complexity: SharedValue<number>;
-  opacity: SharedValue<number>;
+  morphProgress: SharedValue<number>;
+  morphDirection: number; // 1.0 = fading in, -1.0 = fading out
 }) => {
   const { width, height } = useWindowDimensions();
   const clock = useClock();
   const pinkAccent: [number, number, number] = [0.88, 0.11, 0.28];
 
-  // Compile shader
+  // Wrap shader with morph capability and compile
   const shader = useMemo(() => {
-    const effect = Skia.RuntimeEffect.Make(shaderSource);
+    const wrappedSource = wrapWithMorph(shaderSource);
+    const effect = Skia.RuntimeEffect.Make(wrappedSource);
     if (!effect) {
       console.error('[ShaderLayer] SHADER COMPILE FAILED');
+      console.error('[ShaderLayer] Source preview:', wrappedSource.slice(0, 500));
       return null;
     }
     return effect;
   }, [shaderSource]);
 
-  // Create animated uniforms
+  // Create animated uniforms including morph params
   const uniforms = useDerivedValue(() => {
     return {
       u_time: clock.value,
@@ -90,25 +95,23 @@ const ShaderLayer = React.memo(({
       u_colorA: [colors.colorA_r.value, colors.colorA_g.value, colors.colorA_b.value],
       u_colorB: [colors.colorB_r.value, colors.colorB_g.value, colors.colorB_b.value],
       u_colorC: pinkAccent,
+      u_morphProgress: morphProgress.value,
+      u_morphDirection: morphDirection,
     };
-  }, [clock]);
-
-  const animatedStyle = useAnimatedStyle(() => ({
-    opacity: opacity.value,
-  }));
+  }, [clock, morphProgress, morphDirection]);
 
   if (!shader) {
     return null;
   }
 
   return (
-    <Animated.View style={[styles.canvas, animatedStyle]}>
+    <View style={styles.canvas}>
       <Canvas style={styles.canvas}>
         <Fill>
           <Shader source={shader} uniforms={uniforms} />
         </Fill>
       </Canvas>
-    </Animated.View>
+    </View>
   );
 });
 
@@ -132,9 +135,8 @@ export const VibeMatrixAnimated = forwardRef<VibeMatrixAnimatedRef, VibeMatrixAn
     // Ref to track pending unmount (synchronized with React render)
     const pendingUnmountRef = useRef<string | null>(null);
 
-    // Opacity for crossfade
-    const currentOpacity = useSharedValue(1);
-    const nextOpacity = useSharedValue(0);
+    // Morph progress: 0 = fully showing current, 1 = fully showing next
+    const morphProgress = useSharedValue(0);
 
     // Get initial values
     const initialPalette = VIBE_COLORS[initialTheme];
@@ -168,37 +170,33 @@ export const VibeMatrixAnimated = forwardRef<VibeMatrixAnimatedRef, VibeMatrixAn
       }
     }, [propShaderSource, currentShader, isTransitioning]);
 
-    // Crossfade transition logic
+    // Morph transition logic - uses noise-based per-pixel blending
     const startShaderTransition = (newShader: string) => {
       if (newShader === currentShader) return;
 
       setNextShader(newShader);
       setIsTransitioning(true);
-      nextOpacity.value = 0;
+      morphProgress.value = 0; // Start at 0 (fully showing current)
 
-      // Fade in new shader, fade out current
-      currentOpacity.value = withTiming(0, { duration: transitionDuration * 0.8 });
-      nextOpacity.value = withTiming(1, { duration: transitionDuration * 0.8 }, () => {
+      // Animate morph progress from 0→1 (organic blob transition)
+      morphProgress.value = withTiming(1, { duration: transitionDuration }, () => {
         runOnJS(completeTransition)(newShader);
       });
     };
 
     const completeTransition = (newShader: string) => {
-      // ONLY update state - DON'T reset opacities yet!
-      // Opacities will be reset AFTER React renders with new currentShader
+      // ONLY update state - DON'T reset morphProgress yet!
+      // Will be reset AFTER React renders with new currentShader
       setCurrentShader(newShader);
       pendingUnmountRef.current = newShader;
-      // Keep currentOpacity=0 and nextOpacity=1 until React renders
     };
 
     // Cleanup effect - runs AFTER React renders with new currentShader
-    // This ensures the new shader is visible before we reset opacities
+    // This ensures the new shader is visible before we reset morph state
     useEffect(() => {
       if (pendingUnmountRef.current && pendingUnmountRef.current === currentShader && nextShader) {
-        // React has rendered with new currentShader - NOW safe to reset opacities
-        // The currentShader layer now contains the NEW shader, so showing it is correct
-        currentOpacity.value = 1;
-        nextOpacity.value = 0;
+        // React has rendered with new currentShader - NOW safe to reset
+        morphProgress.value = 0; // Reset for next transition
         setNextShader(null);
         setIsTransitioning(false);
         pendingUnmountRef.current = null;
@@ -254,21 +252,23 @@ export const VibeMatrixAnimated = forwardRef<VibeMatrixAnimatedRef, VibeMatrixAn
 
     return (
       <View style={styles.container}>
-        {/* Current shader layer */}
+        {/* Current shader layer - fades OUT during transition */}
         <ShaderLayer
           shaderSource={currentShader}
           colors={colors}
           complexity={complexity}
-          opacity={currentOpacity}
+          morphProgress={morphProgress}
+          morphDirection={-1.0} // Fading out = show where noise < threshold
         />
 
-        {/* Next shader layer (only during transition) */}
+        {/* Next shader layer - fades IN during transition (organic morph blend) */}
         {nextShader && (
           <ShaderLayer
             shaderSource={nextShader}
             colors={colors}
             complexity={complexity}
-            opacity={nextOpacity}
+            morphProgress={morphProgress}
+            morphDirection={1.0} // Fading in = show where noise > threshold
           />
         )}
       </View>
