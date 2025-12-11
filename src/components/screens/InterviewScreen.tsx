@@ -2,15 +2,18 @@
  * InterviewScreen - Question flow with vibe shifts
  *
  * UI Layout:
- * - Top: "Question X of 10" in charcoal (under dynamic island)
+ * - Top: "Question X of 10" + restart button (under dynamic island)
  * - Middle: Question card with glassmorphic backing + Merriweather font
  * - Bottom: Next question button
+ *
+ * Text uses white with subtle shadow for readability on all shader backgrounds.
  */
 
 import React from 'react';
 import { View, Text, StyleSheet, Pressable } from 'react-native';
 import { BlurView } from 'expo-blur';
 import * as Haptics from 'expo-haptics';
+import Animated, { FadeIn, FadeOut } from 'react-native-reanimated';
 import { useDemoStore } from '../../store/useDemoStore';
 import { useVibeController } from '../../store/useVibeController';
 import { DEMO_QUESTIONS } from '../../data/demo-questions';
@@ -46,9 +49,16 @@ export const InterviewScreen: React.FC<InterviewScreenProps> = ({
   const answerQuestion = useDemoStore((state) => state.answerQuestion);
   const nextQuestion = useDemoStore((state) => state.nextQuestion);
   const advance = useDemoStore((state) => state.advance);
+  const reset = useDemoStore((state) => state.reset);
 
   const setColorTheme = useVibeController((state) => state.setColorTheme);
   const setCoveragePercent = useVibeController((state) => state.setCoveragePercent);
+
+  // Restart demo handler
+  const handleRestart = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    reset();
+  };
 
   const currentQuestion = DEMO_QUESTIONS[Math.min(currentIndex, DEMO_QUESTIONS.length - 1)];
   const isLastQuestion = currentIndex >= DEMO_QUESTIONS.length - 1;
@@ -92,20 +102,44 @@ export const InterviewScreen: React.FC<InterviewScreenProps> = ({
 
   return (
     <View style={styles.container}>
-      {/* Top: Question counter in charcoal */}
+      {/* Top: Question counter + restart button */}
       <View style={styles.topSection}>
+        <View style={styles.topRow}>
+          {/* Progress indicator */}
+          <View style={styles.progressContainer}>
+            {DEMO_QUESTIONS.map((_, idx) => (
+              <View
+                key={idx}
+                style={[
+                  styles.progressDot,
+                  idx <= currentIndex && styles.progressDotActive,
+                ]}
+              />
+            ))}
+          </View>
+          {/* Restart button */}
+          <Pressable onPress={handleRestart} style={styles.restartButton}>
+            <Text style={styles.restartText}>✕</Text>
+          </Pressable>
+        </View>
         <Text style={styles.questionCounter}>
           Question {currentIndex + 1} of {DEMO_QUESTIONS.length}
         </Text>
       </View>
 
-      {/* Middle: Question with glassmorphic backing (no dark tint) */}
+      {/* Middle: Question with glassmorphic backing + fade animation */}
       <View style={styles.middleSection}>
-        <BlurView intensity={60} tint="light" style={styles.questionCard}>
-          <Text style={styles.questionText}>
-            {currentQuestion.text}
-          </Text>
-        </BlurView>
+        <Animated.View
+          key={currentQuestion.id}
+          entering={FadeIn.duration(300)}
+          exiting={FadeOut.duration(200)}
+        >
+          <BlurView intensity={60} tint="dark" style={styles.questionCard}>
+            <Text style={styles.questionText}>
+              {currentQuestion.text}
+            </Text>
+          </BlurView>
+        </Animated.View>
       </View>
 
       {/* Bottom: Next button */}
@@ -117,7 +151,7 @@ export const InterviewScreen: React.FC<InterviewScreenProps> = ({
             pressed && styles.nextButtonPressed,
           ]}
         >
-          <BlurView intensity={60} tint="light" style={styles.buttonBlur}>
+          <BlurView intensity={60} tint="dark" style={styles.buttonBlur}>
             <Text style={styles.buttonText}>
               {isLastQuestion ? 'Find My Match' : 'Next'}
             </Text>
@@ -134,17 +168,55 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
   },
 
-  // TOP - Question counter
+  // TOP - Question counter + progress
   topSection: {
     paddingTop: 60, // Below dynamic island
     paddingHorizontal: 24,
     alignItems: 'center',
   },
+  topRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    width: '100%',
+    marginBottom: 8,
+  },
+  progressContainer: {
+    flexDirection: 'row',
+    gap: 6,
+    flex: 1,
+  },
+  progressDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: 'rgba(255, 255, 255, 0.3)',
+  },
+  progressDotActive: {
+    backgroundColor: 'rgba(255, 255, 255, 0.9)',
+  },
+  restartButton: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: 'rgba(0, 0, 0, 0.2)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginLeft: 16,
+  },
+  restartText: {
+    color: 'rgba(255, 255, 255, 0.7)',
+    fontSize: 16,
+    fontWeight: '300',
+  },
   questionCounter: {
     fontFamily: 'Merriweather_400Regular',
     fontSize: 14,
-    color: '#333', // Charcoal
+    color: 'rgba(255, 255, 255, 0.8)',
     letterSpacing: 0.5,
+    textShadowColor: 'rgba(0, 0, 0, 0.3)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 2,
   },
 
   // MIDDLE - Question card
@@ -156,23 +228,26 @@ const styles = StyleSheet.create({
   },
   questionCard: {
     borderRadius: 20,
-    paddingVertical: 16,
+    paddingVertical: 20,
     paddingHorizontal: 24,
     overflow: 'hidden',
-    backgroundColor: 'rgba(0, 0, 0, 0.08)', // Reduced gray tint
+    backgroundColor: 'rgba(0, 0, 0, 0.25)',
   },
   questionText: {
     fontFamily: 'Merriweather_400Regular',
-    fontSize: 17,
-    lineHeight: 26,
-    color: '#333',
+    fontSize: 18,
+    lineHeight: 28,
+    color: '#FFFFFF',
     textAlign: 'center',
+    textShadowColor: 'rgba(0, 0, 0, 0.4)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 3,
   },
 
   // BOTTOM - Next button
   bottomSection: {
     paddingHorizontal: 24,
-    paddingBottom: 40, // Reduced from 80 - moves button DOWN toward bottom edge
+    paddingBottom: 40,
     alignItems: 'center',
   },
   nextButton: {
@@ -188,12 +263,15 @@ const styles = StyleSheet.create({
     paddingHorizontal: 48,
     alignItems: 'center',
     justifyContent: 'center',
-    // No backing card
+    backgroundColor: 'rgba(0, 0, 0, 0.2)',
   },
   buttonText: {
     fontFamily: 'Merriweather_400Regular',
     fontSize: 16,
-    color: '#999', // 30% lighter gray
+    color: 'rgba(255, 255, 255, 0.9)',
+    textShadowColor: 'rgba(0, 0, 0, 0.3)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 2,
   },
 });
 

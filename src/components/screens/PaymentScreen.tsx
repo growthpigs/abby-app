@@ -42,7 +42,6 @@ export const PaymentScreen: React.FC = () => {
         <GlassButton onPress={handlePay}>
           Unlock Photo
         </GlassButton>
-        <Caption style={styles.demoNote}>(Auto-approved for demo)</Caption>
       </View>
     </View>
   );
@@ -88,10 +87,6 @@ const styles = StyleSheet.create({
   },
   buttonContainer: {
     alignItems: 'center',
-  },
-  demoNote: {
-    marginTop: 12,
-    color: 'rgba(255, 255, 255, 0.4)',
   },
 });
 
