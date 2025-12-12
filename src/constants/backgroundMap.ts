@@ -1,14 +1,9 @@
 /**
  * Background Shader Map
  *
- * Two access patterns:
- * 1. Index-based (1-18): For demo progression (soft → hard vibes)
- * 2. Mode-based: For party + mode mapping (deprecated - use index)
- *
+ * Index-based access (1-18) for demo progression (soft → hard vibes).
  * 18 total background shaders.
  */
-
-import { ActiveParty, ActiveMode, UserMode, AbbyMode } from '../types/vibe';
 
 // Import all shader sources (1-18)
 import { VIBE_MATRIX_SHADER } from '../shaders/vibeMatrix';
@@ -69,44 +64,11 @@ export const getShaderByIndex = (index: number): string => {
 };
 
 /**
- * ABBY mode → shader mapping
- * These play when Abby is the active party
- */
-export const ABBY_BACKGROUND_MAP: Record<AbbyMode, string> = {
-  SPEAKING: VIBE_MATRIX_SHADER,     // BG1 - Default, domain-warped organic
-  PROCESSING: VIBE_MATRIX_2_SHADER, // BG2 - Warm fire swirls
-  ADVISING: VIBE_MATRIX_3_SHADER,   // BG3 - Calm coaching vibe
-  REVEALING: VIBE_MATRIX_8_SHADER,  // BG8 - Dramatic reveal
-  CELEBRATING: VIBE_MATRIX_6_SHADER, // BG6 - Celebration energy
-};
-
-/**
- * USER mode → shader mapping
- * These play when the user is the active party (answering questions)
- */
-export const USER_BACKGROUND_MAP: Record<UserMode, string> = {
-  LISTENING: VIBE_MATRIX_10_SHADER, // BG10 - Gentle attention
-  EMPATHY: VIBE_MATRIX_5_SHADER,    // BG5 - Deep emotional
-  CURIOSITY: VIBE_MATRIX_4_SHADER,  // BG13 - Exploratory
-  REFLECTION: VIBE_MATRIX_7_SHADER, // BG7 - Thoughtful pause
-  EXCITEMENT: VIBE_MATRIX_9_SHADER, // BG15 - High energy
-};
-
-/**
- * Get the appropriate shader source for current party + mode
- */
-export const getBackgroundShader = (party: ActiveParty, mode: ActiveMode): string => {
-  if (party === 'ABBY') {
-    return ABBY_BACKGROUND_MAP[mode as AbbyMode] || VIBE_MATRIX_SHADER;
-  }
-  return USER_BACKGROUND_MAP[mode as UserMode] || VIBE_MATRIX_SHADER;
-};
-
-/**
  * All available background shaders (for precompilation/caching)
  */
 export const ALL_BACKGROUND_SHADERS = [
   VIBE_MATRIX_SHADER,
+  VIBE_MATRIX_1_SHADER,
   VIBE_MATRIX_2_SHADER,
   VIBE_MATRIX_3_SHADER,
   VIBE_MATRIX_4_SHADER,
@@ -116,6 +78,14 @@ export const ALL_BACKGROUND_SHADERS = [
   VIBE_MATRIX_8_SHADER,
   VIBE_MATRIX_9_SHADER,
   VIBE_MATRIX_10_SHADER,
+  VIBE_MATRIX_11_SHADER,
+  VIBE_MATRIX_12_SHADER,
+  VIBE_MATRIX_13_SHADER,
+  VIBE_MATRIX_14_SHADER,
+  VIBE_MATRIX_15_SHADER,
+  VIBE_MATRIX_16_SHADER,
+  VIBE_MATRIX_17_SHADER,
+  VIBE_MATRIX_18_SHADER,
 ];
 
 /**

@@ -52,7 +52,6 @@ export const InterviewScreen: React.FC<InterviewScreenProps> = ({
   const reset = useDemoStore((state) => state.reset);
 
   const setColorTheme = useVibeController((state) => state.setColorTheme);
-  const setCoveragePercent = useVibeController((state) => state.setCoveragePercent);
 
   // Restart demo handler
   const handleRestart = () => {
@@ -71,16 +70,12 @@ export const InterviewScreen: React.FC<InterviewScreenProps> = ({
       setColorTheme(currentQuestion.vibe_shift as VibeColorTheme);
     }
 
-    // 2. Record answer
+    // 2. Record answer (also updates coverage via store)
     answerQuestion({
       questionId: currentQuestion.id,
       value: 'Demo answer',
       answeredAt: Date.now(),
     });
-
-    // 3. Calculate new coverage and update vibe controller
-    const newCoverage = ((currentIndex + 1) / DEMO_QUESTIONS.length) * 100;
-    setCoveragePercent(newCoverage);
 
     // 4. Background update handled by useEffect below (single source of truth)
     // Removed duplicate onBackgroundChange call - was causing double transitions
