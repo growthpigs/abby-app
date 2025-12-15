@@ -111,6 +111,12 @@ export function wrapWithMorph(shaderSource: string): string {
     return shaderSource;
   }
 
+  // Detect the parameter name used in main() - could be 'xy' or 'fragCoord'
+  // Pattern: half4 main(float2 <paramName>)
+  const mainParamRegex = /half4\s+main\s*\(\s*float2\s+(\w+)\s*\)/;
+  const mainMatch = shaderSource.match(mainParamRegex);
+  const coordParam = mainMatch ? mainMatch[1] : 'xy'; // Default to 'xy' if not found
+
   const insertPosition = match.index;
 
   // Insert morph uniforms and functions after regular uniforms
@@ -135,7 +141,7 @@ export function wrapWithMorph(shaderSource: string): string {
   finalShader = finalShader.replace(
     /return\s+half4\s*\(\s*color\s*,\s*[\d.]+\s*\)\s*;/g,
     `// Apply morph transition alpha
-  float morphAlpha = getMorphAlpha(xy, u_resolution, u_morphProgress, u_morphDirection);
+  float morphAlpha = getMorphAlpha(${coordParam}, u_resolution, u_morphProgress, u_morphDirection);
   return half4(color, half(morphAlpha));`
   );
 
@@ -143,7 +149,7 @@ export function wrapWithMorph(shaderSource: string): string {
   finalShader = finalShader.replace(
     /return\s+half4\s*\(\s*half3\s*\(\s*color\s*\)\s*,\s*[\d.]+\s*\)\s*;/g,
     `// Apply morph transition alpha
-  float morphAlpha = getMorphAlpha(xy, u_resolution, u_morphProgress, u_morphDirection);
+  float morphAlpha = getMorphAlpha(${coordParam}, u_resolution, u_morphProgress, u_morphDirection);
   return half4(half3(color), half(morphAlpha));`
   );
 
@@ -151,7 +157,7 @@ export function wrapWithMorph(shaderSource: string): string {
   finalShader = finalShader.replace(
     /return\s+half4\s*\(\s*half3\s*\(\s*waterColor\s*\)\s*,\s*[\d.]+\s*\)\s*;/g,
     `// Apply morph transition alpha
-  float morphAlpha = getMorphAlpha(xy, u_resolution, u_morphProgress, u_morphDirection);
+  float morphAlpha = getMorphAlpha(${coordParam}, u_resolution, u_morphProgress, u_morphDirection);
   return half4(half3(waterColor), half(morphAlpha));`
   );
 
