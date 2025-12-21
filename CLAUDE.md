@@ -12,6 +12,59 @@ ABBY is a high-end matchmaking app where users interact with an AI entity (Abby)
 
 ---
 
+## Requirements (MVP - $5K, 7-14 days)
+
+> Last updated: 2024-12-20 | Status: Approved
+
+### Scope
+
+| Category | MVP | V2 |
+|----------|-----|-----|
+| VibeMatrix (living shaders) | ✅ | - |
+| Abby Persona + Voice | ✅ | - |
+| Question Flow (text + voice) | ✅ | - |
+| Glass Interface | ✅ | - |
+| Basic Orb | ✅ | - |
+| Certification/verification | ❌ | ✅ |
+| Match flow (bio → payment → reveal) | ❌ | ✅ |
+| Premium tiers (Gold/Platinum) | ❌ | ✅ |
+| Coach mode | ❌ | ✅ |
+| Stripe payments | ❌ | ✅ |
+
+### Timeline
+
+- **Hard Deadline:** 14 days
+- **Internal Target:** 7 days
+- **Approval:** Client via Brent (~24hr turnaround)
+
+### Budget
+
+- **MVP:** $5K
+- **Scope:** Core experience (VibeMatrix + Abby + Questions)
+
+### Success Criteria
+
+1. User can have voice/text conversation with Abby through question flow
+2. Living background responds to conversation state with smooth transitions
+3. Feels organic and alive, not mechanical
+4. Runs smoothly on iOS, maintains 60fps animations
+5. Demonstrates core concept for client validation
+
+### Dependencies
+
+- ElevenLabs agent (already built)
+- Existing codebase (shaders in progress)
+- Supabase (V2 - mocked for MVP)
+
+### Risks
+
+- Battery optimization for shader performance
+- Voice latency during conversation flow
+- Question flow completeness (how many of 150 for MVP?)
+- State persistence across app sessions
+
+---
+
 ## Living Documents (Source of Truth)
 
 | Document | Path | Purpose |

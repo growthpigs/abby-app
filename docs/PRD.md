@@ -1,150 +1,227 @@
-# ABBY - Product Requirements Document (PRD)
+# ABBY - Product Requirements Document
 
-> **Living Document** | Version: 1.0 | Last Updated: 2025-12-09
->
-> Source of Truth for design, engineering, and QA.
-
----
-
-## 1. Executive Summary
-
-**ABBY** is a high-end, purpose-driven matchmaking service disguised as an app. It rejects the "swiping" paradigm entirely.
-
-Instead of a catalog of humans, users interact with **Abby**—an omnipresent, living AI entity—who:
-- Conducts a deep psychological interview (150 questions)
-- Performs matchmaking in the background
-- Delivers **one curated match at a time**
-
-### Core Value Proposition
-
-| Pillar | Description |
-|--------|-------------|
-| **Privacy** | 100% Anonymous. No public profiles. "Breadcrumb" reveal system. |
-| **Quality** | Matches based on deep psychological compatibility (Gottman principles), not looks. |
-| **Efficiency** | The AI does the work. The user lives their life. |
-| **Living Interface** | The app is not a tool; it is a companion. The UI "breathes," morphs, and reacts. |
+**Product Name:** ABBY - The Anti-Dating App
+**Version:** 1.0 MVP
+**Last Updated:** December 20, 2024
+**Client:** Manuel Negreiro
 
 ---
 
-## 2. Target Audience
+## Product Overview
 
-### Persona 1: The Intentional Dater
-- Tired of "hookup culture" (Tinder/Hinge)
-- Willing to pay premium ($25+) for verified, high-quality connections
-- Values time over volume
+### Vision
+ABBY revolutionizes online dating by eliminating the "swipe grid" entirely. Instead of browsing endless profiles, users have intimate conversations with Abby, an AI matchmaker who learns their deepest compatibility needs and finds their person. The interface feels alive - a glass pane floating over a living, bioluminescent ocean that breathes and reacts to the emotional state of the conversation.
 
-### Persona 2: The Private Professional
-- High-net-worth or public-facing individual
-- Cannot risk having face on a public dating grid
-- Needs discrete, verified matching
+### Target Users
+**Primary:** Adults 25-45 seeking serious relationships - Professionals, divorced individuals, and people burned out on traditional dating apps who value genuine connection over casual encounters.
 
-### Persona 3: The "Awkward" Gen Z
-- Needs coaching on social cues and relationship maintenance
-- Relies on Abby as a "Buddy/Therapist" for guidance
-- Appreciates AI-mediated communication
+**Secondary:** Dating-curious individuals 22-35 - People who find traditional dating apps overwhelming or superficial but are open to AI-guided matchmaking.
 
----
-
-## 3. Platform & Technical Constraints
-
-| Attribute | Specification |
-|-----------|---------------|
-| **Platform** | iOS Only (v1.0) |
-| **Framework** | React Native (Expo SDK 50+) |
-| **Target** | TestFlight Prototype → App Store |
-| **Backend** | Mocked locally (Android backend separate) |
-
----
-
-## 4. Core Functional Pillars
-
-### 4.1 The "Living" Interface (Glass Sandwich)
-
-Three distinct Z-index layers:
-- **Layer 0 (Background)**: GLSL Shader-based "Vibe Matrix" (Fluid Simulation)
-- **Layer 1 (Abby)**: Reactive 3D-style Orb that morphs based on state
-- **Layer 2 (Foreground)**: Glassmorphic modals for text and interactions
-
-**Constraint**: No hard cuts or white screens. All transitions must be continuous morphs.
-
-### 4.2 The Engine (150-Question Profile)
-
-Non-linear conversational interface supporting:
-- Rich Inline Buttons (single-tap answers)
-- Scale Sliders (1-10)
-- Logic Jumps (skip irrelevant questions based on previous answers)
-
-### 4.3 The Matchmaker (The Black Box)
-
-- **Deliberate Delay**: 1hr - 24hrs wait to build value
-- **Presentation**: Match Card shows Bio/Summary ONLY initially
-- **Reveal Flow**: Mutual "Interested" tap → Pay Gate → Photo Unlock
-
----
-
-## 5. User Stories
-
-### EPIC 1: Onboarding & Identity
-
-| ID | Story |
-|----|-------|
-| US 1.1 | As a new user, I want to authenticate via phone number so my account is secure and real. |
-| US 1.2 | As a privacy-conscious user, I want to verify my ID privately so I know everyone is verified (No Bots). |
-| US 1.3 | As a user, I want to be introduced to "Abby" as an entity, not a tutorial. |
-
-### EPIC 2: The Interview (Data Ingestion)
-
-| ID | Story |
-|----|-------|
-| US 2.1 | As a user, I want to answer questions in a conversational chat format so it doesn't feel like a form. |
-| US 2.2 | As a user, I want to tap "Rich Buttons" for answers instead of typing. |
-| US 2.3 | As a user, I want to see Abby "react" (pulse/glow) when I submit an answer. |
-
-### EPIC 3: The Search & Reveal
-
-| ID | Story |
-|----|-------|
-| US 3.1 | As a user, I want to see Abby "analyzing" candidates visually so I feel the algorithm working. |
-| US 3.2 | As a user, I want to receive a notification when a match is found. |
-| US 3.3 | As a user, I want to read a detailed bio before seeing their photo. |
-| US 3.4 | As a matched user, I want to pay to unlock the connection, ensuring high intent. |
-
-### EPIC 4: The Coach (Retention)
-
-| ID | Story |
-|----|-------|
-| US 4.1 | As a user in chat, I want to tap Abby to get private advice without leaving the conversation. |
-| US 4.2 | As a Pro user, I want Abby to suggest date ideas based on shared interests. |
-
-### EPIC 5: Safety & Intervention
-
-| ID | Story |
-|----|-------|
-| US 5.1 | As the system, I want to pause accounts flagging "Four Horsemen" traits (Gottman). |
-
----
-
-## 6. Success Metrics
-
+### Success Metrics
 | Metric | Target |
 |--------|--------|
-| **Completion Rate** | % users finishing 150-question profile > 60% |
-| **Conversion to Match** | % matches resulting in mutual "Interested" tap |
-| **Stickiness** | Frequency of "Coach Abby" interactions post-match |
+| User Completion Rate | 80%+ complete the full Abby interview |
+| Session Duration | Average 15+ minutes per session |
+| Voice Usage | 60%+ of users engage with voice features |
+| Frame Rate | Consistent 60fps during animations |
+| Client Validation | Approved for V2 development funding |
 
 ---
 
-## 7. Risks & Mitigations
+## User Stories (MVP)
 
-| Risk | Mitigation |
-|------|------------|
-| 150-question process too long | "Living UI" provides constant dopamine feedback (pulsing/color shifts) to gamify |
-| High GPU usage from Shaders | "Low Power Mode" fallback using static PNGs if battery < 20% |
+### Epic: Onboarding & Authentication
+
+**US-001: Account Creation**
+As a potential user, I want to create an account using phone/email/social login so that I can access the app securely.
+
+Acceptance Criteria:
+- [ ] User can enter phone number or email address
+- [ ] User can continue with Apple, Facebook, or Google
+- [ ] Phone verification with 6-digit code works
+- [ ] User can change phone number during verification
+- [ ] Account creation saves basic auth info
+
+**US-002: Basic Profile Setup**
+As a new user, I want to provide my basic information so that Abby can begin to understand who I am.
+
+Acceptance Criteria:
+- [ ] User enters full legal name (private) and display name (public)
+- [ ] User enters date of birth and preferred age range
+- [ ] User selects sexual identity from comprehensive list
+- [ ] User selects who they're looking for from comprehensive list
+- [ ] User selects ethnicity (theirs and preferences)
+- [ ] User selects relationship type and smoking preferences
 
 ---
 
-## Changelog
+### Epic: Meeting Abby
 
-| Date | Version | Changes |
-|------|---------|---------|
-| 2025-12-09 | 1.0 | Initial document creation |
+**US-003: Abby Introduction**
+As a user who completed basic setup, I want to meet Abby in a magical way so that I feel excited about the process.
+
+Acceptance Criteria:
+- [ ] VibeMatrix background renders smoothly with color morphing
+- [ ] Abby orb appears with breathing animation
+- [ ] Transition from onboarding to Abby is seamless
+- [ ] User feels the interface is "alive" not static
+- [ ] No white screens or jarring cuts
+
+**US-004: Voice Conversation with Abby**
+As a user meeting Abby, I want to have a natural voice conversation so that it feels like talking to a real matchmaker.
+
+Acceptance Criteria:
+- [ ] User can activate voice mode
+- [ ] ElevenLabs agent responds in real-time
+- [ ] Voice latency is under 500ms for response start
+- [ ] User can switch between voice and text seamlessly
+- [ ] Abby responds contextually to user hesitation or confusion
+
+---
+
+### Epic: The Interview Process
+
+**US-005: Deep Compatibility Questions**
+As a user, I want Abby to ask me thoughtful questions about relationships so that she can find someone truly compatible.
+
+Acceptance Criteria:
+- [ ] Questions appear as appropriate UI (buttons, sliders, text input)
+- [ ] User can answer via voice or touch interface
+- [ ] Progress is saved if user exits mid-interview
+- [ ] Abby reacts to answers with appropriate responses
+- [ ] Interface adapts to question type (multiple choice, scale, open-ended)
+
+**US-006: Emotional State Visualization**
+As a user, I want the background to reflect the mood of our conversation so that the experience feels emotionally connected.
+
+Acceptance Criteria:
+- [ ] VibeMatrix shifts to TRUST (blue) during onboarding
+- [ ] VibeMatrix shifts to DEEP (violet) during intimate questions
+- [ ] VibeMatrix shifts to CAUTION (orange) during deal-breaker topics
+- [ ] Color transitions are smooth (800-1200ms) not jarring
+- [ ] Abby orb position and breathing adapt to conversation state
+
+**US-007: Physical Preferences (Picturegram)**
+As a user, I want to communicate my physical preferences visually so that I can be honest about attraction.
+
+Acceptance Criteria:
+- [ ] User can select multiple physical preference categories
+- [ ] Interface feels judgment-free and safe
+- [ ] Preferences are captured with appropriate weights
+- [ ] User understands their choices affect matching
+
+---
+
+### Epic: Glass Interface System
+
+**US-008: Consistent Glass UI**
+As a user, I want all interface elements to feel cohesive with the glass metaphor so that the experience feels premium and unified.
+
+Acceptance Criteria:
+- [ ] All UI components use BlurView consistently
+- [ ] Text is always readable over the moving background
+- [ ] Buttons and cards feel like they're floating on glass
+- [ ] Touch feedback works properly through blur effects
+- [ ] Interface never breaks the glass/ocean metaphor
+
+---
+
+### Epic: Performance & Polish
+
+**US-009: Smooth Performance**
+As a user, I want the app to run smoothly so that the magical feeling isn't broken by technical issues.
+
+Acceptance Criteria:
+- [ ] App maintains 60fps during normal usage
+- [ ] Shader performance doesn't drain battery excessively
+- [ ] Low power mode switches to static backgrounds when battery < 20%
+- [ ] App launches in under 3 seconds
+- [ ] No crashes during 10-minute usage sessions
+
+**US-010: TestFlight Demo**
+As a client, I want to see a working demo on my device so that I can evaluate the concept.
+
+Acceptance Criteria:
+- [ ] App is available via TestFlight
+- [ ] Full user flow can be completed without crashes
+- [ ] Core experience (VibeMatrix + Abby + Questions) is functional
+- [ ] Voice integration works on physical device
+- [ ] App demonstrates the "alive" feeling effectively
+
+---
+
+## User Stories (V2 / Future)
+
+| ID | Story | Description |
+|----|-------|-------------|
+| US-F01 | Match Revelation Flow | User receives bio-only match, can pay to unlock photos, full reveal system |
+| US-F02 | Verification & Certification | Identity verification system to eliminate bots and fake profiles |
+| US-F03 | Coach Mode | Ongoing relationship guidance from Abby after matching |
+| US-F04 | Premium Subscription Tiers | Gold/Platinum features with advanced matching and priority support |
+| US-F05 | Android Version | Cross-platform compatibility for broader market reach |
+
+---
+
+## Non-Functional Requirements
+
+### Performance
+- Maintain 60fps during animations and shader rendering
+- App launch time under 3 seconds
+- Voice response latency under 500ms
+- Memory usage under 200MB during normal operation
+
+### Security
+- All user data encrypted in transit and at rest
+- No profile browsing prevents unauthorized access to user photos
+- Secure storage of voice conversation metadata
+
+### Scalability
+- Architecture supports 1000+ concurrent users (V2)
+- Question flow easily extensible without code changes
+- Shader system supports additional vibe states
+
+### Accessibility
+- Voice-first design accommodates various abilities
+- Text alternatives for all voice interactions
+- High contrast mode for visual impairments
+
+---
+
+## Constraints & Assumptions
+
+### Constraints
+- iOS only for MVP (iPhone 12+ recommended)
+- 14-day development timeline (hard deadline)
+- $5K budget for MVP phase
+- Must coordinate with Nathan's backend development
+
+### Assumptions
+- ElevenLabs agent is functional and credentials will be provided
+- Apple Developer account access available for TestFlight
+- Users are comfortable with AI-guided matchmaking
+- Target demographic has modern iPhones capable of shader rendering
+
+---
+
+## Dependencies
+
+| Dependency | Type | Status | Risk |
+|------------|------|--------|------|
+| ElevenLabs Agent Credentials | External | Pending | High |
+| Apple Developer/TestFlight Access | External | Pending | High |
+| Nathan's API Contracts | Internal | Can Mock | Medium |
+| @shopify/react-native-skia | External | Stable | Low |
+| Expo SDK 50+ | External | Stable | Low |
+
+---
+
+## Open Questions
+
+- [ ] How many of the 100+ questions should be included in MVP vs V2?
+- [ ] What fallback experience if voice fails or user prefers not to use it?
+- [ ] Should we implement any basic matching algorithm for MVP demo?
+- [ ] What happens after user completes interview - just end screen or preview flow?
+
+---
+
+*Document created: December 20, 2024*
