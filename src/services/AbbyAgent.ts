@@ -124,6 +124,11 @@ export function useAbbyAgent(config: AbbyAgentConfig = {}) {
   // Destructure config with defaults
   const { enabled = true, ...callbacks } = config;
 
+  // Stabilize callbacks to prevent useCallback recreation on every render
+  // Pattern from SpeechRecognition.ts - avoids stale closure issues
+  const callbacksRef = useRef(callbacks);
+  callbacksRef.current = callbacks;
+
   // Zustand selectors (separate for performance)
   const setAudioLevel = useVibeController((s) => s.setAudioLevel);
   const setAbbyMode = useVibeController((s) => s.setAbbyMode);
@@ -134,6 +139,14 @@ export function useAbbyAgent(config: AbbyAgentConfig = {}) {
   const [isStarting, setIsStarting] = useState(false);
   const [isConnected, setIsConnected] = useState(false);
   const [isMuted, setIsMuted] = useState(false);
+
+  // Ref to track muted state in callbacks (validator fix - prevents pulse restart while muted)
+  const isMutedRef = useRef(false);
+
+  // Sync ref with state (callbacks can't read state directly due to closures)
+  useEffect(() => {
+    isMutedRef.current = isMuted;
+  }, [isMuted]);
 
   // Pulse animation ref (persists across renders)
   const pulseIntervalRef = useRef<NodeJS.Timeout | null>(null);
@@ -191,7 +204,7 @@ export function useAbbyAgent(config: AbbyAgentConfig = {}) {
         AudioSession.selectAudioOutput('speaker').catch(() => {});
       }
 
-      callbacks.onConnect?.();
+      callbacksRef.current.onConnect?.();
     },
 
     onDisconnect: (details: string) => {
@@ -208,7 +221,7 @@ export function useAbbyAgent(config: AbbyAgentConfig = {}) {
         });
       }
 
-      callbacks.onDisconnect?.();
+      callbacksRef.current.onDisconnect?.();
     },
 
     onMessage: ({ message, source }: { message: any; source: string }) => {
@@ -217,18 +230,24 @@ export function useAbbyAgent(config: AbbyAgentConfig = {}) {
       // User transcript - SDK uses nested structure per types.d.ts
       if (message.type === 'user_transcript') {
         const text = message.user_transcription_event?.user_transcript;
-        if (text) callbacks.onUserTranscript?.(text);
+        if (text) callbacksRef.current.onUserTranscript?.(text);
       }
 
       // Agent response - SDK uses nested structure per types.d.ts
       if (message.type === 'agent_response') {
         const text = message.agent_response_event?.agent_response;
-        if (text) callbacks.onAbbyResponse?.(text);
+        if (text) callbacksRef.current.onAbbyResponse?.(text);
       }
     },
 
     onModeChange: ({ mode }: { mode: 'speaking' | 'listening' }) => {
       if (__DEV__) console.log('[AbbyAgent] Mode:', mode);
+
+      // Skip visual updates while muted (validator fix - prevents pulse restart)
+      if (isMutedRef.current) {
+        if (__DEV__) console.log('[AbbyAgent] Muted, skipping mode change visual update');
+        return;
+      }
 
       if (mode === 'speaking') {
         startSpeakingPulse();
@@ -252,7 +271,7 @@ export function useAbbyAgent(config: AbbyAgentConfig = {}) {
     onError: (message: string, context?: Record<string, unknown>) => {
       console.error('[AbbyAgent] Error:', message, context);
       stopAudioPulse();
-      callbacks.onError?.(new Error(message));
+      callbacksRef.current.onError?.(new Error(message));
     },
   });
 
@@ -262,7 +281,7 @@ export function useAbbyAgent(config: AbbyAgentConfig = {}) {
     // Guard 1: Voice not available (Expo Go)
     if (!VOICE_AVAILABLE) {
       console.warn('[AbbyAgent] Voice not available. Run with: npx expo run:ios');
-      callbacks.onError?.(new Error('Voice requires a development build. Run: npx expo run:ios'));
+      callbacksRef.current.onError?.(new Error('Voice requires a development build. Run: npx expo run:ios'));
       return;
     }
 
@@ -293,14 +312,14 @@ export function useAbbyAgent(config: AbbyAgentConfig = {}) {
     // Guard 6: Agent ID required and valid format
     if (!AGENT_ID || AGENT_ID.trim().length === 0) {
       const error = new Error('ELEVENLABS_AGENT_ID not configured. Add it to .env.local');
-      callbacks.onError?.(error);
+      callbacksRef.current.onError?.(error);
       throw error;
     }
 
     // Guard 7: Agent ID format validation
     if (!AGENT_ID.startsWith('agent_')) {
       const error = new Error('ELEVENLABS_AGENT_ID must start with "agent_". Check your .env.local configuration.');
-      callbacks.onError?.(error);
+      callbacksRef.current.onError?.(error);
       throw error;
     }
 
@@ -337,10 +356,10 @@ export function useAbbyAgent(config: AbbyAgentConfig = {}) {
     } catch (err) {
       console.error('[AbbyAgent] Failed to start session:', err);
       setIsStarting(false);
-      callbacks.onError?.(err instanceof Error ? err : new Error(String(err)));
+      callbacksRef.current.onError?.(err instanceof Error ? err : new Error(String(err)));
       throw err;
     }
-  }, [enabled, isStarting, isConnected, conversation.status, callbacks.onError]);
+  }, [enabled, isStarting, isConnected, conversation.status]);
 
   // End conversation
   const endConversation = useCallback(async () => {
@@ -393,6 +412,7 @@ export function useAbbyAgent(config: AbbyAgentConfig = {}) {
 
     if (__DEV__) console.log('[AbbyAgent] Unmuting conversation');
 
+    // Restart audio FIRST, then update state (matches mute pattern)
     if (Platform.OS === 'ios' && AudioSession) {
       try {
         await AudioSession.setAppleAudioConfiguration({
@@ -409,12 +429,15 @@ export function useAbbyAgent(config: AbbyAgentConfig = {}) {
         try {
           await AudioSession.configureAudio({ ios: { defaultOutput: 'speaker' } });
           await AudioSession.startAudioSession();
-        } catch {
-          // Continue anyway
+          if (__DEV__) console.log('[AbbyAgent] Audio resumed with fallback config');
+        } catch (fallbackErr) {
+          console.warn('[AbbyAgent] Fallback audio also failed:', fallbackErr);
+          return; // Don't update state if unmute failed (validator fix)
         }
       }
     }
 
+    // Update state AFTER successful audio restart
     setIsMuted(false);
     setAbbyMode('LISTENING');
   }, [isConnected, isMuted, setAbbyMode]);
