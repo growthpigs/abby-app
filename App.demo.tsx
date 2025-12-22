@@ -19,7 +19,7 @@ import {
   Merriweather_700Bold,
 } from '@expo-google-fonts/merriweather';
 import { AnimatedVibeLayer } from './src/components/layers/AnimatedVibeLayer';
-import { useDemoState } from './src/store/useDemoStore';
+import { useDemoState, useDemoStore } from './src/store/useDemoStore';
 import { useVibeController } from './src/store/useVibeController';
 import { useAbbyAgent, VOICE_AVAILABLE } from './src/services/AbbyAgent';
 import {
@@ -88,8 +88,12 @@ function DemoScreen() {
     },
   });
 
-  // Initialize vibe state on mount
+  // Initialize demo state on mount - ensures clean slate
   useEffect(() => {
+    // Reset demo store to initial state (prevents stale state from previous sessions)
+    useDemoStore.getState().reset();
+
+    // Initialize vibe state
     const vibeController = useVibeController.getState();
     vibeController.setFromAppState('COACH_INTRO');
     vibeController.setOrbEnergy('CALM');

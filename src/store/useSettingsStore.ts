@@ -11,6 +11,17 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 // Input mode types
 export type InputMode = 'voice_only' | 'text_only' | 'voice_and_text';
 
+// Valid input modes for runtime validation
+const VALID_INPUT_MODES: InputMode[] = ['voice_only', 'text_only', 'voice_and_text'];
+
+// Type guard to validate InputMode
+const isValidInputMode = (value: unknown): value is InputMode => {
+  return typeof value === 'string' && VALID_INPUT_MODES.includes(value as InputMode);
+};
+
+// Settings schema version (increment when schema changes)
+const SETTINGS_VERSION = 1;
+
 // Storage key
 const SETTINGS_KEY = '@abby/settings';
 
@@ -64,11 +75,36 @@ export const useSettingsStore = create<SettingsStore>((set, get) => ({
       const stored = await AsyncStorage.getItem(SETTINGS_KEY);
 
       if (stored) {
-        const parsed = JSON.parse(stored);
-        set({
-          inputMode: parsed.inputMode || 'voice_and_text',
-          isLoaded: true,
-        });
+        let parsed: unknown;
+        try {
+          parsed = JSON.parse(stored);
+        } catch {
+          console.warn('[SettingsStore] Corrupted settings data, using defaults');
+          set({ isLoaded: true });
+          return;
+        }
+
+        // Validate parsed data structure
+        if (parsed && typeof parsed === 'object' && parsed !== null) {
+          const data = parsed as Record<string, unknown>;
+
+          // Check version for future migrations
+          if (data.version !== SETTINGS_VERSION) {
+            console.warn(`[SettingsStore] Settings version mismatch (${data.version} vs ${SETTINGS_VERSION}), using defaults`);
+            set({ isLoaded: true });
+            return;
+          }
+
+          // Validate and apply inputMode
+          if (isValidInputMode(data.inputMode)) {
+            set({ inputMode: data.inputMode, isLoaded: true });
+          } else {
+            console.warn(`[SettingsStore] Invalid inputMode "${data.inputMode}", using default`);
+            set({ isLoaded: true });
+          }
+        } else {
+          set({ isLoaded: true });
+        }
       } else {
         set({ isLoaded: true });
       }
