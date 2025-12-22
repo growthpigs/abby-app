@@ -221,10 +221,10 @@ export const CoachScreen: React.FC<CoachScreenProps> = ({
               >
                 {isMuted ? (
                   // @ts-ignore - color works via SvgProps
-                  <Play size={20} color="#FFFFFF" />
+                  <Play size={15} color="#FFFFFF" />
                 ) : (
                   // @ts-ignore - color works via SvgProps
-                  <Pause size={20} color="#FFFFFF" />
+                  <Pause size={15} color="#FFFFFF" />
                 )}
               </Pressable>
             )}</View>
@@ -324,12 +324,14 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(0, 0, 0, 0.2)',
   },
 
-  // Status row
+  // Status row - moved up 30px (reduced padding + negative margin)
   statusRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'flex-start',
-    paddingVertical: 12,
+    paddingTop: 0,
+    paddingBottom: 12,
+    marginTop: -18,
     paddingHorizontal: 20,
     gap: 8,
     position: 'relative',
@@ -354,16 +356,16 @@ const styles = StyleSheet.create({
     color: 'rgba(0, 0, 0, 0.5)',
   },
 
-  // Mute button - white outline, positioned top right
+  // Mute button - thin white outline, moved down 30px, reduced 25%
   muteButton: {
     position: 'absolute',
     right: 16,
-    top: -35,
-    width: 44,
-    height: 44,
-    borderRadius: 22,
+    top: -5,
+    width: 33,
+    height: 33,
+    borderRadius: 17,
     backgroundColor: 'transparent',
-    borderWidth: 2,
+    borderWidth: 1,
     borderColor: '#FFFFFF',
     alignItems: 'center',
     justifyContent: 'center',
@@ -403,7 +405,7 @@ const styles = StyleSheet.create({
   messageText: {
     fontFamily: 'Merriweather_400Regular',
     fontSize: 17,
-    lineHeight: 20,
+    lineHeight: 23,  // 17 * 1.35 ≈ 23 (15% more line height)
     color: 'rgba(0, 0, 0, 0.85)',
   },
   userMessageText: {
