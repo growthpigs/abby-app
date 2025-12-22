@@ -172,8 +172,8 @@ export const CoachScreen: React.FC<CoachScreenProps> = ({
     reset(); // Go back to COACH_INTRO
   }, [endConversation, reset]);
 
-  // Handle pause/resume
-  const handleTogglePause = useCallback(async () => {
+  // Handle mute/unmute
+  const handleToggleMute = useCallback(async () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     await toggleMute();
   }, [toggleMute]);
@@ -200,23 +200,23 @@ export const CoachScreen: React.FC<CoachScreenProps> = ({
               <View style={styles.handle} />
             </View>
 
-            {/* Connection status + Pause button */}
+            {/* Connection status + Mute button */}
             <View style={styles.statusRow}>
               <View style={[
                 styles.statusDot,
-                isConnected ? (isMuted ? styles.statusPaused : styles.statusConnected) : styles.statusDisconnected
+                isConnected ? (isMuted ? styles.statusMuted : styles.statusConnected) : styles.statusDisconnected
               ]} />
               <Text style={styles.statusText}>
-                {isMuted ? 'Paused' : (isConnected ? (isSpeaking ? 'Abby is speaking...' : 'Listening') : agentStatus)}
+                {isMuted ? 'Muted' : (isConnected ? (isSpeaking ? 'Abby is speaking...' : 'Listening') : agentStatus)}
               </Text>
 
-              {/* Pause/Play button - positioned absolute right */}
+              {/* Mute/Unmute button - positioned absolute right */}
               {isConnected && (
                 <Pressable
-                  onPress={handleTogglePause}
+                  onPress={handleToggleMute}
                   style={({ pressed }) => [
-                    styles.pauseButton,
-                    pressed && styles.pauseButtonPressed,
+                    styles.muteButton,
+                    pressed && styles.muteButtonPressed,
                   ]}
                 >
                   {isMuted ? (
@@ -344,7 +344,7 @@ const styles = StyleSheet.create({
   statusDisconnected: {
     backgroundColor: '#EF4444',
   },
-  statusPaused: {
+  statusMuted: {
     backgroundColor: '#F59E0B',
   },
   statusText: {
@@ -353,8 +353,8 @@ const styles = StyleSheet.create({
     color: 'rgba(0, 0, 0, 0.5)',
   },
 
-  // Pause button
-  pauseButton: {
+  // Mute button
+  muteButton: {
     position: 'absolute',
     right: 16,
     width: 36,
@@ -364,7 +364,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  pauseButtonPressed: {
+  muteButtonPressed: {
     opacity: 0.7,
     transform: [{ scale: 0.95 }],
   },
