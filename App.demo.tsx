@@ -18,6 +18,7 @@ import {
   Merriweather_400Regular,
   Merriweather_700Bold,
 } from '@expo-google-fonts/merriweather';
+import { JetBrainsMono_400Regular } from '@expo-google-fonts/jetbrains-mono';
 import { AnimatedVibeLayer } from './src/components/layers/AnimatedVibeLayer';
 import { useDemoState, useDemoStore } from './src/store/useDemoStore';
 import { useVibeController } from './src/store/useVibeController';
@@ -60,6 +61,7 @@ function DemoScreen() {
     Merriweather_300Light,
     Merriweather_400Regular,
     Merriweather_700Bold,
+    JetBrainsMono_400Regular,
   });
 
   // Load settings on mount

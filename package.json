@@ -11,6 +11,7 @@
   },
   "dependencies": {
     "@elevenlabs/react-native": "^0.2.1",
+    "@expo-google-fonts/jetbrains-mono": "^0.4.1",
     "@expo-google-fonts/merriweather": "^0.4.2",
     "@livekit/react-native": "^2.7.1",
     "@livekit/react-native-webrtc": "^125.0.7",

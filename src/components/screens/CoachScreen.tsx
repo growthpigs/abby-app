@@ -221,10 +221,10 @@ export const CoachScreen: React.FC<CoachScreenProps> = ({
               >
                 {isMuted ? (
                   // @ts-ignore - color works via SvgProps
-                  <Play size={15} color="#FFFFFF" />
+                  <Play size={11} color="#888888" />
                 ) : (
                   // @ts-ignore - color works via SvgProps
-                  <Pause size={15} color="#FFFFFF" />
+                  <Pause size={11} color="#888888" />
                 )}
               </Pressable>
             )}</View>
@@ -324,14 +324,14 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(0, 0, 0, 0.2)',
   },
 
-  // Status row - moved up 30px (reduced padding + negative margin)
+  // Status row - moved down 30px with icon and text aligned
   statusRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'flex-start',
     paddingTop: 0,
     paddingBottom: 12,
-    marginTop: -18,
+    marginTop: 12,
     paddingHorizontal: 20,
     gap: 8,
     position: 'relative',
@@ -351,22 +351,24 @@ const styles = StyleSheet.create({
     backgroundColor: '#F59E0B',
   },
   statusText: {
-    fontFamily: 'Merriweather_400Regular',
+    fontFamily: 'JetBrainsMono_400Regular',
     fontSize: 13,
     color: 'rgba(0, 0, 0, 0.5)',
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
   },
 
-  // Mute button - thin white outline, moved down 30px, reduced 25%
+  // Mute button - mid-gray icon, 30% smaller, aligned with status text
   muteButton: {
     position: 'absolute',
     right: 16,
-    top: -5,
-    width: 33,
-    height: 33,
-    borderRadius: 17,
+    top: 0,
+    width: 28,
+    height: 28,
+    borderRadius: 14,
     backgroundColor: 'transparent',
     borderWidth: 1,
-    borderColor: '#FFFFFF',
+    borderColor: 'rgba(128, 128, 128, 0.4)',
     alignItems: 'center',
     justifyContent: 'center',
   },
