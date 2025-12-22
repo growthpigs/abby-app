@@ -18,11 +18,10 @@ import {
   Merriweather_400Regular,
   Merriweather_700Bold,
 } from '@expo-google-fonts/merriweather';
-import { ElevenLabsProvider } from '@elevenlabs/react-native';
 import { AnimatedVibeLayer } from './src/components/layers/AnimatedVibeLayer';
 import { useDemoState } from './src/store/useDemoStore';
 import { useVibeController } from './src/store/useVibeController';
-import { useAbbyAgent } from './src/services/AbbyAgent';
+import { useAbbyAgent, VOICE_AVAILABLE } from './src/services/AbbyAgent';
 import {
   OnboardingScreen,
   InterviewScreen,
@@ -33,6 +32,17 @@ import {
   CoachScreen,
 } from './src/components/screens';
 import { useSettingsStore } from './src/store/useSettingsStore';
+
+// Conditional ElevenLabsProvider - only load if native modules available
+let ElevenLabsProvider: React.ComponentType<{ children: React.ReactNode }> | null = null;
+try {
+  const elevenlabs = require('@elevenlabs/react-native');
+  ElevenLabsProvider = elevenlabs.ElevenLabsProvider;
+} catch (e) {
+  if (__DEV__) {
+    console.warn('[App] ElevenLabsProvider not available - voice features disabled');
+  }
+}
 
 // Inner component that uses voice (must be inside ElevenLabsProvider)
 function DemoScreen() {
@@ -172,13 +182,19 @@ function DemoScreen() {
   );
 }
 
-// Main Demo App - wraps with ElevenLabsProvider
+// Main Demo App - conditionally wraps with ElevenLabsProvider
 export default function AppDemo() {
-  return (
-    <ElevenLabsProvider>
-      <DemoScreen />
-    </ElevenLabsProvider>
-  );
+  // Only wrap with ElevenLabsProvider if native modules are available
+  if (ElevenLabsProvider) {
+    return (
+      <ElevenLabsProvider>
+        <DemoScreen />
+      </ElevenLabsProvider>
+    );
+  }
+
+  // Fallback without provider (UI dev mode)
+  return <DemoScreen />;
 }
 
 const styles = StyleSheet.create({

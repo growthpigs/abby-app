@@ -294,6 +294,7 @@ export function useAbbyAgent(config: AbbyAgentConfig = {}) {
     isConnected,
     isStarting,
     status: conversation.status,
+    voiceAvailable: VOICE_AVAILABLE,
   };
 }
 
