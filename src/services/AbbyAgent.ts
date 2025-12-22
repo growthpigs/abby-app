@@ -81,13 +81,18 @@ try {
   }
   // Mock useConversation for when native modules aren't available
   // This lets the app run in Expo Go for UI development
-  // Note: Callbacks are ignored in mock - voice features simply won't work
-  useConversation = (_options?: ConversationCallbacks): Conversation => ({
+  // Provides helpful error feedback via callbacks
+  useConversation = (options?: ConversationCallbacks): Conversation => ({
     status: 'disconnected',
     isSpeaking: false,
     canSendFeedback: false,
     startSession: async () => {
       console.warn('[AbbyAgent] Voice not available - run with expo run:ios');
+      // Call error callback to provide user feedback
+      options?.onError?.(
+        'Voice features require a development build. Run: npx expo run:ios',
+        { reason: 'native_modules_unavailable', platform: 'expo_go' }
+      );
     },
     endSession: async () => {},
     getId: () => '',
@@ -297,9 +302,16 @@ export function useAbbyAgent(config: AbbyAgentConfig = {}) {
       return;
     }
 
-    // Guard 6: Agent ID required
-    if (!AGENT_ID) {
+    // Guard 6: Agent ID required and valid format
+    if (!AGENT_ID || AGENT_ID.trim().length === 0) {
       const error = new Error('ELEVENLABS_AGENT_ID not configured. Add it to .env.local');
+      callbacks.onError?.(error);
+      throw error;
+    }
+
+    // Guard 7: Agent ID format validation
+    if (!AGENT_ID.startsWith('agent_')) {
+      const error = new Error('ELEVENLABS_AGENT_ID must start with "agent_". Check your .env.local configuration.');
       callbacks.onError?.(error);
       throw error;
     }
@@ -308,6 +320,20 @@ export function useAbbyAgent(config: AbbyAgentConfig = {}) {
     if (__DEV__) console.log('[AbbyAgent] Starting session with agent:', AGENT_ID.slice(0, 8) + '...');
 
     try {
+      // Start audio session BEFORE connecting (iOS only)
+      if (Platform.OS === 'ios' && AudioSession) {
+        try {
+          await AudioSession.configureAudio({
+            ios: { defaultOutput: 'speaker' }
+          });
+          await AudioSession.startAudioSession();
+          await AudioSession.selectAudioOutput('force_speaker');
+          if (__DEV__) console.log('[AbbyAgent] iOS audio session pre-configured');
+        } catch (audioErr) {
+          console.warn('[AbbyAgent] Pre-connect audio setup failed:', audioErr);
+        }
+      }
+
       await conversation.startSession({ agentId: AGENT_ID });
     } catch (err) {
       console.error('[AbbyAgent] Failed to start session:', err);
