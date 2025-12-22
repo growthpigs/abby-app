@@ -1,9 +1,11 @@
 # FEATURE SPEC: Voice Integration System
 
-**What:** ElevenLabs conversational AI agent integration enabling natural voice conversations with Abby
+**What:** Voice I/O system using ElevenLabs TTS + @react-native-voice/voice STT enabling natural voice conversations with Abby
 **Who:** All app users who want to interact with Abby through voice instead of touch interface
 **Why:** Core differentiator - creates intimate, natural conversations that feel like talking to a real matchmaker
 **Status:** 📝 Needs Implementation
+
+> **Architecture Decision (2024-12-22):** Using Voice I/O Only strategy instead of ElevenLabs conversational agent. This gives us full control over the 150-question flow. ElevenLabs provides TTS for Abby's voice, @react-native-voice/voice provides STT for user input.
 
 ---
 
@@ -50,21 +52,22 @@ Acceptance Criteria:
 ## Functional Requirements
 
 What this feature DOES:
-- [ ] Integrates @elevenlabs/react-native SDK with pre-built Abby conversational agent
-- [ ] Provides real-time bidirectional voice communication (<500ms latency)
-- [ ] Processes speech-to-text for user input with intent recognition
-- [ ] Streams text-to-speech audio output with amplitude data for orb animation
-- [ ] Manages WebRTC audio streaming via LiveKit for optimal performance
-- [ ] Handles conversation context and state management across question flow
+- [ ] Uses @react-native-voice/voice for speech-to-text (user input)
+- [ ] Uses ElevenLabs TTS API for text-to-speech (Abby's voice)
+- [ ] Client controls all 150 questions - no server-side agent logic
+- [ ] Processes STT with intent recognition for answer extraction
+- [ ] Streams TTS audio output with amplitude simulation for orb animation
 - [ ] Provides voice command recognition for navigation ("skip", "go back", "repeat")
 - [ ] Integrates with AbbyOrb for visual voice state representation
-- [ ] Maintains conversation history for contextual AI responses
+- [ ] Maintains conversation transcript for display in ConversationOverlay
 - [ ] Securely handles voice transcripts and audio processing
+- [ ] Supports 3 input modes: voice only, text only, voice+text
 
 What this feature does NOT do:
+- ❌ Use ElevenLabs conversational agent (we control question flow client-side)
 - ❌ Store raw audio recordings locally (streams only for privacy)
 - ❌ Support multiple simultaneous voice conversations
-- ❌ Function offline (requires ElevenLabs cloud services)
+- ❌ Function offline (requires ElevenLabs + voice recognition services)
 - ❌ Replace text interface entirely (voice is additive, not replacement)
 - ❌ Handle background voice processing (pauses when app backgrounds)
 - ❌ Provide custom voice training or personalization (V2 feature)
@@ -139,11 +142,18 @@ const conversationConfig = {
 ### Service Layer Components
 | Service | Purpose | Location |
 |---------|---------|----------|
-| VoiceService | Main voice integration orchestrator | `src/services/VoiceService.ts` ❌ |
-| ElevenLabsClient | ElevenLabs SDK wrapper | `src/services/ElevenLabsClient.ts` ❌ |
-| SpeechToText | STT processing and intent recognition | `src/services/SpeechToText.ts` ❌ |
-| ConversationManager | Context and session management | `src/services/ConversationManager.ts` ❌ |
-| AudioStreamManager | WebRTC audio handling | `src/services/AudioStreamManager.ts` ❌ |
+| SpeechRecognition | STT wrapper using @react-native-voice/voice | `src/services/SpeechRecognition.ts` ❌ |
+| AbbyVoice | ElevenLabs TTS for Abby's voice | `src/services/AbbyVoice.ts` ✅ (exists) |
+| AbbyAgent | Legacy - to be replaced with Voice I/O | `src/services/AbbyAgent.ts` ⚠️ (refactor) |
+
+### Dependencies
+```json
+{
+  "@react-native-voice/voice": "^3.x",  // STT - NEW
+  "@elevenlabs/react-native": "^0.2.1", // TTS - EXISTS
+  "@react-native-async-storage/async-storage": "^1.x" // Settings persistence - NEW
+}
+```
 
 ---
 
@@ -234,27 +244,61 @@ interface VoiceState {
 
 ## Voice Service Architecture
 
-### ElevenLabs Agent Configuration
+### Voice I/O Only Strategy
 ```typescript
-const abbyAgentConfig = {
-  agentId: process.env.ELEVENLABS_ABBY_AGENT_ID,
-  voiceId: "abby_custom_voice",
-  model: "flash-2.5",
-  systemPrompt: `You are Abby, a warm and intuitive AI matchmaker...`,
-  firstMessage: "Hi there! I'm Abby, your personal matchmaker...",
-  language: "en-US",
-  streaming: true,
-  interruptible: true
+// We control the question flow, not ElevenLabs
+// TTS: ElevenLabs for Abby's voice output
+// STT: @react-native-voice/voice for user input
+
+const voiceConfig = {
+  tts: {
+    provider: 'elevenlabs',
+    voiceId: process.env.ELEVENLABS_VOICE_ID, // Abby's voice
+    model: 'eleven_turbo_v2',
+    streaming: true
+  },
+  stt: {
+    provider: '@react-native-voice/voice',
+    language: 'en-US',
+    continuous: false // Single utterance per answer
+  }
 };
 ```
 
-### WebRTC Audio Pipeline
+### Voice I/O Pipeline
 ```
-User Microphone → LiveKit Capture → ElevenLabs STT → Intent Processing
-                                                    ↓
-Abby Response ← ElevenLabs TTS ← AI Agent ← Context + Question Flow
-      ↓
-Audio Amplitude → AbbyOrb Animation → Shader Breathing
+┌─────────────────────────────────────────────────────────────┐
+│                     CLIENT-CONTROLLED FLOW                   │
+├─────────────────────────────────────────────────────────────┤
+│                                                              │
+│  [Question from 150-question schema]                         │
+│              ↓                                               │
+│  [ElevenLabs TTS] → Audio → Speaker → User hears question   │
+│              ↓                                               │
+│  [Display in ConversationOverlay]                           │
+│                                                              │
+│  [User speaks answer]                                        │
+│              ↓                                               │
+│  [@react-native-voice/voice STT] → Transcript               │
+│              ↓                                               │
+│  [Intent Recognition] → Match to answer options             │
+│              ↓                                               │
+│  [Display user response in overlay]                         │
+│              ↓                                               │
+│  [Next question from schema] → Loop                         │
+│                                                              │
+└─────────────────────────────────────────────────────────────┘
+```
+
+### Audio Amplitude for Orb
+Since we're not using WebRTC/LiveKit, we simulate amplitude:
+```typescript
+// During TTS playback, generate pulse pattern
+const simulateAmplitude = (speaking: boolean) => {
+  if (!speaking) return 0;
+  const t = Date.now() / 1000;
+  return 0.35 + Math.sin(t * 4) * 0.2 + Math.sin(t * 7) * 0.1;
+};
 ```
 
 ### Conversation Context Management
@@ -463,9 +507,12 @@ const { startConversation, endConversation, status } = useConversation({
 
 | Date | Change | Author |
 |------|--------|--------|
+| 2024-12-22 | **MAJOR:** Changed to Voice I/O Only strategy (ElevenLabs TTS + react-native-voice STT) | Chi |
+| 2024-12-22 | Added 3 input modes (voice only, text only, voice+text) | Chi |
+| 2024-12-22 | Updated architecture - client controls 150-question flow | Chi |
 | 2024-12-20 | Initial SpecKit specification created with comprehensive ElevenLabs integration | Chi |
 
 ---
 
 *Document created: December 20, 2024*
-*Last updated: December 20, 2024*
+*Last updated: December 22, 2024*

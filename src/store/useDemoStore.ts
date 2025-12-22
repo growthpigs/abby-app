@@ -10,6 +10,7 @@
 import { create } from 'zustand';
 import { VibeColorTheme, AppState } from '../types/vibe';
 import { useVibeController } from './useVibeController';
+import { ConversationMessage } from '../components/ui/ConversationOverlay';
 
 // Demo flow states
 export type DemoState =
@@ -45,6 +46,7 @@ interface DemoStoreState {
   coveragePercent: number;
   matchData: MatchProfile | null;
   userName: string;
+  messages: ConversationMessage[];
 }
 
 // Demo store actions
@@ -59,6 +61,10 @@ interface DemoStoreActions {
   answerQuestion: (answer: Answer) => void;
   nextQuestion: () => void;
   setTotalQuestions: (count: number) => void;
+
+  // Conversation
+  addMessage: (speaker: 'abby' | 'user', text: string) => void;
+  clearMessages: () => void;
 
   // Match
   setMatchData: (match: MatchProfile) => void;
@@ -98,6 +104,7 @@ export const useDemoStore = create<DemoStore>((set, get) => ({
   coveragePercent: 0,
   matchData: null,
   userName: '',
+  messages: [],
 
   // Navigation
   advance: () => {
@@ -125,6 +132,7 @@ export const useDemoStore = create<DemoStore>((set, get) => ({
       coveragePercent: 0,
       matchData: null,
       userName: '',
+      messages: [],
     });
     syncVibeState('ONBOARDING');
   },
@@ -163,6 +171,22 @@ export const useDemoStore = create<DemoStore>((set, get) => ({
     set({ totalQuestions: count });
   },
 
+  // Conversation
+  addMessage: (speaker: 'abby' | 'user', text: string) => {
+    const { messages } = get();
+    const newMessage: ConversationMessage = {
+      id: `msg-${Date.now()}-${Math.random().toString(36).substring(7)}`,
+      speaker,
+      text,
+      timestamp: Date.now(),
+    };
+    set({ messages: [...messages, newMessage] });
+  },
+
+  clearMessages: () => {
+    set({ messages: [] });
+  },
+
   // Match
   setMatchData: (match: MatchProfile) => {
     set({ matchData: match });
@@ -190,3 +214,6 @@ export const useInterviewProgress = () =>
 export const useMatchData = () => useDemoStore((state) => state.matchData);
 
 export const useUserName = () => useDemoStore((state) => state.userName);
+
+export const useConversationMessages = () =>
+  useDemoStore((state) => state.messages);

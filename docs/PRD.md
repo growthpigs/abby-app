@@ -2,7 +2,7 @@
 
 **Product Name:** ABBY - The Anti-Dating App
 **Version:** 1.0 MVP
-**Last Updated:** December 20, 2024
+**Last Updated:** December 22, 2024
 **Client:** Manuel Negreiro
 
 ---
@@ -147,6 +147,32 @@ Acceptance Criteria:
 - [ ] Core experience (VibeMatrix + Abby + Questions) is functional
 - [ ] Voice integration works on physical device
 - [ ] App demonstrates the "alive" feeling effectively
+
+---
+
+### Epic: Settings & Input Mode (Added 2024-12-22)
+
+**US-011: Input Mode Selection**
+As a user, I want to choose my preferred input mode (voice only, text only, or both) so that I can interact with Abby in my most comfortable way.
+
+Acceptance Criteria:
+- [ ] User can access Settings screen before interview starts
+- [ ] 3 input modes available: voice only, text only, voice+text
+- [ ] Selection persists across app sessions (AsyncStorage)
+- [ ] Can change mode during interview (in voice+text mode via drag handle)
+- [ ] Default mode is voice+text
+- [ ] Settings accessible via gear icon on Onboarding screen
+
+**US-012: Conversation Transcript Display**
+As a user, I want to see the conversation with Abby as text so that I can follow along and reference what was said.
+
+Acceptance Criteria:
+- [ ] Transcript appears in blur overlay during interview
+- [ ] Abby's messages and user responses both shown
+- [ ] Text uses Merriweather 13pt, 5px padding, 125% line height
+- [ ] Overlay height adapts to input mode (0%/50%/100%)
+- [ ] Drag handle allows hiding text in voice+text mode
+- [ ] Auto-scrolls to latest message
 
 ---
 

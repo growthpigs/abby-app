@@ -9,15 +9,19 @@
  * Text uses white with subtle shadow for readability on all shader backgrounds.
  */
 
-import React from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { View, Text, StyleSheet, Pressable } from 'react-native';
 import { BlurView } from 'expo-blur';
 import * as Haptics from 'expo-haptics';
 import Animated, { FadeIn, FadeOut } from 'react-native-reanimated';
 import { useDemoStore } from '../../store/useDemoStore';
 import { useVibeController } from '../../store/useVibeController';
+import { useSettingsStore } from '../../store/useSettingsStore';
 import { DEMO_QUESTIONS } from '../../data/demo-questions';
 import { VibeColorTheme } from '../../types/vibe';
+import { ConversationOverlay } from '../ui/ConversationOverlay';
+import { useSpeechRecognition } from '../../services/SpeechRecognition';
+import { abbyVoice } from '../../services/AbbyVoice';
 
 // Returns the background index for shader progression
 // Curated selection featuring the most beautiful shaders: 5, 1, 13, 8, 18, etc.
@@ -49,43 +53,78 @@ export const InterviewScreen: React.FC<InterviewScreenProps> = ({
   const answerQuestion = useDemoStore((state) => state.answerQuestion);
   const nextQuestion = useDemoStore((state) => state.nextQuestion);
   const advance = useDemoStore((state) => state.advance);
-  const reset = useDemoStore((state) => state.reset);
+  const messages = useDemoStore((state) => state.messages);
+  const addMessage = useDemoStore((state) => state.addMessage);
 
   const setColorTheme = useVibeController((state) => state.setColorTheme);
+  const setAudioLevel = useVibeController((state) => state.setAudioLevel);
+  const inputMode = useSettingsStore((state) => state.inputMode);
 
-  // Restart demo handler
-  const handleRestart = () => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    reset();
-  };
-
+  // Derive current question and state (needed before callbacks)
   const currentQuestion = DEMO_QUESTIONS[Math.min(currentIndex, DEMO_QUESTIONS.length - 1)];
   const isLastQuestion = currentIndex >= DEMO_QUESTIONS.length - 1;
 
-  const handleAnswer = () => {
+  // Check if voice is enabled (voice_only or voice_and_text mode)
+  const voiceEnabled = inputMode === 'voice_only' || inputMode === 'voice_and_text';
+
+  // Track TTS errors for user feedback
+  const [voiceError, setVoiceError] = useState(false);
+
+  // Ref for audio level callback to prevent memory leaks
+  // (callback is created fresh each render, but AbbyVoice stores reference)
+  const audioLevelRef = useRef(setAudioLevel);
+  audioLevelRef.current = setAudioLevel;
+
+  // Track if we already added Abby's message for current question
+  const addedMessageForQuestion = useRef(-1);
+
+  // Submit answer (from voice or button tap)
+  const submitAnswer = useCallback((answerValue: string) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
 
-    // 1. Trigger vibe_shift if present
+    // Add user response to conversation
+    addMessage('user', answerValue);
+
+    // Trigger vibe_shift if present
     if (currentQuestion.vibe_shift) {
       setColorTheme(currentQuestion.vibe_shift as VibeColorTheme);
     }
 
-    // 2. Record answer (also updates coverage via store)
+    // Record answer
     answerQuestion({
       questionId: currentQuestion.id,
-      value: 'Demo answer',
+      value: answerValue,
       answeredAt: Date.now(),
     });
 
-    // 4. Background update handled by useEffect below (single source of truth)
-    // Removed duplicate onBackgroundChange call - was causing double transitions
-
-    // 5. Next question or advance to searching
+    // Next question or advance
     if (isLastQuestion) {
       advance();
     } else {
       nextQuestion();
     }
+  }, [currentQuestion, isLastQuestion, addMessage, setColorTheme, answerQuestion, advance, nextQuestion]);
+
+  // Speech recognition hook
+  const {
+    isListening,
+    partialTranscript,
+    startListening,
+    stopListening,
+  } = useSpeechRecognition({
+    onResult: (transcript) => {
+      if (transcript.trim()) {
+        submitAnswer(transcript);
+      }
+    },
+    onError: (error) => {
+      if (__DEV__) console.log('[Interview] Speech error:', error);
+    },
+  });
+
+  // Button tap handler (for text_only mode or manual advance)
+  const handleAnswer = () => {
+    submitAnswer('Answered'); // Default for button tap
   };
 
   // Calculate background index for current question
@@ -95,33 +134,35 @@ export const InterviewScreen: React.FC<InterviewScreenProps> = ({
     }
   }, [currentIndex, onBackgroundChange]);
 
+  // Add Abby's question to conversation and SPEAK it when it changes
+  React.useEffect(() => {
+    const question = DEMO_QUESTIONS[Math.min(currentIndex, DEMO_QUESTIONS.length - 1)];
+    if (question) {
+      // Reset error state for new question
+      setVoiceError(false);
+
+      // Add to transcript
+      addMessage('abby', question.text);
+
+      // Speak the question with Abby's voice (TTS)
+      // Use ref for callback to prevent stale closure
+      abbyVoice.speak(question.text, (level) => {
+        audioLevelRef.current(level);
+      }).catch((err) => {
+        console.warn('[Interview] TTS error:', err);
+        // Show error indicator to user
+        setVoiceError(true);
+      });
+    }
+
+    // Cleanup: stop any ongoing speech when question changes or unmounts
+    return () => {
+      abbyVoice.stop();
+    };
+  }, [currentIndex]);
+
   return (
     <View style={styles.container}>
-      {/* Top: Question counter + restart button */}
-      <View style={styles.topSection}>
-        <View style={styles.topRow}>
-          {/* Progress indicator */}
-          <View style={styles.progressContainer}>
-            {DEMO_QUESTIONS.map((_, idx) => (
-              <View
-                key={idx}
-                style={[
-                  styles.progressDot,
-                  idx <= currentIndex && styles.progressDotActive,
-                ]}
-              />
-            ))}
-          </View>
-          {/* Restart button */}
-          <Pressable onPress={handleRestart} style={styles.restartButton}>
-            <Text style={styles.restartText}>✕</Text>
-          </Pressable>
-        </View>
-        <Text style={styles.questionCounter}>
-          Question {currentIndex + 1} of {DEMO_QUESTIONS.length}
-        </Text>
-      </View>
-
       {/* Middle: Question with glassmorphic backing + fade animation */}
       <View style={styles.middleSection}>
         <Animated.View
@@ -135,10 +176,47 @@ export const InterviewScreen: React.FC<InterviewScreenProps> = ({
             </Text>
           </BlurView>
         </Animated.View>
+
+        {/* Voice error indicator */}
+        {voiceError && (
+          <View style={styles.voiceErrorContainer}>
+            <Text style={styles.voiceErrorText}>
+              🔇 Voice unavailable - read text above
+            </Text>
+          </View>
+        )}
       </View>
 
-      {/* Bottom: Next button */}
+      {/* Bottom: Voice mic + Next button */}
       <View style={styles.bottomSection}>
+        {/* Microphone button (for voice modes) */}
+        {voiceEnabled && (
+          <Pressable
+            onPressIn={startListening}
+            onPressOut={stopListening}
+            style={({ pressed }) => [
+              styles.micButton,
+              pressed && styles.micButtonActive,
+              isListening && styles.micButtonActive,
+            ]}
+          >
+            <BlurView intensity={60} tint="dark" style={styles.micBlur}>
+              <Text style={styles.micIcon}>{isListening ? '🔴' : '🎤'}</Text>
+              <Text style={styles.micHint}>
+                {isListening ? 'Listening...' : 'Hold to speak'}
+              </Text>
+            </BlurView>
+          </Pressable>
+        )}
+
+        {/* Partial transcript display */}
+        {partialTranscript ? (
+          <View style={styles.partialContainer}>
+            <Text style={styles.partialText}>{partialTranscript}</Text>
+          </View>
+        ) : null}
+
+        {/* Next button (always visible, primary for text_only mode) */}
         <Pressable
           onPress={handleAnswer}
           style={({ pressed }) => [
@@ -153,6 +231,12 @@ export const InterviewScreen: React.FC<InterviewScreenProps> = ({
           </BlurView>
         </Pressable>
       </View>
+
+      {/* Conversation Overlay - scrolling chat transcript */}
+      <ConversationOverlay
+        messages={messages}
+        inputMode={inputMode}
+      />
     </View>
   );
 };
@@ -161,57 +245,6 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     justifyContent: 'space-between',
-  },
-
-  // TOP - Question counter + progress
-  topSection: {
-    paddingTop: 60, // Below dynamic island
-    paddingHorizontal: 24,
-    alignItems: 'center',
-  },
-  topRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    width: '100%',
-    marginBottom: 8,
-  },
-  progressContainer: {
-    flexDirection: 'row',
-    gap: 6,
-    flex: 1,
-  },
-  progressDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: 'rgba(255, 255, 255, 0.3)',
-  },
-  progressDotActive: {
-    backgroundColor: 'rgba(255, 255, 255, 0.9)',
-  },
-  restartButton: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    backgroundColor: 'rgba(0, 0, 0, 0.2)',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginLeft: 16,
-  },
-  restartText: {
-    color: 'rgba(255, 255, 255, 0.7)',
-    fontSize: 16,
-    fontWeight: '300',
-  },
-  questionCounter: {
-    fontFamily: 'Merriweather_400Regular',
-    fontSize: 14,
-    color: 'rgba(255, 255, 255, 0.8)',
-    letterSpacing: 0.5,
-    textShadowColor: 'rgba(0, 0, 0, 0.3)',
-    textShadowOffset: { width: 0, height: 1 },
-    textShadowRadius: 2,
   },
 
   // MIDDLE - Question card
@@ -238,12 +271,63 @@ const styles = StyleSheet.create({
     textShadowOffset: { width: 0, height: 1 },
     textShadowRadius: 3,
   },
+  voiceErrorContainer: {
+    marginTop: 12,
+    alignItems: 'center',
+  },
+  voiceErrorText: {
+    fontFamily: 'Merriweather_400Regular',
+    fontSize: 12,
+    color: 'rgba(255, 180, 0, 0.9)',
+    textAlign: 'center',
+  },
 
-  // BOTTOM - Next button
+  // BOTTOM - Voice mic + Next button
   bottomSection: {
     paddingHorizontal: 24,
     paddingBottom: 40,
     alignItems: 'center',
+    gap: 16,
+  },
+  micButton: {
+    borderRadius: 40,
+    overflow: 'hidden',
+  },
+  micButtonActive: {
+    transform: [{ scale: 1.05 }],
+  },
+  micBlur: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'rgba(0, 0, 0, 0.3)',
+    borderWidth: 2,
+    borderColor: 'rgba(255, 255, 255, 0.2)',
+  },
+  micIcon: {
+    fontSize: 28,
+  },
+  micHint: {
+    fontFamily: 'Merriweather_400Regular',
+    fontSize: 10,
+    color: 'rgba(255, 255, 255, 0.6)',
+    marginTop: 4,
+  },
+  partialContainer: {
+    backgroundColor: 'rgba(0, 0, 0, 0.3)',
+    borderRadius: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    maxWidth: '80%',
+  },
+  partialText: {
+    fontFamily: 'Merriweather_400Regular',
+    fontSize: 14,
+    color: 'rgba(255, 255, 255, 0.8)',
+    fontStyle: 'italic',
+    textAlign: 'center',
   },
   nextButton: {
     borderRadius: 30,

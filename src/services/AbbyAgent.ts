@@ -20,6 +20,7 @@ import { useVibeController } from '../store/useVibeController';
 const AGENT_ID = process.env.EXPO_PUBLIC_ELEVENLABS_AGENT_ID || '';
 
 export interface AbbyAgentConfig {
+  enabled?: boolean;  // When false, startConversation is a no-op (saves resources)
   onUserTranscript?: (text: string) => void;
   onAbbyResponse?: (text: string) => void;
   onError?: (error: Error) => void;
@@ -28,6 +29,9 @@ export interface AbbyAgentConfig {
 }
 
 export function useAbbyAgent(config: AbbyAgentConfig = {}) {
+  // Destructure config with defaults
+  const { enabled = true, ...callbacks } = config;
+
   // Zustand selectors (separate for performance)
   const setAudioLevel = useVibeController((s) => s.setAudioLevel);
   const setAbbyMode = useVibeController((s) => s.setAbbyMode);
@@ -112,7 +116,7 @@ export function useAbbyAgent(config: AbbyAgentConfig = {}) {
         })();
       }
 
-      config.onConnect?.();
+      callbacks.onConnect?.();
     },
 
     onDisconnect: (details: string) => {
@@ -129,7 +133,7 @@ export function useAbbyAgent(config: AbbyAgentConfig = {}) {
         });
       }
 
-      config.onDisconnect?.();
+      callbacks.onDisconnect?.();
     },
 
     onMessage: ({ message, source }: { message: any; source: string }) => {
@@ -138,13 +142,13 @@ export function useAbbyAgent(config: AbbyAgentConfig = {}) {
       // User transcript - SDK uses nested structure per types.d.ts
       if (message.type === 'user_transcript') {
         const text = message.user_transcription_event?.user_transcript;
-        if (text) config.onUserTranscript?.(text);
+        if (text) callbacks.onUserTranscript?.(text);
       }
 
       // Agent response - SDK uses nested structure per types.d.ts
       if (message.type === 'agent_response') {
         const text = message.agent_response_event?.agent_response;
-        if (text) config.onAbbyResponse?.(text);
+        if (text) callbacks.onAbbyResponse?.(text);
       }
     },
 
@@ -173,13 +177,19 @@ export function useAbbyAgent(config: AbbyAgentConfig = {}) {
     onError: (message: string, context?: Record<string, unknown>) => {
       console.error('[AbbyAgent] Error:', message, context);
       stopAudioPulse();
-      config.onError?.(new Error(message));
+      callbacks.onError?.(new Error(message));
     },
   });
 
   // Start conversation with ElevenLabs agent
   // Uses guards to prevent infinite loop from unstable references
   const startConversation = useCallback(async () => {
+    // Guard 0: Disabled (saves resources when not in COACH mode)
+    if (!enabled) {
+      if (__DEV__) console.log('[AbbyAgent] Disabled, skipping start');
+      return;
+    }
+
     // Guard 1: Already starting
     if (isStarting) {
       if (__DEV__) console.log('[AbbyAgent] Already starting, skipping');
@@ -214,7 +224,7 @@ export function useAbbyAgent(config: AbbyAgentConfig = {}) {
       setIsStarting(false);
       throw err;
     }
-  }, [isStarting, isConnected, conversation.status]);
+  }, [enabled, isStarting, isConnected, conversation.status]);
 
   // End conversation
   const endConversation = useCallback(async () => {

@@ -7,7 +7,8 @@
 
 import { Audio, AVPlaybackStatus } from 'expo-av';
 
-const FAL_KEY = '00c10bec-d5cf-4fd0-8cc7-7bd74ed652cb:55ad5ca184ab611adf4fa82fcd7824a3';
+// API key from environment (add FAL_KEY to .env.local)
+const FAL_KEY = process.env.EXPO_PUBLIC_FAL_KEY || '';
 const FAL_TTS_ENDPOINT = 'https://fal.run/fal-ai/orpheus-tts';
 
 // Orpheus voices: tara, leah, jess, leo, dan, mia, zac, zoe
@@ -37,10 +38,17 @@ class AbbyVoiceService {
   private durationMs: number = 0;
   private currentText: string = '';
 
+  // Generation tracking for race condition prevention
+  private currentGenerationId: number = 0;
+
   /**
    * Generate speech from text using Fal.ai Orpheus
    */
   async generateSpeech(text: string): Promise<string> {
+    if (!FAL_KEY) {
+      throw new Error('FAL_KEY not configured. Add EXPO_PUBLIC_FAL_KEY to .env.local');
+    }
+
     console.log('[AbbyVoice] Generating speech for:', text.substring(0, 50));
 
     const response = await fetch(FAL_TTS_ENDPOINT, {
@@ -76,8 +84,13 @@ class AbbyVoiceService {
 
   /**
    * Play audio and report amplitude levels via callback
+   * Includes race condition protection - if speak() is called again
+   * while generating, the previous generation is cancelled.
    */
   async speak(text: string, onAudioLevel?: AudioLevelCallback): Promise<void> {
+    // Increment generation ID to cancel any in-flight requests
+    const generationId = ++this.currentGenerationId;
+
     try {
       // Stop any existing playback
       await this.stop();
@@ -85,11 +98,17 @@ class AbbyVoiceService {
       this.audioLevelCallback = onAudioLevel || null;
 
       // Generate speech
-      console.log('[AbbyVoice] Starting speak()...');
+      console.log('[AbbyVoice] Starting speak()... (gen:', generationId, ')');
       this.currentText = text;
       this.durationMs = estimateDurationMs(text);
       console.log('[AbbyVoice] Estimated duration:', this.durationMs, 'ms');
       const audioUrl = await this.generateSpeech(text);
+
+      // Check if we were cancelled during generation
+      if (generationId !== this.currentGenerationId) {
+        console.log('[AbbyVoice] Generation', generationId, 'cancelled (new request started)');
+        return;
+      }
 
       // Configure audio mode
       console.log('[AbbyVoice] Configuring audio mode...');
@@ -98,15 +117,30 @@ class AbbyVoiceService {
         staysActiveInBackground: false,
       });
 
-      // Load and play
+      // Check again after async operation
+      if (generationId !== this.currentGenerationId) {
+        console.log('[AbbyVoice] Generation', generationId, 'cancelled after audio config');
+        return;
+      }
+
+      // Load audio (paused) to check cancellation before playing
       console.log('[AbbyVoice] Loading audio from URL...');
       const { sound } = await Audio.Sound.createAsync(
         { uri: audioUrl },
-        { shouldPlay: true },
+        { shouldPlay: false },  // Load paused to check cancellation first
         this.onPlaybackStatusUpdate.bind(this)
       );
 
+      // Final check before committing to playback
+      if (generationId !== this.currentGenerationId) {
+        console.log('[AbbyVoice] Generation', generationId, 'cancelled before playback');
+        await sound.unloadAsync();
+        return;
+      }
+
+      // Now play (after confirming not cancelled)
       console.log('[AbbyVoice] Audio loaded, playing...');
+      await sound.playAsync();
       this.sound = sound;
       this.isPlaying = true;
 
@@ -116,8 +150,11 @@ class AbbyVoiceService {
       console.log('[AbbyVoice] Amplitude simulation started');
 
     } catch (error) {
-      console.error('[AbbyVoice] Error:', error);
-      this.isPlaying = false;
+      // Only log error if this generation is still current
+      if (generationId === this.currentGenerationId) {
+        console.error('[AbbyVoice] Error:', error);
+        this.isPlaying = false;
+      }
       throw error;
     }
   }

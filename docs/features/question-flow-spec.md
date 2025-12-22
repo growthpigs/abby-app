@@ -240,9 +240,10 @@ interface PicturegramQuestion {
 
 | Flow Type | Questions | Duration | Purpose |
 |-----------|-----------|----------|---------|
-| Demo | 10 questions | 3-5 minutes | Client demonstration |
-| MVP Full | 50-75 questions | 15-20 minutes | Core compatibility assessment |
-| Complete | 150+ questions | 30-45 minutes | Deep personality profiling |
+| Demo | 10 questions | 3-5 minutes | Client demonstration (tap-through) |
+| **MVP** | **150 questions** | **30-45 minutes** | **Full compatibility assessment (approved 2024-12-22)** |
+
+> **Decision (2024-12-22):** MVP uses all 150 questions from `docs/data/questions-schema.ts`. This is the approved client question set.
 
 ### Question Prioritization
 
@@ -558,17 +559,17 @@ src/
 
 ## Open Questions & Decisions
 
-### MVP Scope Decisions Needed
-1. **How many questions for MVP?** Currently 10 (demo) - should we expand to 50-75?
-2. **Which question types for MVP?** All 5 types or subset?
-3. **Voice integration timeline?** Wait for AbbyOrb completion or parallel development?
-4. **Skip/back navigation?** Linear flow only or full navigation?
+### MVP Scope Decisions ✅ RESOLVED
+1. ~~**How many questions for MVP?**~~ → ✅ **All 150 questions** (approved 2024-12-22)
+2. ~~**Which question types for MVP?**~~ → ✅ All 5 types from schema
+3. ~~**Voice integration timeline?**~~ → ✅ Voice I/O Only strategy, parallel with UI
+4. **Skip/back navigation?** → TBD (linear flow for MVP)
 
 ### Technical Decisions
-1. **Question loading strategy?** All upfront or paginated?
-2. **Answer validation?** Client-side only or server validation?
-3. **Progress persistence?** Local only or cloud backup?
-4. **Voice confidence threshold?** What % confidence to auto-submit?
+1. **Question loading strategy?** → Load all 150 upfront (schema is static)
+2. **Answer validation?** → Client-side only for MVP
+3. **Progress persistence?** → Local (AsyncStorage) for MVP
+4. ~~**Voice confidence threshold?**~~ → ✅ 70% to show confirmation, 90% to auto-submit
 
 ---
 
@@ -576,6 +577,8 @@ src/
 
 | Date | Change | Author |
 |------|--------|--------|
+| 2024-12-22 | **MAJOR:** Updated to 150 questions for MVP (all questions from schema) | Chi |
+| 2024-12-22 | Resolved MVP scope decisions - voice strategy, question types | Chi |
 | 2024-12-20 | Created comprehensive SpecKit specification | Chi |
 | 2024-12-10 | Implemented demo InterviewScreen with vibe coordination | CC1 |
 | 2024-12-09 | Created basic question rendering and progress tracking | CC1 |
@@ -583,4 +586,4 @@ src/
 ---
 
 *Document created: December 20, 2024*
-*Last updated: December 20, 2024*
+*Last updated: December 22, 2024*

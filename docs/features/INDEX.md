@@ -15,6 +15,7 @@
 | glass-interface | 📝 Needs Implementation | glass-interface-spec.md | Chi | MVP |
 | onboarding-auth | 📝 Needs Implementation | onboarding-auth-spec.md | Chi | MVP |
 | voice-integration | 📝 Needs Implementation | voice-integration-spec.md | Chi | MVP |
+| **settings** | 📝 Needs Implementation | **settings-spec.md** | Chi | MVP |
 
 ---
 
@@ -133,6 +134,33 @@ Voice Integration is now fully specced. All core MVP features have comprehensive
 
 ---
 
+## 2024-12-22 Update
+
+**What was done:**
+- Added Settings feature spec (input mode selection)
+- Updated voice-integration-spec.md to Voice I/O Only strategy (ElevenLabs TTS + @react-native-voice/voice STT)
+- Updated question-flow-spec.md to 150 questions for MVP
+- Added ConversationOverlay component to glass-interface-spec.md
+- Added 2 new user stories to PRD.md (US-011, US-012)
+
+**Files created:**
+- docs/features/settings-spec.md - Input mode selection (voice/text/both)
+
+**Files updated:**
+- docs/features/voice-integration-spec.md - Voice I/O Only strategy
+- docs/features/question-flow-spec.md - 150 questions for MVP
+- docs/features/glass-interface-spec.md - ConversationOverlay component
+- docs/PRD.md - New user stories US-011, US-012
+
+**Key Decisions:**
+- 150 questions approved (all from questions-schema.ts)
+- Voice I/O Only: ElevenLabs TTS + @react-native-voice/voice STT
+- Client controls question flow (not ElevenLabs agent)
+- 3 input modes: voice only, text only, voice+text
+- ConversationOverlay with drag handle
+
+---
+
 ## 2024-12-20 Update
 
 **What was done:**
@@ -157,4 +185,4 @@ Voice Integration is now fully specced. All core MVP features have comprehensive
 ---
 
 *Index created: December 20, 2024*
-*Last updated: December 20, 2024*
+*Last updated: December 22, 2024*

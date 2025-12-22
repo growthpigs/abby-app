@@ -31,6 +31,7 @@ import {
   PaymentScreen,
   RevealScreen,
 } from './src/components/screens';
+import { useSettingsStore } from './src/store/useSettingsStore';
 
 // Inner component that uses voice (must be inside ElevenLabsProvider)
 function DemoScreen() {
@@ -39,6 +40,10 @@ function DemoScreen() {
   const [voiceStatus, setVoiceStatus] = useState('');
   const currentState = useDemoState();
 
+  // Settings
+  const settingsLoaded = useSettingsStore((state) => state.isLoaded);
+  const loadSettings = useSettingsStore((state) => state.loadSettings);
+
   // Load Merriweather font
   const [fontsLoaded] = useFonts({
     Merriweather_300Light,
@@ -46,8 +51,14 @@ function DemoScreen() {
     Merriweather_700Bold,
   });
 
-  // Initialize AbbyAgent for voice
+  // Load settings on mount
+  useEffect(() => {
+    loadSettings();
+  }, []);
+
+  // Initialize AbbyAgent for voice (only enabled in COACH mode)
   const { startConversation, endConversation, isSpeaking, status } = useAbbyAgent({
+    enabled: currentState === 'COACH',  // Disabled for INTERVIEW - uses Fal.ai TTS instead
     onAbbyResponse: (text) => {
       if (__DEV__) console.log('[Demo] Abby says:', text);
       setAbbyText(text);
@@ -94,22 +105,10 @@ function DemoScreen() {
   // Track if voice session has been started to prevent infinite loop
   const voiceStartedRef = useRef(false);
 
-  // Start voice when entering interview state (once only)
-  useEffect(() => {
-    if (currentState === 'INTERVIEW' && !voiceStartedRef.current) {
-      voiceStartedRef.current = true;
-      setVoiceStatus('Connecting...');
-      startConversation().catch((err) => {
-        console.error('[Demo] Failed to start voice:', err);
-        setVoiceStatus('Voice unavailable');
-        voiceStartedRef.current = false; // Allow retry
-      });
-    } else if (currentState !== 'INTERVIEW' && voiceStartedRef.current) {
-      // Left INTERVIEW state, end conversation
-      voiceStartedRef.current = false;
-      endConversation();
-    }
-  }, [currentState]); // Only depend on currentState, not the functions
+  // NOTE: ElevenLabs agent is DISABLED during INTERVIEW state
+  // We use Fal.ai TTS (AbbyVoice) for scripted questions instead.
+  // ElevenLabs agent will be used for COACH mode (free-form conversation).
+  // See InterviewScreen.tsx for TTS implementation.
 
   // Render the appropriate screen based on state
   const renderScreen = () => {
@@ -131,8 +130,8 @@ function DemoScreen() {
     }
   };
 
-  // Show loading while fonts load
-  if (!fontsLoaded) {
+  // Show loading while fonts or settings load
+  if (!fontsLoaded || !settingsLoaded) {
     return (
       <View style={styles.loadingContainer}>
         <ActivityIndicator size="large" color="#fff" />

@@ -80,6 +80,7 @@ New fields needed:
 |-----------|---------|----------|
 | GlassCard | Base container component with blur background | `src/components/ui/GlassCard.tsx` ✅ |
 | GlassButton | Interactive button with variants and haptics | `src/components/ui/GlassButton.tsx` ✅ |
+| **ConversationOverlay** | **Blur sheet for transcript display with drag handle** | `src/components/ui/ConversationOverlay.tsx` ❌ **NEW** |
 | GlassInput | Text input with glass styling and focus states | `src/components/ui/GlassInput.tsx` ❌ |
 | GlassPicker | Selection component for choice questions | `src/components/ui/GlassPicker.tsx` ❌ |
 | GlassSlider | Range input for scale questions | `src/components/ui/GlassSlider.tsx` ❌ |
@@ -99,6 +100,84 @@ New fields needed:
 
 ---
 
+## ConversationOverlay Component Specification (NEW - 2024-12-22)
+
+### Overview
+Blur sheet overlay that displays conversation transcript during the interview flow. Adapts height based on input mode setting.
+
+### Visual Spec
+```
+┌─────────────────────────────────────┐
+│         [Shader Background]         │
+│                                     │
+│            [Abby Orb]               │
+│                                     │
+├─────────────────────────────────────┤ ← BlurView starts
+│5px│                                 │
+│   │ "What draws                     │   Merriweather 400
+│   │ you to                          │   13px font
+│   │ someone                         │   16.25px line height (125%)
+│   │ initially?"                     │   White + textShadow
+│   │                                 │
+│   │ [User response...]              │
+│   │                                 │
+│   │ "That's beautiful..."           │
+│   └─────────────────────────────────│
+│    ──────── (drag handle)           │
+└─────────────────────────────────────┘
+```
+
+### Props
+```typescript
+interface ConversationOverlayProps {
+  messages: ConversationMessage[];
+  inputMode: 'voice_only' | 'text_only' | 'voice_and_text';
+  onDragEnd?: (collapsed: boolean) => void;
+}
+
+interface ConversationMessage {
+  id: string;
+  speaker: 'abby' | 'user';
+  text: string;
+  timestamp: number;
+}
+```
+
+### Height Behavior by Input Mode
+| Mode | Height | Drag Handle | Notes |
+|------|--------|-------------|-------|
+| `voice_only` | 0% (hidden) | N/A | No overlay, just orb |
+| `voice_and_text` | 50% | Yes | Can drag down to hide |
+| `text_only` | 100% | No | Full screen frost |
+
+### Typography
+```typescript
+const overlayTextStyle = {
+  fontFamily: 'Merriweather_400Regular',
+  fontSize: 13,
+  lineHeight: 16.25, // 13 * 1.25
+  color: '#FFFFFF',
+  paddingLeft: 5,
+  textShadowColor: 'rgba(0,0,0,0.5)',
+  textShadowOffset: { width: 0, height: 1 },
+  textShadowRadius: 2,
+};
+```
+
+### Animation
+- Uses react-native-reanimated for height animation
+- Drag gesture via react-native-gesture-handler PanGestureHandler
+- BlurView intensity: 60 (dark tint)
+- Transition duration: 300ms with easeInOut
+
+### Implementation Notes
+1. Sits in Layer 2 (Z:20) with other glass components
+2. Uses ScrollView with auto-scroll to latest message
+3. Abby messages align left, user messages could have different style
+4. Drag handle only visible in `voice_and_text` mode
+
+---
+
 ## Implementation Tasks
 
 ### Setup
@@ -113,6 +192,8 @@ New fields needed:
 - [ ] TASK-007: Create GlassPicker for multiple choice questions
 - [ ] TASK-008: Build GlassSlider for scale-based questions
 - [ ] TASK-009: Develop GlassModal for full-screen overlays
+- [ ] **TASK-NEW-001: Build ConversationOverlay with 3 height modes** (2024-12-22)
+- [ ] **TASK-NEW-002: Implement drag handle gesture for ConversationOverlay** (2024-12-22)
 
 ### Layer Architecture
 - [ ] TASK-010: Create GlassInterface layer container (Z-index: 20)
@@ -368,9 +449,12 @@ accessibilityState={{ disabled }}
 
 | Date | Change | Author |
 |------|--------|--------|
+| 2024-12-22 | Added ConversationOverlay component specification with 3 height modes | Chi |
+| 2024-12-22 | Added 13pt/5px typography spec for conversation transcript | Chi |
+| 2024-12-22 | Added drag handle gesture requirements | Chi |
 | 2024-12-20 | Initial SpecKit specification created with comprehensive component analysis | Chi |
 
 ---
 
 *Document created: December 20, 2024*
-*Last updated: December 20, 2024*
+*Last updated: December 22, 2024*

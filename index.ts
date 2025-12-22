@@ -1,15 +1,15 @@
 import { registerRootComponent } from 'expo';
 
 /**
- * DEV MODE
+ * DEMO MODE
  *
- * Uses App.dev.tsx which has a runtime toggle between:
- * - SHADERS: Background + Orb testing (App.liquid)
- * - ABBY: Voice/TTS testing (App.abby)
- *
- * Toggle button in top-right corner of screen.
+ * Full demo flow: Onboarding → Interview → Searching → Match → Payment → Reveal
+ * Includes:
+ * - Settings (input mode selection)
+ * - ConversationOverlay (transcript display)
+ * - Voice input (hold mic to speak)
  */
-import App from './App.dev';
+import App from './App.demo';
 
 // registerRootComponent calls AppRegistry.registerComponent('main', () => App);
 // It also ensures that whether you load the app in Expo Go or in a native build,
