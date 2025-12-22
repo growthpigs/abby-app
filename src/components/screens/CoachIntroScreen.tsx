@@ -355,8 +355,8 @@ const styles = StyleSheet.create({
     color: 'rgba(0, 0, 0, 0.5)',
   },
 
-  // Pause button
-  pauseButton: {
+  // Mute button
+  muteButton: {
     position: 'absolute',
     right: 16,
     width: 36,
@@ -366,7 +366,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  pauseButtonPressed: {
+  muteButtonPressed: {
     opacity: 0.7,
     transform: [{ scale: 0.95 }],
   },
