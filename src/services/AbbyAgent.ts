@@ -133,7 +133,7 @@ export function useAbbyAgent(config: AbbyAgentConfig = {}) {
   // Session state - prevents double-starting
   const [isStarting, setIsStarting] = useState(false);
   const [isConnected, setIsConnected] = useState(false);
-  const [isPaused, setIsPaused] = useState(false);
+  const [isMuted, setIsMuted] = useState(false);
 
   // Pulse animation ref (persists across renders)
   const pulseIntervalRef = useRef<NodeJS.Timeout | null>(null);
@@ -353,7 +353,7 @@ export function useAbbyAgent(config: AbbyAgentConfig = {}) {
     stopAudioPulse();
     stopSpeakingPulse();
     setIsConnected(false);
-    setIsPaused(false);
+    setIsMuted(false);
 
     try {
       await conversation.endSession();
@@ -363,31 +363,35 @@ export function useAbbyAgent(config: AbbyAgentConfig = {}) {
     }
   }, [isConnected, conversation.status, stopAudioPulse, stopSpeakingPulse]);
 
-  // Pause conversation (stops audio session)
-  const pauseConversation = useCallback(async () => {
-    if (!isConnected || isPaused) return;
+  // Mute conversation (stops audio I/O - agent keeps running on backend)
+  const muteConversation = useCallback(async () => {
+    if (!isConnected || isMuted) return;
 
-    if (__DEV__) console.log('[AbbyAgent] Pausing conversation');
-    setIsPaused(true);
-    stopAudioPulse();
-    stopSpeakingPulse();
-    setAbbyMode('IDLE');
+    if (__DEV__) console.log('[AbbyAgent] Muting conversation');
 
+    // Stop audio FIRST, then update state (validator fix)
     if (Platform.OS === 'ios' && AudioSession) {
       try {
         await AudioSession.stopAudioSession();
-        if (__DEV__) console.log('[AbbyAgent] Audio session stopped (paused)');
+        if (__DEV__) console.log('[AbbyAgent] Audio session stopped (muted)');
       } catch (err) {
-        console.warn('[AbbyAgent] Failed to stop audio:', err);
+        console.warn('[AbbyAgent] Failed to mute audio:', err);
+        return; // Don't update state if mute failed
       }
     }
-  }, [isConnected, isPaused, stopAudioPulse, stopSpeakingPulse, setAbbyMode]);
 
-  // Resume conversation (restarts audio session)
-  const resumeConversation = useCallback(async () => {
-    if (!isConnected || !isPaused) return;
+    // Update state AFTER successful audio stop
+    setIsMuted(true);
+    stopAudioPulse();
+    stopSpeakingPulse();
+    setAbbyMode('IDLE');
+  }, [isConnected, isMuted, stopAudioPulse, stopSpeakingPulse, setAbbyMode]);
 
-    if (__DEV__) console.log('[AbbyAgent] Resuming conversation');
+  // Unmute conversation (restarts audio I/O)
+  const unmuteConversation = useCallback(async () => {
+    if (!isConnected || !isMuted) return;
+
+    if (__DEV__) console.log('[AbbyAgent] Unmuting conversation');
 
     if (Platform.OS === 'ios' && AudioSession) {
       try {
@@ -411,29 +415,29 @@ export function useAbbyAgent(config: AbbyAgentConfig = {}) {
       }
     }
 
-    setIsPaused(false);
+    setIsMuted(false);
     setAbbyMode('LISTENING');
-  }, [isConnected, isPaused, setAbbyMode]);
+  }, [isConnected, isMuted, setAbbyMode]);
 
-  // Toggle pause/resume
-  const togglePause = useCallback(async () => {
-    if (isPaused) {
-      await resumeConversation();
+  // Toggle mute/unmute
+  const toggleMute = useCallback(async () => {
+    if (isMuted) {
+      await unmuteConversation();
     } else {
-      await pauseConversation();
+      await muteConversation();
     }
-  }, [isPaused, pauseConversation, resumeConversation]);
+  }, [isMuted, muteConversation, unmuteConversation]);
 
   return {
     startConversation,
     endConversation,
-    pauseConversation,
-    resumeConversation,
-    togglePause,
+    muteConversation,
+    unmuteConversation,
+    toggleMute,
     isSpeaking: conversation.isSpeaking,
     isConnected,
     isStarting,
-    isPaused,
+    isMuted,
     status: conversation.status,
     voiceAvailable: VOICE_AVAILABLE,
   };

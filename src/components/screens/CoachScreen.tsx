@@ -48,7 +48,7 @@ export const CoachScreen: React.FC<CoachScreenProps> = ({
   const translateY = useRef(new Animated.Value(SCREEN_HEIGHT)).current;
 
   // Initialize ElevenLabs Agent
-  const { startConversation, endConversation, togglePause, isSpeaking, isConnected, isPaused } = useAbbyAgent({
+  const { startConversation, endConversation, toggleMute, isSpeaking, isConnected, isMuted } = useAbbyAgent({
     enabled: true,
     onAbbyResponse: (text) => {
       addMessage('abby', text);
@@ -175,8 +175,8 @@ export const CoachScreen: React.FC<CoachScreenProps> = ({
   // Handle pause/resume
   const handleTogglePause = useCallback(async () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    await togglePause();
-  }, [togglePause]);
+    await toggleMute();
+  }, [toggleMute]);
 
   return (
     <View style={styles.container}>
@@ -204,10 +204,10 @@ export const CoachScreen: React.FC<CoachScreenProps> = ({
             <View style={styles.statusRow}>
               <View style={[
                 styles.statusDot,
-                isConnected ? (isPaused ? styles.statusPaused : styles.statusConnected) : styles.statusDisconnected
+                isConnected ? (isMuted ? styles.statusPaused : styles.statusConnected) : styles.statusDisconnected
               ]} />
               <Text style={styles.statusText}>
-                {isPaused ? 'Paused' : (isConnected ? (isSpeaking ? 'Abby is speaking...' : 'Listening') : agentStatus)}
+                {isMuted ? 'Paused' : (isConnected ? (isSpeaking ? 'Abby is speaking...' : 'Listening') : agentStatus)}
               </Text>
 
               {/* Pause/Play button - positioned absolute right */}
@@ -219,7 +219,7 @@ export const CoachScreen: React.FC<CoachScreenProps> = ({
                     pressed && styles.pauseButtonPressed,
                   ]}
                 >
-                  {isPaused ? (
+                  {isMuted ? (
                     // @ts-ignore - color works via SvgProps
                     <Play size={20} color="#FFFFFF" />
                   ) : (

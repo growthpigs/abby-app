@@ -50,7 +50,7 @@ export const CoachIntroScreen: React.FC<CoachIntroScreenProps> = ({
   const translateY = useRef(new Animated.Value(SCREEN_HEIGHT)).current;
 
   // Initialize ElevenLabs Agent
-  const { startConversation, endConversation, togglePause, isSpeaking, isConnected, isPaused } = useAbbyAgent({
+  const { startConversation, endConversation, toggleMute, isSpeaking, isConnected, isMuted } = useAbbyAgent({
     enabled: true,
     onAbbyResponse: (text) => {
       addMessage('abby', text);
@@ -174,11 +174,11 @@ export const CoachIntroScreen: React.FC<CoachIntroScreenProps> = ({
     advance(); // Go to INTERVIEW
   }, [endConversation, advance]);
 
-  // Handle pause/resume
-  const handleTogglePause = useCallback(async () => {
+  // Handle mute/unmute
+  const handleToggleMute = useCallback(async () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    await togglePause();
-  }, [togglePause]);
+    await toggleMute();
+  }, [toggleMute]);
 
   return (
     <View style={styles.container}>
@@ -202,26 +202,26 @@ export const CoachIntroScreen: React.FC<CoachIntroScreenProps> = ({
               <View style={styles.handle} />
             </View>
 
-            {/* Connection status + Pause button */}
+            {/* Connection status + Mute button */}
             <View style={styles.statusRow}>
               <View style={[
                 styles.statusDot,
-                isConnected ? (isPaused ? styles.statusPaused : styles.statusConnected) : styles.statusDisconnected
+                isConnected ? (isMuted ? styles.statusMuted : styles.statusConnected) : styles.statusDisconnected
               ]} />
               <Text style={styles.statusText}>
-                {isPaused ? 'Paused' : (isConnected ? (isSpeaking ? 'Abby is speaking...' : 'Listening') : agentStatus)}
+                {isMuted ? 'Muted' : (isConnected ? (isSpeaking ? 'Abby is speaking...' : 'Listening') : agentStatus)}
               </Text>
 
-              {/* Pause/Play button - positioned absolute right */}
+              {/* Mute/Unmute button - positioned absolute right */}
               {isConnected && (
                 <Pressable
-                  onPress={handleTogglePause}
+                  onPress={handleToggleMute}
                   style={({ pressed }) => [
-                    styles.pauseButton,
-                    pressed && styles.pauseButtonPressed,
+                    styles.muteButton,
+                    pressed && styles.muteButtonPressed,
                   ]}
                 >
-                  {isPaused ? (
+                  {isMuted ? (
                     // @ts-ignore - color works via SvgProps
                     <Play size={20} color="#FFFFFF" />
                   ) : (
@@ -346,7 +346,7 @@ const styles = StyleSheet.create({
   statusDisconnected: {
     backgroundColor: '#EF4444',
   },
-  statusPaused: {
+  statusMuted: {
     backgroundColor: '#F59E0B',
   },
   statusText: {
