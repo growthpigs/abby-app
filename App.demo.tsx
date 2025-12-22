@@ -6,7 +6,7 @@
  * Background shaders progress (soft → hard) as questions advance.
  * ElevenLabs voice integration for Abby conversation.
  *
- * States: ONBOARDING → INTERVIEW → SEARCHING → MATCH → PAYMENT → REVEAL
+ * States: ONBOARDING → INTERVIEW → SEARCHING → MATCH → PAYMENT → REVEAL → COACH
  */
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
@@ -30,6 +30,7 @@ import {
   MatchScreen,
   PaymentScreen,
   RevealScreen,
+  CoachScreen,
 } from './src/components/screens';
 import { useSettingsStore } from './src/store/useSettingsStore';
 
@@ -98,6 +99,8 @@ function DemoScreen() {
       setBackgroundIndex(8); // Deep Ocean - mysterious searching
     } else if (currentState === 'MATCH' || currentState === 'PAYMENT' || currentState === 'REVEAL') {
       setBackgroundIndex(5); // Liquid Marble - beautiful for reveal
+    } else if (currentState === 'COACH') {
+      setBackgroundIndex(5); // Liquid Marble - calming for conversation
     }
     // INTERVIEW uses its own progression via handleBackgroundChange
   }, [currentState]);
@@ -125,6 +128,8 @@ function DemoScreen() {
         return <PaymentScreen />;
       case 'REVEAL':
         return <RevealScreen />;
+      case 'COACH':
+        return <CoachScreen onBackgroundChange={handleBackgroundChange} />;
       default:
         return <OnboardingScreen />;
     }

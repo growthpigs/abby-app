@@ -12,9 +12,43 @@
 
 import { useCallback, useRef, useEffect, useState } from 'react';
 import { Platform } from 'react-native';
-import { useConversation } from '@elevenlabs/react-native';
-import { AudioSession } from '@livekit/react-native';
 import { useVibeController } from '../store/useVibeController';
+
+// Conditional imports - native modules may not be available in Expo Go
+// ElevenLabs SDK internally uses LiveKit which requires native code
+let useConversation: any = null;
+let AudioSession: {
+  configureAudio: (config: { ios?: { defaultOutput: string } }) => Promise<void>;
+  startAudioSession: () => Promise<void>;
+  stopAudioSession: () => Promise<void>;
+  selectAudioOutput: (output: string) => Promise<void>;
+} | null = null;
+
+// Flag to track if voice features are available
+export let VOICE_AVAILABLE = false;
+
+try {
+  // This will throw if native module isn't linked (Expo Go)
+  const elevenlabs = require('@elevenlabs/react-native');
+  const livekit = require('@livekit/react-native');
+  useConversation = elevenlabs.useConversation;
+  AudioSession = livekit.AudioSession;
+  VOICE_AVAILABLE = true;
+} catch (e) {
+  if (__DEV__) {
+    console.warn('[AbbyAgent] Voice native modules not available. Run with a development build (expo run:ios) for voice support.');
+  }
+  // Mock useConversation for when native modules aren't available
+  // This lets the app run in Expo Go for UI development
+  useConversation = () => ({
+    status: 'disconnected' as const,
+    isSpeaking: false,
+    startSession: async () => {
+      console.warn('[AbbyAgent] Voice not available - run with expo run:ios');
+    },
+    endSession: async () => {},
+  });
+}
 
 // Agent ID from ElevenLabs dashboard
 const AGENT_ID = process.env.EXPO_PUBLIC_ELEVENLABS_AGENT_ID || '';
@@ -93,8 +127,8 @@ export function useAbbyAgent(config: AbbyAgentConfig = {}) {
       setIsStarting(false);
       setAbbyMode('SPEAKING');
 
-      // Configure and start LiveKit audio session for iOS
-      if (Platform.OS === 'ios') {
+      // Configure and start LiveKit audio session for iOS (if available)
+      if (Platform.OS === 'ios' && AudioSession) {
         (async () => {
           try {
             // Configure audio for speaker output
@@ -126,8 +160,8 @@ export function useAbbyAgent(config: AbbyAgentConfig = {}) {
       stopSpeakingPulse();
       stopAudioPulse();
 
-      // Stop iOS audio session
-      if (Platform.OS === 'ios') {
+      // Stop iOS audio session (if available)
+      if (Platform.OS === 'ios' && AudioSession) {
         AudioSession.stopAudioSession().catch(() => {
           // Ignore errors on stop
         });
@@ -184,7 +218,14 @@ export function useAbbyAgent(config: AbbyAgentConfig = {}) {
   // Start conversation with ElevenLabs agent
   // Uses guards to prevent infinite loop from unstable references
   const startConversation = useCallback(async () => {
-    // Guard 0: Disabled (saves resources when not in COACH mode)
+    // Guard 0: Voice not available (Expo Go)
+    if (!VOICE_AVAILABLE) {
+      console.warn('[AbbyAgent] Voice not available. Run with: npx expo run:ios');
+      callbacks.onError?.(new Error('Voice requires a development build. Run: npx expo run:ios'));
+      return;
+    }
+
+    // Guard 1: Disabled (saves resources when not in COACH mode)
     if (!enabled) {
       if (__DEV__) console.log('[AbbyAgent] Disabled, skipping start');
       return;

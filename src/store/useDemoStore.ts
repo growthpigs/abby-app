@@ -19,7 +19,8 @@ export type DemoState =
   | 'SEARCHING'
   | 'MATCH'
   | 'PAYMENT'
-  | 'REVEAL';
+  | 'REVEAL'
+  | 'COACH';
 
 // Question answer structure
 export interface Answer {
@@ -83,6 +84,7 @@ const DEMO_TO_APP_STATE: Record<DemoState, AppState> = {
   MATCH: 'MATCH_FOUND',
   PAYMENT: 'MATCH_FOUND',
   REVEAL: 'MATCH_FOUND',
+  COACH: 'COACH',
 };
 
 // State flow order
@@ -93,6 +95,7 @@ const STATE_ORDER: DemoState[] = [
   'MATCH',
   'PAYMENT',
   'REVEAL',
+  'COACH',
 ];
 
 export const useDemoStore = create<DemoStore>((set, get) => ({
