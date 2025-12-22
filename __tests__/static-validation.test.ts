@@ -80,7 +80,11 @@ describe('COACH_INTRO Feature', () => {
     const source = readFile('src/components/screens/CoachIntroScreen.tsx');
 
     expect(source).toContain("import { useAbbyAgent } from '../../services/AbbyAgent'");
-    expect(source).toContain('const { startConversation, endConversation, isSpeaking, isConnected } = useAbbyAgent');
+    // Check for key destructured properties (mute features added later)
+    expect(source).toContain('startConversation');
+    expect(source).toContain('endConversation');
+    expect(source).toContain('isConnected');
+    expect(source).toContain('useAbbyAgent({');
   });
 
   test('CoachIntroScreen has cleanup logic', () => {

@@ -6,4 +6,15 @@ module.exports = {
   transform: {
     '^.+\\.tsx?$': 'ts-jest',
   },
+  // Mock React Native and Expo modules for node testing
+  moduleNameMapper: {
+    '^react-native$': '<rootDir>/__mocks__/react-native.js',
+    '^react$': '<rootDir>/__mocks__/react.js',
+    '^@elevenlabs/react-native$': '<rootDir>/__mocks__/@elevenlabs/react-native.js',
+    '^@livekit/react-native$': '<rootDir>/__mocks__/@livekit/react-native.js',
+    '^expo-blur$': '<rootDir>/__mocks__/expo-blur.js',
+    '^expo-haptics$': '<rootDir>/__mocks__/expo-haptics.js',
+  },
+  // Silence console during tests
+  silent: true,
 };
