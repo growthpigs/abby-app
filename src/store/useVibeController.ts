@@ -112,6 +112,13 @@ const APP_STATE_VIBES: Record<AppState, {
   complexity: VibeComplexity;
   orbEnergy: OrbEnergy;
 }> = {
+  COACH_INTRO: {
+    party: 'ABBY',
+    mode: 'SPEAKING',
+    theme: 'GROWTH',
+    complexity: 'SMOOTHIE',
+    orbEnergy: 'CALM',
+  },
   ONBOARDING: {
     party: 'ABBY',
     mode: 'SPEAKING',

@@ -2,10 +2,10 @@
  * Screen Components - Demo Flow Screens
  *
  * Each screen corresponds to a demo state:
- * ONBOARDING → INTERVIEW → SEARCHING → MATCH → PAYMENT → REVEAL → COACH
+ * COACH_INTRO → INTERVIEW → SEARCHING → MATCH → PAYMENT → REVEAL → COACH
  */
 
-export { OnboardingScreen } from './OnboardingScreen';
+export { CoachIntroScreen } from './CoachIntroScreen';
 export { InterviewScreen } from './InterviewScreen';
 export { SearchingScreen } from './SearchingScreen';
 export { MatchScreen } from './MatchScreen';

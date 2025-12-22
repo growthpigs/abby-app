@@ -1,4 +1,14 @@
 import { registerRootComponent } from 'expo';
+import { LogBox } from 'react-native';
+
+// Suppress LiveKit WebSocket warnings from appearing as toasts
+// These are expected during reconnection and don't affect functionality
+LogBox.ignoreLogs([
+  'Websocket got closed during',
+  'websocket closed',
+  'could not createOffer with closed peer connection',
+  'rn-webrtc',
+]);
 
 /**
  * DEMO MODE

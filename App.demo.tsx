@@ -1,12 +1,12 @@
 /**
  * App.demo.tsx - Demo Entry Point
  *
- * Full demo flow from onboarding to match reveal.
+ * Full demo flow from coach intro to match reveal.
  * Uses AnimatedVibeLayer for visual state management.
  * Background shaders progress (soft → hard) as questions advance.
  * ElevenLabs voice integration for Abby conversation.
  *
- * States: ONBOARDING → INTERVIEW → SEARCHING → MATCH → PAYMENT → REVEAL → COACH
+ * States: COACH_INTRO → INTERVIEW → SEARCHING → MATCH → PAYMENT → REVEAL → COACH
  */
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
@@ -23,7 +23,7 @@ import { useDemoState } from './src/store/useDemoStore';
 import { useVibeController } from './src/store/useVibeController';
 import { useAbbyAgent, VOICE_AVAILABLE } from './src/services/AbbyAgent';
 import {
-  OnboardingScreen,
+  CoachIntroScreen,
   InterviewScreen,
   SearchingScreen,
   MatchScreen,
@@ -67,9 +67,9 @@ function DemoScreen() {
     loadSettings();
   }, []);
 
-  // Initialize AbbyAgent for voice (only enabled in COACH mode)
+  // Initialize AbbyAgent for voice (enabled in COACH_INTRO and COACH modes)
   const { startConversation, endConversation, isSpeaking, status } = useAbbyAgent({
-    enabled: currentState === 'COACH',  // Disabled for INTERVIEW - uses Fal.ai TTS instead
+    enabled: currentState === 'COACH_INTRO' || currentState === 'COACH',  // Uses Fal.ai TTS for INTERVIEW
     onAbbyResponse: (text) => {
       if (__DEV__) console.log('[Demo] Abby says:', text);
       setAbbyText(text);
@@ -91,7 +91,7 @@ function DemoScreen() {
   // Initialize vibe state on mount
   useEffect(() => {
     const vibeController = useVibeController.getState();
-    vibeController.setFromAppState('ONBOARDING');
+    vibeController.setFromAppState('COACH_INTRO');
     vibeController.setOrbEnergy('CALM');
   }, []);
 
@@ -101,10 +101,10 @@ function DemoScreen() {
   }, []);
 
   // Set background based on demo state
-  // Onboarding: BG1, Searching: BG8, Match/Payment/Reveal: BG5
+  // COACH_INTRO: BG5, Searching: BG8, Match/Payment/Reveal: BG5
   useEffect(() => {
-    if (currentState === 'ONBOARDING') {
-      setBackgroundIndex(1);
+    if (currentState === 'COACH_INTRO') {
+      setBackgroundIndex(5); // Liquid Marble - calming for intro
     } else if (currentState === 'SEARCHING') {
       setBackgroundIndex(8); // Deep Ocean - mysterious searching
     } else if (currentState === 'MATCH' || currentState === 'PAYMENT' || currentState === 'REVEAL') {
@@ -126,8 +126,8 @@ function DemoScreen() {
   // Render the appropriate screen based on state
   const renderScreen = () => {
     switch (currentState) {
-      case 'ONBOARDING':
-        return <OnboardingScreen />;
+      case 'COACH_INTRO':
+        return <CoachIntroScreen onBackgroundChange={handleBackgroundChange} />;
       case 'INTERVIEW':
         return <InterviewScreen onBackgroundChange={handleBackgroundChange} />;
       case 'SEARCHING':
@@ -141,7 +141,7 @@ function DemoScreen() {
       case 'COACH':
         return <CoachScreen onBackgroundChange={handleBackgroundChange} />;
       default:
-        return <OnboardingScreen />;
+        return <CoachIntroScreen onBackgroundChange={handleBackgroundChange} />;
     }
   };
 

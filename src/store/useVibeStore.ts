@@ -34,6 +34,7 @@ interface VibeStore {
  * Map app states to vibe configurations
  */
 const APP_STATE_VIBES: Record<AppState, { theme: VibeColorTheme; complexity: VibeComplexity }> = {
+  COACH_INTRO: { theme: 'GROWTH', complexity: 'SMOOTHIE' },
   ONBOARDING: { theme: 'TRUST', complexity: 'SMOOTHIE' },
   VERIFICATION: { theme: 'TRUST', complexity: 'SMOOTHIE' },
   INTERVIEW_LIGHT: { theme: 'TRUST', complexity: 'FLOW' },

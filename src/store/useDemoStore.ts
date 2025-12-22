@@ -14,7 +14,7 @@ import { ConversationMessage } from '../components/ui/ConversationOverlay';
 
 // Demo flow states
 export type DemoState =
-  | 'ONBOARDING'
+  | 'COACH_INTRO'
   | 'INTERVIEW'
   | 'SEARCHING'
   | 'MATCH'
@@ -78,7 +78,7 @@ type DemoStore = DemoStoreState & DemoStoreActions;
 
 // Map demo states to app states for vibe controller
 const DEMO_TO_APP_STATE: Record<DemoState, AppState> = {
-  ONBOARDING: 'ONBOARDING',
+  COACH_INTRO: 'COACH_INTRO',
   INTERVIEW: 'INTERVIEW_LIGHT',
   SEARCHING: 'SEARCHING',
   MATCH: 'MATCH_FOUND',
@@ -89,7 +89,7 @@ const DEMO_TO_APP_STATE: Record<DemoState, AppState> = {
 
 // State flow order
 const STATE_ORDER: DemoState[] = [
-  'ONBOARDING',
+  'COACH_INTRO',
   'INTERVIEW',
   'SEARCHING',
   'MATCH',
@@ -100,7 +100,7 @@ const STATE_ORDER: DemoState[] = [
 
 export const useDemoStore = create<DemoStore>((set, get) => ({
   // Initial state
-  currentState: 'ONBOARDING',
+  currentState: 'COACH_INTRO',
   currentQuestionIndex: 0,
   totalQuestions: 10,
   answers: [],
@@ -129,7 +129,7 @@ export const useDemoStore = create<DemoStore>((set, get) => ({
   reset: () => {
     const { syncVibeState } = get();
     set({
-      currentState: 'ONBOARDING',
+      currentState: 'COACH_INTRO',
       currentQuestionIndex: 0,
       answers: [],
       coveragePercent: 0,
@@ -137,7 +137,7 @@ export const useDemoStore = create<DemoStore>((set, get) => ({
       userName: '',
       messages: [],
     });
-    syncVibeState('ONBOARDING');
+    syncVibeState('COACH_INTRO');
   },
 
   // Interview

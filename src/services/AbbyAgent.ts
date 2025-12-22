@@ -54,6 +54,11 @@ interface AudioSessionAPI {
   startAudioSession: () => Promise<void>;
   stopAudioSession: () => Promise<void>;
   selectAudioOutput: (output: string) => Promise<void>;
+  setAppleAudioConfiguration: (config: {
+    audioCategory?: 'soloAmbient' | 'playback' | 'record' | 'playAndRecord' | 'multiRoute';
+    audioCategoryOptions?: ('mixWithOthers' | 'duckOthers' | 'allowBluetooth' | 'allowBluetoothA2DP' | 'allowAirPlay' | 'defaultToSpeaker')[];
+    audioMode?: 'default' | 'gameChat' | 'measurement' | 'moviePlayback' | 'spokenAudio' | 'videoChat' | 'videoRecording' | 'voiceChat' | 'voicePrompt';
+  }) => Promise<void>;
 }
 
 // ============================================
@@ -321,14 +326,26 @@ export function useAbbyAgent(config: AbbyAgentConfig = {}) {
 
     try {
       // Start audio session BEFORE connecting (iOS only)
+      // Must set proper audio category for two-way audio (playAndRecord)
       if (Platform.OS === 'ios' && AudioSession) {
         try {
+          // Configure default output
           await AudioSession.configureAudio({
             ios: { defaultOutput: 'speaker' }
           });
+
+          // Set Apple audio configuration for two-way voice
+          // playAndRecord category enables both mic and speaker
+          // defaultToSpeaker routes output through speaker (not earpiece)
+          await AudioSession.setAppleAudioConfiguration({
+            audioCategory: 'playAndRecord',
+            audioCategoryOptions: ['defaultToSpeaker', 'allowBluetooth', 'mixWithOthers'],
+            audioMode: 'voiceChat',
+          });
+
           await AudioSession.startAudioSession();
           await AudioSession.selectAudioOutput('force_speaker');
-          if (__DEV__) console.log('[AbbyAgent] iOS audio session pre-configured');
+          if (__DEV__) console.log('[AbbyAgent] iOS audio: playAndRecord + voiceChat + speaker');
         } catch (audioErr) {
           console.warn('[AbbyAgent] Pre-connect audio setup failed:', audioErr);
         }

@@ -1,9 +1,11 @@
 /**
- * CoachScreen - Free-form conversation with Abby (end screen)
+ * CoachIntroScreen - Abby greets user with ElevenLabs Agent
  *
- * Same visual pattern as CoachIntroScreen but for post-interview conversation.
+ * First screen in the demo flow. Abby initiates conversation.
+ * User can tap "Start Interview" to advance to questions.
+ *
  * Uses draggable bottom sheet pattern (from ProperDress SwatchSelectionModal).
- * Snap points at 35%, 55%, 75%, 90% of screen height.
+ * Snap points at 25%, 50%, 75%, 90% of screen height.
  */
 
 import React, { useCallback, useEffect, useState, useRef } from 'react';
@@ -28,18 +30,18 @@ const { height: SCREEN_HEIGHT } = Dimensions.get('window');
 const SNAP_POINTS = [0.35, 0.55, 0.75, 0.9];
 const DEFAULT_SNAP = 0.55; // Start at 55%
 
-export interface CoachScreenProps {
+export interface CoachIntroScreenProps {
   onBackgroundChange?: (index: number) => void;
 }
 
-export const CoachScreen: React.FC<CoachScreenProps> = ({
+export const CoachIntroScreen: React.FC<CoachIntroScreenProps> = ({
   onBackgroundChange,
 }) => {
   const scrollRef = useRef<ScrollView>(null);
 
   const messages = useDemoStore((state) => state.messages);
   const addMessage = useDemoStore((state) => state.addMessage);
-  const reset = useDemoStore((state) => state.reset);
+  const advance = useDemoStore((state) => state.advance);
 
   const [agentStatus, setAgentStatus] = useState<string>('Connecting...');
 
@@ -130,7 +132,7 @@ export const CoachScreen: React.FC<CoachScreenProps> = ({
   // Set background to Liquid Marble shader
   useEffect(() => {
     if (onBackgroundChange) {
-      onBackgroundChange(5); // Liquid Marble - calming for conversation
+      onBackgroundChange(5); // Liquid Marble - calming for intro
     }
   }, [onBackgroundChange]);
 
@@ -150,23 +152,24 @@ export const CoachScreen: React.FC<CoachScreenProps> = ({
       try {
         await startConversation();
       } catch (err) {
-        console.warn('[Coach] Failed to start conversation:', err);
+        console.warn('[CoachIntro] Failed to start conversation:', err);
         setAgentStatus('Failed to connect');
       }
     };
     initConversation();
 
+    // Cleanup on unmount
     return () => {
       endConversation();
     };
   }, []);
 
-  // End chat and reset demo
-  const handleEndChat = useCallback(async () => {
+  // Start Interview - advance to INTERVIEW state
+  const handleStartInterview = useCallback(async () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     await endConversation();
-    reset(); // Go back to COACH_INTRO
-  }, [endConversation, reset]);
+    advance(); // Go to INTERVIEW
+  }, [endConversation, advance]);
 
   return (
     <View style={styles.container}>
@@ -213,7 +216,7 @@ export const CoachScreen: React.FC<CoachScreenProps> = ({
             >
               {messages.length === 0 ? (
                 <Text style={styles.placeholderText}>
-                  {isConnected ? "Let's talk about your match! I'm here to help you prepare." : "Connecting to Abby..."}
+                  {isConnected ? "Hi! I'm Abby. Ready to help you find your perfect match?" : "Connecting to Abby..."}
                 </Text>
               ) : (
                 [...messages].reverse().map((message) => (
@@ -229,15 +232,15 @@ export const CoachScreen: React.FC<CoachScreenProps> = ({
               )}
             </ScrollView>
 
-            {/* End Chat button */}
+            {/* Start Interview button */}
             <Pressable
-              onPress={handleEndChat}
+              onPress={handleStartInterview}
               style={({ pressed }) => [
-                styles.endButton,
-                pressed && styles.endButtonPressed,
+                styles.startButton,
+                pressed && styles.startButtonPressed,
               ]}
             >
-              <Text style={styles.buttonText}>End Chat</Text>
+              <Text style={styles.buttonText}>Start Interview</Text>
             </Pressable>
           </View>
         </BlurView>
@@ -319,11 +322,13 @@ const styles = StyleSheet.create({
     color: 'rgba(0, 0, 0, 0.5)',
   },
 
+  // Content area
   contentContainer: {
     flex: 1,
     paddingHorizontal: 20,
   },
 
+  // Messages container
   messagesContainer: {
     flex: 1,
   },
@@ -352,7 +357,8 @@ const styles = StyleSheet.create({
     fontStyle: 'italic',
   },
 
-  endButton: {
+  // Start button
+  startButton: {
     backgroundColor: 'rgba(0, 0, 0, 0.85)',
     borderRadius: 30,
     paddingVertical: 16,
@@ -360,7 +366,7 @@ const styles = StyleSheet.create({
     marginBottom: 40,
     alignItems: 'center',
   },
-  endButtonPressed: {
+  startButtonPressed: {
     opacity: 0.8,
     transform: [{ scale: 0.98 }],
   },
@@ -372,4 +378,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default CoachScreen;
+export default CoachIntroScreen;

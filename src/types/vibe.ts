@@ -61,6 +61,7 @@ export interface VibeConfig {
  * App states that map to vibes
  */
 export type AppState =
+  | 'COACH_INTRO'
   | 'ONBOARDING'
   | 'VERIFICATION'
   | 'INTERVIEW_LIGHT'
