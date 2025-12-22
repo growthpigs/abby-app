@@ -20,7 +20,6 @@ import { useSettingsStore } from '../../store/useSettingsStore';
 import { DEMO_QUESTIONS } from '../../data/demo-questions';
 import { VibeColorTheme } from '../../types/vibe';
 import { ConversationOverlay } from '../ui/ConversationOverlay';
-import { useSpeechRecognition } from '../../services/SpeechRecognition';
 import { abbyVoice } from '../../services/AbbyVoice';
 
 // Returns the background index for shader progression
@@ -64,9 +63,6 @@ export const InterviewScreen: React.FC<InterviewScreenProps> = ({
   const currentQuestion = DEMO_QUESTIONS[Math.min(currentIndex, DEMO_QUESTIONS.length - 1)];
   const isLastQuestion = currentIndex >= DEMO_QUESTIONS.length - 1;
 
-  // Check if voice is enabled (voice_only or voice_and_text mode)
-  const voiceEnabled = inputMode === 'voice_only' || inputMode === 'voice_and_text';
-
   // Track TTS errors for user feedback
   const [voiceError, setVoiceError] = useState(false);
 
@@ -75,10 +71,7 @@ export const InterviewScreen: React.FC<InterviewScreenProps> = ({
   const audioLevelRef = useRef(setAudioLevel);
   audioLevelRef.current = setAudioLevel;
 
-  // Track if we already added Abby's message for current question
-  const addedMessageForQuestion = useRef(-1);
-
-  // Submit answer (from voice or button tap)
+  // Submit answer and advance
   const submitAnswer = useCallback((answerValue: string) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
 
@@ -105,26 +98,9 @@ export const InterviewScreen: React.FC<InterviewScreenProps> = ({
     }
   }, [currentQuestion, isLastQuestion, addMessage, setColorTheme, answerQuestion, advance, nextQuestion]);
 
-  // Speech recognition hook
-  const {
-    isListening,
-    partialTranscript,
-    startListening,
-    stopListening,
-  } = useSpeechRecognition({
-    onResult: (transcript) => {
-      if (transcript.trim()) {
-        submitAnswer(transcript);
-      }
-    },
-    onError: (error) => {
-      if (__DEV__) console.log('[Interview] Speech error:', error);
-    },
-  });
-
-  // Button tap handler (for text_only mode or manual advance)
+  // Button tap handler
   const handleAnswer = () => {
-    submitAnswer('Answered'); // Default for button tap
+    submitAnswer('Answered');
   };
 
   // Calculate background index for current question
@@ -187,36 +163,8 @@ export const InterviewScreen: React.FC<InterviewScreenProps> = ({
         )}
       </View>
 
-      {/* Bottom: Voice mic + Next button */}
+      {/* Bottom: Next button */}
       <View style={styles.bottomSection}>
-        {/* Microphone button (for voice modes) */}
-        {voiceEnabled && (
-          <Pressable
-            onPressIn={startListening}
-            onPressOut={stopListening}
-            style={({ pressed }) => [
-              styles.micButton,
-              pressed && styles.micButtonActive,
-              isListening && styles.micButtonActive,
-            ]}
-          >
-            <BlurView intensity={60} tint="dark" style={styles.micBlur}>
-              <Text style={styles.micIcon}>{isListening ? '🔴' : '🎤'}</Text>
-              <Text style={styles.micHint}>
-                {isListening ? 'Listening...' : 'Hold to speak'}
-              </Text>
-            </BlurView>
-          </Pressable>
-        )}
-
-        {/* Partial transcript display */}
-        {partialTranscript ? (
-          <View style={styles.partialContainer}>
-            <Text style={styles.partialText}>{partialTranscript}</Text>
-          </View>
-        ) : null}
-
-        {/* Next button (always visible, primary for text_only mode) */}
         <Pressable
           onPress={handleAnswer}
           style={({ pressed }) => [
@@ -282,52 +230,12 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
 
-  // BOTTOM - Voice mic + Next button
+  // BOTTOM - Next button
   bottomSection: {
     paddingHorizontal: 24,
     paddingBottom: 40,
     alignItems: 'center',
     gap: 16,
-  },
-  micButton: {
-    borderRadius: 40,
-    overflow: 'hidden',
-  },
-  micButtonActive: {
-    transform: [{ scale: 1.05 }],
-  },
-  micBlur: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: 'rgba(0, 0, 0, 0.3)',
-    borderWidth: 2,
-    borderColor: 'rgba(255, 255, 255, 0.2)',
-  },
-  micIcon: {
-    fontSize: 28,
-  },
-  micHint: {
-    fontFamily: 'Merriweather_400Regular',
-    fontSize: 10,
-    color: 'rgba(255, 255, 255, 0.6)',
-    marginTop: 4,
-  },
-  partialContainer: {
-    backgroundColor: 'rgba(0, 0, 0, 0.3)',
-    borderRadius: 12,
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    maxWidth: '80%',
-  },
-  partialText: {
-    fontFamily: 'Merriweather_400Regular',
-    fontSize: 14,
-    color: 'rgba(255, 255, 255, 0.8)',
-    fontStyle: 'italic',
-    textAlign: 'center',
   },
   nextButton: {
     borderRadius: 30,

@@ -14,15 +14,56 @@ import { useCallback, useRef, useEffect, useState } from 'react';
 import { Platform } from 'react-native';
 import { useVibeController } from '../store/useVibeController';
 
-// Conditional imports - native modules may not be available in Expo Go
-// ElevenLabs SDK internally uses LiveKit which requires native code
-let useConversation: any = null;
-let AudioSession: {
+// ============================================
+// Type Definitions (from @elevenlabs/react-native)
+// ============================================
+
+type ConversationStatus = 'disconnected' | 'connecting' | 'connected';
+
+interface ConversationConfig {
+  agentId?: string;
+  conversationToken?: string;
+}
+
+interface Conversation {
+  startSession: (config: ConversationConfig) => Promise<void>;
+  endSession: () => Promise<void>;
+  status: ConversationStatus;
+  isSpeaking: boolean;
+  canSendFeedback: boolean;
+  getId: () => string;
+  sendFeedback: (like: boolean) => void;
+  sendContextualUpdate: (text: string) => void;
+  sendUserMessage: (text: string) => void;
+  sendUserActivity: () => void;
+}
+
+interface ConversationCallbacks {
+  onConnect?: (props: { conversationId: string }) => void;
+  onDisconnect?: (details: string) => void;
+  onError?: (message: string, context?: Record<string, unknown>) => void;
+  onMessage?: (props: { message: any; source: string }) => void;
+  onModeChange?: (prop: { mode: 'speaking' | 'listening' }) => void;
+  onStatusChange?: (prop: { status: ConversationStatus }) => void;
+}
+
+type UseConversationHook = (options?: ConversationCallbacks) => Conversation;
+
+interface AudioSessionAPI {
   configureAudio: (config: { ios?: { defaultOutput: string } }) => Promise<void>;
   startAudioSession: () => Promise<void>;
   stopAudioSession: () => Promise<void>;
   selectAudioOutput: (output: string) => Promise<void>;
-} | null = null;
+}
+
+// ============================================
+// Conditional Imports
+// ============================================
+
+// Native modules may not be available in Expo Go
+// ElevenLabs SDK internally uses LiveKit which requires native code
+let useConversation: UseConversationHook;
+let AudioSession: AudioSessionAPI | null = null;
 
 // Flag to track if voice features are available
 export let VOICE_AVAILABLE = false;
@@ -40,13 +81,20 @@ try {
   }
   // Mock useConversation for when native modules aren't available
   // This lets the app run in Expo Go for UI development
-  useConversation = () => ({
-    status: 'disconnected' as const,
+  // Note: Callbacks are ignored in mock - voice features simply won't work
+  useConversation = (_options?: ConversationCallbacks): Conversation => ({
+    status: 'disconnected',
     isSpeaking: false,
+    canSendFeedback: false,
     startSession: async () => {
       console.warn('[AbbyAgent] Voice not available - run with expo run:ios');
     },
     endSession: async () => {},
+    getId: () => '',
+    sendFeedback: () => {},
+    sendContextualUpdate: () => {},
+    sendUserMessage: () => {},
+    sendUserActivity: () => {},
   });
 }
 
@@ -216,43 +264,44 @@ export function useAbbyAgent(config: AbbyAgentConfig = {}) {
   });
 
   // Start conversation with ElevenLabs agent
-  // Uses guards to prevent infinite loop from unstable references
+  // Uses guards to prevent double-starts and race conditions
   const startConversation = useCallback(async () => {
-    // Guard 0: Voice not available (Expo Go)
+    // Guard 1: Voice not available (Expo Go)
     if (!VOICE_AVAILABLE) {
       console.warn('[AbbyAgent] Voice not available. Run with: npx expo run:ios');
       callbacks.onError?.(new Error('Voice requires a development build. Run: npx expo run:ios'));
       return;
     }
 
-    // Guard 1: Disabled (saves resources when not in COACH mode)
+    // Guard 2: Disabled (saves resources when not in COACH mode)
     if (!enabled) {
       if (__DEV__) console.log('[AbbyAgent] Disabled, skipping start');
       return;
     }
 
-    // Guard 1: Already starting
+    // Guard 3: Already starting
     if (isStarting) {
       if (__DEV__) console.log('[AbbyAgent] Already starting, skipping');
       return;
     }
 
-    // Guard 2: Already connected
+    // Guard 4: Already connected
     if (isConnected) {
       if (__DEV__) console.log('[AbbyAgent] Already connected, skipping');
       return;
     }
 
-    // Guard 3: Check SDK status
+    // Guard 5: Check SDK status
     if (conversation.status === 'connected' || conversation.status === 'connecting') {
       if (__DEV__) console.log('[AbbyAgent] SDK already connected/connecting, skipping');
       return;
     }
 
+    // Guard 6: Agent ID required
     if (!AGENT_ID) {
-      throw new Error(
-        'ELEVENLABS_AGENT_ID not configured. Add it to .env.local'
-      );
+      const error = new Error('ELEVENLABS_AGENT_ID not configured. Add it to .env.local');
+      callbacks.onError?.(error);
+      throw error;
     }
 
     setIsStarting(true);
@@ -263,9 +312,10 @@ export function useAbbyAgent(config: AbbyAgentConfig = {}) {
     } catch (err) {
       console.error('[AbbyAgent] Failed to start session:', err);
       setIsStarting(false);
+      callbacks.onError?.(err instanceof Error ? err : new Error(String(err)));
       throw err;
     }
-  }, [enabled, isStarting, isConnected, conversation.status]);
+  }, [enabled, isStarting, isConnected, conversation.status, callbacks.onError]);
 
   // End conversation
   const endConversation = useCallback(async () => {

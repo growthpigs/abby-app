@@ -117,9 +117,9 @@ export const ConversationOverlay: React.FC<ConversationOverlayProps> = ({
 
   const combinedGesture = Gesture.Race(dragGesture, tapGesture);
 
-  // Animated styles
+  // Animated styles - add 34px for bottom safe area extension
   const containerStyle = useAnimatedStyle(() => {
-    const baseHeight = screenHeight * heightPercent.value;
+    const baseHeight = screenHeight * heightPercent.value + 34; // Extra height to cover safe area
     const adjustedHeight = Math.max(0, baseHeight - dragOffset.value);
 
     return {
@@ -188,7 +188,7 @@ const MessageBubble: React.FC<{ message: ConversationMessage }> = ({
 const styles = StyleSheet.create({
   gestureRoot: {
     position: 'absolute',
-    bottom: 0,
+    bottom: -34, // Extend past safe area to reach screen edge
     left: 0,
     right: 0,
     zIndex: 20,
@@ -197,6 +197,7 @@ const styles = StyleSheet.create({
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
     overflow: 'hidden',
+    paddingBottom: 34, // Compensate for negative bottom positioning
   },
   blur: {
     flex: 1,
