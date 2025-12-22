@@ -139,6 +139,7 @@ export function useAbbyAgent(config: AbbyAgentConfig = {}) {
   const [isStarting, setIsStarting] = useState(false);
   const [isConnected, setIsConnected] = useState(false);
   const [isMuted, setIsMuted] = useState(false);
+  const [isTogglingMute, setIsTogglingMute] = useState(false); // Prevents race condition on rapid toggle
 
   // Ref to track muted state in callbacks (validator fix - prevents pulse restart while muted)
   const isMutedRef = useRef(false);
@@ -384,8 +385,9 @@ export function useAbbyAgent(config: AbbyAgentConfig = {}) {
 
   // Mute conversation (stops audio I/O - agent keeps running on backend)
   const muteConversation = useCallback(async () => {
-    if (!isConnected || isMuted) return;
+    if (!isConnected || isMuted || isTogglingMute) return;
 
+    setIsTogglingMute(true);
     if (__DEV__) console.log('[AbbyAgent] Muting conversation');
 
     // Stop audio FIRST, then update state (validator fix)
@@ -395,21 +397,24 @@ export function useAbbyAgent(config: AbbyAgentConfig = {}) {
         if (__DEV__) console.log('[AbbyAgent] Audio session stopped (muted)');
       } catch (err) {
         console.warn('[AbbyAgent] Failed to mute audio:', err);
+        setIsTogglingMute(false);
         return; // Don't update state if mute failed
       }
     }
 
     // Update state AFTER successful audio stop
     setIsMuted(true);
+    setIsTogglingMute(false);
     stopAudioPulse();
     stopSpeakingPulse();
     setAbbyMode('IDLE');
-  }, [isConnected, isMuted, stopAudioPulse, stopSpeakingPulse, setAbbyMode]);
+  }, [isConnected, isMuted, isTogglingMute, stopAudioPulse, stopSpeakingPulse, setAbbyMode]);
 
   // Unmute conversation (restarts audio I/O)
   const unmuteConversation = useCallback(async () => {
-    if (!isConnected || !isMuted) return;
+    if (!isConnected || !isMuted || isTogglingMute) return;
 
+    setIsTogglingMute(true);
     if (__DEV__) console.log('[AbbyAgent] Unmuting conversation');
 
     // Restart audio FIRST, then update state (matches mute pattern)
@@ -432,6 +437,7 @@ export function useAbbyAgent(config: AbbyAgentConfig = {}) {
           if (__DEV__) console.log('[AbbyAgent] Audio resumed with fallback config');
         } catch (fallbackErr) {
           console.warn('[AbbyAgent] Fallback audio also failed:', fallbackErr);
+          setIsTogglingMute(false);
           return; // Don't update state if unmute failed (validator fix)
         }
       }
@@ -439,8 +445,9 @@ export function useAbbyAgent(config: AbbyAgentConfig = {}) {
 
     // Update state AFTER successful audio restart
     setIsMuted(false);
+    setIsTogglingMute(false);
     setAbbyMode('LISTENING');
-  }, [isConnected, isMuted, setAbbyMode]);
+  }, [isConnected, isMuted, isTogglingMute, setAbbyMode]);
 
   // Toggle mute/unmute
   const toggleMute = useCallback(async () => {
