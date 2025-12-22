@@ -193,43 +193,41 @@ export const CoachScreen: React.FC<CoachScreenProps> = ({
         ]}
       >
         <BlurView intensity={80} tint="light" style={styles.blurContainer}>
-          {/* DRAGGABLE HEADER */}
+          {/* DRAGGABLE HEADER - Handle only, no buttons */}
           <View {...panResponder.panHandlers} style={styles.draggableHeader}>
-            {/* Handle */}
             <View style={styles.handleContainer}>
               <View style={styles.handle} />
             </View>
-
-            {/* Connection status + Mute button */}
-            <View style={styles.statusRow}>
-              <View style={[
-                styles.statusDot,
-                isConnected ? (isMuted ? styles.statusMuted : styles.statusConnected) : styles.statusDisconnected
-              ]} />
-              <Text style={styles.statusText}>
-                {isMuted ? 'Muted' : (isConnected ? (isSpeaking ? 'Abby is speaking...' : 'Listening') : agentStatus)}
-              </Text>
-
-              {/* Mute/Unmute button - positioned absolute right */}
-              {isConnected && (
-                <Pressable
-                  onPress={handleToggleMute}
-                  style={({ pressed }) => [
-                    styles.muteButton,
-                    pressed && styles.muteButtonPressed,
-                  ]}
-                >
-                  {isMuted ? (
-                    // @ts-ignore - color works via SvgProps
-                    <Play size={20} color="#FFFFFF" />
-                  ) : (
-                    // @ts-ignore - color works via SvgProps
-                    <Pause size={20} color="#FFFFFF" />
-                  )}
-                </Pressable>
-              )}
-            </View>
           </View>
+
+          {/* Status row - OUTSIDE drag zone to prevent accidental taps */}
+          <View style={styles.statusRow}>
+            <View style={[
+              styles.statusDot,
+              isConnected ? (isMuted ? styles.statusMuted : styles.statusConnected) : styles.statusDisconnected
+            ]} />
+            <Text style={styles.statusText}>
+              {isMuted ? 'Muted' : (isConnected ? (isSpeaking ? 'Abby is speaking...' : 'Listening') : agentStatus)}
+            </Text>
+
+            {/* Mute/Unmute button - 44x44 for iOS HIG compliance */}
+            {isConnected && (
+              <Pressable
+                onPress={handleToggleMute}
+                style={({ pressed }) => [
+                  styles.muteButton,
+                  pressed && styles.muteButtonPressed,
+                ]}
+              >
+                {isMuted ? (
+                  // @ts-ignore - color works via SvgProps
+                  <Play size={20} color="#FFFFFF" />
+                ) : (
+                  // @ts-ignore - color works via SvgProps
+                  <Pause size={20} color="#FFFFFF" />
+                )}
+              </Pressable>
+            )}</View>
 
           {/* Content area */}
           <View style={styles.contentContainer}>
@@ -246,7 +244,10 @@ export const CoachScreen: React.FC<CoachScreenProps> = ({
                 </Text>
               ) : (
                 [...messages].reverse().map((message) => (
-                  <View key={message.id} style={styles.messageBubble}>
+                  <View key={message.id} style={[
+                    styles.messageBubble,
+                    message.speaker === 'user' && styles.messageBubbleUser
+                  ]}>
                     <Text style={[
                       styles.messageText,
                       message.speaker === 'user' && styles.userMessageText
@@ -327,7 +328,7 @@ const styles = StyleSheet.create({
   statusRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
+    justifyContent: 'flex-start',
     paddingVertical: 12,
     paddingHorizontal: 20,
     gap: 8,
@@ -353,19 +354,23 @@ const styles = StyleSheet.create({
     color: 'rgba(0, 0, 0, 0.5)',
   },
 
-  // Mute button
+  // Mute button - white outline, positioned top right
   muteButton: {
     position: 'absolute',
     right: 16,
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: 'rgba(0, 0, 0, 0.7)',
+    top: -35,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: 'transparent',
+    borderWidth: 2,
+    borderColor: '#FFFFFF',
     alignItems: 'center',
     justifyContent: 'center',
   },
   muteButtonPressed: {
     opacity: 0.7,
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
     transform: [{ scale: 0.95 }],
   },
 
@@ -389,12 +394,16 @@ const styles = StyleSheet.create({
     paddingVertical: 20,
   },
   messageBubble: {
-    marginBottom: 12,
+    marginBottom: 16,
+  },
+  messageBubbleUser: {
+    marginBottom: 8,
+    marginTop: -4,
   },
   messageText: {
     fontFamily: 'Merriweather_400Regular',
     fontSize: 17,
-    lineHeight: 26,
+    lineHeight: 20,
     color: 'rgba(0, 0, 0, 0.85)',
   },
   userMessageText: {
