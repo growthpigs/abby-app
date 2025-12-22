@@ -18,6 +18,18 @@ export type VibeColorTheme =
   | 'DEEP';    // Violet - Deep questions, intervention
 
 /**
+ * Valid theme values for runtime validation
+ */
+export const VALID_VIBE_THEMES: VibeColorTheme[] = ['TRUST', 'PASSION', 'CAUTION', 'GROWTH', 'DEEP'];
+
+/**
+ * Type guard to validate a string is a valid VibeColorTheme
+ */
+export const isValidVibeTheme = (value: unknown): value is VibeColorTheme => {
+  return typeof value === 'string' && VALID_VIBE_THEMES.includes(value as VibeColorTheme);
+};
+
+/**
  * Complexity levels mapped to texture intensity
  */
 export type VibeComplexity =

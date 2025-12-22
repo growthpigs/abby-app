@@ -16,7 +16,7 @@ import Animated, { FadeIn, FadeOut } from 'react-native-reanimated';
 import { useDemoStore } from '../../store/useDemoStore';
 import { useVibeController } from '../../store/useVibeController';
 import { DEMO_QUESTIONS } from '../../data/demo-questions';
-import { VibeColorTheme } from '../../types/vibe';
+import { isValidVibeTheme } from '../../types/vibe';
 import { abbyVoice } from '../../services/AbbyVoice';
 
 // Returns the background index for shader progression
@@ -34,7 +34,13 @@ const BACKGROUND_SEQUENCE = [
 ];
 
 const getBackgroundIndexForQuestion = (questionIndex: number): number => {
-  return BACKGROUND_SEQUENCE[questionIndex] || 1;
+  if (questionIndex < 0 || questionIndex >= BACKGROUND_SEQUENCE.length) {
+    if (__DEV__) {
+      console.warn(`[Interview] Question index ${questionIndex} out of bounds for BACKGROUND_SEQUENCE (length: ${BACKGROUND_SEQUENCE.length})`);
+    }
+    return 1; // Fallback to default shader
+  }
+  return BACKGROUND_SEQUENCE[questionIndex];
 };
 
 export interface InterviewScreenProps {
@@ -71,9 +77,13 @@ export const InterviewScreen: React.FC<InterviewScreenProps> = ({
     // Add user response to conversation
     addMessage('user', answerValue);
 
-    // Trigger vibe_shift if present
+    // Trigger vibe_shift if present and valid
     if (currentQuestion.vibe_shift) {
-      setColorTheme(currentQuestion.vibe_shift as VibeColorTheme);
+      if (isValidVibeTheme(currentQuestion.vibe_shift)) {
+        setColorTheme(currentQuestion.vibe_shift);
+      } else if (__DEV__) {
+        console.warn(`[Interview] Invalid vibe_shift "${currentQuestion.vibe_shift}" in question ${currentQuestion.id}`);
+      }
     }
 
     // Record answer
