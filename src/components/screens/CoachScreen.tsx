@@ -19,6 +19,7 @@ import {
 } from 'react-native';
 import { BlurView } from 'expo-blur';
 import * as Haptics from 'expo-haptics';
+import { Pause, Play } from 'lucide-react-native';
 import { useDemoStore } from '../../store/useDemoStore';
 import { useAbbyAgent } from '../../services/AbbyAgent';
 
@@ -47,7 +48,7 @@ export const CoachScreen: React.FC<CoachScreenProps> = ({
   const translateY = useRef(new Animated.Value(SCREEN_HEIGHT)).current;
 
   // Initialize ElevenLabs Agent
-  const { startConversation, endConversation, isSpeaking, isConnected } = useAbbyAgent({
+  const { startConversation, endConversation, togglePause, isSpeaking, isConnected, isPaused } = useAbbyAgent({
     enabled: true,
     onAbbyResponse: (text) => {
       addMessage('abby', text);
@@ -156,8 +157,11 @@ export const CoachScreen: React.FC<CoachScreenProps> = ({
     };
     initConversation();
 
+    // Cleanup on unmount - must handle async gracefully
     return () => {
-      endConversation();
+      endConversation().catch(() => {
+        // Ignore cleanup errors - session may already be ended
+      });
     };
   }, []);
 
@@ -167,6 +171,12 @@ export const CoachScreen: React.FC<CoachScreenProps> = ({
     await endConversation();
     reset(); // Go back to COACH_INTRO
   }, [endConversation, reset]);
+
+  // Handle pause/resume
+  const handleTogglePause = useCallback(async () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    await togglePause();
+  }, [togglePause]);
 
   return (
     <View style={styles.container}>
@@ -190,15 +200,34 @@ export const CoachScreen: React.FC<CoachScreenProps> = ({
               <View style={styles.handle} />
             </View>
 
-            {/* Connection status */}
+            {/* Connection status + Pause button */}
             <View style={styles.statusRow}>
               <View style={[
                 styles.statusDot,
-                isConnected ? styles.statusConnected : styles.statusDisconnected
+                isConnected ? (isPaused ? styles.statusPaused : styles.statusConnected) : styles.statusDisconnected
               ]} />
               <Text style={styles.statusText}>
-                {isConnected ? (isSpeaking ? 'Abby is speaking...' : 'Listening') : agentStatus}
+                {isPaused ? 'Paused' : (isConnected ? (isSpeaking ? 'Abby is speaking...' : 'Listening') : agentStatus)}
               </Text>
+
+              {/* Pause/Play button - positioned absolute right */}
+              {isConnected && (
+                <Pressable
+                  onPress={handleTogglePause}
+                  style={({ pressed }) => [
+                    styles.pauseButton,
+                    pressed && styles.pauseButtonPressed,
+                  ]}
+                >
+                  {isPaused ? (
+                    // @ts-ignore - color works via SvgProps
+                    <Play size={20} color="#FFFFFF" />
+                  ) : (
+                    // @ts-ignore - color works via SvgProps
+                    <Pause size={20} color="#FFFFFF" />
+                  )}
+                </Pressable>
+              )}
             </View>
           </View>
 
@@ -300,7 +329,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     paddingVertical: 12,
+    paddingHorizontal: 20,
     gap: 8,
+    position: 'relative',
   },
   statusDot: {
     width: 8,
@@ -313,10 +344,29 @@ const styles = StyleSheet.create({
   statusDisconnected: {
     backgroundColor: '#EF4444',
   },
+  statusPaused: {
+    backgroundColor: '#F59E0B',
+  },
   statusText: {
     fontFamily: 'Merriweather_400Regular',
     fontSize: 13,
     color: 'rgba(0, 0, 0, 0.5)',
+  },
+
+  // Pause button
+  pauseButton: {
+    position: 'absolute',
+    right: 16,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: 'rgba(0, 0, 0, 0.7)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  pauseButtonPressed: {
+    opacity: 0.7,
+    transform: [{ scale: 0.95 }],
   },
 
   contentContainer: {

@@ -133,6 +133,7 @@ export function useAbbyAgent(config: AbbyAgentConfig = {}) {
   // Session state - prevents double-starting
   const [isStarting, setIsStarting] = useState(false);
   const [isConnected, setIsConnected] = useState(false);
+  const [isPaused, setIsPaused] = useState(false);
 
   // Pulse animation ref (persists across renders)
   const pulseIntervalRef = useRef<NodeJS.Timeout | null>(null);
@@ -307,16 +308,28 @@ export function useAbbyAgent(config: AbbyAgentConfig = {}) {
     if (__DEV__) console.log('[AbbyAgent] Starting session with agent:', AGENT_ID.slice(0, 8) + '...');
 
     try {
-      // Configure audio BEFORE connecting - keep it SIMPLE
+      // Configure audio BEFORE connecting - proper voice chat setup
       if (Platform.OS === 'ios' && AudioSession) {
         try {
-          await AudioSession.configureAudio({
-            ios: { defaultOutput: 'speaker' }
+          // Full Apple audio configuration for voice chat
+          await AudioSession.setAppleAudioConfiguration({
+            audioCategory: 'playAndRecord',
+            audioCategoryOptions: ['allowBluetooth', 'allowBluetoothA2DP', 'defaultToSpeaker'],
+            audioMode: 'voiceChat',
           });
           await AudioSession.startAudioSession();
-          if (__DEV__) console.log('[AbbyAgent] Audio session started');
+          if (__DEV__) console.log('[AbbyAgent] Audio session configured for voice chat');
         } catch (err) {
           console.warn('[AbbyAgent] Audio setup error:', err);
+          // Fallback to simple config
+          try {
+            await AudioSession.configureAudio({
+              ios: { defaultOutput: 'speaker' }
+            });
+            await AudioSession.startAudioSession();
+          } catch {
+            // Continue without audio - will fail gracefully
+          }
         }
       }
 
@@ -340,6 +353,7 @@ export function useAbbyAgent(config: AbbyAgentConfig = {}) {
     stopAudioPulse();
     stopSpeakingPulse();
     setIsConnected(false);
+    setIsPaused(false);
 
     try {
       await conversation.endSession();
@@ -349,12 +363,77 @@ export function useAbbyAgent(config: AbbyAgentConfig = {}) {
     }
   }, [isConnected, conversation.status, stopAudioPulse, stopSpeakingPulse]);
 
+  // Pause conversation (stops audio session)
+  const pauseConversation = useCallback(async () => {
+    if (!isConnected || isPaused) return;
+
+    if (__DEV__) console.log('[AbbyAgent] Pausing conversation');
+    setIsPaused(true);
+    stopAudioPulse();
+    stopSpeakingPulse();
+    setAbbyMode('IDLE');
+
+    if (Platform.OS === 'ios' && AudioSession) {
+      try {
+        await AudioSession.stopAudioSession();
+        if (__DEV__) console.log('[AbbyAgent] Audio session stopped (paused)');
+      } catch (err) {
+        console.warn('[AbbyAgent] Failed to stop audio:', err);
+      }
+    }
+  }, [isConnected, isPaused, stopAudioPulse, stopSpeakingPulse, setAbbyMode]);
+
+  // Resume conversation (restarts audio session)
+  const resumeConversation = useCallback(async () => {
+    if (!isConnected || !isPaused) return;
+
+    if (__DEV__) console.log('[AbbyAgent] Resuming conversation');
+
+    if (Platform.OS === 'ios' && AudioSession) {
+      try {
+        await AudioSession.setAppleAudioConfiguration({
+          audioCategory: 'playAndRecord',
+          audioCategoryOptions: ['allowBluetooth', 'allowBluetoothA2DP', 'defaultToSpeaker'],
+          audioMode: 'voiceChat',
+        });
+        await AudioSession.startAudioSession();
+        await AudioSession.selectAudioOutput('speaker');
+        if (__DEV__) console.log('[AbbyAgent] Audio session resumed');
+      } catch (err) {
+        console.warn('[AbbyAgent] Failed to resume audio:', err);
+        // Try simple fallback
+        try {
+          await AudioSession.configureAudio({ ios: { defaultOutput: 'speaker' } });
+          await AudioSession.startAudioSession();
+        } catch {
+          // Continue anyway
+        }
+      }
+    }
+
+    setIsPaused(false);
+    setAbbyMode('LISTENING');
+  }, [isConnected, isPaused, setAbbyMode]);
+
+  // Toggle pause/resume
+  const togglePause = useCallback(async () => {
+    if (isPaused) {
+      await resumeConversation();
+    } else {
+      await pauseConversation();
+    }
+  }, [isPaused, pauseConversation, resumeConversation]);
+
   return {
     startConversation,
     endConversation,
+    pauseConversation,
+    resumeConversation,
+    togglePause,
     isSpeaking: conversation.isSpeaking,
     isConnected,
     isStarting,
+    isPaused,
     status: conversation.status,
     voiceAvailable: VOICE_AVAILABLE,
   };

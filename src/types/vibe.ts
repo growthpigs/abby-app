@@ -92,6 +92,8 @@ export type UserMode =
  * Abby modes - what Abby is doing
  */
 export type AbbyMode =
+  | 'IDLE'        // Paused/waiting
+  | 'LISTENING'   // Ready for user input
   | 'SPEAKING'    // Abby is talking
   | 'PROCESSING'  // Thinking/analyzing
   | 'ADVISING'    // Coaching mode
