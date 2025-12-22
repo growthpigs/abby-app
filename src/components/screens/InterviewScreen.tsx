@@ -2,39 +2,35 @@
  * InterviewScreen - Question flow with vibe shifts
  *
  * UI Layout:
- * - Top: "Question X of 10" + restart button (under dynamic island)
- * - Middle: Question card with glassmorphic backing + Merriweather font
- * - Bottom: Next question button
+ * - Top: Empty space for shader/orb
+ * - Bottom: Glass modal with question + Next button (extends to screen edge)
  *
  * Text uses white with subtle shadow for readability on all shader backgrounds.
  */
 
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { View, Text, StyleSheet, Pressable } from 'react-native';
+import { View, Text, StyleSheet, Pressable, Dimensions } from 'react-native';
 import { BlurView } from 'expo-blur';
 import * as Haptics from 'expo-haptics';
 import Animated, { FadeIn, FadeOut } from 'react-native-reanimated';
 import { useDemoStore } from '../../store/useDemoStore';
 import { useVibeController } from '../../store/useVibeController';
-import { useSettingsStore } from '../../store/useSettingsStore';
 import { DEMO_QUESTIONS } from '../../data/demo-questions';
 import { VibeColorTheme } from '../../types/vibe';
-import { ConversationOverlay } from '../ui/ConversationOverlay';
 import { abbyVoice } from '../../services/AbbyVoice';
 
 // Returns the background index for shader progression
-// Curated selection featuring the most beautiful shaders: 5, 1, 13, 8, 18, etc.
 const BACKGROUND_SEQUENCE = [
-  5,   // Q1: Liquid Marble - gorgeous opener
-  1,   // Q2: Domain Warping fBM - classic
-  13,  // Q3: Featured beautiful shader
+  5,   // Q1: Liquid Marble
+  1,   // Q2: Domain Warping fBM
+  13,  // Q3: Featured shader
   2,   // Q4: Warm Fire Swirls
-  8,   // Q5: Deep Ocean - mid-point depth
+  8,   // Q5: Deep Ocean
   3,   // Q6: Neon Aurora Spirals
-  18,  // Q7: Featured beautiful shader
+  18,  // Q7: Featured shader
   6,   // Q8: Kaleidoscope Bloom
   4,   // Q9: Aerial Reef
-  10,  // Q10: Chromatic Bloom - finale
+  10,  // Q10: Chromatic Bloom
 ];
 
 const getBackgroundIndexForQuestion = (questionIndex: number): number => {
@@ -52,22 +48,19 @@ export const InterviewScreen: React.FC<InterviewScreenProps> = ({
   const answerQuestion = useDemoStore((state) => state.answerQuestion);
   const nextQuestion = useDemoStore((state) => state.nextQuestion);
   const advance = useDemoStore((state) => state.advance);
-  const messages = useDemoStore((state) => state.messages);
   const addMessage = useDemoStore((state) => state.addMessage);
 
   const setColorTheme = useVibeController((state) => state.setColorTheme);
   const setAudioLevel = useVibeController((state) => state.setAudioLevel);
-  const inputMode = useSettingsStore((state) => state.inputMode);
 
-  // Derive current question and state (needed before callbacks)
+  // Derive current question and state
   const currentQuestion = DEMO_QUESTIONS[Math.min(currentIndex, DEMO_QUESTIONS.length - 1)];
   const isLastQuestion = currentIndex >= DEMO_QUESTIONS.length - 1;
 
   // Track TTS errors for user feedback
   const [voiceError, setVoiceError] = useState(false);
 
-  // Ref for audio level callback to prevent memory leaks
-  // (callback is created fresh each render, but AbbyVoice stores reference)
+  // Ref for audio level callback
   const audioLevelRef = useRef(setAudioLevel);
   audioLevelRef.current = setAudioLevel;
 
@@ -104,34 +97,27 @@ export const InterviewScreen: React.FC<InterviewScreenProps> = ({
   };
 
   // Calculate background index for current question
-  React.useEffect(() => {
+  useEffect(() => {
     if (onBackgroundChange) {
       onBackgroundChange(getBackgroundIndexForQuestion(currentIndex));
     }
   }, [currentIndex, onBackgroundChange]);
 
-  // Add Abby's question to conversation and SPEAK it when it changes
-  React.useEffect(() => {
+  // Speak question when it changes
+  useEffect(() => {
     const question = DEMO_QUESTIONS[Math.min(currentIndex, DEMO_QUESTIONS.length - 1)];
     if (question) {
-      // Reset error state for new question
       setVoiceError(false);
-
-      // Add to transcript
       addMessage('abby', question.text);
 
-      // Speak the question with Abby's voice (TTS)
-      // Use ref for callback to prevent stale closure
       abbyVoice.speak(question.text, (level) => {
         audioLevelRef.current(level);
       }).catch((err) => {
         console.warn('[Interview] TTS error:', err);
-        // Show error indicator to user
         setVoiceError(true);
       });
     }
 
-    // Cleanup: stop any ongoing speech when question changes or unmounts
     return () => {
       abbyVoice.stop();
     };
@@ -139,126 +125,138 @@ export const InterviewScreen: React.FC<InterviewScreenProps> = ({
 
   return (
     <View style={styles.container}>
-      {/* Middle: Question with glassmorphic backing + fade animation */}
-      <View style={styles.middleSection}>
-        <Animated.View
-          key={currentQuestion.id}
-          entering={FadeIn.duration(300)}
-          exiting={FadeOut.duration(200)}
-        >
-          <BlurView intensity={60} tint="dark" style={styles.questionCard}>
+      {/* Top: Empty space for shader background + orb */}
+      <View style={styles.topSpacer} />
+
+      {/* Bottom: Glass modal with question + button - extends to screen edge */}
+      <View style={styles.bottomModal}>
+        <BlurView intensity={80} tint="light" style={styles.modalBlur}>
+          {/* Drag handle */}
+          <View style={styles.handleContainer}>
+            <View style={styles.handle} />
+          </View>
+
+          {/* Question text */}
+          <Animated.View
+            key={currentQuestion.id}
+            entering={FadeIn.duration(300)}
+            exiting={FadeOut.duration(200)}
+            style={styles.questionContainer}
+          >
             <Text style={styles.questionText}>
               {currentQuestion.text}
             </Text>
-          </BlurView>
-        </Animated.View>
+          </Animated.View>
 
-        {/* Voice error indicator */}
-        {voiceError && (
-          <View style={styles.voiceErrorContainer}>
+          {/* Voice error indicator */}
+          {voiceError && (
             <Text style={styles.voiceErrorText}>
-              🔇 Voice unavailable - read text above
+              🔇 Voice unavailable
             </Text>
-          </View>
-        )}
-      </View>
+          )}
 
-      {/* Bottom: Next button */}
-      <View style={styles.bottomSection}>
-        <Pressable
-          onPress={handleAnswer}
-          style={({ pressed }) => [
-            styles.nextButton,
-            pressed && styles.nextButtonPressed,
-          ]}
-        >
-          <BlurView intensity={60} tint="dark" style={styles.buttonBlur}>
+          {/* Next button */}
+          <Pressable
+            onPress={handleAnswer}
+            style={({ pressed }) => [
+              styles.nextButton,
+              pressed && styles.nextButtonPressed,
+            ]}
+          >
             <Text style={styles.buttonText}>
               {isLastQuestion ? 'Find My Match' : 'Next'}
             </Text>
-          </BlurView>
-        </Pressable>
-      </View>
+          </Pressable>
 
-      {/* Conversation Overlay - scrolling chat transcript */}
-      <ConversationOverlay
-        messages={messages}
-        inputMode={inputMode}
-      />
+          {/* Extra padding for home indicator */}
+          <View style={styles.homeIndicatorPadding} />
+        </BlurView>
+      </View>
     </View>
   );
 };
 
+const { height: SCREEN_HEIGHT } = Dimensions.get('window');
+
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    justifyContent: 'space-between',
   },
 
-  // MIDDLE - Question card
-  middleSection: {
+  // Top spacer - takes remaining space
+  topSpacer: {
     flex: 1,
-    justifyContent: 'flex-end',
-    paddingHorizontal: 24,
-    paddingBottom: 10,
   },
-  questionCard: {
-    borderRadius: 20,
-    paddingVertical: 20,
-    paddingHorizontal: 24,
+
+  // Bottom modal - positioned at absolute bottom, extends past safe area to screen edge
+  bottomModal: {
+    position: 'absolute',
+    bottom: -34, // Extend past safe area to reach actual screen bottom
+    left: 0,
+    right: 0,
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
     overflow: 'hidden',
-    backgroundColor: 'rgba(0, 0, 0, 0.25)',
+  },
+  modalBlur: {
+    backgroundColor: 'rgba(255, 255, 255, 0.15)',
+    paddingTop: 8,
+  },
+
+  // Drag handle
+  handleContainer: {
+    alignItems: 'center',
+    paddingVertical: 8,
+  },
+  handle: {
+    width: 40,
+    height: 5,
+    borderRadius: 2.5,
+    backgroundColor: 'rgba(0, 0, 0, 0.2)',
+  },
+
+  // Question
+  questionContainer: {
+    paddingHorizontal: 24,
+    paddingVertical: 20,
   },
   questionText: {
     fontFamily: 'Merriweather_400Regular',
-    fontSize: 18,
-    lineHeight: 28,
-    color: '#FFFFFF',
+    fontSize: 20,
+    lineHeight: 30,
+    color: 'rgba(0, 0, 0, 0.85)',
     textAlign: 'center',
-    textShadowColor: 'rgba(0, 0, 0, 0.4)',
-    textShadowOffset: { width: 0, height: 1 },
-    textShadowRadius: 3,
-  },
-  voiceErrorContainer: {
-    marginTop: 12,
-    alignItems: 'center',
   },
   voiceErrorText: {
     fontFamily: 'Merriweather_400Regular',
     fontSize: 12,
-    color: 'rgba(255, 180, 0, 0.9)',
+    color: 'rgba(180, 100, 0, 0.9)',
     textAlign: 'center',
+    marginBottom: 12,
   },
 
-  // BOTTOM - Next button
-  bottomSection: {
-    paddingHorizontal: 24,
-    paddingBottom: 40,
-    alignItems: 'center',
-    gap: 16,
-  },
+  // Next button
   nextButton: {
+    marginHorizontal: 24,
+    backgroundColor: 'rgba(0, 0, 0, 0.8)',
     borderRadius: 30,
-    overflow: 'hidden',
+    paddingVertical: 16,
+    alignItems: 'center',
   },
   nextButtonPressed: {
     opacity: 0.8,
     transform: [{ scale: 0.98 }],
   },
-  buttonBlur: {
-    paddingVertical: 16,
-    paddingHorizontal: 48,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: 'rgba(0, 0, 0, 0.2)',
-  },
   buttonText: {
     fontFamily: 'Merriweather_400Regular',
     fontSize: 16,
-    color: 'rgba(255, 255, 255, 0.9)',
-    textShadowColor: 'rgba(0, 0, 0, 0.3)',
-    textShadowOffset: { width: 0, height: 1 },
-    textShadowRadius: 2,
+    color: '#FFFFFF',
+    fontWeight: '600',
+  },
+
+  // Extra padding at bottom for home indicator
+  homeIndicatorPadding: {
+    height: 34,
   },
 });
 

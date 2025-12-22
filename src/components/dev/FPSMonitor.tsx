@@ -28,7 +28,7 @@ export function FPSMonitor() {
   const frameCountRef = useRef(0);
   const lastTimeRef = useRef(performance.now());
   const fpsHistoryRef = useRef<number[]>([]);
-  const rafIdRef = useRef<number>();
+  const rafIdRef = useRef<number | undefined>(undefined);
 
   useEffect(() => {
     const measureFrame = () => {

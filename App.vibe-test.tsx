@@ -125,13 +125,11 @@ export default function App() {
     'COACH',
   ];
 
-  // Response qualities
+  // Response qualities (matches ResponseQuality type)
   const responses: ResponseQuality[] = [
-    'BORING',
-    'NORMAL',
-    'ENGAGED',
+    'BRIEF',
     'THOUGHTFUL',
-    'EXCEPTIONAL',
+    'PROFOUND',
   ];
 
   return (
