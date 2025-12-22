@@ -200,9 +200,9 @@ export function useAbbyAgent(config: AbbyAgentConfig = {}) {
       setIsStarting(false);
       setAbbyMode('SPEAKING');
 
-      // Audio already configured before connect - just ensure speaker output
+      // Audio already configured before connect - force speaker output
       if (Platform.OS === 'ios' && AudioSession) {
-        AudioSession.selectAudioOutput('speaker').catch(() => {});
+        AudioSession.selectAudioOutput('force_speaker').catch(() => {});
       }
 
       callbacksRef.current.onConnect?.();
@@ -328,28 +328,15 @@ export function useAbbyAgent(config: AbbyAgentConfig = {}) {
     if (__DEV__) console.log('[AbbyAgent] Starting session with agent:', AGENT_ID.slice(0, 8) + '...');
 
     try {
-      // Configure audio BEFORE connecting - proper voice chat setup
+      // Configure audio BEFORE connecting - use SIMPLE config (confirmed working)
       if (Platform.OS === 'ios' && AudioSession) {
         try {
-          // Full Apple audio configuration for voice chat
-          await AudioSession.setAppleAudioConfiguration({
-            audioCategory: 'playAndRecord',
-            audioCategoryOptions: ['allowBluetooth', 'allowBluetoothA2DP', 'defaultToSpeaker'],
-            audioMode: 'voiceChat',
-          });
+          await AudioSession.configureAudio({ ios: { defaultOutput: 'speaker' } });
           await AudioSession.startAudioSession();
-          if (__DEV__) console.log('[AbbyAgent] Audio session configured for voice chat');
+          if (__DEV__) console.log('[AbbyAgent] Audio session started (simple config)');
         } catch (err) {
           console.warn('[AbbyAgent] Audio setup error:', err);
-          // Fallback to simple config
-          try {
-            await AudioSession.configureAudio({
-              ios: { defaultOutput: 'speaker' }
-            });
-            await AudioSession.startAudioSession();
-          } catch {
-            // Continue without audio - will fail gracefully
-          }
+          // Continue without audio - will fail gracefully
         }
       }
 
@@ -417,29 +404,17 @@ export function useAbbyAgent(config: AbbyAgentConfig = {}) {
     setIsTogglingMute(true);
     if (__DEV__) console.log('[AbbyAgent] Unmuting conversation');
 
-    // Restart audio FIRST, then update state (matches mute pattern)
+    // Restart audio FIRST using SIMPLE config (confirmed working)
     if (Platform.OS === 'ios' && AudioSession) {
       try {
-        await AudioSession.setAppleAudioConfiguration({
-          audioCategory: 'playAndRecord',
-          audioCategoryOptions: ['allowBluetooth', 'allowBluetoothA2DP', 'defaultToSpeaker'],
-          audioMode: 'voiceChat',
-        });
+        await AudioSession.configureAudio({ ios: { defaultOutput: 'speaker' } });
         await AudioSession.startAudioSession();
-        await AudioSession.selectAudioOutput('speaker');
-        if (__DEV__) console.log('[AbbyAgent] Audio session resumed');
+        await AudioSession.selectAudioOutput('force_speaker');
+        if (__DEV__) console.log('[AbbyAgent] Audio session resumed (force_speaker)');
       } catch (err) {
         console.warn('[AbbyAgent] Failed to resume audio:', err);
-        // Try simple fallback
-        try {
-          await AudioSession.configureAudio({ ios: { defaultOutput: 'speaker' } });
-          await AudioSession.startAudioSession();
-          if (__DEV__) console.log('[AbbyAgent] Audio resumed with fallback config');
-        } catch (fallbackErr) {
-          console.warn('[AbbyAgent] Fallback audio also failed:', fallbackErr);
-          setIsTogglingMute(false);
-          return; // Don't update state if unmute failed (validator fix)
-        }
+        setIsTogglingMute(false);
+        return; // Don't update state if unmute failed (validator fix)
       }
     }
 
