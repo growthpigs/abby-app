@@ -354,10 +354,71 @@ const conversation = useConversation({
 
 ---
 
+## Troubleshooting & Error Patterns
+
+### Critical: iOS Audio Output Not Working
+
+**Symptom**: Voice connection works (transcripts appear, mode changes), but no audio heard.
+
+**Root Cause**: ElevenLabs SDK uses LiveKit internally. LiveKit's `useLiveKitRoom.ts` calls `AudioSession.startAudioSession()` on mount but does NOT configure audio output mode. Without explicit configuration, WebRTC audio may route to non-functional output (especially on iOS Simulator).
+
+**Solution**: Configure iOS audio with `setAppleAudioConfiguration` at module load time, BEFORE SDK mounts:
+
+```typescript
+// In AbbyAgent.ts - at module load (not in a hook)
+if (Platform.OS === 'ios' && AudioSession) {
+  AudioSession.setAppleAudioConfiguration({
+    audioCategory: 'playAndRecord',
+    audioCategoryOptions: ['defaultToSpeaker', 'allowBluetooth'],
+    audioMode: 'voiceChat',
+  }).catch(() => {});
+}
+```
+
+**Why This Works**:
+1. `playAndRecord` - Required for bidirectional voice (mic + speaker)
+2. `defaultToSpeaker` - Routes audio to speaker instead of earpiece
+3. `voiceChat` - Optimizes for real-time voice communication
+4. Module load timing - Runs BEFORE SDK's `useEffect` starts audio session
+
+**What Doesn't Work**:
+- ❌ `configureAudio({ ios: { defaultOutput: 'speaker' } })` - Too simple
+- ❌ Calling `startAudioSession()` ourselves - Conflicts with SDK's call
+- ❌ Configuring audio in `onConnect` callback - Too late, audio already routing
+
+---
+
+### Suppressed Warnings (LogBox)
+
+These warnings are suppressed in `index.ts` as they don't affect functionality:
+
+| Warning | Reason |
+|---------|--------|
+| `websocket closed` | Normal when ElevenLabs session ends |
+| `could not createOffer with closed peer connection` | Normal during reconnection |
+| `[expo-av]` deprecation | AbbyVoice uses expo-av, migration deferred |
+| `SafeAreaView has been deprecated` | Internal to expo-blur, not our code |
+| `Cannot send message: room not connected` | Normal during session transitions |
+
+---
+
+### Common Issues
+
+| Issue | Cause | Fix |
+|-------|-------|-----|
+| No audio on iOS Simulator | Missing `voiceChat` audio mode | See audio config above |
+| Voice works once then stops | Multiple `startAudioSession` calls | Let SDK manage, only call `selectAudioOutput` |
+| Crash on Expo Go | LiveKit requires native code | Use `expo run:ios` development build |
+| Connection works, no speaking | WebRTC track not subscribed | SDK handles this, check audio config |
+
+---
+
 ## Changelog
 
 | Date | Change |
 |------|--------|
+| 2024-12-23 | **FIX**: iOS audio output - use `setAppleAudioConfiguration` with voiceChat mode at module load |
+| 2024-12-23 | Added troubleshooting section with error patterns |
 | 2024-12-22 | **CRITICAL**: Updated prompts - reject off-topic (UI talk), one intro question, foreplay before 150 questions |
 | 2024-12-22 | Added COACH mode prompt for post-interview coaching |
 | 2024-12-10 | Created feature doc (Chi) |

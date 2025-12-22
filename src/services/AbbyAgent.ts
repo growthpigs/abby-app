@@ -80,6 +80,19 @@ try {
   useConversation = elevenlabs.useConversation;
   AudioSession = livekit.AudioSession;
   VOICE_AVAILABLE = true;
+
+  // Configure iOS audio for voice chat BEFORE SDK's useEffect runs
+  // This is critical - SDK starts audio session but doesn't configure output mode
+  // Must use playAndRecord + voiceChat for WebRTC audio to work on simulator
+  if (Platform.OS === 'ios' && AudioSession) {
+    AudioSession.setAppleAudioConfiguration({
+      audioCategory: 'playAndRecord',
+      audioCategoryOptions: ['defaultToSpeaker', 'allowBluetooth'],
+      audioMode: 'voiceChat',
+    }).catch(() => {
+      // Ignore errors - audio may still work with SDK defaults
+    });
+  }
 } catch (e) {
   if (__DEV__) {
     console.warn('[AbbyAgent] Voice native modules not available. Run with a development build (expo run:ios) for voice support.');
@@ -200,7 +213,8 @@ export function useAbbyAgent(config: AbbyAgentConfig = {}) {
       setIsStarting(false);
       setAbbyMode('SPEAKING');
 
-      // Audio already configured before connect - force speaker output
+      // Force speaker output after connection established
+      // SDK already started audio session, we just ensure speaker routing
       if (Platform.OS === 'ios' && AudioSession) {
         AudioSession.selectAudioOutput('force_speaker').catch(() => {});
       }
@@ -328,18 +342,7 @@ export function useAbbyAgent(config: AbbyAgentConfig = {}) {
     if (__DEV__) console.log('[AbbyAgent] Starting session with agent:', AGENT_ID.slice(0, 8) + '...');
 
     try {
-      // Configure audio BEFORE connecting - use SIMPLE config (confirmed working)
-      if (Platform.OS === 'ios' && AudioSession) {
-        try {
-          await AudioSession.configureAudio({ ios: { defaultOutput: 'speaker' } });
-          await AudioSession.startAudioSession();
-          if (__DEV__) console.log('[AbbyAgent] Audio session started (simple config)');
-        } catch (err) {
-          console.warn('[AbbyAgent] Audio setup error:', err);
-          // Continue without audio - will fail gracefully
-        }
-      }
-
+      // Audio setup happens in onConnect callback (original working pattern)
       await conversation.startSession({ agentId: AGENT_ID });
     } catch (err) {
       console.error('[AbbyAgent] Failed to start session:', err);
