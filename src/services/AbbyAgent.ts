@@ -185,27 +185,9 @@ export function useAbbyAgent(config: AbbyAgentConfig = {}) {
       setIsStarting(false);
       setAbbyMode('SPEAKING');
 
-      // Configure and start LiveKit audio session for iOS (if available)
+      // Audio already configured before connect - just ensure speaker output
       if (Platform.OS === 'ios' && AudioSession) {
-        (async () => {
-          try {
-            // Configure audio for speaker output
-            await AudioSession.configureAudio({
-              ios: { defaultOutput: 'speaker' }
-            });
-            if (__DEV__) console.log('[AbbyAgent] iOS audio configured for speaker');
-
-            // Start the audio session
-            await AudioSession.startAudioSession();
-            if (__DEV__) console.log('[AbbyAgent] iOS audio session started');
-
-            // Force speaker output
-            await AudioSession.selectAudioOutput('force_speaker');
-            if (__DEV__) console.log('[AbbyAgent] iOS audio output set to speaker');
-          } catch (err) {
-            console.warn('[AbbyAgent] Failed to configure audio session:', err);
-          }
-        })();
+        AudioSession.selectAudioOutput('speaker').catch(() => {});
       }
 
       callbacks.onConnect?.();
@@ -325,29 +307,16 @@ export function useAbbyAgent(config: AbbyAgentConfig = {}) {
     if (__DEV__) console.log('[AbbyAgent] Starting session with agent:', AGENT_ID.slice(0, 8) + '...');
 
     try {
-      // Start audio session BEFORE connecting (iOS only)
-      // Must set proper audio category for two-way audio (playAndRecord)
+      // Configure audio BEFORE connecting - keep it SIMPLE
       if (Platform.OS === 'ios' && AudioSession) {
         try {
-          // Configure default output
           await AudioSession.configureAudio({
             ios: { defaultOutput: 'speaker' }
           });
-
-          // Set Apple audio configuration for two-way voice
-          // playAndRecord category enables both mic and speaker
-          // defaultToSpeaker routes output through speaker (not earpiece)
-          await AudioSession.setAppleAudioConfiguration({
-            audioCategory: 'playAndRecord',
-            audioCategoryOptions: ['defaultToSpeaker', 'allowBluetooth', 'mixWithOthers'],
-            audioMode: 'voiceChat',
-          });
-
           await AudioSession.startAudioSession();
-          await AudioSession.selectAudioOutput('force_speaker');
-          if (__DEV__) console.log('[AbbyAgent] iOS audio: playAndRecord + voiceChat + speaker');
-        } catch (audioErr) {
-          console.warn('[AbbyAgent] Pre-connect audio setup failed:', audioErr);
+          if (__DEV__) console.log('[AbbyAgent] Audio session started');
+        } catch (err) {
+          console.warn('[AbbyAgent] Audio setup error:', err);
         }
       }
 
