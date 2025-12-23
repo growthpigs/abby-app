@@ -38,11 +38,22 @@ interface Conversation {
   sendUserActivity: () => void;
 }
 
+/**
+ * Message source types from ElevenLabs SDK
+ * - 'user': User's transcribed speech
+ * - 'ai': Agent's response text
+ */
+type MessageSource = 'user' | 'ai';
+
 interface ConversationCallbacks {
   onConnect?: (props: { conversationId: string }) => void;
   onDisconnect?: (details: string) => void;
   onError?: (message: string, context?: Record<string, unknown>) => void;
-  onMessage?: (props: { message: any; source: string }) => void;
+  /**
+   * Called when a message is received from user (transcript) or AI (response)
+   * SDK v0.5.7+ returns message as plain string
+   */
+  onMessage?: (props: { message: string; source: MessageSource }) => void;
   onModeChange?: (prop: { mode: 'speaking' | 'listening' }) => void;
   onStatusChange?: (prop: { status: ConversationStatus }) => void;
 }

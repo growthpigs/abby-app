@@ -2,7 +2,7 @@
  * CoachScreen - Free-form conversation with Abby (end screen)
  *
  * Same visual pattern as CoachIntroScreen but for post-interview conversation.
- * Uses draggable bottom sheet pattern (from ProperDress SwatchSelectionModal).
+ * Uses useDraggableSheet hook for bottom sheet behavior.
  * Snap points at 35%, 55%, 75%, 90% of screen height.
  */
 
@@ -15,7 +15,6 @@ import {
   Dimensions,
   ScrollView,
   Animated,
-  PanResponder,
 } from 'react-native';
 import { BlurView } from 'expo-blur';
 import * as Haptics from 'expo-haptics';
@@ -23,12 +22,9 @@ import { Pause, Play } from 'lucide-react-native';
 import { useDemoStore } from '../../store/useDemoStore';
 import { useAbbyAgent } from '../../services/AbbyAgent';
 import { ChatInput } from '../ui/ChatInput';
+import { useDraggableSheet } from '../../hooks/useDraggableSheet';
 
 const { height: SCREEN_HEIGHT } = Dimensions.get('window');
-
-// Snap points as percentages of screen height (from bottom)
-const SNAP_POINTS = [0.35, 0.55, 0.75, 0.9];
-const DEFAULT_SNAP = 0.55; // Start at 55% (enough room for conversation)
 
 export interface CoachScreenProps {
   onBackgroundChange?: (index: number) => void;
@@ -45,8 +41,11 @@ export const CoachScreen: React.FC<CoachScreenProps> = ({
 
   const [agentStatus, setAgentStatus] = useState<string>('Connecting...');
 
-  // Animated value for bottom sheet position
-  const translateY = useRef(new Animated.Value(SCREEN_HEIGHT)).current;
+  // Use draggable sheet hook (replaces manual pan responder + snap logic)
+  const { translateY, panHandlers, animateIn } = useDraggableSheet({
+    snapPoints: [0.35, 0.55, 0.75, 0.9],
+    defaultSnap: 0.55,
+  });
 
   // Initialize ElevenLabs Agent
   const { startConversation, endConversation, toggleMute, sendTextMessage, isSpeaking, isConnected, isMuted } = useAbbyAgent({
@@ -75,60 +74,6 @@ export const CoachScreen: React.FC<CoachScreenProps> = ({
     },
   });
 
-  // Find closest snap point
-  const findClosestSnapPoint = useCallback((position: number): number => {
-    const currentPercentage = 1 - position / SCREEN_HEIGHT;
-    let closest = SNAP_POINTS[0];
-    let minDistance = Math.abs(currentPercentage - closest);
-
-    for (const snap of SNAP_POINTS) {
-      const distance = Math.abs(currentPercentage - snap);
-      if (distance < minDistance) {
-        minDistance = distance;
-        closest = snap;
-      }
-    }
-
-    return SCREEN_HEIGHT * (1 - closest);
-  }, []);
-
-  // Pan responder for draggable header
-  const panResponder = useRef(
-    PanResponder.create({
-      onStartShouldSetPanResponder: () => true,
-      onMoveShouldSetPanResponder: (_, gestureState) => {
-        // Only respond to vertical drags
-        return Math.abs(gestureState.dy) > Math.abs(gestureState.dx);
-      },
-      onPanResponderGrant: () => {
-        translateY.setOffset((translateY as any)._value);
-        translateY.setValue(0);
-      },
-      onPanResponderMove: (_, gestureState) => {
-        const newY = gestureState.dy;
-        const minY = SCREEN_HEIGHT * 0.1 - (translateY as any)._offset;
-        const maxY = SCREEN_HEIGHT - (translateY as any)._offset;
-
-        const constrainedY = Math.max(minY, Math.min(maxY, newY));
-        translateY.setValue(constrainedY);
-      },
-      onPanResponderRelease: (_, gestureState) => {
-        translateY.flattenOffset();
-        const currentY = (translateY as any)._value;
-        const velocity = gestureState.vy;
-
-        // Snap to closest point
-        const snapY = findClosestSnapPoint(currentY + velocity * 100);
-        Animated.spring(translateY, {
-          toValue: snapY,
-          useNativeDriver: true,
-          damping: 50,
-          stiffness: 400,
-        }).start();
-      },
-    })
-  ).current;
-
   // Set background to Liquid Marble shader
   useEffect(() => {
     if (onBackgroundChange) {
@@ -138,13 +83,8 @@ export const CoachScreen: React.FC<CoachScreenProps> = ({
 
   // Animate sheet in on mount
   useEffect(() => {
-    Animated.spring(translateY, {
-      toValue: SCREEN_HEIGHT * (1 - DEFAULT_SNAP),
-      useNativeDriver: true,
-      damping: 50,
-      stiffness: 400,
-    }).start();
-  }, []);
+    animateIn();
+  }, [animateIn]);
 
   // Auto-start conversation when screen mounts
   useEffect(() => {
@@ -208,7 +148,7 @@ export const CoachScreen: React.FC<CoachScreenProps> = ({
       >
         <BlurView intensity={80} tint="light" style={styles.blurContainer} pointerEvents="box-none">
           {/* DRAGGABLE HEADER - Handle only, no buttons */}
-          <View {...panResponder.panHandlers} style={styles.draggableHeader}>
+          <View {...panHandlers} style={styles.draggableHeader}>
             <View style={styles.handleContainer}>
               <View style={styles.handle} />
             </View>

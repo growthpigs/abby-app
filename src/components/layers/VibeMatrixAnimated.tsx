@@ -13,7 +13,7 @@
  *   ref.current?.setShader(newShaderSource); // Morph to new shader
  */
 
-import React, { useMemo, useState, useEffect, forwardRef, useImperativeHandle, useRef } from 'react';
+import React, { useMemo, useState, useEffect, forwardRef, useImperativeHandle, useRef, useCallback } from 'react';
 import { StyleSheet, useWindowDimensions, View } from 'react-native';
 import {
   Canvas,
@@ -162,16 +162,17 @@ export const VibeMatrixAnimated = forwardRef<VibeMatrixAnimatedRef, VibeMatrixAn
       colorB_b,
     };
 
-    // Handle prop-driven shader changes
-    // All dependencies included to prevent stale closure issues
-    useEffect(() => {
-      if (propShaderSource && propShaderSource !== currentShader && !isTransitioning) {
-        startShaderTransition(propShaderSource);
-      }
-    }, [propShaderSource, currentShader, isTransitioning]);
+    // Callback to complete shader transition (called from Reanimated worklet)
+    const completeTransition = useCallback((newShader: string) => {
+      // ONLY update state - DON'T reset morphProgress yet!
+      // Will be reset AFTER React renders with new currentShader
+      setCurrentShader(newShader);
+      pendingUnmountRef.current = newShader;
+    }, []);
 
     // Morph transition logic - uses noise-based per-pixel blending
-    const startShaderTransition = (newShader: string) => {
+    // Wrapped in useCallback to prevent stale closure issues
+    const startShaderTransition = useCallback((newShader: string) => {
       if (newShader === currentShader) return;
 
       setNextShader(newShader);
@@ -182,14 +183,14 @@ export const VibeMatrixAnimated = forwardRef<VibeMatrixAnimatedRef, VibeMatrixAn
       morphProgress.value = withTiming(1, { duration: transitionDuration }, () => {
         runOnJS(completeTransition)(newShader);
       });
-    };
+    }, [currentShader, transitionDuration, morphProgress, completeTransition]);
 
-    const completeTransition = (newShader: string) => {
-      // ONLY update state - DON'T reset morphProgress yet!
-      // Will be reset AFTER React renders with new currentShader
-      setCurrentShader(newShader);
-      pendingUnmountRef.current = newShader;
-    };
+    // Handle prop-driven shader changes
+    useEffect(() => {
+      if (propShaderSource && propShaderSource !== currentShader && !isTransitioning) {
+        startShaderTransition(propShaderSource);
+      }
+    }, [propShaderSource, currentShader, isTransitioning, startShaderTransition]);
 
     // Cleanup effect - runs AFTER React renders with new currentShader
     // This ensures the new shader is visible before we reset morph state

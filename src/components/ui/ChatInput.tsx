@@ -51,9 +51,9 @@ export function ChatInput({
             multiline
             maxLength={500}
             editable={!disabled}
-            returnKeyType="send"
-            onSubmitEditing={handleSend}
             blurOnSubmit={false}
+            accessibilityLabel="Message input"
+            accessibilityHint="Type a message to send to Abby"
           />
           <TouchableOpacity
             style={[
@@ -63,6 +63,9 @@ export function ChatInput({
             onPress={handleSend}
             disabled={!canSend}
             activeOpacity={0.7}
+            accessibilityLabel="Send message"
+            accessibilityRole="button"
+            accessibilityState={{ disabled: !canSend }}
           >
             <Send
               size={18}

@@ -33,6 +33,7 @@ import {
   CoachScreen,
 } from './src/components/screens';
 import { useSettingsStore } from './src/store/useSettingsStore';
+import { ErrorBoundary } from './src/components/ErrorBoundary';
 
 // Conditional ElevenLabsProvider - only load if native modules available
 let ElevenLabsProvider: React.ComponentType<{ children: React.ReactNode }> | null = null;
@@ -290,14 +291,20 @@ export default function AppDemo() {
   // Only wrap with ElevenLabsProvider if native modules are available
   if (ElevenLabsProvider) {
     return (
-      <ElevenLabsProvider>
-        <DemoScreen />
-      </ElevenLabsProvider>
+      <ErrorBoundary>
+        <ElevenLabsProvider>
+          <DemoScreen />
+        </ElevenLabsProvider>
+      </ErrorBoundary>
     );
   }
 
   // Fallback without provider (UI dev mode)
-  return <DemoScreen />;
+  return (
+    <ErrorBoundary>
+      <DemoScreen />
+    </ErrorBoundary>
+  );
 }
 
 const styles = StyleSheet.create({
