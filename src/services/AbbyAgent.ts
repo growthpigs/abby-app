@@ -249,19 +249,15 @@ export function useAbbyAgent(config: AbbyAgentConfig = {}) {
       callbacksRef.current.onDisconnect?.();
     },
 
-    onMessage: ({ message, source }: { message: any; source: string }) => {
+    onMessage: ({ message, source }: { message: string; source: string }) => {
       if (__DEV__) console.log(`[AbbyAgent] Message from ${source}:`, message);
 
-      // User transcript - SDK uses nested structure per types.d.ts
-      if (message.type === 'user_transcript') {
-        const text = message.user_transcription_event?.user_transcript;
-        if (text) callbacksRef.current.onUserTranscript?.(text);
-      }
-
-      // Agent response - SDK uses nested structure per types.d.ts
-      if (message.type === 'agent_response') {
-        const text = message.agent_response_event?.agent_response;
-        if (text) callbacksRef.current.onAbbyResponse?.(text);
+      // SDK v0.5.7+ simplified API: message is the extracted text string
+      // source is 'user' for user transcripts, 'ai' for agent responses
+      if (source === 'user') {
+        callbacksRef.current.onUserTranscript?.(message);
+      } else if (source === 'ai') {
+        callbacksRef.current.onAbbyResponse?.(message);
       }
     },
 

@@ -158,6 +158,19 @@ User speaks → Whisper/Deepgram (STT)
 - Use `atan(y, x)` not `atan2`
 - Use integer division not `%` operator
 
+### ElevenLabs SDK v0.5.7 API change - text not showing (FIXED 2024-12-23)
+- **Issue**: Conversation text stopped appearing in modal after SDK upgrade
+- **Cause**: ElevenLabs SDK v0.5.7 changed `onMessage` callback API:
+  - Old: `{ message: { type: 'agent_response', agent_response_event: {...} } }`
+  - New: `{ message: "text string", source: "user" | "ai" }`
+- **Fix**: Updated `AbbyAgent.ts` onMessage handler to use new simplified API:
+  ```typescript
+  onMessage: ({ message, source }) => {
+    if (source === 'user') onUserTranscript(message);
+    else if (source === 'ai') onAbbyResponse(message);
+  }
+  ```
+
 ---
 
 ## Open Tasks

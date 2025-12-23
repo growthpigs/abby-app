@@ -429,8 +429,9 @@ describe('Audio Configuration', () => {
   test('AbbyAgent starts audio session before connection', () => {
     const source = readFile('src/services/AbbyAgent.ts');
 
-    expect(source).toContain('await AudioSession.startAudioSession()');
-    expect(source).toContain("await AudioSession.selectAudioOutput('force_speaker')");
+    // Audio session calls are wrapped in withTimeout for safety
+    expect(source).toContain('AudioSession.startAudioSession()');
+    expect(source).toContain("AudioSession.selectAudioOutput('force_speaker')");
   });
 
   test('AbbyAgent stops audio session on disconnect', () => {
