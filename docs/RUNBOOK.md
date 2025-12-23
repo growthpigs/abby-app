@@ -4,30 +4,44 @@
 
 ---
 
-## Quick Start
+## Development Startup
+
+### TL;DR - Two Options
 
 ```bash
-# ⚠️ IMPORTANT: Use expo run:ios, NOT expo start!
-cd ~/projects/abby
-
-# ✅ CORRECT - Development build with voice
+# Option 1: Single command (builds + runs + starts Metro)
 npx expo run:ios
 
-# ❌ WRONG - Expo Go (no voice support)
-# expo start
-# npm start
+# Option 2: Separate Metro (faster for rebuilds)
+npm start              # Terminal 1 - Metro bundler
+npx expo run:ios       # Terminal 2 - Build & run app
 ```
 
-### Why `expo run:ios`?
+### Port: 8081
 
-ElevenLabs voice requires native modules (LiveKit WebRTC). These are NOT available in Expo Go.
+Metro runs on `http://localhost:8081`. If you see "Could not connect to development server":
 
-| Command | Mode | Voice | Use When |
-|---------|------|-------|----------|
-| `expo run:ios` | Dev Build | ✅ Yes | Always for ABBY |
-| `expo start` | Expo Go | ❌ No | UI-only testing |
+```bash
+# Kill stale processes
+pkill -f metro
+pkill -f "expo start"
+lsof -ti:8081 | xargs kill -9  # Nuclear option
 
-If you see **"ERROR: VOICE REQUIRES A DEVELOPMENT BUILD"**, you ran the wrong command.
+# Then restart
+npm start
+```
+
+### Why Dev Build (not Expo Go)?
+
+ElevenLabs voice requires native modules (LiveKit WebRTC). NOT available in Expo Go.
+
+| Command | Mode | Voice | Metro |
+|---------|------|-------|-------|
+| `npx expo run:ios` | Dev Build | ✅ | Starts automatically |
+| `npm start` | Metro only | - | Must run app separately |
+| `expo start` | Expo Go | ❌ | Don't use for ABBY |
+
+**Error:** "VOICE REQUIRES A DEVELOPMENT BUILD" → You ran `expo start` instead of `expo run:ios`
 
 ---
 

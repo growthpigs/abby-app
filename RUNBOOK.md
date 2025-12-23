@@ -4,6 +4,8 @@
 > **Project:** ABBY (The Anti-Dating App)
 > **Created:** 2025-12-19
 
+**⚠️ For development/troubleshooting → see [`docs/RUNBOOK.md`](docs/RUNBOOK.md)**
+
 ---
 
 ## Google Drive Folders
