@@ -107,6 +107,66 @@ npx eas submit --platform ios                   # App Store Connect
 
 ---
 
+## Troubleshooting
+
+### "App entry not found" or Metro bundler fails
+
+**Symptoms:**
+- Metro shows "Unable to resolve entry file"
+- App crashes on startup with no clear error
+- `npm ls` shows packages marked as `invalid`
+
+**Diagnosis:**
+```bash
+# Check for invalid peer dependencies
+npm ls 2>&1 | grep -i invalid
+
+# Check Expo version alignment
+npm ls expo | head -10
+```
+
+**Common causes:**
+
+1. **Expo plugin version mismatch** (EP-046)
+   - `@config-plugins/react-native-webrtc` must match Expo SDK version
+   - v10.0.0 for Expo 52, v13.0.0 for Expo 54
+
+2. **LiveKit/ElevenLabs SDK version conflict**
+   - Must keep all related packages in sync
+   - See version mapping table below
+
+**Fix:**
+```bash
+# Clean install with correct versions
+rm -rf node_modules package-lock.json
+npm install --legacy-peer-deps
+```
+
+### "event-target-shim/index" warnings flooding console (EP-045)
+
+**Symptoms:**
+```
+WARN  Attempted to import the module "node_modules/event-target-shim/index"
+which is not listed in the "exports"
+```
+
+**Cause:** LiveKit imports `event-target-shim/index` but v6.0.2's exports field doesn't expose that subpath.
+
+**Fix:** Add `metro.config.js` with custom resolver (already in repo).
+
+### Version Compatibility Matrix (Dec 2025)
+
+| Package | Expo 52 | Expo 54 |
+|---------|---------|---------|
+| @config-plugins/react-native-webrtc | v10.0.0 | **v13.0.0** |
+| @elevenlabs/react-native | v0.2.1 | **v0.5.7** |
+| @livekit/react-native-webrtc | v125.x | **v137.x** |
+| @livekit/react-native | v2.7.x | **v2.9.x** |
+| livekit-client | v2.9.x | **v2.15.x** |
+| event-target-shim | v5.0.1 | **v6.0.2** |
+
+---
+
 ## Notes
 
 - iOS only for v1.0
