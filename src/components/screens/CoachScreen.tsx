@@ -58,6 +58,11 @@ export const CoachScreen: React.FC<CoachScreenProps> = ({
       }, 100);
     },
     onUserTranscript: (text) => {
+      // Dedup: Don't add if last user message has same text (prevents double-add from typed input)
+      const lastUserMsg = messages.filter(m => m.speaker === 'user').pop();
+      if (lastUserMsg?.text === text) {
+        return; // Already added by handleSendMessage
+      }
       addMessage('user', text);
       setTimeout(() => {
         scrollRef.current?.scrollTo({ y: 0, animated: true });
