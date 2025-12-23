@@ -247,6 +247,9 @@ export const CoachIntroScreen: React.FC<CoachIntroScreenProps> = ({
               showsVerticalScrollIndicator={true}
               bounces={true}
               scrollEnabled={true}
+              scrollEventThrottle={16}
+              removeClippedSubviews={true}
+              keyboardShouldPersistTaps="handled"
             >
               {messages.length === 0 ? (
                 <Text style={styles.placeholderText}>
