@@ -244,7 +244,9 @@ export const CoachIntroScreen: React.FC<CoachIntroScreenProps> = ({
               ref={scrollRef}
               style={styles.messagesContainer}
               contentContainerStyle={styles.messagesContent}
-              showsVerticalScrollIndicator={false}
+              showsVerticalScrollIndicator={true}
+              bounces={true}
+              scrollEnabled={true}
             >
               {messages.length === 0 ? (
                 <Text style={styles.placeholderText}>
