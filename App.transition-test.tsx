@@ -115,7 +115,7 @@ export default function TransitionTest() {
         </View>
       </SafeAreaView>
 
-      <StatusBar style="light" />
+      <StatusBar hidden />
     </View>
   );
 }

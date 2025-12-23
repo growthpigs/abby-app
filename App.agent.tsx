@@ -74,7 +74,7 @@ export default function AppAgent() {
           <AbbyConversation />
         </SafeAreaView>
 
-        <StatusBar style="light" />
+        <StatusBar hidden />
       </View>
     </ElevenLabsProvider>
   );

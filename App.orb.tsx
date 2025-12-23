@@ -97,7 +97,7 @@ export default function AppOrb() {
         ))}
       </View>
 
-      <StatusBar style="light" />
+      <StatusBar hidden />
     </View>
   );
 }

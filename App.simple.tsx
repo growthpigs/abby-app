@@ -23,7 +23,7 @@ export default function AppSimple() {
         <Text style={styles.hint}>Should animate between blue and red</Text>
       </View>
 
-      <StatusBar style="light" />
+      <StatusBar hidden />
     </View>
   );
 }

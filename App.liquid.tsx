@@ -253,7 +253,7 @@ export default function AppLiquid() {
       {/* FPS Monitor for performance testing */}
       <FPSMonitor />
 
-      <StatusBar style="light" />
+      <StatusBar hidden />
     </View>
   );
 }
