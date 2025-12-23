@@ -243,13 +243,11 @@ export const CoachIntroScreen: React.FC<CoachIntroScreenProps> = ({
             <ScrollView
               ref={scrollRef}
               style={styles.messagesContainer}
-              contentContainerStyle={styles.messagesContent}
+              contentContainerStyle={[styles.messagesContent, { flexGrow: 1 }]}
               showsVerticalScrollIndicator={true}
               bounces={true}
-              scrollEnabled={true}
+              alwaysBounceVertical={true}
               scrollEventThrottle={16}
-              removeClippedSubviews={true}
-              keyboardShouldPersistTaps="handled"
             >
               {messages.length === 0 ? (
                 <Text style={styles.placeholderText}>
