@@ -213,6 +213,32 @@ npx eas build --platform ios --profile preview
 
 ---
 
+## Recent Session Work (2024-12-23)
+
+### Fixed
+
+| Issue | Root Cause | Fix |
+|-------|------------|-----|
+| Text not flowing (only 1 sentence visible) | `DEFAULT_SNAP` changed from 0.55 to 0.25 | Reverted to 0.55 (55% modal height) |
+| No shader transitions during interview | `BACKGROUND_SEQUENCE` started at 5 (same as COACH_INTRO) | Changed to `[1,2,3,4,5,6,7,8,9,10]` |
+| No progress indicator | Missing UI element | Added "X/10" in JetBrains Mono 12pt uppercase |
+| Mute button inconsistent | CoachIntroScreen had 44x44, CoachScreen had 28x28 | Unified to 28x28 |
+
+### Key Parameters (Don't Change!)
+
+```typescript
+// CoachIntroScreen.tsx & CoachScreen.tsx
+const SNAP_POINTS = [0.35, 0.55, 0.75, 0.9];
+const DEFAULT_SNAP = 0.55;  // 55% - enough room for conversation
+```
+
+### Tests
+
+- 211 tests in 6 test suites
+- Run with: `npm test`
+
+---
+
 ## Notes
 
 - Backend is mocked locally (Android backend is separate)
