@@ -19,6 +19,7 @@ import { useVibeController } from '../../store/useVibeController';
 
 export const RevealScreen: React.FC = () => {
   const reset = useDemoStore((state) => state.reset);
+  const advance = useDemoStore((state) => state.advance);
   const matchData = useDemoStore((state) => state.matchData);
   const setOrbEnergy = useVibeController((state) => state.setOrbEnergy);
   const setColorTheme = useVibeController((state) => state.setColorTheme);
@@ -55,6 +56,11 @@ export const RevealScreen: React.FC = () => {
 
   const handleStartOver = () => {
     reset();
+  };
+
+  // Continue to COACH mode (next state in demo flow)
+  const handleMeetCoach = () => {
+    advance();
   };
 
   if (!matchData) {
@@ -94,6 +100,9 @@ export const RevealScreen: React.FC = () => {
 
         {/* Actions */}
         <View style={styles.buttonContainer}>
+          <GlassButton onPress={handleMeetCoach} variant="primary">
+            Meet Your Coach
+          </GlassButton>
           <GlassButton onPress={handleStartOver} variant="secondary">
             Start Over (Demo)
           </GlassButton>
@@ -171,6 +180,7 @@ const styles = StyleSheet.create({
   },
   buttonContainer: {
     alignItems: 'center',
+    gap: 12,
   },
 });
 

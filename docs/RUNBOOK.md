@@ -248,4 +248,70 @@ npx tsc --noEmit
 
 ---
 
+## Demo Flow Known Issues (2024-12-23 Audit)
+
+### CRITICAL - Blocks Demo Completion
+
+| # | Issue | File:Line | Status |
+|---|-------|-----------|--------|
+| 1 | ~~COACH state unreachable~~ | `RevealScreen.tsx:57` | ✅ FIXED - Added "Meet Your Coach" button |
+| 2 | ~~Shader progression broken~~ | `InterviewScreen.tsx` | ❌ FALSE POSITIVE - useEffect at line 111-115 calls onBackgroundChange correctly |
+| 3 | ~~Vibe state desync~~ | `SearchingScreen.tsx:66` | ❌ FALSE POSITIVE - MATCH_FOUND is valid AppState, intentional visual anticipation |
+
+### HIGH - UX Issues
+
+| # | Issue | File:Line | Status |
+|---|-------|-----------|--------|
+| 4 | ~~endConversation() may hang~~ | `CoachIntroScreen.tsx:173` | ✅ FIXED - Added 2s timeout race |
+
+### MEDIUM - Visual Inconsistency
+
+| # | Issue | File:Line | Fix |
+|---|-------|-----------|-----|
+| 5 | Mute icon size: CoachIntroScreen=18px, CoachScreen=11px | Both screens | Unify to 11px |
+| 6 | RevealScreen missing `onBackgroundChange` prop | `RevealScreen.tsx` | Add prop |
+| 7 | Two parallel vibe stores | `useVibeStore.ts` | Remove unused |
+
+### LOW - Code Cleanup
+
+| # | Issue | File:Line | Fix |
+|---|-------|-----------|-----|
+| 8 | OnboardingScreen is dead code | `OnboardingScreen.tsx` | Delete |
+| 9 | SettingsScreen is dead code | `SettingsScreen.tsx` | Delete |
+| 10 | INTERVIEW_DEEP/SPICY unused | `useVibeController.ts` | Delete or use |
+
+---
+
+## Demo State Machine
+
+**Flow (FIXED 2024-12-23):**
+```
+COACH_INTRO → INTERVIEW → SEARCHING → MATCH → PAYMENT → REVEAL → COACH ✅
+```
+
+User can now tap "Meet Your Coach" on RevealScreen to advance to COACH state.
+"Start Over (Demo)" still available as secondary action to reset.
+
+**Key Files:**
+- `useDemoStore.ts` - STATE_ORDER array (line 91-99)
+- `App.demo.tsx` - renderScreen() switch (line 133-151)
+- Each screen calls `advance()` or `reset()`
+
+---
+
+## Key Parameters (DON'T CHANGE)
+
+```typescript
+// Modal height - shows conversation
+const DEFAULT_SNAP = 0.55;  // 55%
+
+// Shader sequence for interview
+const BACKGROUND_SEQUENCE = [1,2,3,4,5,6,7,8,9,10];
+
+// State order
+const STATE_ORDER = ['COACH_INTRO','INTERVIEW','SEARCHING','MATCH','PAYMENT','REVEAL','COACH'];
+```
+
+---
+
 *Last Updated: 2024-12-23*

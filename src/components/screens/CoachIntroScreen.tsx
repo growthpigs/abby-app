@@ -168,9 +168,14 @@ export const CoachIntroScreen: React.FC<CoachIntroScreenProps> = ({
   }, []);
 
   // Start Interview - advance to INTERVIEW state
+  // Uses timeout race to prevent hanging if endConversation() takes too long
   const handleStartInterview = useCallback(async () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    await endConversation();
+
+    // Race between endConversation and a 2s timeout to prevent UI hang
+    const timeout = new Promise<void>((resolve) => setTimeout(resolve, 2000));
+    await Promise.race([endConversation(), timeout]);
+
     advance(); // Go to INTERVIEW
   }, [endConversation, advance]);
 
