@@ -7,14 +7,27 @@
 ## Quick Start
 
 ```bash
-# Start development
+# ⚠️ IMPORTANT: Use expo run:ios, NOT expo start!
 cd ~/projects/abby
-npm run ios              # Build and run on iOS Simulator
 
-# If "No script URL" error:
-pkill -f "expo|metro"    # Kill stale processes
-npx expo start --clear --ios
+# ✅ CORRECT - Development build with voice
+npx expo run:ios
+
+# ❌ WRONG - Expo Go (no voice support)
+# expo start
+# npm start
 ```
+
+### Why `expo run:ios`?
+
+ElevenLabs voice requires native modules (LiveKit WebRTC). These are NOT available in Expo Go.
+
+| Command | Mode | Voice | Use When |
+|---------|------|-------|----------|
+| `expo run:ios` | Dev Build | ✅ Yes | Always for ABBY |
+| `expo start` | Expo Go | ❌ No | UI-only testing |
+
+If you see **"ERROR: VOICE REQUIRES A DEVELOPMENT BUILD"**, you ran the wrong command.
 
 ---
 
