@@ -204,6 +204,17 @@ export function useAbbyAgent(config: AbbyAgentConfig = {}) {
     setAudioLevel(0);
   }, [setAudioLevel]);
 
+  // Timeout helper to prevent hanging on AudioSession calls
+  // Defined early so it's available for startConversation, endConversation, and mute/unmute
+  const withTimeout = <T,>(promise: Promise<T>, ms: number): Promise<T> => {
+    return Promise.race([
+      promise,
+      new Promise<T>((_, reject) =>
+        setTimeout(() => reject(new Error(`Operation timed out after ${ms}ms`)), ms)
+      ),
+    ]);
+  };
+
   // Initialize conversation with ElevenLabs SDK
   // Using correct callback signatures per ElevenLabs React Native docs
   const conversation = useConversation({
@@ -229,12 +240,11 @@ export function useAbbyAgent(config: AbbyAgentConfig = {}) {
       stopSpeakingPulse();
       stopAudioPulse();
 
-      // Stop iOS audio session (if available)
-      if (Platform.OS === 'ios' && AudioSession) {
-        AudioSession.stopAudioSession().catch(() => {
-          // Ignore errors on stop
-        });
-      }
+      // IMPORTANT: Do NOT call stopAudioSession() here!
+      // The SDK manages its own audio cleanup. Calling stopAudioSession()
+      // during SDK-initiated disconnect interrupts LiveKit's track management
+      // and causes "could not find local track subscription" warnings.
+      // Audio session cleanup happens in endConversation() instead.
 
       callbacksRef.current.onDisconnect?.();
     },
@@ -342,7 +352,22 @@ export function useAbbyAgent(config: AbbyAgentConfig = {}) {
     if (__DEV__) console.log('[AbbyAgent] Starting session with agent:', AGENT_ID.slice(0, 8) + '...');
 
     try {
-      // Audio setup happens in onConnect callback (original working pattern)
+      // CRITICAL: Start audio session BEFORE SDK initiates WebRTC connection
+      // The SDK expects audio infrastructure to be ready when it publishes tracks
+      // Without this, microphone track may publish but not actually capture audio,
+      // causing the agent to disconnect after timeout (no audio input detected)
+      if (Platform.OS === 'ios' && AudioSession) {
+        try {
+          if (__DEV__) console.log('[AbbyAgent] Pre-starting audio session...');
+          await withTimeout(AudioSession.startAudioSession(), 5000);
+          await withTimeout(AudioSession.selectAudioOutput('force_speaker'), 5000);
+          if (__DEV__) console.log('[AbbyAgent] Audio session ready');
+        } catch (err) {
+          // Log but continue - SDK may still work with its own audio init
+          console.warn('[AbbyAgent] Audio pre-start warning:', err);
+        }
+      }
+
       await conversation.startSession({ agentId: AGENT_ID });
     } catch (err) {
       console.error('[AbbyAgent] Failed to start session:', err);
@@ -366,22 +391,25 @@ export function useAbbyAgent(config: AbbyAgentConfig = {}) {
     setIsMuted(false);
 
     try {
+      // First end the SDK session - let it clean up WebRTC tracks
       await conversation.endSession();
+
+      // THEN stop audio session (after SDK cleanup is complete)
+      // This is the correct place for audio teardown, not onDisconnect
+      if (Platform.OS === 'ios' && AudioSession) {
+        try {
+          await withTimeout(AudioSession.stopAudioSession(), 3000);
+          if (__DEV__) console.log('[AbbyAgent] Audio session stopped after conversation end');
+        } catch (err) {
+          console.warn('[AbbyAgent] Audio stop warning:', err);
+          // Don't throw - audio cleanup is best-effort
+        }
+      }
     } catch (err) {
       console.error('[AbbyAgent] Failed to end session:', err);
       // Don't throw - ending should be graceful
     }
   }, [isConnected, conversation.status, stopAudioPulse, stopSpeakingPulse]);
-
-  // Timeout helper to prevent hanging on AudioSession calls
-  const withTimeout = <T,>(promise: Promise<T>, ms: number): Promise<T> => {
-    return Promise.race([
-      promise,
-      new Promise<T>((_, reject) =>
-        setTimeout(() => reject(new Error(`Operation timed out after ${ms}ms`)), ms)
-      ),
-    ]);
-  };
 
   // Mute conversation (stops audio I/O - agent keeps running on backend)
   const muteConversation = useCallback(async () => {
