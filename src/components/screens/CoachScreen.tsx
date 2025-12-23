@@ -192,7 +192,7 @@ export const CoachScreen: React.FC<CoachScreenProps> = ({
           },
         ]}
       >
-        <BlurView intensity={80} tint="light" style={styles.blurContainer}>
+        <BlurView intensity={80} tint="light" style={styles.blurContainer} pointerEvents="box-none">
           {/* DRAGGABLE HEADER - Handle only, no buttons */}
           <View {...panResponder.panHandlers} style={styles.draggableHeader}>
             <View style={styles.handleContainer}>
@@ -229,8 +229,8 @@ export const CoachScreen: React.FC<CoachScreenProps> = ({
               </Pressable>
             )}</View>
 
-          {/* Content area */}
-          <View style={styles.contentContainer}>
+          {/* Content area - pointerEvents auto to capture touches */}
+          <View style={styles.contentContainer} pointerEvents="auto">
             {/* Conversation transcript - newest at top */}
             <ScrollView
               ref={scrollRef}
@@ -240,6 +240,8 @@ export const CoachScreen: React.FC<CoachScreenProps> = ({
               bounces={true}
               alwaysBounceVertical={true}
               scrollEventThrottle={16}
+              onScroll={() => console.log('[CoachScreen ScrollView] SCROLLING!')}
+              onTouchStart={() => console.log('[CoachScreen ScrollView] Touch started')}
             >
               {messages.length === 0 ? (
                 <Text style={styles.placeholderText}>

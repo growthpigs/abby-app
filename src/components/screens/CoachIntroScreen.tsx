@@ -199,7 +199,7 @@ export const CoachIntroScreen: React.FC<CoachIntroScreenProps> = ({
           },
         ]}
       >
-        <BlurView intensity={80} tint="light" style={styles.blurContainer}>
+        <BlurView intensity={80} tint="light" style={styles.blurContainer} pointerEvents="box-none">
           {/* DRAGGABLE HEADER - Handle only, no buttons */}
           <View {...panResponder.panHandlers} style={styles.draggableHeader}>
             <View style={styles.handleContainer}>
@@ -237,8 +237,8 @@ export const CoachIntroScreen: React.FC<CoachIntroScreenProps> = ({
             )}
           </View>
 
-          {/* Content area */}
-          <View style={styles.contentContainer}>
+          {/* Content area - pointerEvents auto to capture touches */}
+          <View style={styles.contentContainer} pointerEvents="auto">
             {/* Conversation transcript - newest at top */}
             <ScrollView
               ref={scrollRef}
@@ -248,6 +248,9 @@ export const CoachIntroScreen: React.FC<CoachIntroScreenProps> = ({
               bounces={true}
               alwaysBounceVertical={true}
               scrollEventThrottle={16}
+              onScroll={() => console.log('[ScrollView] SCROLLING!')}
+              onTouchStart={() => console.log('[ScrollView] Touch started')}
+              onTouchEnd={() => console.log('[ScrollView] Touch ended')}
             >
               {messages.length === 0 ? (
                 <Text style={styles.placeholderText}>
