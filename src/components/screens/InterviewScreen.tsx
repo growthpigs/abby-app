@@ -19,17 +19,18 @@ import { DEMO_QUESTIONS } from '../../data/demo-questions';
 import { isValidVibeTheme } from '../../types/vibe';
 import { abbyVoice } from '../../services/AbbyVoice';
 
-// Returns the background index for shader progression
+// Background shader progression (1→10 for smooth visual journey)
+// Starts at 1 (different from COACH_INTRO's 5) for clear transition
 const BACKGROUND_SEQUENCE = [
-  5,   // Q1: Liquid Marble
-  1,   // Q2: Domain Warping fBM
-  13,  // Q3: Featured shader
-  2,   // Q4: Warm Fire Swirls
-  8,   // Q5: Deep Ocean
-  3,   // Q6: Neon Aurora Spirals
-  18,  // Q7: Featured shader
-  6,   // Q8: Kaleidoscope Bloom
-  4,   // Q9: Aerial Reef
+  1,   // Q1: Domain Warping fBM
+  2,   // Q2: Warm Fire Swirls
+  3,   // Q3: Neon Aurora Spirals
+  4,   // Q4: Aerial Reef
+  5,   // Q5: Liquid Marble
+  6,   // Q6: Kaleidoscope Bloom
+  7,   // Q7: Electric Storm
+  8,   // Q8: Deep Ocean
+  9,   // Q9: Plasma Flow
   10,  // Q10: Chromatic Bloom
 ];
 
@@ -146,6 +147,11 @@ export const InterviewScreen: React.FC<InterviewScreenProps> = ({
             <View style={styles.handle} />
           </View>
 
+          {/* Progress indicator */}
+          <Text style={styles.progressText}>
+            {currentIndex + 1}/{DEMO_QUESTIONS.length}
+          </Text>
+
           {/* Question text */}
           <Animated.View
             key={currentQuestion.id}
@@ -223,6 +229,17 @@ const styles = StyleSheet.create({
     height: 5,
     borderRadius: 2.5,
     backgroundColor: 'rgba(0, 0, 0, 0.2)',
+  },
+
+  // Progress indicator
+  progressText: {
+    fontFamily: 'JetBrainsMono_400Regular',
+    fontSize: 12,
+    color: 'rgba(0, 0, 0, 0.5)',
+    textTransform: 'uppercase',
+    letterSpacing: 1,
+    textAlign: 'center',
+    marginTop: 4,
   },
 
   // Question

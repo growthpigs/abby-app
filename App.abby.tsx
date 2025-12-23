@@ -134,7 +134,7 @@ function AbbyScreen() {
         <Text style={styles.statusText}>{status}</Text>
       </View>
 
-      <StatusBar style="light" />
+      <StatusBar hidden />
     </View>
   );
 }

@@ -223,10 +223,10 @@ export const CoachIntroScreen: React.FC<CoachIntroScreenProps> = ({
               >
                 {isMuted ? (
                   // @ts-ignore - color works via SvgProps
-                  <Play size={11} color="#888888" />
+                  <Play size={18} color="#888888" />
                 ) : (
                   // @ts-ignore - color works via SvgProps
-                  <Pause size={11} color="#888888" />
+                  <Pause size={18} color="#888888" />
                 )}
               </Pressable>
             )}
@@ -361,12 +361,12 @@ const styles = StyleSheet.create({
     letterSpacing: 0.5,
   },
 
-  // Mute button - mid-gray icon, 30% smaller, aligned with status text
+  // Mute button - 44x44 for iOS HIG touch target compliance
   muteButton: {
     marginLeft: 'auto',
-    width: 28,
-    height: 28,
-    borderRadius: 14,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
     backgroundColor: 'transparent',
     borderWidth: 1,
     borderColor: 'rgba(128, 128, 128, 0.4)',
