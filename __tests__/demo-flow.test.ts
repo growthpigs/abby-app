@@ -142,11 +142,12 @@ describe('Background Shader Progression', () => {
     expect(source).toContain('setBackgroundIndex');
   });
 
-  test('InterviewScreen has BACKGROUND_SEQUENCE', () => {
+  test('InterviewScreen has background cycling function', () => {
     const source = readFile('src/components/screens/InterviewScreen.tsx');
 
-    expect(source).toContain('BACKGROUND_SEQUENCE');
+    // Background index is computed dynamically (cycles 1-10 for 150 questions)
     expect(source).toContain('getBackgroundIndexForQuestion');
+    expect(source).toContain('% 10'); // Cycle through 10 backgrounds
   });
 
   test('InterviewScreen passes onBackgroundChange to parent', () => {

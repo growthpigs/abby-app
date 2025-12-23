@@ -10,7 +10,7 @@
  */
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { StyleSheet, View, SafeAreaView, ActivityIndicator, Text } from 'react-native';
+import { StyleSheet, View, SafeAreaView, ActivityIndicator, Text, Switch } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import {
   useFonts,
@@ -45,11 +45,15 @@ try {
   }
 }
 
+// Demo mode toggle - Coach (ElevenLabs) vs Interview (structured questions)
+type DemoMode = 'coach' | 'interview';
+
 // Inner component that uses voice (must be inside ElevenLabsProvider)
 function DemoScreen() {
   const [backgroundIndex, setBackgroundIndex] = useState(1);
   const [abbyText, setAbbyText] = useState('');
   const [voiceStatus, setVoiceStatus] = useState('');
+  const [demoMode, setDemoMode] = useState<DemoMode>('interview'); // Default to interview for testing
   const currentState = useDemoState();
 
   // Settings
@@ -69,21 +73,69 @@ function DemoScreen() {
     loadSettings();
   }, []);
 
+  // Get advance function from store for state transitions
+  const advance = useDemoStore((state) => state.advance);
+
+  // Transition trigger phrases (Abby or user can say these to start interview)
+  const TRANSITION_PHRASES = [
+    "let's begin",
+    "lets begin",
+    "let us begin",
+    "ready to start",
+    "start the interview",
+    "begin the interview",
+    "rapid fire",
+    "rapidfire",
+    "one by one",
+  ];
+
+  // Check if text contains any transition phrase
+  const shouldTransitionToInterview = useCallback((text: string): boolean => {
+    const lower = text.toLowerCase();
+    return TRANSITION_PHRASES.some(phrase => lower.includes(phrase));
+  }, []);
+
   // Initialize AbbyAgent for voice (enabled in COACH_INTRO and COACH modes)
   const { startConversation, endConversation, isSpeaking, status } = useAbbyAgent({
     enabled: currentState === 'COACH_INTRO' || currentState === 'COACH',  // Uses Fal.ai TTS for INTERVIEW
     onAbbyResponse: (text) => {
       if (__DEV__) console.log('[Demo] Abby says:', text);
       setAbbyText(text);
+
+      // AUTO-TRANSITION: When Abby says "let's begin" (or similar), advance to interview
+      if (currentState === 'COACH_INTRO' && shouldTransitionToInterview(text)) {
+        if (__DEV__) console.log('[Demo] 🚀 Transition triggered by Abby!');
+        // Small delay to let Abby finish speaking before transitioning
+        setTimeout(() => {
+          endConversation();
+          advance();
+        }, 1500);
+      }
     },
     onUserTranscript: (text) => {
       if (__DEV__) console.log('[Demo] User said:', text);
+
+      // Also check user speech for transition phrases
+      if (currentState === 'COACH_INTRO' && shouldTransitionToInterview(text)) {
+        if (__DEV__) console.log('[Demo] 🚀 Transition triggered by user!');
+        // Wait for Abby to respond, then transition
+        setTimeout(() => {
+          endConversation();
+          advance();
+        }, 3000);
+      }
     },
     onConnect: () => {
       setVoiceStatus('Connected');
     },
     onDisconnect: () => {
       setVoiceStatus('Disconnected');
+      // AUTO-ADVANCE: When ElevenLabs conversation ends (via End node in workflow),
+      // automatically transition to interview if we're still in COACH_INTRO
+      if (currentState === 'COACH_INTRO') {
+        if (__DEV__) console.log('[Demo] 🚀 Conversation ended, advancing to interview');
+        advance();
+      }
     },
     onError: (error) => {
       setVoiceStatus(`Error: ${error.message}`);
@@ -129,11 +181,36 @@ function DemoScreen() {
   // ElevenLabs agent will be used for COACH mode (free-form conversation).
   // See InterviewScreen.tsx for TTS implementation.
 
-  // Render the appropriate screen based on state
+  // Handle mode toggle
+  const handleModeToggle = (value: boolean) => {
+    const newMode = value ? 'interview' : 'coach';
+    setDemoMode(newMode);
+    // Reset to appropriate state when switching modes
+    useDemoStore.getState().reset();
+    if (newMode === 'interview') {
+      useDemoStore.getState().goToState('INTERVIEW');
+    }
+  };
+
+  // Render the appropriate screen based on state and mode
   const renderScreen = () => {
+    // When in coach mode, show coach screens
+    if (demoMode === 'coach') {
+      switch (currentState) {
+        case 'COACH_INTRO':
+          return <CoachIntroScreen onBackgroundChange={handleBackgroundChange} />;
+        case 'COACH':
+          return <CoachScreen onBackgroundChange={handleBackgroundChange} />;
+        default:
+          return <CoachIntroScreen onBackgroundChange={handleBackgroundChange} />;
+      }
+    }
+
+    // Interview mode - full flow
     switch (currentState) {
       case 'COACH_INTRO':
-        return <CoachIntroScreen onBackgroundChange={handleBackgroundChange} />;
+        // In interview mode, skip coach intro and go straight to questions
+        return <InterviewScreen onBackgroundChange={handleBackgroundChange} />;
       case 'INTERVIEW':
         return <InterviewScreen onBackgroundChange={handleBackgroundChange} />;
       case 'SEARCHING':
@@ -147,7 +224,7 @@ function DemoScreen() {
       case 'COACH':
         return <CoachScreen onBackgroundChange={handleBackgroundChange} />;
       default:
-        return <CoachIntroScreen onBackgroundChange={handleBackgroundChange} />;
+        return <InterviewScreen onBackgroundChange={handleBackgroundChange} />;
     }
   };
 
@@ -169,6 +246,26 @@ function DemoScreen() {
         backgroundIndex={backgroundIndex}
         showDebug={false}
       />
+
+      {/* Mode Toggle - iOS style wireframe */}
+      <SafeAreaView style={styles.toggleContainer} pointerEvents="box-none">
+        <View style={styles.toggleWrapper}>
+          <Text style={[styles.toggleLabel, demoMode === 'coach' && styles.toggleLabelActive]}>
+            Chat
+          </Text>
+          <Switch
+            value={demoMode === 'interview'}
+            onValueChange={handleModeToggle}
+            trackColor={{ false: 'rgba(255,255,255,0.2)', true: 'rgba(255,255,255,0.2)' }}
+            thumbColor="#fff"
+            ios_backgroundColor="rgba(255,255,255,0.2)"
+            style={styles.toggle}
+          />
+          <Text style={[styles.toggleLabel, demoMode === 'interview' && styles.toggleLabelActive]}>
+            Interview
+          </Text>
+        </View>
+      </SafeAreaView>
 
       {/* L2: UI Layer (Glass Interface) */}
       <SafeAreaView style={styles.uiLayer} pointerEvents="box-none">
@@ -213,6 +310,39 @@ const styles = StyleSheet.create({
     backgroundColor: '#000',
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  toggleContainer: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    zIndex: 100,
+    alignItems: 'center',
+  },
+  toggleWrapper: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0,0,0,0.3)',
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.2)',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    marginTop: 8,
+  },
+  toggle: {
+    marginHorizontal: 8,
+    transform: [{ scaleX: 0.8 }, { scaleY: 0.8 }],
+  },
+  toggleLabel: {
+    color: 'rgba(255,255,255,0.4)',
+    fontSize: 12,
+    fontWeight: '600',
+    textTransform: 'uppercase',
+    letterSpacing: 1,
+  },
+  toggleLabelActive: {
+    color: '#fff',
   },
   uiLayer: {
     ...StyleSheet.absoluteFillObject,

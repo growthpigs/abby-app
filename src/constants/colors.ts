@@ -45,10 +45,16 @@ export const VIBE_COLORS: Record<VibeColorTheme, ColorPalette> = {
     secondary: hexToRGB('#34D399'), // Mint
   },
 
-  // Deep - Introspective, Serious, Warning
+  // Deep - Introspective, Serious, Vulnerable
   DEEP: {
     primary: hexToRGB('#4C1D95'),   // Violet
     secondary: hexToRGB('#8B5CF6'), // Indigo
+  },
+
+  // Alert - Intervention, Warning, Concern
+  ALERT: {
+    primary: hexToRGB('#374151'),   // Grey 700
+    secondary: hexToRGB('#6B7280'), // Grey 500
   },
 };
 
@@ -118,6 +124,11 @@ export const VIBE_GRADIENTS: Record<VibeColorTheme, GradientPalette> = {
     primary: VIBE_COLORS.DEEP.primary,
     secondary: VIBE_COLORS.DEEP.secondary,
     gradient: { angle: 225 },
+  },
+  ALERT: {
+    primary: VIBE_COLORS.ALERT.primary,
+    secondary: VIBE_COLORS.ALERT.secondary,
+    gradient: { angle: 270 },
   },
 };
 

@@ -1,6 +1,54 @@
 # ABBY Runbook
 
+> **Client:** Manuel Negreiro
+> **Project:** ABBY (The Anti-Dating App)
 > Operational procedures and troubleshooting for the ABBY iOS app
+
+---
+
+## Project Info
+
+### Google Drive Folders
+
+| Folder | ID |
+|--------|-----|
+| Root (ABBY) | `1xKaC62ap5_gN2ZJo0MMiSfIin933Y-TH` |
+| Client Intake | `1cm5pNEaLcDXRjAnaMzgmW7wubojT9CzM` |
+| 00-OVERVIEW | `1Nm4gz5AQ30eayxRjMSWoM_lDIUiu47yU` |
+| 01-INTAKE | `1Ss3z6NZy6QeMHa-KhmCr-XX8A_8ltF1v` |
+| 02-PROPOSALS | `1FYd8FFOMMsXBRvxbwNyKQnyb8yQlX8Ez` |
+| 03-SPECS | `1BUECvMqtlCBT9NfBg5pBPTWe3dSoW7pg` |
+| 04-WORK | `1e9V8Seo1T7Lk7ZAXKDFMtnc2XojN8AOa` |
+| 05-REPORTS | `1nHX_xjtcq7y2jBprgavmIIEyevG4dHAd` |
+| 06-DELIVERED | `1JnB6HCp0rswJeSYBN12M3hBi9Vk-VCg6` |
+| _INTERNAL | `1BPbvl0RENoQyvVldx8QU33E0AJ4M6cW4` |
+
+### Key Contacts
+
+| Role | Name | Responsibility |
+|------|------|----------------|
+| Client / Decision Maker | Manuel Negreiro | Approvals, direction |
+| Client Contact | Brent | Communication |
+| Frontend + Integration | Diiiploy | App development |
+| Backend / AWS | Nathan | Heavy infrastructure, APIs, S3 |
+
+### Third-Party Integrations
+
+| Service | Purpose | Status |
+|---------|---------|--------|
+| ElevenLabs | Real-time voice conversation | ✅ Working |
+| Sentry | Error tracking | To configure |
+| AWS S3 (Nathan) | Voice file storage | Nathan manages |
+
+### Performance Targets
+
+| Metric | Target |
+|--------|--------|
+| App Launch | < 3 seconds |
+| Frame Rate | 60fps sustained |
+| Voice Latency | < 500ms response start |
+| Memory Usage | < 200MB normal operation |
+| Battery Impact | < 10%/10min active use |
 
 ---
 
@@ -126,6 +174,45 @@ WARN could not find local track subscription  ← This is the smoking gun
 2. Verify agent ID in `.env.local` matches ElevenLabs dashboard
 3. Check agent is "Published" not "Draft" in dashboard
 4. Try increasing agent "Max Duration" to 600s temporarily
+
+---
+
+### 4b. Voice Not Working on Simulator (Dec 2025 Investigation)
+
+**Symptom:**
+- Text messages appear in logs: `Message from ai: "Hey there..."`
+- Mode transitions work: `Mode: speaking` / `Mode: listening`
+- But user hears nothing and Abby can't hear user
+
+**Diagnostic Logs:**
+```
+publishing track {"enabled": true, "trackID": undefined}
+[AudioToolbox] error -66680 finding/initializing
+Message from user: ...              ← No actual speech captured
+Disconnected: {"reason": "agent"}   ← Agent timeout, no input
+```
+
+**Root Cause:** iOS Simulator has no audio hardware. Error `-66680` means "cannot find audio device."
+
+**Key Insight:** The SDK connects successfully (text appears) but audio I/O fails silently because:
+- Simulator has no physical microphone
+- CoreAudio cannot initialize audio units
+- Track publishes with `trackID: undefined` (no actual device)
+
+**Solution:**
+1. **Test on physical iPhone** - voice works immediately on real device
+2. For simulator testing, configure: Simulator > I/O > Microphone > select input
+
+**Code Status (Dec 2025):**
+- Audio session lifecycle: ✅ Fixed (commit `ec95299`)
+- SDK API v0.5.7: ✅ Fixed (commit `62a52cf`)
+- `withTimeout` helper: ✅ Correct location
+- Silent error catching: ⚠️ Acceptable (SDK fallback works)
+
+**Files Verified Clean:**
+- `src/services/AbbyAgent.ts` - Audio lifecycle correct
+- `src/components/screens/CoachIntroScreen.tsx` - Uses hook correctly
+- `src/components/screens/CoachScreen.tsx` - Uses hook correctly
 
 ---
 
@@ -328,4 +415,4 @@ const STATE_ORDER = ['COACH_INTRO','INTERVIEW','SEARCHING','MATCH','PAYMENT','RE
 
 ---
 
-*Last Updated: 2024-12-23*
+*Last Updated: 2025-12-23*

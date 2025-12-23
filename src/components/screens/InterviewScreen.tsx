@@ -15,33 +15,18 @@ import * as Haptics from 'expo-haptics';
 import Animated, { FadeIn, FadeOut } from 'react-native-reanimated';
 import { useDemoStore } from '../../store/useDemoStore';
 import { useVibeController } from '../../store/useVibeController';
-import { DEMO_QUESTIONS } from '../../data/demo-questions';
+import { ALL_DATA_POINTS } from '../../../docs/data/questions-schema';
 import { isValidVibeTheme } from '../../types/vibe';
 import { abbyVoice } from '../../services/AbbyVoice';
 
-// Background shader progression (1→10 for smooth visual journey)
-// Starts at 1 (different from COACH_INTRO's 5) for clear transition
-const BACKGROUND_SEQUENCE = [
-  1,   // Q1: Domain Warping fBM
-  2,   // Q2: Warm Fire Swirls
-  3,   // Q3: Neon Aurora Spirals
-  4,   // Q4: Aerial Reef
-  5,   // Q5: Liquid Marble
-  6,   // Q6: Kaleidoscope Bloom
-  7,   // Q7: Electric Storm
-  8,   // Q8: Deep Ocean
-  9,   // Q9: Plasma Flow
-  10,  // Q10: Chromatic Bloom
-];
+// Use the full 150 questions for interview mode
+const INTERVIEW_QUESTIONS = ALL_DATA_POINTS;
 
+// Background shaders cycle 1-10 continuously through all 150 questions
+// Each question gets a background, cycling smoothly through all visuals
 const getBackgroundIndexForQuestion = (questionIndex: number): number => {
-  if (questionIndex < 0 || questionIndex >= BACKGROUND_SEQUENCE.length) {
-    if (__DEV__) {
-      console.warn(`[Interview] Question index ${questionIndex} out of bounds for BACKGROUND_SEQUENCE (length: ${BACKGROUND_SEQUENCE.length})`);
-    }
-    return 1; // Fallback to default shader
-  }
-  return BACKGROUND_SEQUENCE[questionIndex];
+  // Cycle through backgrounds 1-10 (10 total shaders)
+  return (questionIndex % 10) + 1;
 };
 
 export interface InterviewScreenProps {
@@ -60,9 +45,9 @@ export const InterviewScreen: React.FC<InterviewScreenProps> = ({
   const setColorTheme = useVibeController((state) => state.setColorTheme);
   const setAudioLevel = useVibeController((state) => state.setAudioLevel);
 
-  // Derive current question and state
-  const currentQuestion = DEMO_QUESTIONS[Math.min(currentIndex, DEMO_QUESTIONS.length - 1)];
-  const isLastQuestion = currentIndex >= DEMO_QUESTIONS.length - 1;
+  // Derive current question and state from 150 questions
+  const currentQuestion = INTERVIEW_QUESTIONS[Math.min(currentIndex, INTERVIEW_QUESTIONS.length - 1)];
+  const isLastQuestion = currentIndex >= INTERVIEW_QUESTIONS.length - 1;
 
   // Track TTS errors for user feedback
   const [voiceError, setVoiceError] = useState(false);
@@ -72,20 +57,12 @@ export const InterviewScreen: React.FC<InterviewScreenProps> = ({
   audioLevelRef.current = setAudioLevel;
 
   // Submit answer and advance
+  // Note: vibe_shift is triggered when question LOADS, not when answered (more organic)
   const submitAnswer = useCallback((answerValue: string) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
 
     // Add user response to conversation
     addMessage('user', answerValue);
-
-    // Trigger vibe_shift if present and valid
-    if (currentQuestion.vibe_shift) {
-      if (isValidVibeTheme(currentQuestion.vibe_shift)) {
-        setColorTheme(currentQuestion.vibe_shift);
-      } else if (__DEV__) {
-        console.warn(`[Interview] Invalid vibe_shift "${currentQuestion.vibe_shift}" in question ${currentQuestion.id}`);
-      }
-    }
 
     // Record answer
     answerQuestion({
@@ -100,7 +77,7 @@ export const InterviewScreen: React.FC<InterviewScreenProps> = ({
     } else {
       nextQuestion();
     }
-  }, [currentQuestion, isLastQuestion, addMessage, setColorTheme, answerQuestion, advance, nextQuestion]);
+  }, [currentQuestion, isLastQuestion, addMessage, answerQuestion, advance, nextQuestion]);
 
   // Button tap handler
   const handleAnswer = () => {
@@ -114,14 +91,20 @@ export const InterviewScreen: React.FC<InterviewScreenProps> = ({
     }
   }, [currentIndex, onBackgroundChange]);
 
-  // Speak question when it changes
+  // Speak question when it changes + trigger vibe shift BEFORE question is asked
   useEffect(() => {
-    const question = DEMO_QUESTIONS[Math.min(currentIndex, DEMO_QUESTIONS.length - 1)];
+    const question = INTERVIEW_QUESTIONS[Math.min(currentIndex, INTERVIEW_QUESTIONS.length - 1)];
     if (question) {
       setVoiceError(false);
-      addMessage('abby', question.text);
 
-      abbyVoice.speak(question.text, (level) => {
+      // Trigger vibe_shift BEFORE speaking the question (organic color transition)
+      if (question.vibe_shift && isValidVibeTheme(question.vibe_shift)) {
+        setColorTheme(question.vibe_shift);
+      }
+
+      addMessage('abby', question.question);
+
+      abbyVoice.speak(question.question, (level) => {
         audioLevelRef.current(level);
       }).catch((err) => {
         console.warn('[Interview] TTS error:', err);
@@ -132,7 +115,7 @@ export const InterviewScreen: React.FC<InterviewScreenProps> = ({
     return () => {
       abbyVoice.stop();
     };
-  }, [currentIndex]);
+  }, [currentIndex, setColorTheme]);
 
   return (
     <View style={styles.container}>
@@ -149,7 +132,7 @@ export const InterviewScreen: React.FC<InterviewScreenProps> = ({
 
           {/* Progress indicator */}
           <Text style={styles.progressText}>
-            {currentIndex + 1}/{DEMO_QUESTIONS.length}
+            {currentIndex + 1}/{INTERVIEW_QUESTIONS.length}
           </Text>
 
           {/* Question text */}
@@ -160,7 +143,7 @@ export const InterviewScreen: React.FC<InterviewScreenProps> = ({
             style={styles.questionContainer}
           >
             <Text style={styles.questionText}>
-              {currentQuestion.text}
+              {currentQuestion.question}
             </Text>
           </Animated.View>
 

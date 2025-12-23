@@ -76,6 +76,7 @@ export default function App() {
     'CAUTION',
     'GROWTH',
     'DEEP',
+    'ALERT',
   ];
   const themeColors: Record<VibeColorTheme, string> = {
     TRUST: '#3B82F6',
@@ -83,6 +84,7 @@ export default function App() {
     CAUTION: '#F59E0B',
     GROWTH: '#10B981',
     DEEP: '#4C1D95',
+    ALERT: '#374151',
   };
 
   // Complexity levels

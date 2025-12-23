@@ -22,6 +22,7 @@ import * as Haptics from 'expo-haptics';
 import { Pause, Play } from 'lucide-react-native';
 import { useDemoStore } from '../../store/useDemoStore';
 import { useAbbyAgent } from '../../services/AbbyAgent';
+import { ChatInput } from '../ui/ChatInput';
 
 const { height: SCREEN_HEIGHT } = Dimensions.get('window');
 
@@ -48,7 +49,7 @@ export const CoachScreen: React.FC<CoachScreenProps> = ({
   const translateY = useRef(new Animated.Value(SCREEN_HEIGHT)).current;
 
   // Initialize ElevenLabs Agent
-  const { startConversation, endConversation, toggleMute, isSpeaking, isConnected, isMuted } = useAbbyAgent({
+  const { startConversation, endConversation, toggleMute, sendTextMessage, isSpeaking, isConnected, isMuted } = useAbbyAgent({
     enabled: true,
     onAbbyResponse: (text) => {
       addMessage('abby', text);
@@ -178,6 +179,19 @@ export const CoachScreen: React.FC<CoachScreenProps> = ({
     await toggleMute();
   }, [toggleMute]);
 
+  // Handle sending text message
+  const handleSendMessage = useCallback((text: string) => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    // Add user message to conversation display
+    addMessage('user', text);
+    // Send to Abby agent
+    sendTextMessage(text);
+    // Scroll to show newest message
+    setTimeout(() => {
+      scrollRef.current?.scrollTo({ y: 0, animated: true });
+    }, 100);
+  }, [addMessage, sendTextMessage]);
+
   return (
     <View style={styles.container}>
       {/* Backdrop - not tappable for this screen */}
@@ -263,6 +277,13 @@ export const CoachScreen: React.FC<CoachScreenProps> = ({
                 ))
               )}
             </ScrollView>
+
+            {/* Chat input */}
+            <ChatInput
+              onSend={handleSendMessage}
+              disabled={!isConnected}
+              placeholder="Message Abby..."
+            />
 
             {/* End Chat button */}
             <Pressable

@@ -15,12 +15,13 @@ export type VibeColorTheme =
   | 'PASSION'  // Red/Pink - Match reveal, celebration
   | 'CAUTION'  // Orange - Searching, analyzing
   | 'GROWTH'   // Green - Coach mode, chat
-  | 'DEEP';    // Violet - Deep questions, intervention
+  | 'DEEP'     // Violet - Deep questions, vulnerable topics
+  | 'ALERT';   // Grey - Intervention, warning
 
 /**
  * Valid theme values for runtime validation
  */
-export const VALID_VIBE_THEMES: VibeColorTheme[] = ['TRUST', 'PASSION', 'CAUTION', 'GROWTH', 'DEEP'];
+export const VALID_VIBE_THEMES: VibeColorTheme[] = ['TRUST', 'PASSION', 'CAUTION', 'GROWTH', 'DEEP', 'ALERT'];
 
 /**
  * Type guard to validate a string is a valid VibeColorTheme

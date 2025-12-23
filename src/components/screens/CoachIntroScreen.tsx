@@ -70,6 +70,10 @@ export const CoachIntroScreen: React.FC<CoachIntroScreenProps> = ({
     },
     onDisconnect: () => {
       setAgentStatus('Disconnected');
+      // AUTO-ADVANCE: When ElevenLabs conversation ends (via End node in workflow),
+      // automatically transition to interview
+      if (__DEV__) console.log('[CoachIntro] 🚀 ElevenLabs disconnected, advancing to interview');
+      advance();
     },
     onError: (error) => {
       setAgentStatus(`Error: ${error.message}`);

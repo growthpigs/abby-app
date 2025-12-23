@@ -17,7 +17,7 @@ import {
 } from './src/components/layers/VibeMatrixAnimated';
 import { VibeColorTheme, VibeComplexity } from './src/types/vibe';
 
-const VIBES: VibeColorTheme[] = ['TRUST', 'PASSION', 'CAUTION', 'GROWTH', 'DEEP'];
+const VIBES: VibeColorTheme[] = ['TRUST', 'PASSION', 'CAUTION', 'GROWTH', 'DEEP', 'ALERT'];
 const COMPLEXITIES: VibeComplexity[] = ['SMOOTHIE', 'FLOW', 'OCEAN', 'STORM', 'PAISLEY'];
 
 // Color indicators for each vibe
@@ -27,6 +27,7 @@ const VIBE_PREVIEW: Record<VibeColorTheme, string> = {
   CAUTION: '#F59E0B',   // Amber
   GROWTH: '#10B981',    // Green
   DEEP: '#4C1D95',      // Violet
+  ALERT: '#374151',     // Grey
 };
 
 export default function TransitionTest() {

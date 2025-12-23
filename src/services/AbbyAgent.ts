@@ -478,12 +478,29 @@ export function useAbbyAgent(config: AbbyAgentConfig = {}) {
     }
   }, [isMuted, muteConversation, unmuteConversation]);
 
+  // Send a text message to the agent (for typed input)
+  const sendTextMessage = useCallback((text: string) => {
+    if (!isConnected) {
+      if (__DEV__) console.warn('[AbbyAgent] Cannot send message - not connected');
+      return;
+    }
+
+    if (!text.trim()) {
+      if (__DEV__) console.warn('[AbbyAgent] Cannot send empty message');
+      return;
+    }
+
+    if (__DEV__) console.log('[AbbyAgent] Sending text message:', text.slice(0, 50) + '...');
+    conversation.sendUserMessage(text.trim());
+  }, [isConnected, conversation]);
+
   return {
     startConversation,
     endConversation,
     muteConversation,
     unmuteConversation,
     toggleMute,
+    sendTextMessage,
     isSpeaking: conversation.isSpeaking,
     isConnected,
     isStarting,
