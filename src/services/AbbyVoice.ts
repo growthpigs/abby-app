@@ -1,18 +1,15 @@
 /**
  * AbbyVoice - TTS Service for Abby
  *
- * Uses Fal.ai Orpheus TTS (Tara voice)
- * Returns audio URL and provides amplitude extraction during playback
+ * Uses ElevenLabs TTS API - SAME voice as the conversational agent
+ * Voice: Jessica Anne Bogart - Eloquent Villain
  */
 
 import { Audio, AVPlaybackStatus } from 'expo-av';
 
-// API key from environment (add FAL_KEY to .env.local)
-const FAL_KEY = process.env.EXPO_PUBLIC_FAL_KEY || '';
-const FAL_TTS_ENDPOINT = 'https://fal.run/fal-ai/orpheus-tts';
-
-// Orpheus voices: tara, leah, jess, leo, dan, mia, zac, zoe
-const ABBY_VOICE = 'tara';
+// ElevenLabs API credentials
+const ELEVENLABS_API_KEY = process.env.EXPO_PUBLIC_ELEVENLABS_API_KEY || '';
+const ELEVENLABS_VOICE_ID = process.env.EXPO_PUBLIC_ELEVENLABS_VOICE_ID || '';
 
 // Estimate audio duration from text (rough: ~150ms per syllable, ~4 chars per syllable)
 const estimateDurationMs = (text: string): number => {
@@ -42,24 +39,33 @@ class AbbyVoiceService {
   private currentGenerationId: number = 0;
 
   /**
-   * Generate speech from text using Fal.ai Orpheus
+   * Generate speech from text using ElevenLabs TTS API
+   * Same voice as the conversational agent (Jessica Anne Bogart)
    */
   async generateSpeech(text: string): Promise<string> {
-    if (!FAL_KEY) {
-      throw new Error('FAL_KEY not configured. Add EXPO_PUBLIC_FAL_KEY to .env.local');
+    if (!ELEVENLABS_API_KEY) {
+      throw new Error('ELEVENLABS_API_KEY not configured. Add EXPO_PUBLIC_ELEVENLABS_API_KEY to .env.local');
+    }
+    if (!ELEVENLABS_VOICE_ID) {
+      throw new Error('ELEVENLABS_VOICE_ID not configured. Add EXPO_PUBLIC_ELEVENLABS_VOICE_ID to .env.local');
     }
 
     console.log('[AbbyVoice] Generating speech for:', text.substring(0, 50));
 
-    const response = await fetch(FAL_TTS_ENDPOINT, {
+    const response = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${ELEVENLABS_VOICE_ID}`, {
       method: 'POST',
       headers: {
-        'Authorization': `Key ${FAL_KEY}`,
+        'xi-api-key': ELEVENLABS_API_KEY,
         'Content-Type': 'application/json',
+        'Accept': 'audio/mpeg',
       },
       body: JSON.stringify({
         text,
-        voice: ABBY_VOICE,
+        model_id: 'eleven_turbo_v2_5',
+        voice_settings: {
+          stability: 0.5,
+          similarity_boost: 0.75,
+        },
       }),
     });
 
@@ -71,15 +77,17 @@ class AbbyVoiceService {
       throw new Error(`TTS failed: ${response.status} - ${error}`);
     }
 
-    const result = await response.json();
-    console.log('[AbbyVoice] API result:', JSON.stringify(result).substring(0, 200));
+    // ElevenLabs returns raw audio bytes - convert to base64 data URI
+    const audioBlob = await response.blob();
+    const base64 = await new Promise<string>((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onloadend = () => resolve(reader.result as string);
+      reader.onerror = reject;
+      reader.readAsDataURL(audioBlob);
+    });
 
-    if (!result.audio?.url) {
-      throw new Error('No audio URL in response');
-    }
-
-    console.log('[AbbyVoice] Audio URL:', result.audio.url);
-    return result.audio.url;
+    console.log('[AbbyVoice] Audio generated, size:', audioBlob.size);
+    return base64;
   }
 
   /**
@@ -127,11 +135,11 @@ class AbbyVoiceService {
       }
 
       // Load audio (paused) to check cancellation before playing
-      // Volume boosted to 1.0 (max) - audio from Fal.ai tends to be quiet
+      // Volume at max 1.0 - expo-av doesn't allow higher values
       console.log('[AbbyVoice] Loading audio from URL...');
       const { sound } = await Audio.Sound.createAsync(
         { uri: audioUrl },
-        { shouldPlay: false, volume: 1.0 },  // Load paused, max volume
+        { shouldPlay: false, volume: 1.0 },
         this.onPlaybackStatusUpdate.bind(this)
       );
 

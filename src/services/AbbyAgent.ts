@@ -81,14 +81,14 @@ try {
   AudioSession = livekit.AudioSession;
   VOICE_AVAILABLE = true;
 
-  // Configure iOS audio for voice chat BEFORE SDK's useEffect runs
-  // This is critical - SDK starts audio session but doesn't configure output mode
-  // Must use playAndRecord + voiceChat for WebRTC audio to work on simulator
+  // Configure iOS audio for LOUDER output BEFORE SDK's useEffect runs
+  // Using 'spokenAudio' mode - optimized for voice content (podcasts/audiobooks)
+  // This typically results in louder playback than 'voiceChat' mode
   if (Platform.OS === 'ios' && AudioSession) {
     AudioSession.setAppleAudioConfiguration({
       audioCategory: 'playAndRecord',
-      audioCategoryOptions: ['defaultToSpeaker', 'allowBluetooth'],
-      audioMode: 'voiceChat',
+      audioCategoryOptions: ['defaultToSpeaker', 'allowBluetooth', 'allowBluetoothA2DP'],
+      audioMode: 'spokenAudio',  // Optimized for spoken content - louder than voiceChat
     }).catch(() => {
       // Ignore errors - audio may still work with SDK defaults
     });
