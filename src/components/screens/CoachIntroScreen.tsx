@@ -327,17 +327,16 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(0, 0, 0, 0.2)',
   },
 
-  // Status row - moved down 30px with icon and text aligned
+  // Status row - vertically aligned with mute button
   statusRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'flex-start',
     paddingTop: 0,
     paddingBottom: 12,
-    marginTop: 12,
+    marginTop: -15,
     paddingHorizontal: 20,
     gap: 8,
-    position: 'relative',
   },
   statusDot: {
     width: 8,
@@ -363,9 +362,7 @@ const styles = StyleSheet.create({
 
   // Mute button - mid-gray icon, 30% smaller, aligned with status text
   muteButton: {
-    position: 'absolute',
-    right: 16,
-    top: 0,
+    marginLeft: 'auto',
     width: 28,
     height: 28,
     borderRadius: 14,

@@ -32,8 +32,8 @@ function AbbyScreen() {
       console.log('[Abby] Connected:', conversationId);
       setStatus('Listening...');
     }, []),
-    onDisconnect: useCallback((details: string) => {
-      console.log('[Abby] Disconnected:', details);
+    onDisconnect: useCallback((details: { reason: string; message?: string }) => {
+      console.log('[Abby] Disconnected:', details.reason, details.message);
       setStatus('Disconnected');
     }, []),
     onMessage: useCallback(({ message, source }: { message: any; source: string }) => {
