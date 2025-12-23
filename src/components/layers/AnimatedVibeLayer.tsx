@@ -3,15 +3,20 @@
  *
  * Combines:
  * - Background shader (VibeMatrixAnimated) - Selected by index (1-18)
- * - Orb (LiquidGlass / G1) - The original organic blob orb
+ * - Orb (LiquidGlass4) - Speech-reactive orb with organic breathing
  * - All driven by VibeController store
  *
  * This is the "Glass Sandwich" L0 + L1:
  * - L0: VibeMatrix background
- * - L1: Abby orb (centered)
+ * - L1: Abby orb (centered, reacts to audioLevel)
  *
  * The orb's alpha-glow naturally tints the background through
  * GPU framebuffer compositing (reverse chameleon effect).
+ *
+ * Orb SPEECH REACTIVITY:
+ * - audioLevel from useOrbState drives blob animation speed
+ * - When Abby speaks, orb "breathes" faster with more edge distortion
+ * - When silent, subtle idle breathing pulse
  *
  * Background Shader PROGRESSION (soft → hard):
  * - Pass backgroundIndex prop to directly select shader 1-18
@@ -24,10 +29,11 @@ import {
   VibeMatrixAnimated,
   VibeMatrixAnimatedRef,
 } from './VibeMatrixAnimated';
-import { LiquidGlass } from './LiquidGlass';
+import { LiquidGlass4 } from './LiquidGlass4';
 import {
   useVibeController,
   useVibeColors,
+  useOrbState,
 } from '../../store/useVibeController';
 import { OrbEnergy } from '../../types/vibe';
 import { getShaderByIndex, TOTAL_SHADERS } from '../../constants/backgroundMap';
@@ -55,6 +61,9 @@ export const AnimatedVibeLayer: React.FC<AnimatedVibeLayerProps> = ({
   // Subscribe to vibe state
   const colorTheme = useVibeController((state) => state.colorTheme);
   const complexity = useVibeController((state) => state.complexity);
+
+  // Subscribe to orb state (audioLevel, colors) for speech reactivity
+  const orbState = useOrbState();
 
   // Get shader by direct index (clamp to valid range)
   const currentShader = useMemo(() => {
@@ -99,8 +108,14 @@ export const AnimatedVibeLayer: React.FC<AnimatedVibeLayerProps> = ({
         shaderSource={currentShader}
       />
 
-      {/* L1: G1 Orb - the original organic blob */}
-      {!hideOrb && <LiquidGlass />}
+      {/* L1: Abby Orb - speech-reactive with organic breathing */}
+      {!hideOrb && (
+        <LiquidGlass4
+          audioLevel={orbState.audioLevel}
+          colorA={orbState.colorA as [number, number, number]}
+          colorB={orbState.colorB as [number, number, number]}
+        />
+      )}
 
       {/* Debug overlay */}
       {showDebug && (
