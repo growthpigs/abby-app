@@ -110,11 +110,14 @@ class AbbyVoiceService {
         return;
       }
 
-      // Configure audio mode
+      // Configure audio mode with speaker output for louder playback
       console.log('[AbbyVoice] Configuring audio mode...');
       await Audio.setAudioModeAsync({
         playsInSilentModeIOS: true,
         staysActiveInBackground: false,
+        // Use playback category for louder speaker output
+        interruptionModeIOS: 1, // MixWithOthers
+        shouldDuckAndroid: false,
       });
 
       // Check again after async operation
@@ -124,10 +127,11 @@ class AbbyVoiceService {
       }
 
       // Load audio (paused) to check cancellation before playing
+      // Volume boosted to 1.0 (max) - audio from Fal.ai tends to be quiet
       console.log('[AbbyVoice] Loading audio from URL...');
       const { sound } = await Audio.Sound.createAsync(
         { uri: audioUrl },
-        { shouldPlay: false },  // Load paused to check cancellation first
+        { shouldPlay: false, volume: 1.0 },  // Load paused, max volume
         this.onPlaybackStatusUpdate.bind(this)
       );
 

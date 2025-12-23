@@ -24,6 +24,29 @@ import * as Haptics from 'expo-haptics';
 import { Pause, Play } from 'lucide-react-native';
 import { useDemoStore } from '../../store/useDemoStore';
 import { useAbbyAgent } from '../../services/AbbyAgent';
+import { useVibeController } from '../../store/useVibeController';
+import { VibeColorTheme } from '../../types/vibe';
+
+// Keywords that trigger color changes during conversation
+const VIBE_KEYWORDS: Record<VibeColorTheme, string[]> = {
+  TRUST: ['trust', 'honest', 'reliable', 'safe', 'secure', 'comfortable', 'welcome'],
+  PASSION: ['love', 'passion', 'heart', 'romantic', 'chemistry', 'attraction', 'excited'],
+  CAUTION: ['think', 'consider', 'careful', 'maybe', 'unsure', 'wonder'],
+  GROWTH: ['learn', 'grow', 'journey', 'discover', 'understand', 'better', 'improve'],
+  DEEP: ['feel', 'emotional', 'vulnerable', 'deep', 'meaningful', 'important', 'matter'],
+  ALERT: ['concern', 'worry', 'problem', 'issue', 'difficult', 'challenge'],
+};
+
+// Detect vibe from text
+const detectVibeFromText = (text: string): VibeColorTheme | null => {
+  const lower = text.toLowerCase();
+  for (const [vibe, keywords] of Object.entries(VIBE_KEYWORDS)) {
+    if (keywords.some(kw => lower.includes(kw))) {
+      return vibe as VibeColorTheme;
+    }
+  }
+  return null;
+};
 
 const { height: SCREEN_HEIGHT } = Dimensions.get('window');
 
@@ -44,6 +67,9 @@ export const CoachIntroScreen: React.FC<CoachIntroScreenProps> = ({
   const addMessage = useDemoStore((state) => state.addMessage);
   const advance = useDemoStore((state) => state.advance);
 
+  // Vibe controller for color changes
+  const setColorTheme = useVibeController((state) => state.setColorTheme);
+
   const [agentStatus, setAgentStatus] = useState<string>('Connecting...');
 
   // Animated value for bottom sheet position
@@ -54,6 +80,14 @@ export const CoachIntroScreen: React.FC<CoachIntroScreenProps> = ({
     enabled: true,
     onAbbyResponse: (text) => {
       addMessage('abby', text);
+
+      // Trigger color change based on conversation content
+      const detectedVibe = detectVibeFromText(text);
+      if (detectedVibe) {
+        if (__DEV__) console.log('[CoachIntro] 🎨 Vibe shift:', detectedVibe);
+        setColorTheme(detectedVibe);
+      }
+
       // Scroll to top to show newest message
       setTimeout(() => {
         scrollRef.current?.scrollTo({ y: 0, animated: true });

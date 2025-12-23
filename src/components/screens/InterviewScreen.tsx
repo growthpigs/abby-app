@@ -154,18 +154,41 @@ export const InterviewScreen: React.FC<InterviewScreenProps> = ({
             </Text>
           )}
 
-          {/* Next button */}
-          <Pressable
-            onPress={handleAnswer}
-            style={({ pressed }) => [
-              styles.nextButton,
-              pressed && styles.nextButtonPressed,
-            ]}
-          >
-            <Text style={styles.buttonText}>
-              {isLastQuestion ? 'Find My Match' : 'Next'}
-            </Text>
-          </Pressable>
+          {/* Yes/No buttons */}
+          {isLastQuestion ? (
+            <Pressable
+              onPress={() => submitAnswer('Yes')}
+              style={({ pressed }) => [
+                styles.nextButton,
+                pressed && styles.nextButtonPressed,
+              ]}
+            >
+              <Text style={styles.buttonText}>Find My Match</Text>
+            </Pressable>
+          ) : (
+            <View style={styles.buttonRow}>
+              <Pressable
+                onPress={() => submitAnswer('No')}
+                style={({ pressed }) => [
+                  styles.answerButton,
+                  styles.noButton,
+                  pressed && styles.answerButtonPressed,
+                ]}
+              >
+                <Text style={[styles.answerButtonText, styles.noButtonText]}>No</Text>
+              </Pressable>
+              <Pressable
+                onPress={() => submitAnswer('Yes')}
+                style={({ pressed }) => [
+                  styles.answerButton,
+                  styles.yesButton,
+                  pressed && styles.answerButtonPressed,
+                ]}
+              >
+                <Text style={styles.answerButtonText}>Yes</Text>
+              </Pressable>
+            </View>
+          )}
 
           {/* Extra padding for home indicator */}
           <View style={styles.homeIndicatorPadding} />
@@ -262,6 +285,41 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#FFFFFF',
     fontWeight: '600',
+  },
+
+  // Yes/No button row
+  buttonRow: {
+    flexDirection: 'row',
+    marginHorizontal: 24,
+    gap: 12,
+  },
+  answerButton: {
+    flex: 1,
+    borderRadius: 30,
+    paddingVertical: 16,
+    alignItems: 'center',
+    borderWidth: 2,
+  },
+  noButton: {
+    backgroundColor: 'rgba(255, 255, 255, 0.3)',
+    borderColor: 'rgba(0, 0, 0, 0.2)',
+  },
+  noButtonText: {
+    color: 'rgba(0, 0, 0, 0.7)',
+  },
+  yesButton: {
+    backgroundColor: 'rgba(0, 0, 0, 0.8)',
+    borderColor: 'rgba(0, 0, 0, 0.8)',
+  },
+  answerButtonPressed: {
+    opacity: 0.8,
+    transform: [{ scale: 0.98 }],
+  },
+  answerButtonText: {
+    fontFamily: 'Merriweather_400Regular',
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#FFFFFF',
   },
 
   // Extra padding at bottom for home indicator

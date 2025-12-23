@@ -272,8 +272,8 @@ function DemoScreen() {
         {renderScreen()}
       </SafeAreaView>
 
-      {/* Voice status indicator (dev only) */}
-      {__DEV__ && voiceStatus ? (
+      {/* Voice status indicator (dev only, coach mode only) */}
+      {__DEV__ && demoMode === 'coach' && voiceStatus ? (
         <View style={styles.voiceStatus}>
           <Text style={styles.voiceStatusText}>{voiceStatus}</Text>
           {abbyText ? (
