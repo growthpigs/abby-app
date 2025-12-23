@@ -184,7 +184,8 @@ describe('App.demo.tsx', () => {
 
     expect(source).toContain('if (ElevenLabsProvider) {');
     expect(source).toContain('<ElevenLabsProvider>');
-    expect(source).toContain('return <DemoScreen />');
+    expect(source).toContain('<DemoScreen />'); // Now wrapped in ErrorBoundary
+    expect(source).toContain('<ErrorBoundary>'); // Error boundary added
   });
 
   test('useAbbyAgent enabled for COACH_INTRO', () => {

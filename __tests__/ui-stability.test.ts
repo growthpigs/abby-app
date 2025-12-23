@@ -304,19 +304,23 @@ describe('Screen Component Structure', () => {
 // ==============================================================================
 
 describe('Animation Safety', () => {
-  test('CoachScreen uses Animated from react-native (not reanimated for PanResponder)', () => {
+  test('CoachScreen uses Animated from react-native (for View transforms)', () => {
     const source = readFile('src/components/screens/CoachScreen.tsx');
 
-    // Should use RN Animated for PanResponder compatibility
+    // Should use RN Animated for transforms and hook integration
     expect(source).toContain("Animated,");
     expect(source).toContain("from 'react-native'");
-    expect(source).toContain('Animated.spring');
+    // Animated.spring moved to useDraggableSheet hook
+    expect(source).toContain('useDraggableSheet');
   });
 
-  test('CoachScreen PanResponder uses native driver', () => {
-    const source = readFile('src/components/screens/CoachScreen.tsx');
+  test('useDraggableSheet hook uses native driver and Animated.spring', () => {
+    // PanResponder logic moved to shared hook
+    const source = readFile('src/hooks/useDraggableSheet.ts');
 
     expect(source).toContain('useNativeDriver: true');
+    expect(source).toContain('Animated.spring');
+    expect(source).toContain('PanResponder.create');
   });
 
   test('VibeMatrix uses reanimated for derived values', () => {
