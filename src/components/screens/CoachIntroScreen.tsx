@@ -335,7 +335,8 @@ const styles = StyleSheet.create({
     paddingTop: 0,
     paddingBottom: 12,
     marginTop: -15,
-    paddingHorizontal: 20,
+    paddingLeft: 15,
+    paddingRight: 10,
     gap: 8,
   },
   statusDot: {
@@ -358,13 +359,11 @@ const styles = StyleSheet.create({
     color: 'rgba(0, 0, 0, 0.5)',
     textTransform: 'uppercase',
     letterSpacing: 0.5,
-    marginLeft: -5,
   },
 
   // Mute button - mid-gray icon, 30% smaller, aligned with status text
   muteButton: {
     marginLeft: 'auto',
-    marginRight: 7,
     width: 28,
     height: 28,
     borderRadius: 14,
@@ -392,7 +391,7 @@ const styles = StyleSheet.create({
   },
   messagesContent: {
     paddingBottom: 16,
-    marginTop: -30,
+    marginTop: -10,
   },
   placeholderText: {
     fontFamily: 'Merriweather_400Regular',
