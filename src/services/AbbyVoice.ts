@@ -52,6 +52,10 @@ class AbbyVoiceService {
 
     console.log('[AbbyVoice] Generating speech for:', text.substring(0, 50));
 
+    // 10 second timeout to prevent hanging
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 10000);
+
     const response = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${ELEVENLABS_VOICE_ID}`, {
       method: 'POST',
       headers: {
@@ -67,7 +71,10 @@ class AbbyVoiceService {
           similarity_boost: 0.75,
         },
       }),
+      signal: controller.signal,
     });
+
+    clearTimeout(timeoutId);
 
     console.log('[AbbyVoice] API response status:', response.status);
 
