@@ -422,7 +422,7 @@ describe('Audio Configuration', () => {
 
     expect(source).toContain('setAppleAudioConfiguration');
     expect(source).toContain("audioCategory: 'playAndRecord'");
-    expect(source).toContain("audioMode: 'voiceChat'");
+    expect(source).toContain("audioMode: 'spokenAudio'");  // Optimized for voice apps
     expect(source).toContain('defaultToSpeaker');
   });
 

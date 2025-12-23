@@ -139,7 +139,9 @@ describe('InterviewScreen Questions Integration', () => {
     const source = readFile('src/components/screens/InterviewScreen.tsx');
 
     expect(source).toContain('const isLastQuestion = currentIndex >= INTERVIEW_QUESTIONS.length - 1');
-    expect(source).toContain("isLastQuestion ? 'Find My Match' : 'Next'");
+    // Uses JSX conditional: {isLastQuestion ? (...Find My Match...) : (...buttons...)}
+    expect(source).toContain('{isLastQuestion ? (');
+    expect(source).toContain('Find My Match');
   });
 });
 
