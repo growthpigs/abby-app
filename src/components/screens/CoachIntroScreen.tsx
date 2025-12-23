@@ -5,7 +5,7 @@
  * User can tap "Start Interview" to advance to questions.
  *
  * Uses draggable bottom sheet pattern (from ProperDress SwatchSelectionModal).
- * Snap points at 25%, 50%, 75%, 90% of screen height.
+ * Snap points at 25%, 45%, 65%, 85% of screen height (starts minimal).
  */
 
 import React, { useCallback, useEffect, useState, useRef } from 'react';
@@ -28,8 +28,8 @@ import { useAbbyAgent } from '../../services/AbbyAgent';
 const { height: SCREEN_HEIGHT } = Dimensions.get('window');
 
 // Snap points as percentages of screen height (from bottom)
-const SNAP_POINTS = [0.35, 0.55, 0.75, 0.9];
-const DEFAULT_SNAP = 0.55; // Start at 55%
+const SNAP_POINTS = [0.25, 0.45, 0.65, 0.85];
+const DEFAULT_SNAP = 0.25; // Start at 25% (minimal - shows more orb)
 
 export interface CoachIntroScreenProps {
   onBackgroundChange?: (index: number) => void;
@@ -361,12 +361,12 @@ const styles = StyleSheet.create({
     letterSpacing: 0.5,
   },
 
-  // Mute button - 44x44 for iOS HIG touch target compliance
+  // Mute button - mid-gray icon, 28x28, aligned with status text
   muteButton: {
     marginLeft: 'auto',
-    width: 44,
-    height: 44,
-    borderRadius: 22,
+    width: 28,
+    height: 28,
+    borderRadius: 14,
     backgroundColor: 'transparent',
     borderWidth: 1,
     borderColor: 'rgba(128, 128, 128, 0.4)',

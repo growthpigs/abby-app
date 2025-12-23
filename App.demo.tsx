@@ -162,7 +162,7 @@ function DemoScreen() {
 
   return (
     <View style={styles.container}>
-      <StatusBar style="light" />
+      <StatusBar hidden />
 
       {/* L0 + L1: Background shader + G1 Orb */}
       <AnimatedVibeLayer
