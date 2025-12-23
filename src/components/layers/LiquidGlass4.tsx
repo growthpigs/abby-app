@@ -91,9 +91,9 @@ const ABBY_ORB_SHADER = Skia.RuntimeEffect.Make(`
     return min(a, b) - h * h * k * 0.25;
   }
 
-  // Blob position - faster movement like G2
+  // Blob position - gentle movement, subtle audio response
   vec2 blobPos(float seed, float t, float audio) {
-    float audioBoost = 1.0 + audio * 0.15;
+    float audioBoost = 1.0 + audio * 0.08;  // Reduced: 15% → 8%
     return vec2(
       sin(t * 0.7 * audioBoost + seed * 6.28) * 0.3,
       cos(t * 0.9 * audioBoost + seed * 4.17) * 0.3
@@ -108,7 +108,7 @@ const ABBY_ORB_SHADER = Skia.RuntimeEffect.Make(`
 
     // === BREATHING: Uniform expansion from center ===
     // Scale UV inward = orb appears larger (inflating balloon)
-    float breath = 1.0 - audio * 0.15;  // 15% expansion when audio=1.0
+    float breath = 1.0 - audio * 0.06;  // Reduced: 15% → 6% expansion
     uv *= breath;
 
     // === PURE BLOB APPROACH (no hard boundary) ===
@@ -131,9 +131,9 @@ const ABBY_ORB_SHADER = Skia.RuntimeEffect.Make(`
     shape = smin(shape, d4, 0.7);
     shape = smin(shape, d5, 0.7);
 
-    // Sine wave edge wobble (doubled amplitude)
+    // Sine wave edge wobble - soft organic ripple
     float angle = atan(uv.y, uv.x);
-    float waveAmp = 0.016 + audio * 0.024; // 1.6% to 4% of size
+    float waveAmp = 0.012 + audio * 0.012; // Reduced: softer 1.2% to 2.4%
     float edgeWobble = sin(angle * 5.0 + t * 2.0) * waveAmp;
     edgeWobble += sin(angle * 3.0 - t * 1.5) * waveAmp * 0.5;
     shape -= edgeWobble;
@@ -145,8 +145,8 @@ const ABBY_ORB_SHADER = Skia.RuntimeEffect.Make(`
     float si = sin(rotAngle);
     vec2 rotUV = vec2(uv.x * co - uv.y * si, uv.x * si + uv.y * co);
 
-    // Speed up noise when speaking
-    float noiseSpeed = 0.15 + audio * 0.3;
+    // Gentle noise acceleration when speaking
+    float noiseSpeed = 0.15 + audio * 0.12;  // Reduced: 0.3 → 0.12
 
     // Domain warping layers
     vec3 p1 = vec3(rotUV * 1.5 + vec2(t * 0.2, t * 0.3), t * noiseSpeed);
