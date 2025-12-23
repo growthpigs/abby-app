@@ -354,15 +354,17 @@ const styles = StyleSheet.create({
   },
   statusText: {
     fontFamily: 'JetBrainsMono_400Regular',
-    fontSize: 13,
+    fontSize: 12,
     color: 'rgba(0, 0, 0, 0.5)',
     textTransform: 'uppercase',
     letterSpacing: 0.5,
+    marginLeft: -5,
   },
 
   // Mute button - mid-gray icon, 30% smaller, aligned with status text
   muteButton: {
     marginLeft: 'auto',
+    marginRight: 7,
     width: 28,
     height: 28,
     borderRadius: 14,
@@ -390,13 +392,14 @@ const styles = StyleSheet.create({
   },
   messagesContent: {
     paddingBottom: 16,
+    marginTop: -30,
   },
   placeholderText: {
     fontFamily: 'Merriweather_400Regular',
     fontSize: 18,
     lineHeight: 28,
-    color: 'rgba(0, 0, 0, 0.8)',
-    textAlign: 'center',
+    color: 'rgba(0, 0, 0, 0.6)',
+    textAlign: 'left',
     paddingVertical: 20,
   },
   messageBubble: {
@@ -410,7 +413,8 @@ const styles = StyleSheet.create({
     fontFamily: 'Merriweather_400Regular',
     fontSize: 17,
     lineHeight: 23,  // 17 * 1.35 ≈ 23 (15% more line height)
-    color: 'rgba(0, 0, 0, 0.85)',
+    color: 'rgba(0, 0, 0, 0.65)',
+    textAlign: 'left',
   },
   userMessageText: {
     color: 'rgba(0, 0, 0, 0.5)',
