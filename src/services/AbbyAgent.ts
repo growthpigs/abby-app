@@ -373,6 +373,16 @@ export function useAbbyAgent(config: AbbyAgentConfig = {}) {
     }
   }, [isConnected, conversation.status, stopAudioPulse, stopSpeakingPulse]);
 
+  // Timeout helper to prevent hanging on AudioSession calls
+  const withTimeout = <T,>(promise: Promise<T>, ms: number): Promise<T> => {
+    return Promise.race([
+      promise,
+      new Promise<T>((_, reject) =>
+        setTimeout(() => reject(new Error(`Operation timed out after ${ms}ms`)), ms)
+      ),
+    ]);
+  };
+
   // Mute conversation (stops audio I/O - agent keeps running on backend)
   const muteConversation = useCallback(async () => {
     if (!isConnected || isMuted || isTogglingMute) return;
@@ -380,19 +390,23 @@ export function useAbbyAgent(config: AbbyAgentConfig = {}) {
     setIsTogglingMute(true);
     if (__DEV__) console.log('[AbbyAgent] Muting conversation');
 
-    // Stop audio FIRST, then update state (validator fix)
+    // Stop audio FIRST, then update state
     if (Platform.OS === 'ios' && AudioSession) {
       try {
-        await AudioSession.stopAudioSession();
+        await withTimeout(AudioSession.stopAudioSession(), 5000);
         if (__DEV__) console.log('[AbbyAgent] Audio session stopped (muted)');
       } catch (err) {
         console.warn('[AbbyAgent] Failed to mute audio:', err);
+        callbacksRef.current.onError?.(err instanceof Error ? err : new Error('Failed to mute audio'));
         setIsTogglingMute(false);
-        return; // Don't update state if mute failed
+        return; // Don't update state - keep UI honest about actual audio state
       }
+    } else if (Platform.OS === 'android') {
+      // Android: State-only mute (no native AudioSession support)
+      if (__DEV__) console.warn('[AbbyAgent] Android mute is UI-only - audio may continue');
     }
 
-    // Update state AFTER successful audio stop
+    // Update state AFTER successful audio stop (or on Android where it's UI-only)
     setIsMuted(true);
     setIsTogglingMute(false);
     stopAudioPulse();
@@ -410,18 +424,22 @@ export function useAbbyAgent(config: AbbyAgentConfig = {}) {
     // Restart audio FIRST using SIMPLE config (confirmed working)
     if (Platform.OS === 'ios' && AudioSession) {
       try {
-        await AudioSession.configureAudio({ ios: { defaultOutput: 'speaker' } });
-        await AudioSession.startAudioSession();
-        await AudioSession.selectAudioOutput('force_speaker');
+        await withTimeout(AudioSession.configureAudio({ ios: { defaultOutput: 'speaker' } }), 5000);
+        await withTimeout(AudioSession.startAudioSession(), 5000);
+        await withTimeout(AudioSession.selectAudioOutput('force_speaker'), 5000);
         if (__DEV__) console.log('[AbbyAgent] Audio session resumed (force_speaker)');
       } catch (err) {
         console.warn('[AbbyAgent] Failed to resume audio:', err);
+        callbacksRef.current.onError?.(err instanceof Error ? err : new Error('Failed to unmute audio'));
         setIsTogglingMute(false);
-        return; // Don't update state if unmute failed (validator fix)
+        return; // Don't update state - keep UI honest about actual audio state
       }
+    } else if (Platform.OS === 'android') {
+      // Android: State-only unmute (no native AudioSession support)
+      if (__DEV__) console.warn('[AbbyAgent] Android unmute is UI-only');
     }
 
-    // Update state AFTER successful audio restart
+    // Update state AFTER successful audio restart (or on Android where it's UI-only)
     setIsMuted(false);
     setIsTogglingMute(false);
     setAbbyMode('LISTENING');
