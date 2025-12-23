@@ -400,8 +400,8 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   messagesContent: {
+    paddingTop: 8,
     paddingBottom: 16,
-    marginTop: -10,
   },
   placeholderText: {
     fontFamily: 'Merriweather_400Regular',
