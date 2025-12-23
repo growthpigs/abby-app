@@ -173,6 +173,11 @@ src/
 3. **Motion is slow** - 800-1200ms transitions, heavy easing
 4. **Colors morph** - Never cross-fade, always interpolate
 5. **Text on Glass** - Content never touches background directly
+6. **MORPH, NOT FADE** - All visual transitions are shader parameter changes, NOT React component swaps
+   - Background changes = morphWrapper noise-based transition (stays alive)
+   - Orb changes = continuous shader uniform animation (never unmounts)
+   - NO `opacity` or `display` toggling between visual components
+   - The visual layer ALWAYS renders; only uniforms change
 
 ---
 
