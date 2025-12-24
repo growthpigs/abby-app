@@ -81,7 +81,7 @@ export const SearchingScreen: React.FC = () => {
             Searching{dots}
           </Text>
           <Text style={styles.status}>
-            {STATUS_MESSAGES[statusIndex]}
+            {STATUS_MESSAGES[statusIndex] || 'Searching...'}
           </Text>
           <View style={styles.progressDots}>
             {STATUS_MESSAGES.map((_, index) => (

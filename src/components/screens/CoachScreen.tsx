@@ -340,12 +340,12 @@ const styles = StyleSheet.create({
     letterSpacing: 0.5,
   },
 
-  // Mute button - mid-gray icon, 30% smaller, aligned with status text
+  // Mute button - 44x44 for iOS HIG compliance
   muteButton: {
     marginLeft: 'auto',
-    width: 28,
-    height: 28,
-    borderRadius: 14,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
     backgroundColor: 'transparent',
     borderWidth: 1,
     borderColor: 'rgba(128, 128, 128, 0.4)',

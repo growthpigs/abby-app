@@ -11,6 +11,7 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { View, Text, StyleSheet, Pressable, Dimensions } from 'react-native';
 import { BlurView } from 'expo-blur';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
 import Animated, { FadeIn, FadeOut } from 'react-native-reanimated';
 import { useDemoStore } from '../../store/useDemoStore';
@@ -44,6 +45,7 @@ export const InterviewScreen: React.FC<InterviewScreenProps> = ({
 
   const setColorTheme = useVibeController((state) => state.setColorTheme);
   const setAudioLevel = useVibeController((state) => state.setAudioLevel);
+  const insets = useSafeAreaInsets();
 
   // Derive current question and state from 150 questions
   // Guard against empty array (defensive - should never happen but prevents crash)
@@ -132,7 +134,7 @@ export const InterviewScreen: React.FC<InterviewScreenProps> = ({
       <View style={styles.topSpacer} />
 
       {/* Bottom: Glass modal with question + button - extends to screen edge */}
-      <View style={styles.bottomModal}>
+      <View style={[styles.bottomModal, { bottom: -insets.bottom }]}>
         <BlurView intensity={80} tint="light" style={styles.modalBlur}>
           {/* Drag handle */}
           <View style={styles.handleContainer}>

@@ -18,6 +18,7 @@ import {
   ScrollView,
   useWindowDimensions,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { BlurView } from 'expo-blur';
 import Animated, {
   useSharedValue,
@@ -59,6 +60,7 @@ export const ConversationOverlay: React.FC<ConversationOverlayProps> = ({
   onCollapsedChange,
 }) => {
   const { height: screenHeight } = useWindowDimensions();
+  const insets = useSafeAreaInsets();
   const scrollRef = useRef<ScrollView>(null);
 
   // Animation values
@@ -134,7 +136,7 @@ export const ConversationOverlay: React.FC<ConversationOverlayProps> = ({
   }
 
   return (
-    <GestureHandlerRootView style={styles.gestureRoot}>
+    <GestureHandlerRootView style={[styles.gestureRoot, { bottom: -insets.bottom, paddingBottom: insets.bottom }]}>
       <GestureDetector gesture={combinedGesture}>
         <Animated.View style={[styles.container, containerStyle]}>
           <BlurView
