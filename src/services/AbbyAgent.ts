@@ -343,14 +343,16 @@ export function useAbbyAgent(config: AbbyAgentConfig = {}) {
 
     // Guard 6: Agent ID required and valid format
     if (!AGENT_ID || AGENT_ID.trim().length === 0) {
-      const error = new Error('ELEVENLABS_AGENT_ID not configured. Add it to .env.local');
+      if (__DEV__) console.error('[AbbyAgent] ELEVENLABS_AGENT_ID not configured in .env.local');
+      const error = new Error('Voice service not configured');
       callbacksRef.current.onError?.(error);
       throw error;
     }
 
     // Guard 7: Agent ID format validation
     if (!AGENT_ID.startsWith('agent_')) {
-      const error = new Error('ELEVENLABS_AGENT_ID must start with "agent_". Check your .env.local configuration.');
+      if (__DEV__) console.error('[AbbyAgent] ELEVENLABS_AGENT_ID must start with "agent_"');
+      const error = new Error('Voice service configuration error');
       callbacksRef.current.onError?.(error);
       throw error;
     }
@@ -490,19 +492,28 @@ export function useAbbyAgent(config: AbbyAgentConfig = {}) {
   }, [isMuted, muteConversation, unmuteConversation]);
 
   // Send a text message to the agent (for typed input)
-  const sendTextMessage = useCallback((text: string) => {
+  // Returns true if sent successfully, false otherwise
+  const sendTextMessage = useCallback((text: string): boolean => {
     if (!isConnected) {
       if (__DEV__) console.warn('[AbbyAgent] Cannot send message - not connected');
-      return;
+      callbacksRef.current.onError?.(new Error('Not connected'));
+      return false;
     }
 
     if (!text.trim()) {
       if (__DEV__) console.warn('[AbbyAgent] Cannot send empty message');
-      return;
+      return false;
     }
 
-    if (__DEV__) console.log('[AbbyAgent] Sending text message:', text.slice(0, 50) + '...');
-    conversation.sendUserMessage(text.trim());
+    try {
+      if (__DEV__) console.log('[AbbyAgent] Sending text message');
+      conversation.sendUserMessage(text.trim());
+      return true;
+    } catch (err) {
+      if (__DEV__) console.error('[AbbyAgent] Failed to send message:', err);
+      callbacksRef.current.onError?.(err instanceof Error ? err : new Error('Failed to send message'));
+      return false;
+    }
   }, [isConnected, conversation]);
 
   return {

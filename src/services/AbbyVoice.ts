@@ -44,13 +44,15 @@ class AbbyVoiceService {
    */
   async generateSpeech(text: string): Promise<string> {
     if (!ELEVENLABS_API_KEY) {
-      throw new Error('ELEVENLABS_API_KEY not configured. Add EXPO_PUBLIC_ELEVENLABS_API_KEY to .env.local');
+      if (__DEV__) console.error('[AbbyVoice] EXPO_PUBLIC_ELEVENLABS_API_KEY not configured');
+      throw new Error('Voice service not configured');
     }
     if (!ELEVENLABS_VOICE_ID) {
-      throw new Error('ELEVENLABS_VOICE_ID not configured. Add EXPO_PUBLIC_ELEVENLABS_VOICE_ID to .env.local');
+      if (__DEV__) console.error('[AbbyVoice] EXPO_PUBLIC_ELEVENLABS_VOICE_ID not configured');
+      throw new Error('Voice service not configured');
     }
 
-    console.log('[AbbyVoice] Generating speech for:', text.substring(0, 50));
+    if (__DEV__) console.log('[AbbyVoice] Generating speech');
 
     // 10 second timeout to prevent hanging
     const controller = new AbortController();

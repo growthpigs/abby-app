@@ -29,9 +29,20 @@ export function ChatInput({
 }: ChatInputProps) {
   const [message, setMessage] = useState('');
 
+  // Sanitize input: remove control chars, limit whitespace
+  const sanitizeInput = (text: string): string => {
+    return text
+      .trim()
+      .replace(/[\x00-\x09\x0B-\x1F\x7F-\x9F]/g, '') // Remove control chars (keep \n)
+      .replace(/\n{3,}/g, '\n\n') // Max 2 consecutive newlines
+      .replace(/[ \t]{3,}/g, '  ') // Max 2 consecutive spaces
+      .slice(0, 500); // Hard limit
+  };
+
   const handleSend = () => {
-    if (message.trim() && !disabled) {
-      onSend(message.trim());
+    const sanitized = sanitizeInput(message);
+    if (sanitized.length > 0 && !disabled) {
+      onSend(sanitized);
       setMessage('');
     }
   };

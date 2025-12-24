@@ -34,6 +34,7 @@ export const CoachScreen: React.FC<CoachScreenProps> = ({
   onBackgroundChange,
 }) => {
   const scrollRef = useRef<ScrollView>(null);
+  const scrollTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   const messages = useDemoStore((state) => state.messages);
   const addMessage = useDemoStore((state) => state.addMessage);
@@ -47,15 +48,31 @@ export const CoachScreen: React.FC<CoachScreenProps> = ({
     defaultSnap: 0.55,
   });
 
+  // Safe scroll helper - clears previous timeout to prevent memory leaks
+  const scrollToTop = useCallback(() => {
+    if (scrollTimeoutRef.current) {
+      clearTimeout(scrollTimeoutRef.current);
+    }
+    scrollTimeoutRef.current = setTimeout(() => {
+      scrollRef.current?.scrollTo({ y: 0, animated: true });
+    }, 100);
+  }, []);
+
+  // Cleanup timeouts on unmount
+  useEffect(() => {
+    return () => {
+      if (scrollTimeoutRef.current) {
+        clearTimeout(scrollTimeoutRef.current);
+      }
+    };
+  }, []);
+
   // Initialize ElevenLabs Agent
   const { startConversation, endConversation, toggleMute, sendTextMessage, isSpeaking, isConnected, isMuted } = useAbbyAgent({
     enabled: true,
     onAbbyResponse: (text) => {
       addMessage('abby', text);
-      // Scroll to top to show newest message
-      setTimeout(() => {
-        scrollRef.current?.scrollTo({ y: 0, animated: true });
-      }, 100);
+      scrollToTop();
     },
     onUserTranscript: (text) => {
       // Dedup: Don't add if last user message has same text (prevents double-add from typed input)
@@ -64,9 +81,7 @@ export const CoachScreen: React.FC<CoachScreenProps> = ({
         return; // Already added by handleSendMessage
       }
       addMessage('user', text);
-      setTimeout(() => {
-        scrollRef.current?.scrollTo({ y: 0, animated: true });
-      }, 100);
+      scrollToTop();
     },
     onConnect: () => {
       setAgentStatus('Connected');
@@ -132,10 +147,8 @@ export const CoachScreen: React.FC<CoachScreenProps> = ({
     // Send to Abby agent
     sendTextMessage(text);
     // Scroll to show newest message
-    setTimeout(() => {
-      scrollRef.current?.scrollTo({ y: 0, animated: true });
-    }, 100);
-  }, [addMessage, sendTextMessage]);
+    scrollToTop();
+  }, [addMessage, sendTextMessage, scrollToTop]);
 
   return (
     <View style={styles.container}>

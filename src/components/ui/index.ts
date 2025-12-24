@@ -6,6 +6,7 @@
 
 export { GlassCard } from './GlassCard';
 export { GlassButton } from './GlassButton';
+export { GlassSheet } from './GlassSheet';
 export {
   Headline,
   HeadlineLarge,
