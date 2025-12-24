@@ -140,20 +140,21 @@ export const CoachIntroScreen: React.FC<CoachIntroScreenProps> = ({
         return Math.abs(gestureState.dy) > Math.abs(gestureState.dx);
       },
       onPanResponderGrant: () => {
-        translateY.setOffset((translateY as any)._value);
+        translateY.setOffset((translateY as unknown as { _value: number })._value);
         translateY.setValue(0);
       },
       onPanResponderMove: (_, gestureState) => {
         const newY = gestureState.dy;
-        const minY = SCREEN_HEIGHT * 0.1 - (translateY as any)._offset;
-        const maxY = SCREEN_HEIGHT - (translateY as any)._offset;
+        const offset = (translateY as unknown as { _offset: number })._offset;
+        const minY = SCREEN_HEIGHT * 0.1 - offset;
+        const maxY = SCREEN_HEIGHT - offset;
 
         const constrainedY = Math.max(minY, Math.min(maxY, newY));
         translateY.setValue(constrainedY);
       },
       onPanResponderRelease: (_, gestureState) => {
         translateY.flattenOffset();
-        const currentY = (translateY as any)._value;
+        const currentY = (translateY as unknown as { _value: number })._value;
         const velocity = gestureState.vy;
 
         // Snap to closest point

@@ -148,7 +148,7 @@ export const useDemoStore = create<DemoStore>((set, get) => ({
   answerQuestion: (answer: Answer) => {
     const { answers, totalQuestions } = get();
     const newAnswers = [...answers, answer];
-    const newCoverage = (newAnswers.length / totalQuestions) * 100;
+    const newCoverage = totalQuestions > 0 ? (newAnswers.length / totalQuestions) * 100 : 0;
 
     set({
       answers: newAnswers,
