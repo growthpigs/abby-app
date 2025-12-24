@@ -1,29 +1,43 @@
 # ABBY Maintenance Plan
 
 **Generated**: 2025-12-24 10:30 CET
+**Reviewed**: 2025-12-24 10:45 CET (CTO sanity check completed)
 **Analyzed by**: Claude Code Analysis Mode
 **Project**: ABBY iOS App (React Native Expo)
 
 ---
 
-## Executive Summary
+## SANITY CHECK CORRECTIONS
+
+**Initial analysis had 4 errors. Corrections applied:**
+
+| Claim | Reality | Correction |
+|-------|---------|------------|
+| xmldom CRITICAL vulnerability | Package already at safe version 3.1.5 | **NO SECURITY ISSUE** - npm audit shows 0 vulns |
+| event-target-shim unused | Required by metro.config.js for LiveKit | **DO NOT REMOVE** |
+| expo-font unused | Transitive dep of expo core + vector-icons | **DO NOT REMOVE** |
+| shaders/index.ts used | Only BackgroundShaderRenderer imports it (dead) | Correct but backgroundMap.ts is the real import |
+
+---
+
+## Executive Summary (CORRECTED)
 
 | Category | Count |
 |----------|-------|
-| **Critical** | 1 |
-| **High** | 3 |
-| **Medium** | 8 |
-| **Low** | 6 |
-| **Total Issues** | 18 |
+| **Critical** | 0 |
+| **High** | 2 |
+| **Medium** | 6 |
+| **Low** | 5 |
+| **Total Issues** | 13 |
 
-**Quick Win Time Estimate**: ~45 minutes of safe work
-**Full Cleanup Time Estimate**: ~3-4 hours
+**Quick Win Time Estimate**: ~30 minutes of safe work
+**Full Cleanup Time Estimate**: ~2-3 hours
 
 ---
 
 ## IMMEDIATE (Do First - Low Risk, High Value)
 
-### Issue #1: Remove Unused Dependencies
+### Issue #1: Remove Truly Unused Dependencies (CORRECTED)
 
 **Category**: Code Quality
 **Severity**: Medium
@@ -32,45 +46,40 @@
 
 **Current State**:
 ```json
-// package.json has unused dependencies:
-"event-target-shim": "^6.0.2",      // Added for Metro resolution, no longer needed
-"expo-font": "...",                 // Fonts loaded via app.json instead
-"react-native-worklets-core": "..." // Not used in production
+// Only react-native-worklets-core is truly unused:
+"react-native-worklets-core": "^1.6.2" // Different from react-native-worklets (peer dep)
 ```
+
+**⚠️ DO NOT REMOVE (verified needed):**
+- `event-target-shim` - Required by metro.config.js for LiveKit resolution
+- `expo-font` - Transitive dep of expo core and @expo/vector-icons
 
 **Proposed Fix**:
 ```bash
-npm uninstall event-target-shim expo-font react-native-worklets-core
+npm uninstall react-native-worklets-core
 ```
 
-**Why This Matters**: Reduces bundle size and attack surface
-**Breaking Risk**: Very low - depcheck confirmed these are unused
+**Why This Matters**: react-native-worklets (v0.5.1) is what reanimated uses, not worklets-core
+**Breaking Risk**: Very low - npm ls confirms it's standalone
 **Tests Needed**: Run `npm test` after removal
 
 ---
 
-### Issue #2: Remove Unused DevDependencies
+### Issue #2: ~~Remove Unused DevDependencies~~ NOT APPLICABLE
 
 **Category**: Code Quality
-**Severity**: Low
-**Effort**: 5min
-**Risk**: None
+**Severity**: ~~Low~~ **NONE**
+**Status**: ✅ **NO ACTION NEEDED**
 
-**Current State**:
-```json
-// Unused devDependencies:
-"@config-plugins/react-native-webrtc": "13.0.0",
-"@livekit/react-native-expo-plugin": "0.4.2"
-```
-
-**Proposed Fix**:
+**Sanity Check Finding**:
 ```bash
-npm uninstall -D @config-plugins/react-native-webrtc @livekit/react-native-expo-plugin
+$ grep "plugins" app.json
+    "plugins": [
+      "@livekit/react-native-expo-plugin",
+      "@config-plugins/react-native-webrtc",
 ```
 
-**Why This Matters**: Cleaner dev environment, faster installs
-**Breaking Risk**: None - these are config plugins for features not in use
-**Tests Needed**: Build the app to verify
+These config plugins ARE used in app.json for native module configuration. **DO NOT REMOVE.**
 
 ---
 
@@ -198,34 +207,24 @@ if (__DEV__) {
 
 ## PLANNED WORK (Needs Review - High Value, Medium Risk)
 
-### Issue #7: CRITICAL Security - xmldom Vulnerability
+### Issue #7: ~~CRITICAL Security - xmldom Vulnerability~~ RESOLVED
 
 **Category**: Security
-**Severity**: CRITICAL
-**Effort**: 30min
-**Risk**: Medium (major version update)
+**Severity**: ~~CRITICAL~~ **NONE**
+**Status**: ✅ **NO ACTION NEEDED**
 
-**Current State**:
-```
-xmldom <= 0.6.0 (via @expo/plist via @react-native-voice/voice)
-GHSA-crh6-fp67-6883 - Allows multiple root nodes in DOM (CVSS 9.8)
-GHSA-5fg8-2547-mr8q - Misinterpretation of malicious XML (CVSS 6.5)
-```
-
-**Proposed Fix**:
+**Sanity Check Finding**:
 ```bash
-# Option 1: Update voice package (major version change)
-npm install @react-native-voice/voice@3.1.5
+$ npm audit
+found 0 vulnerabilities
 
-# Option 2: If voice features not needed, remove entirely
-npm uninstall @react-native-voice/voice
+$ npm ls @react-native-voice/voice
+└── @react-native-voice/voice@3.1.5  # Already on safe version!
 ```
 
-**Why This Matters**: CVSS 9.8 is critical - remote code execution possible
-**Breaking Risk**: Medium - @react-native-voice/voice is listed as unused
-**Tests Needed**: Full voice functionality testing OR verify voice not used
+The initial analysis misread the npm audit output. Version 3.1.5 is the FIXED version, not the vulnerable one. The vulnerability affects versions `>=3.2.0` only.
 
-**Decision Required**: Is @react-native-voice/voice actually used? Depcheck says NO.
+**Conclusion**: Security posture is GOOD. No action required.
 
 ---
 
@@ -486,22 +485,33 @@ The following areas require extreme caution:
 
 ---
 
-## Recommended Action Plan
+## Recommended Action Plan (CORRECTED)
 
-### Today (15 min)
-1. Remove `@react-native-voice/voice` if unused - Fixes CRITICAL vulnerability
-2. Remove other unused dependencies
+### Today (10 min) - SAFE TO DO
+1. ~~Remove `@react-native-voice/voice`~~ **NO - already on safe version**
+2. Remove `react-native-worklets-core` only (verified unused)
+3. Add `@jest/globals` to devDeps
 
 ### This Week (2 hr)
-3. Fix TypeScript module resolution
-4. Clean up console.log statements
-5. Archive truly unused files
+4. Fix TypeScript module resolution (skipLibCheck or paths config)
+5. Clean up console.log statements (wrap with `__DEV__`)
+6. Archive truly unused files (VibeMatrix*.tsx components, not shader strings)
 
-### Next Sprint
-6. Add test coverage for services
-7. Consolidate layer components
-8. Document component usage patterns
+### Before Touching ANYTHING Else
+- Verify with `npm ls [package]` that it's truly unused
+- Check app.json for config plugin usage
+- Check metro.config.js for resolution fixes
+- Run `npm test` after every removal
 
 ---
 
-*Analysis complete. Ready for your review when you return!*
+## Lessons from Sanity Check
+
+1. **depcheck lies** - It doesn't understand Metro resolver configs or Expo plugins
+2. **npm audit output is confusing** - "range" shows what's VULNERABLE, not what you have
+3. **Similar package names are different** - `react-native-worklets` ≠ `react-native-worklets-core`
+4. **Always verify with `npm ls`** before removing anything
+
+---
+
+*Analysis complete. Sanity check applied. Ready for your review when you return!*
