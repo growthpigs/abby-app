@@ -107,9 +107,10 @@ describe('Mute Button UI', () => {
     expect(muteButtonMatch).toBeTruthy();
 
     const style = muteButtonMatch![0];
-    expect(style).toContain('width: 28');
-    expect(style).toContain('height: 28');
-    expect(style).toContain('borderRadius: 14');
+    // Updated to 44x44 for iOS HIG compliance (minimum touch target)
+    expect(style).toContain('width: 44');
+    expect(style).toContain('height: 44');
+    expect(style).toContain('borderRadius: 22');
   });
 
   test('Mute button uses lucide-react-native icons', () => {
