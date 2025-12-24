@@ -31,13 +31,13 @@ export const VibeMatrix: React.FC = () => {
 
   // Compile shader once
   const shader = useMemo(() => {
-    console.log('[VibeMatrix] Compiling shader...');
+    if (__DEV__) console.log('[VibeMatrix] Compiling shader...');
     const effect = Skia.RuntimeEffect.Make(VIBE_MATRIX_SHADER);
     if (!effect) {
       console.error('[VibeMatrix] SHADER COMPILE FAILED');
       return null;
     }
-    console.log('[VibeMatrix] Shader compiled successfully');
+    if (__DEV__) console.log('[VibeMatrix] Shader compiled successfully');
     return effect;
   }, []);
 

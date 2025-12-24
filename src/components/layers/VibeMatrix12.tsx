@@ -25,13 +25,13 @@ export const VibeMatrix12: React.FC = () => {
   const clock = useClock();
 
   const shader = useMemo(() => {
-    console.log('[VibeMatrix12] Compiling shader...');
+    if (__DEV__) console.log('[VibeMatrix12] Compiling shader...');
     const effect = Skia.RuntimeEffect.Make(VIBE_MATRIX_12_SHADER);
     if (!effect) {
       console.error('[VibeMatrix12] SHADER COMPILE FAILED');
       return null;
     }
-    console.log('[VibeMatrix12] Shader compiled successfully');
+    if (__DEV__) console.log('[VibeMatrix12] Shader compiled successfully');
     return effect;
   }, []);
 
