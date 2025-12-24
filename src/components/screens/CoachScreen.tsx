@@ -180,10 +180,10 @@ export const CoachScreen: React.FC<CoachScreenProps> = ({
               >
                 {isMuted ? (
                   // @ts-ignore - color works via SvgProps
-                  <Play size={11} color="#888888" />
+                  <Play size={18} color="#888888" />
                 ) : (
                   // @ts-ignore - color works via SvgProps
-                  <Pause size={11} color="#888888" />
+                  <Pause size={18} color="#888888" />
                 )}
               </Pressable>
             )}</View>
@@ -199,8 +199,6 @@ export const CoachScreen: React.FC<CoachScreenProps> = ({
               bounces={true}
               alwaysBounceVertical={true}
               scrollEventThrottle={16}
-              onScroll={() => console.log('[CoachScreen ScrollView] SCROLLING!')}
-              onTouchStart={() => console.log('[CoachScreen ScrollView] Touch started')}
             >
               {messages.length === 0 ? (
                 <Text style={styles.placeholderText}>
@@ -322,7 +320,7 @@ const styles = StyleSheet.create({
   },
   statusText: {
     fontFamily: 'JetBrainsMono_400Regular',
-    fontSize: 13,
+    fontSize: 12,
     color: 'rgba(0, 0, 0, 0.5)',
     textTransform: 'uppercase',
     letterSpacing: 0.5,

@@ -286,9 +286,6 @@ export const CoachIntroScreen: React.FC<CoachIntroScreenProps> = ({
               bounces={true}
               alwaysBounceVertical={true}
               scrollEventThrottle={16}
-              onScroll={() => console.log('[ScrollView] SCROLLING!')}
-              onTouchStart={() => console.log('[ScrollView] Touch started')}
-              onTouchEnd={() => console.log('[ScrollView] Touch ended')}
             >
               {messages.length === 0 ? (
                 <Text style={styles.placeholderText}>
@@ -384,8 +381,7 @@ const styles = StyleSheet.create({
     paddingTop: 0,
     paddingBottom: 12,
     marginTop: -15,
-    paddingLeft: 15,
-    paddingRight: 10,
+    paddingHorizontal: 20,
     gap: 8,
   },
   statusDot: {
