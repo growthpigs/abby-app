@@ -42,7 +42,9 @@ export const GlassSheet: React.FC<GlassSheetProps> = ({
   showHandle = true,
 }) => {
   const translateY = useRef(new Animated.Value(SCREEN_HEIGHT)).current;
-  const sheetHeight = SCREEN_HEIGHT * height;
+  // Clamp height to valid range (10% - 100% of screen)
+  const clampedHeight = Math.max(0.1, Math.min(1.0, height));
+  const sheetHeight = SCREEN_HEIGHT * clampedHeight;
 
   useEffect(() => {
     if (animateIn) {

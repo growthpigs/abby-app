@@ -18,6 +18,10 @@ export const PaymentScreen: React.FC = () => {
     advance();
   };
 
+  if (!matchData) {
+    return null;
+  }
+
   return (
     <View style={styles.container}>
       <GlassSheet height={0.55}>
