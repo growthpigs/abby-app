@@ -78,7 +78,7 @@ class AbbyVoiceService {
 
     clearTimeout(timeoutId);
 
-    console.log('[AbbyVoice] API response status:', response.status);
+    if (__DEV__) console.log('[AbbyVoice] API response status:', response.status);
 
     if (!response.ok) {
       const error = await response.text();
@@ -95,7 +95,7 @@ class AbbyVoiceService {
       reader.readAsDataURL(audioBlob);
     });
 
-    console.log('[AbbyVoice] Audio generated, size:', audioBlob.size);
+    if (__DEV__) console.log('[AbbyVoice] Audio generated, size:', audioBlob.size);
     return base64;
   }
 
@@ -115,20 +115,20 @@ class AbbyVoiceService {
       this.audioLevelCallback = onAudioLevel || null;
 
       // Generate speech
-      console.log('[AbbyVoice] Starting speak()... (gen:', generationId, ')');
+      if (__DEV__) console.log('[AbbyVoice] Starting speak()... (gen:', generationId, ')');
       this.currentText = text;
       this.durationMs = estimateDurationMs(text);
-      console.log('[AbbyVoice] Estimated duration:', this.durationMs, 'ms');
+      if (__DEV__) console.log('[AbbyVoice] Estimated duration:', this.durationMs, 'ms');
       const audioUrl = await this.generateSpeech(text);
 
       // Check if we were cancelled during generation
       if (generationId !== this.currentGenerationId) {
-        console.log('[AbbyVoice] Generation', generationId, 'cancelled (new request started)');
+        if (__DEV__) console.log('[AbbyVoice] Generation', generationId, 'cancelled (new request started)');
         return;
       }
 
       // Configure audio mode with speaker output for louder playback
-      console.log('[AbbyVoice] Configuring audio mode...');
+      if (__DEV__) console.log('[AbbyVoice] Configuring audio mode...');
       await Audio.setAudioModeAsync({
         playsInSilentModeIOS: true,
         staysActiveInBackground: false,
@@ -139,13 +139,13 @@ class AbbyVoiceService {
 
       // Check again after async operation
       if (generationId !== this.currentGenerationId) {
-        console.log('[AbbyVoice] Generation', generationId, 'cancelled after audio config');
+        if (__DEV__) console.log('[AbbyVoice] Generation', generationId, 'cancelled after audio config');
         return;
       }
 
       // Load audio (paused) to check cancellation before playing
       // Volume at max 1.0 - expo-av doesn't allow higher values
-      console.log('[AbbyVoice] Loading audio from URL...');
+      if (__DEV__) console.log('[AbbyVoice] Loading audio from URL...');
       const { sound } = await Audio.Sound.createAsync(
         { uri: audioUrl },
         { shouldPlay: false, volume: 1.0 },
@@ -154,13 +154,13 @@ class AbbyVoiceService {
 
       // Final check before committing to playback
       if (generationId !== this.currentGenerationId) {
-        console.log('[AbbyVoice] Generation', generationId, 'cancelled before playback');
+        if (__DEV__) console.log('[AbbyVoice] Generation', generationId, 'cancelled before playback');
         await sound.unloadAsync();
         return;
       }
 
       // Now play (after confirming not cancelled)
-      console.log('[AbbyVoice] Audio loaded, playing...');
+      if (__DEV__) console.log('[AbbyVoice] Audio loaded, playing...');
       await sound.playAsync();
       this.sound = sound;
       this.isPlaying = true;
@@ -168,7 +168,7 @@ class AbbyVoiceService {
       // Start simulated amplitude animation
       // (expo-av doesn't provide real-time amplitude, so we simulate based on playback)
       this.startAmplitudeSimulation();
-      console.log('[AbbyVoice] Amplitude simulation started');
+      if (__DEV__) console.log('[AbbyVoice] Amplitude simulation started');
 
     } catch (error) {
       // Only log error if this generation is still current
@@ -296,7 +296,7 @@ class AbbyVoiceService {
   private startAmplitudeSimulation(): void {
     this.lastLevel = 0;
     this.amplitudePattern = this.generateAmplitudePattern(this.currentText);
-    console.log('[AbbyVoice] Generated pattern with', this.amplitudePattern.length, 'samples');
+    if (__DEV__) console.log('[AbbyVoice] Generated pattern with', this.amplitudePattern.length, 'samples');
 
     const animate = () => {
       if (!this.isPlaying) return;
