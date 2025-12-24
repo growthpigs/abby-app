@@ -2,18 +2,18 @@
  * RevealScreen - Photo reveal with celebration
  *
  * The climax of the demo - photo is revealed with animation.
- * Vibe: PASSION + PAISLEY (maximum celebration)
+ * Uses GlassSheet with animated content inside.
  */
 
-import React, { useEffect, useRef } from 'react';
-import { View, StyleSheet, Image } from 'react-native';
+import React, { useEffect } from 'react';
+import { View, StyleSheet } from 'react-native';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
   withSpring,
   withDelay,
 } from 'react-native-reanimated';
-import { GlassCard, GlassButton, Headline, Body, Caption } from '../ui';
+import { GlassSheet, GlassButton, Headline, Body, Caption } from '../ui';
 import { useDemoStore } from '../../store/useDemoStore';
 import { useVibeController } from '../../store/useVibeController';
 
@@ -58,7 +58,6 @@ export const RevealScreen: React.FC = () => {
     reset();
   };
 
-  // Continue to COACH mode (next state in demo flow)
   const handleMeetCoach = () => {
     advance();
   };
@@ -69,24 +68,23 @@ export const RevealScreen: React.FC = () => {
 
   return (
     <View style={styles.container}>
-      {/* Celebration header */}
-      <Caption style={styles.celebration}>YOUR MATCH</Caption>
+      <GlassSheet height={0.75}>
+        {/* Celebration header */}
+        <Caption style={styles.celebration}>YOUR MATCH</Caption>
 
-      {/* Photo reveal */}
-      <Animated.View style={[styles.photoContainer, photoAnimatedStyle]}>
-        <View style={styles.photoCircle}>
-          {/* Placeholder gradient - in production would be actual photo */}
-          <View style={styles.photoGradient}>
-            <Headline style={styles.photoInitial}>
-              {matchData.name.charAt(0)}
-            </Headline>
+        {/* Photo reveal - animated */}
+        <Animated.View style={[styles.photoContainer, photoAnimatedStyle]}>
+          <View style={styles.photoCircle}>
+            <View style={styles.photoGradient}>
+              <Headline style={styles.photoInitial}>
+                {matchData.name.charAt(0)}
+              </Headline>
+            </View>
           </View>
-        </View>
-      </Animated.View>
+        </Animated.View>
 
-      {/* Match info */}
-      <Animated.View style={contentAnimatedStyle}>
-        <GlassCard style={styles.infoCard}>
+        {/* Match info - animated */}
+        <Animated.View style={[styles.infoSection, contentAnimatedStyle]}>
           <Headline style={styles.name}>
             {matchData.name}, {matchData.age}
           </Headline>
@@ -96,18 +94,18 @@ export const RevealScreen: React.FC = () => {
             </Caption>
           </View>
           <Body style={styles.bio}>{matchData.bio}</Body>
-        </GlassCard>
+        </Animated.View>
 
-        {/* Actions */}
-        <View style={styles.buttonContainer}>
+        {/* Action buttons */}
+        <Animated.View style={[styles.buttonContainer, contentAnimatedStyle]}>
           <GlassButton onPress={handleMeetCoach} variant="primary">
             Meet Your Coach
           </GlassButton>
           <GlassButton onPress={handleStartOver} variant="secondary">
             Start Over (Demo)
           </GlassButton>
-        </View>
-      </Animated.View>
+        </Animated.View>
+      </GlassSheet>
     </View>
   );
 };
@@ -115,32 +113,30 @@ export const RevealScreen: React.FC = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    justifyContent: 'flex-end',
-    paddingBottom: 80,
-    paddingHorizontal: 24,
   },
   celebration: {
     textAlign: 'center',
-    marginBottom: 24,
+    marginTop: 8,
+    marginBottom: 20,
     letterSpacing: 4,
-    fontSize: 14,
-    color: 'rgba(255, 255, 255, 0.9)',
+    fontSize: 12,
+    color: 'rgba(0, 0, 0, 0.5)',
   },
   photoContainer: {
     alignSelf: 'center',
     marginBottom: 24,
   },
   photoCircle: {
-    width: 200,
-    height: 200,
-    borderRadius: 100,
+    width: 160,
+    height: 160,
+    borderRadius: 80,
     overflow: 'hidden',
     borderWidth: 3,
-    borderColor: 'rgba(255, 255, 255, 0.4)',
+    borderColor: 'rgba(225, 29, 72, 0.4)',
     shadowColor: '#E11D48',
     shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.5,
-    shadowRadius: 20,
+    shadowOpacity: 0.4,
+    shadowRadius: 16,
     elevation: 10,
   },
   photoGradient: {
@@ -150,37 +146,42 @@ const styles = StyleSheet.create({
     backgroundColor: '#E11D48',
   },
   photoInitial: {
-    fontSize: 72,
-    color: 'rgba(255, 255, 255, 0.9)',
+    fontSize: 64,
+    color: 'rgba(255, 255, 255, 0.95)',
   },
-  infoCard: {
+  infoSection: {
+    alignItems: 'center',
     marginBottom: 24,
   },
   name: {
     textAlign: 'center',
     marginBottom: 12,
+    color: 'rgba(0, 0, 0, 0.85)',
   },
   compatibilityBadge: {
-    backgroundColor: 'rgba(16, 185, 129, 0.3)',
+    backgroundColor: 'rgba(16, 185, 129, 0.15)',
     paddingVertical: 6,
     paddingHorizontal: 16,
     borderRadius: 20,
-    alignSelf: 'center',
     marginBottom: 16,
   },
   compatibilityLabel: {
-    color: '#10B981',
-    fontSize: 14,
+    color: '#059669',
+    fontSize: 13,
     fontWeight: '600',
     letterSpacing: 0.5,
   },
   bio: {
     textAlign: 'center',
-    lineHeight: 24,
+    lineHeight: 22,
+    color: 'rgba(0, 0, 0, 0.7)',
+    paddingHorizontal: 16,
   },
   buttonContainer: {
     alignItems: 'center',
     gap: 12,
+    marginTop: 'auto',
+    paddingBottom: 32,
   },
 });
 
