@@ -277,7 +277,7 @@ describe('TTS Integration', () => {
     const source = readFile('src/components/screens/InterviewScreen.tsx');
 
     expect(source).toContain('(level) => {');
-    expect(source).toContain('audioLevelRef.current(level)');
+    expect(source).toContain('audioLevelRef.current?.(level)');
   });
 
   test('InterviewScreen handles TTS errors', () => {

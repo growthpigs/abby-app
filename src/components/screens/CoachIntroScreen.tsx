@@ -211,8 +211,13 @@ export const CoachIntroScreen: React.FC<CoachIntroScreenProps> = ({
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
 
     // Race between endConversation and a 2s timeout to prevent UI hang
-    const timeout = new Promise<void>((resolve) => setTimeout(resolve, 2000));
-    await Promise.race([endConversation(), timeout]);
+    try {
+      const timeout = new Promise<void>((resolve) => setTimeout(resolve, 2000));
+      await Promise.race([endConversation(), timeout]);
+    } catch (err) {
+      // Ignore errors - we're navigating away anyway
+      console.warn('[CoachIntro] endConversation error (continuing):', err);
+    }
 
     advance(); // Go to INTERVIEW
   }, [endConversation, advance]);
@@ -265,11 +270,9 @@ export const CoachIntroScreen: React.FC<CoachIntroScreenProps> = ({
                 ]}
               >
                 {isMuted ? (
-                  // @ts-ignore - color works via SvgProps
-                  <Play size={18} color="#888888" />
+                  <Play size={18} stroke="#888888" />
                 ) : (
-                  // @ts-ignore - color works via SvgProps
-                  <Pause size={18} color="#888888" />
+                  <Pause size={18} stroke="#888888" />
                 )}
               </Pressable>
             )}
@@ -292,19 +295,22 @@ export const CoachIntroScreen: React.FC<CoachIntroScreenProps> = ({
                   {isConnected ? "Hi! I'm Abby. Ready to help you find your perfect match?" : "Connecting to Abby..."}
                 </Text>
               ) : (
-                [...messages].reverse().map((message) => (
-                  <View key={message.id} style={[
-                    styles.messageBubble,
-                    message.speaker === 'user' && styles.messageBubbleUser
-                  ]}>
-                    <Text style={[
-                      styles.messageText,
-                      message.speaker === 'user' && styles.userMessageText
+                [...messages].reverse().map((message) => {
+                  if (!message?.text) return null;
+                  return (
+                    <View key={message.id} style={[
+                      styles.messageBubble,
+                      message.speaker === 'user' && styles.messageBubbleUser
                     ]}>
-                      {message.speaker === 'abby' ? '' : 'You: '}{message.text}
-                    </Text>
-                  </View>
-                ))
+                      <Text style={[
+                        styles.messageText,
+                        message.speaker === 'user' && styles.userMessageText
+                      ]}>
+                        {message.speaker === 'abby' ? '' : 'You: '}{message.text}
+                      </Text>
+                    </View>
+                  );
+                })
               )}
             </ScrollView>
 

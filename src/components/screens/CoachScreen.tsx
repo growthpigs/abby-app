@@ -192,11 +192,9 @@ export const CoachScreen: React.FC<CoachScreenProps> = ({
                 ]}
               >
                 {isMuted ? (
-                  // @ts-ignore - color works via SvgProps
-                  <Play size={18} color="#888888" />
+                  <Play size={18} stroke="#888888" />
                 ) : (
-                  // @ts-ignore - color works via SvgProps
-                  <Pause size={18} color="#888888" />
+                  <Pause size={18} stroke="#888888" />
                 )}
               </Pressable>
             )}</View>
@@ -218,19 +216,22 @@ export const CoachScreen: React.FC<CoachScreenProps> = ({
                   {isConnected ? "Let's talk about your match! I'm here to help you prepare." : "Connecting to Abby..."}
                 </Text>
               ) : (
-                [...messages].reverse().map((message) => (
-                  <View key={message.id} style={[
-                    styles.messageBubble,
-                    message.speaker === 'user' && styles.messageBubbleUser
-                  ]}>
-                    <Text style={[
-                      styles.messageText,
-                      message.speaker === 'user' && styles.userMessageText
+                [...messages].reverse().map((message) => {
+                  if (!message?.text) return null;
+                  return (
+                    <View key={message.id} style={[
+                      styles.messageBubble,
+                      message.speaker === 'user' && styles.messageBubbleUser
                     ]}>
-                      {message.speaker === 'abby' ? '' : 'You: '}{message.text}
-                    </Text>
-                  </View>
-                ))
+                      <Text style={[
+                        styles.messageText,
+                        message.speaker === 'user' && styles.userMessageText
+                      ]}>
+                        {message.speaker === 'abby' ? '' : 'You: '}{message.text}
+                      </Text>
+                    </View>
+                  );
+                })
               )}
             </ScrollView>
 

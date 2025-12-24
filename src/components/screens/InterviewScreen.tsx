@@ -46,8 +46,17 @@ export const InterviewScreen: React.FC<InterviewScreenProps> = ({
   const setAudioLevel = useVibeController((state) => state.setAudioLevel);
 
   // Derive current question and state from 150 questions
-  const currentQuestion = INTERVIEW_QUESTIONS[Math.min(currentIndex, INTERVIEW_QUESTIONS.length - 1)];
+  // Guard against empty array (defensive - should never happen but prevents crash)
+  const safeIndex = INTERVIEW_QUESTIONS.length > 0
+    ? Math.min(currentIndex, INTERVIEW_QUESTIONS.length - 1)
+    : 0;
+  const currentQuestion = INTERVIEW_QUESTIONS[safeIndex];
   const isLastQuestion = currentIndex >= INTERVIEW_QUESTIONS.length - 1;
+
+  // Early return if no questions (should never happen, but prevents crash)
+  if (!currentQuestion) {
+    return null;
+  }
 
   // Track TTS errors for user feedback
   const [voiceError, setVoiceError] = useState(false);
@@ -105,7 +114,7 @@ export const InterviewScreen: React.FC<InterviewScreenProps> = ({
       addMessage('abby', question.question);
 
       abbyVoice.speak(question.question, (level) => {
-        audioLevelRef.current(level);
+        audioLevelRef.current?.(level);
       }).catch((err) => {
         console.warn('[Interview] TTS error:', err);
         setVoiceError(true);

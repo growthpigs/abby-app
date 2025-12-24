@@ -294,6 +294,9 @@ class AbbyVoiceService {
   }
 
   private startAmplitudeSimulation(): void {
+    // Cancel any existing animation frame to prevent stacking
+    this.stopAmplitudeSimulation();
+
     this.lastLevel = 0;
     this.amplitudePattern = this.generateAmplitudePattern(this.currentText);
     if (__DEV__) console.log('[AbbyVoice] Generated pattern with', this.amplitudePattern.length, 'samples');

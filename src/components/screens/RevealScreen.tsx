@@ -62,7 +62,8 @@ export const RevealScreen: React.FC = () => {
     advance();
   };
 
-  if (!matchData) {
+  // Guard against missing or incomplete matchData
+  if (!matchData || !matchData.name || typeof matchData.age !== 'number') {
     return null;
   }
 
