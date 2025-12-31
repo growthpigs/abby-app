@@ -4,11 +4,15 @@
  * The Petal Orb - Abby's visual representation.
  * She is never hidden; she only transforms.
  *
+ * ARCHITECTURE: Full-screen shader with position/scale uniforms
+ * - LiquidGlass4 renders at full screen resolution
+ * - centerY uniform moves the orb vertically in UV space
+ * - orbScale uniform controls apparent size
+ * - Tap overlay tracks the animated orb position for hit detection
+ *
  * Modes:
  * - center: Large (250px), top 15%, expressing/speaking
  * - docked: Small (80px), bottom 40px, waiting for user
- *
- * The orb color syncs with the VibeMatrix background.
  */
 
 import React, { useEffect, useMemo } from 'react';
@@ -19,55 +23,63 @@ import Animated, {
   withTiming,
   withSpring,
   Easing,
-  interpolate,
-  runOnJS,
 } from 'react-native-reanimated';
-import { AbbyOrbProps, OrbColors } from '../../../types/orb';
+import { AbbyOrbProps } from '../../../types/orb';
 import { useVibeStore } from '../../../store/useVibeStore';
 import { VIBE_COLORS } from '../../../constants/colors';
 import { ORB_SIZES, ORB_TIMING, ORB_EASING } from './constants';
-import OrbCore2D from './OrbCore2D';
-import OrbPetalsShader from './OrbPetalsShader';
-import OrbParticles from './OrbParticles';
+import { LiquidGlass4 } from '../LiquidGlass4';
 
 /**
- * Convert RGB array to CSS rgba string
+ * Calculate UV offset for a given screen Y position
+ * UV coords: (y * 2 - height) / min(width, height)
  */
-const rgbToString = (rgb: [number, number, number], alpha: number = 1): string => {
-  return `rgba(${Math.round(rgb[0] * 255)}, ${Math.round(rgb[1] * 255)}, ${Math.round(rgb[2] * 255)}, ${alpha})`;
-};
-
-/**
- * Generate orb colors from vibe theme
- */
-const getOrbColors = (colorTheme: string): OrbColors => {
-  const palette = VIBE_COLORS[colorTheme as keyof typeof VIBE_COLORS] || VIBE_COLORS.TRUST;
-
-  // Core uses warm tones with bright highlight
-  return {
-    core: {
-      highlight: 'rgba(255, 255, 255, 0.95)',
-      inner: rgbToString(palette.primary, 0.8),
-      outer: rgbToString(palette.secondary, 0.4),
-    },
-    petals: {
-      warm: rgbToString(palette.primary, 0.8),
-      cool: rgbToString(palette.secondary, 0.6),
-    },
-    particles: rgbToString(palette.secondary, 0.8),
-  };
+const calculateCenterY = (
+  screenY: number,
+  screenWidth: number,
+  screenHeight: number
+): number => {
+  // Convert screen position to UV space
+  // UV range is roughly -1 to 1 based on aspect ratio
+  const minDim = Math.min(screenWidth, screenHeight);
+  // Guard against division by zero during app initialization
+  if (minDim === 0) return 0;
+  return (screenY * 2 - screenHeight) / minDim;
 };
 
 export const AbbyOrb: React.FC<AbbyOrbProps> = ({ mode, onTap }) => {
-  const { height: screenHeight } = useWindowDimensions();
+  const { width: screenWidth, height: screenHeight } = useWindowDimensions();
   const { colorTheme } = useVibeStore();
 
-  // Animation values
+  // Get vibe colors for shader
+  const shaderColors = useMemo(() => {
+    const palette = VIBE_COLORS[colorTheme as keyof typeof VIBE_COLORS] || VIBE_COLORS.TRUST;
+    return {
+      colorA: palette.primary as [number, number, number],
+      colorB: palette.secondary as [number, number, number],
+    };
+  }, [colorTheme]);
+
+  // Animation progress (0 = center, 1 = docked)
   const progress = useSharedValue(mode === 'center' ? 0 : 1);
   const tapScale = useSharedValue(1);
 
-  // Get colors based on current vibe
-  const colors = useMemo(() => getOrbColors(colorTheme), [colorTheme]);
+  // Calculate UV positions for each mode
+  const centerModeY = useMemo(() => {
+    // Center: top 15% of screen + orb radius (so center is visible)
+    const screenY = screenHeight * 0.15 + ORB_SIZES.center.radius;
+    return calculateCenterY(screenY, screenWidth, screenHeight);
+  }, [screenWidth, screenHeight]);
+
+  const dockedModeY = useMemo(() => {
+    // Docked: bottom 40px margin + orb radius
+    const screenY = screenHeight - 40 - ORB_SIZES.docked.radius;
+    return calculateCenterY(screenY, screenWidth, screenHeight);
+  }, [screenWidth, screenHeight]);
+
+  // Scale values
+  const centerScale = 1.0;
+  const dockedScale = ORB_SIZES.docked.diameter / ORB_SIZES.center.diameter; // 80/250 = 0.32
 
   // Animate mode transition
   useEffect(() => {
@@ -75,31 +87,28 @@ export const AbbyOrb: React.FC<AbbyOrbProps> = ({ mode, onTap }) => {
       duration: ORB_TIMING.modeTransition,
       easing: Easing.bezier(...ORB_EASING.bezier),
     });
-  }, [mode, progress]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [mode]);
 
-  // Animated container style
-  const animatedContainerStyle = useAnimatedStyle(() => {
-    const size = interpolate(
-      progress.value,
-      [0, 1],
-      [ORB_SIZES.center.diameter, ORB_SIZES.docked.diameter]
-    );
+  // Tap overlay position (tracks the orb in screen space)
+  const animatedTapStyle = useAnimatedStyle(() => {
+    // Interpolate size
+    const size = ORB_SIZES.center.diameter +
+      (ORB_SIZES.docked.diameter - ORB_SIZES.center.diameter) * progress.value;
 
-    // Calculate positions
-    // Center: top 15% of screen
-    // Docked: bottom 40px
+    // Interpolate screen Y position (for tap target)
     const centerTop = screenHeight * 0.15;
     const dockedTop = screenHeight - 40 - ORB_SIZES.docked.diameter;
-
-    const top = interpolate(progress.value, [0, 1], [centerTop, dockedTop]);
+    const top = centerTop + (dockedTop - centerTop) * progress.value;
 
     return {
       width: size,
       height: size,
       top,
+      left: (screenWidth - size) / 2, // Centered horizontally
       transform: [{ scale: tapScale.value }],
     };
-  }, [screenHeight]);
+  }, [screenWidth, screenHeight]);
 
   // Handle tap
   const handleTapIn = () => {
@@ -120,55 +129,46 @@ export const AbbyOrb: React.FC<AbbyOrbProps> = ({ mode, onTap }) => {
     onTap?.();
   };
 
-  // Determine if petals/particles should be visible
-  const showPetals = mode === 'center';
-  const showParticles = mode === 'center';
-
-  // Current size for child components
-  const currentSize = mode === 'center' ? ORB_SIZES.center.diameter : ORB_SIZES.docked.diameter;
+  // Extract current values for shader props (can't pass SharedValue directly)
+  // We need to use the raw calculated values since shader expects numbers
+  const currentCenterY = mode === 'center' ? centerModeY : dockedModeY;
+  const currentOrbScale = mode === 'center' ? centerScale : dockedScale;
 
   return (
-    <Pressable
-      onPressIn={handleTapIn}
-      onPressOut={handleTapOut}
-      onPress={handlePress}
-      style={styles.pressable}
-    >
-      <Animated.View style={[styles.container, animatedContainerStyle]}>
-        {/* Particles layer (behind core) */}
-        <OrbParticles
-          orbSize={currentSize}
-          color={colors.particles}
-          visible={showParticles}
-        />
+    <View style={StyleSheet.absoluteFillObject} pointerEvents="box-none">
+      {/* Full-screen shader canvas */}
+      <LiquidGlass4
+        audioLevel={0}
+        colorA={shaderColors.colorA}
+        colorB={shaderColors.colorB}
+        centerY={currentCenterY}
+        orbScale={currentOrbScale}
+      />
 
-        {/* Petals layer - GPU shader version */}
-        <OrbPetalsShader
-          size={currentSize}
-          colors={colors}
-          visible={showPetals}
-        />
-
-        {/* Core layer (on top) */}
-        <OrbCore2D
-          size={currentSize}
-          colors={colors}
-          breathing={mode === 'center'}
+      {/* Tap overlay - positioned over orb for hit detection */}
+      <Animated.View
+        style={[styles.tapOverlay, animatedTapStyle]}
+        pointerEvents="box-only"
+      >
+        <Pressable
+          onPressIn={handleTapIn}
+          onPressOut={handleTapOut}
+          onPress={handlePress}
+          style={styles.tapPressable}
         />
       </Animated.View>
-    </Pressable>
+    </View>
   );
 };
 
 const styles = StyleSheet.create({
-  pressable: {
+  tapOverlay: {
     position: 'absolute',
-    alignSelf: 'center',
-    zIndex: 10,
+    borderRadius: 9999, // Circular
   },
-  container: {
-    alignItems: 'center',
-    justifyContent: 'center',
+  tapPressable: {
+    flex: 1,
+    borderRadius: 9999,
   },
 });
 
