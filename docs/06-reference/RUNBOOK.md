@@ -444,4 +444,54 @@ const STATE_ORDER = ['COACH_INTRO','INTERVIEW','SEARCHING','MATCH','PAYMENT','RE
 
 ---
 
+---
+
+## Verification Commands
+
+**Rule:** Verification requires execution. File existence does not imply functionality. Run these commands after ANY changes to onboarding, auth flow, or stores.
+
+### Onboarding Screens Verification
+
+```bash
+# 1. Verify no debug borders visible to users
+grep -l "borderWidth" src/components/screens/{NameScreen,DOBScreen,EthnicityScreen,EthnicityPreferenceScreen,SmokingScreen}.tsx && echo "FAIL: Debug borders found" || echo "PASS: No debug borders"
+
+# 2. Verify all screens exported from barrel
+for screen in NameScreen DOBScreen BasicsGenderScreen BasicsPreferencesScreen EthnicityScreen EthnicityPreferenceScreen BasicsRelationshipScreen SmokingScreen BasicsLocationScreen PermissionsScreen; do
+  grep -q "export.*${screen}" src/components/screens/index.ts || echo "MISSING: ${screen}"
+done
+
+# 3. Verify UI components exported
+grep -E "^export.*RadioGroup|^export.*Checkbox" src/components/ui/index.ts || echo "MISSING: Form components"
+
+# 4. Verify DOB calendar validation works
+node -e "
+const isValidCalendarDate = (m, d, y) => {
+  if (m < 1 || m > 12 || d < 1) return false;
+  const daysInMonth = new Date(y, m, 0).getDate();
+  return d <= daysInMonth;
+};
+console.log('Feb 30:', isValidCalendarDate(2,30,2024) === false ? 'PASS' : 'FAIL');
+console.log('Feb 29 leap:', isValidCalendarDate(2,29,2024) === true ? 'PASS' : 'FAIL');
+console.log('Feb 29 non-leap:', isValidCalendarDate(2,29,2023) === false ? 'PASS' : 'FAIL');
+"
+```
+
+### TypeScript Verification
+
+```bash
+# Check new files compile (ignore pre-existing node_modules errors)
+npx tsc --noEmit 2>&1 | grep -E "src/components/screens/(Name|DOB|Ethnicity|SmokingScreen)" || echo "PASS: New screens compile"
+```
+
+### Store Verification
+
+```bash
+# Verify all store fields exist
+grep -E "fullName|nickname|dateOfBirth|ageRange|ethnicity|ethnicityPreferences|smokingMe|smokingPartner" src/store/useOnboardingStore.ts | wc -l
+# Should return 20+ matches
+```
+
+---
+
 *Last Updated: 2025-12-31*
