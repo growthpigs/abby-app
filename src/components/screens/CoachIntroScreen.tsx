@@ -75,9 +75,10 @@ export const CoachIntroScreen: React.FC<CoachIntroScreenProps> = ({
   // Animated value for bottom sheet position
   const translateY = useRef(new Animated.Value(SCREEN_HEIGHT)).current;
 
-  // Initialize ElevenLabs Agent
-  const { startConversation, endConversation, toggleMute, isSpeaking, isConnected, isMuted } = useAbbyAgent({
+  // Initialize Abby Agent (uses demo mode if API unavailable)
+  const { startConversation, endConversation, toggleMute, isSpeaking, isConnected, isMuted, isDemoMode } = useAbbyAgent({
     enabled: true,
+    screenType: 'intro',
     onAbbyResponse: (text) => {
       addMessage('abby', text);
 
@@ -104,10 +105,12 @@ export const CoachIntroScreen: React.FC<CoachIntroScreenProps> = ({
     },
     onDisconnect: () => {
       setAgentStatus('Disconnected');
-      // AUTO-ADVANCE: When ElevenLabs conversation ends (via End node in workflow),
-      // automatically transition to interview
-      if (__DEV__) console.log('[CoachIntro] 🚀 ElevenLabs disconnected, advancing to interview');
-      advance();
+      // AUTO-ADVANCE: When conversation ends, transition to interview
+      // (Skip auto-advance in demo mode - user controls flow)
+      if (!isDemoMode) {
+        if (__DEV__) console.log('[CoachIntro] 🚀 Conversation ended, advancing to interview');
+        advance();
+      }
     },
     onError: (error) => {
       setAgentStatus(`Error: ${error.message}`);
@@ -258,7 +261,7 @@ export const CoachIntroScreen: React.FC<CoachIntroScreenProps> = ({
               isConnected ? (isMuted ? styles.statusMuted : styles.statusConnected) : styles.statusDisconnected
             ]} />
             <Text style={styles.statusText}>
-              {isMuted ? 'Muted' : (isConnected ? (isSpeaking ? 'Abby is speaking...' : 'Listening') : agentStatus)}
+              {isMuted ? 'Muted' : (isConnected ? (isDemoMode ? 'Demo Mode' : (isSpeaking ? 'Abby is speaking...' : 'Listening')) : agentStatus)}
             </Text>
 
             {/* Mute/Unmute button - 44x44 for iOS HIG compliance */}

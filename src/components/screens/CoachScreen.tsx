@@ -67,9 +67,10 @@ export const CoachScreen: React.FC<CoachScreenProps> = ({
     };
   }, []);
 
-  // Initialize ElevenLabs Agent
-  const { startConversation, endConversation, toggleMute, sendTextMessage, isSpeaking, isConnected, isMuted } = useAbbyAgent({
+  // Initialize Abby Agent (uses demo mode if API unavailable)
+  const { startConversation, endConversation, toggleMute, sendTextMessage, isSpeaking, isConnected, isMuted, isDemoMode } = useAbbyAgent({
     enabled: true,
+    screenType: 'coach',
     onAbbyResponse: (text) => {
       addMessage('abby', text);
       scrollToTop();
@@ -84,7 +85,7 @@ export const CoachScreen: React.FC<CoachScreenProps> = ({
       scrollToTop();
     },
     onConnect: () => {
-      setAgentStatus('Connected');
+      setAgentStatus(isDemoMode ? 'Demo Mode' : 'Connected');
     },
     onDisconnect: () => {
       setAgentStatus('Disconnected');
@@ -179,7 +180,7 @@ export const CoachScreen: React.FC<CoachScreenProps> = ({
               isConnected ? (isMuted ? styles.statusMuted : styles.statusConnected) : styles.statusDisconnected
             ]} />
             <Text style={styles.statusText}>
-              {isMuted ? 'Muted' : (isConnected ? (isSpeaking ? 'Abby is speaking...' : 'Listening') : agentStatus)}
+              {isMuted ? 'Muted' : (isConnected ? (isDemoMode ? 'Demo Mode' : (isSpeaking ? 'Abby is speaking...' : 'Listening')) : agentStatus)}
             </Text>
 
             {/* Mute/Unmute button - 44x44 for iOS HIG compliance */}
