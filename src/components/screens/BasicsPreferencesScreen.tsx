@@ -29,12 +29,21 @@ const BASIC_OPTIONS: RadioOption[] = [
   { label: 'Everyone', value: 'everyone' },
 ];
 
+// Client spec: Screen 7 - Sexual Preference
+// Primary options (1 choice) + Other options (multi-select capable)
 const EXPANDED_OPTIONS: RadioOption[] = [
   { label: 'Men', value: 'men' },
   { label: 'Women', value: 'women' },
   { label: 'Everyone', value: 'everyone' },
-  { label: 'Non-binary folks', value: 'non_binary' },
-  { label: 'Transgender folks', value: 'transgender' },
+  { label: 'Agender people', value: 'agender' },
+  { label: 'Androgynous people', value: 'androgynous' },
+  { label: 'Bigender people', value: 'bigender' },
+  { label: 'Cis Women', value: 'cis_woman' },
+  { label: 'Genderfluid people', value: 'genderfluid' },
+  { label: 'Genderqueer people', value: 'genderqueer' },
+  { label: 'Gender Nonconforming people', value: 'gender_nonconforming' },
+  { label: 'Non-binary people', value: 'non_binary' },
+  { label: 'Other', value: 'other' },
 ];
 
 export const BasicsPreferencesScreen: React.FC<BasicsPreferencesScreenProps> = ({

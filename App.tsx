@@ -49,9 +49,14 @@ import { EmailVerificationScreen } from './src/components/screens/EmailVerificat
 
 // Onboarding screens
 import { PermissionsScreen } from './src/components/screens/PermissionsScreen';
+import { NameScreen } from './src/components/screens/NameScreen';
+import { DOBScreen } from './src/components/screens/DOBScreen';
 import { BasicsGenderScreen } from './src/components/screens/BasicsGenderScreen';
 import { BasicsPreferencesScreen } from './src/components/screens/BasicsPreferencesScreen';
+import { EthnicityScreen } from './src/components/screens/EthnicityScreen';
+import { EthnicityPreferenceScreen } from './src/components/screens/EthnicityPreferenceScreen';
 import { BasicsRelationshipScreen } from './src/components/screens/BasicsRelationshipScreen';
+import { SmokingScreen } from './src/components/screens/SmokingScreen';
 import { BasicsLocationScreen } from './src/components/screens/BasicsLocationScreen';
 
 // Main app screens
@@ -73,24 +78,34 @@ type AuthState =
   | 'VERIFICATION'
   | 'EMAIL'
   | 'EMAIL_VERIFICATION'
+  | 'NAME'
+  | 'DOB'
   | 'PERMISSIONS'
   | 'BASICS_GENDER'
   | 'BASICS_PREFERENCES'
+  | 'ETHNICITY'
+  | 'ETHNICITY_PREFERENCE'
   | 'BASICS_RELATIONSHIP'
+  | 'SMOKING'
   | 'BASICS_LOCATION'
   | 'AUTHENTICATED';
 
-// Screen ordering for secret navigation
+// Screen ordering for secret navigation (matches client spec order)
 const AUTH_ORDER: AuthState[] = [
   'LOGIN',
   'PHONE',
   'VERIFICATION',
   'EMAIL',
   'EMAIL_VERIFICATION',
+  'NAME',               // Screen 4
+  'DOB',                // Screen 5
   'PERMISSIONS',
-  'BASICS_GENDER',
-  'BASICS_PREFERENCES',
-  'BASICS_RELATIONSHIP',
+  'BASICS_GENDER',      // Screen 6
+  'BASICS_PREFERENCES', // Screen 7
+  'ETHNICITY',          // Screen 8
+  'ETHNICITY_PREFERENCE', // Screen 9
+  'BASICS_RELATIONSHIP', // Screen 10
+  'SMOKING',            // Screen 11
   'BASICS_LOCATION',
   'AUTHENTICATED',
 ];
@@ -246,33 +261,80 @@ function AppContent() {
   };
 
   const handleEmailVerificationComplete = (code: string) => {
-    // Email verified, go to permissions screen
-    setAuthState('PERMISSIONS');
+    // Email verified, go to name screen (client spec Screen 4)
+    setAuthState('NAME');
   };
 
   // ONBOARDING FLOW HANDLERS
+  const setFullName = useOnboardingStore((state) => state.setFullName);
+  const setNickname = useOnboardingStore((state) => state.setNickname);
+  const setDateOfBirth = useOnboardingStore((state) => state.setDateOfBirth);
+  const setAgeRange = useOnboardingStore((state) => state.setAgeRange);
   const setGender = useOnboardingStore((state) => state.setGender);
   const setDatingPreference = useOnboardingStore((state) => state.setDatingPreference);
+  const setEthnicity = useOnboardingStore((state) => state.setEthnicity);
+  const setEthnicityPreferences = useOnboardingStore((state) => state.setEthnicityPreferences);
   const setRelationshipType = useOnboardingStore((state) => state.setRelationshipType);
+  const setSmokingMe = useOnboardingStore((state) => state.setSmokingMe);
+  const setSmokingPartner = useOnboardingStore((state) => state.setSmokingPartner);
   const setLocation = useOnboardingStore((state) => state.setLocation);
   const markOnboardingComplete = useOnboardingStore((state) => state.markComplete);
+
+  // Screen 4: Name
+  const handleNameComplete = (fullName: string, nickname: string) => {
+    setFullName(fullName);
+    setNickname(nickname);
+    setAuthState('DOB');
+  };
+
+  // Screen 5: DOB
+  const handleDOBComplete = (
+    dob: { month: number; day: number; year: number },
+    ageRange: { min: number; max: number }
+  ) => {
+    setDateOfBirth(new Date(dob.year, dob.month - 1, dob.day));
+    setAgeRange(ageRange.min, ageRange.max);
+    setAuthState('PERMISSIONS');
+  };
 
   const handlePermissionsComplete = () => {
     setAuthState('BASICS_GENDER');
   };
 
+  // Screen 6: Gender
   const handleGenderComplete = (gender: string) => {
     setGender(gender);
     setAuthState('BASICS_PREFERENCES');
   };
 
+  // Screen 7: Preferences
   const handlePreferencesComplete = (preference: string) => {
     setDatingPreference(preference);
+    setAuthState('ETHNICITY');
+  };
+
+  // Screen 8: Ethnicity
+  const handleEthnicityComplete = (ethnicity: string) => {
+    setEthnicity(ethnicity);
+    setAuthState('ETHNICITY_PREFERENCE');
+  };
+
+  // Screen 9: Ethnicity Preference
+  const handleEthnicityPreferenceComplete = (ethnicities: string[]) => {
+    setEthnicityPreferences(ethnicities);
     setAuthState('BASICS_RELATIONSHIP');
   };
 
+  // Screen 10: Relationship
   const handleRelationshipComplete = (relationshipType: string) => {
     setRelationshipType(relationshipType);
+    setAuthState('SMOKING');
+  };
+
+  // Screen 11: Smoking
+  const handleSmokingComplete = (smokingMe: string, smokingPartner: string) => {
+    setSmokingMe(smokingMe);
+    setSmokingPartner(smokingPartner);
     setAuthState('BASICS_LOCATION');
   };
 
@@ -341,6 +403,24 @@ function AppContent() {
           />
         );
 
+      case 'NAME':
+        return (
+          <NameScreen
+            onNext={handleNameComplete}
+            onSecretBack={handleSecretBack}
+            onSecretForward={handleSecretForward}
+          />
+        );
+
+      case 'DOB':
+        return (
+          <DOBScreen
+            onNext={handleDOBComplete}
+            onSecretBack={handleSecretBack}
+            onSecretForward={handleSecretForward}
+          />
+        );
+
       case 'PERMISSIONS':
         return (
           <PermissionsScreen
@@ -368,10 +448,37 @@ function AppContent() {
           />
         );
 
+      case 'ETHNICITY':
+        return (
+          <EthnicityScreen
+            onNext={handleEthnicityComplete}
+            onSecretBack={handleSecretBack}
+            onSecretForward={handleSecretForward}
+          />
+        );
+
+      case 'ETHNICITY_PREFERENCE':
+        return (
+          <EthnicityPreferenceScreen
+            onNext={handleEthnicityPreferenceComplete}
+            onSecretBack={handleSecretBack}
+            onSecretForward={handleSecretForward}
+          />
+        );
+
       case 'BASICS_RELATIONSHIP':
         return (
           <BasicsRelationshipScreen
             onNext={handleRelationshipComplete}
+            onSecretBack={handleSecretBack}
+            onSecretForward={handleSecretForward}
+          />
+        );
+
+      case 'SMOKING':
+        return (
+          <SmokingScreen
+            onNext={handleSmokingComplete}
             onSecretBack={handleSecretBack}
             onSecretForward={handleSecretForward}
           />

@@ -1,8 +1,10 @@
 /**
- * BasicsGenderScreen - "I am a..." gender selection
+ * SmokingScreen - Smoking habits & preferences
  *
- * Screen 6 in onboarding flow. User selects their gender identity.
- * Options: Man, Woman, See All (expands to full list)
+ * Screen 11 in client onboarding spec.
+ * Two questions:
+ * - Smoking - Me: yes/no/casually
+ * - Smoking - Partner: yes/no/don't care
  */
 
 import React, { useState } from 'react';
@@ -17,47 +19,37 @@ import { Typography } from '../ui/Typography';
 import { RadioGroup, RadioOption } from '../ui/RadioGroup';
 import { GlassButton } from '../ui/GlassButton';
 
-interface BasicsGenderScreenProps {
-  onNext?: (gender: string) => void;
+interface SmokingScreenProps {
+  onNext?: (smokingMe: string, smokingPartner: string) => void;
   onSecretBack?: () => void;
   onSecretForward?: () => void;
 }
 
-const BASIC_OPTIONS: RadioOption[] = [
-  { label: 'Man', value: 'man' },
-  { label: 'Woman', value: 'woman' },
+// Client spec: Screen 11 - Smoking preferences
+const MY_SMOKING_OPTIONS: RadioOption[] = [
+  { label: 'Yes', value: 'yes' },
+  { label: 'No', value: 'no' },
+  { label: 'Casually', value: 'casually' },
 ];
 
-// Client spec: Screen 6 - Sexual Identity
-// Primary options (1 choice) + Other options (multi-select capable)
-const EXPANDED_OPTIONS: RadioOption[] = [
-  { label: 'Man', value: 'man' },
-  { label: 'Woman', value: 'woman' },
-  { label: 'Agender', value: 'agender' },
-  { label: 'Androgynous', value: 'androgynous' },
-  { label: 'Bigender', value: 'bigender' },
-  { label: 'Cis Woman', value: 'cis_woman' },
-  { label: 'Genderfluid', value: 'genderfluid' },
-  { label: 'Genderqueer', value: 'genderqueer' },
-  { label: 'Gender Nonconforming', value: 'gender_nonconforming' },
-  { label: 'Non-binary', value: 'non_binary' },
-  { label: 'Other', value: 'other' },
+const PARTNER_SMOKING_OPTIONS: RadioOption[] = [
+  { label: 'Yes', value: 'yes' },
+  { label: 'No', value: 'no' },
+  { label: "I don't care", value: 'dont_care' },
 ];
 
-export const BasicsGenderScreen: React.FC<BasicsGenderScreenProps> = ({
+export const SmokingScreen: React.FC<SmokingScreenProps> = ({
   onNext,
   onSecretBack,
   onSecretForward,
 }) => {
-  const [selectedGender, setSelectedGender] = useState<string | null>(null);
-  const [showAll, setShowAll] = useState(false);
-
-  const options = showAll ? EXPANDED_OPTIONS : BASIC_OPTIONS;
+  const [smokingMe, setSmokingMe] = useState<string | null>(null);
+  const [smokingPartner, setSmokingPartner] = useState<string | null>(null);
 
   const handleNext = () => {
-    if (selectedGender) {
+    if (smokingMe && smokingPartner) {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-      onNext?.(selectedGender);
+      onNext?.(smokingMe, smokingPartner);
     }
   };
 
@@ -71,10 +63,7 @@ export const BasicsGenderScreen: React.FC<BasicsGenderScreenProps> = ({
     onSecretForward?.();
   };
 
-  const handleSeeAll = () => {
-    Haptics.selectionAsync();
-    setShowAll(true);
-  };
+  const isValid = smokingMe !== null && smokingPartner !== null;
 
   return (
     <View style={styles.container}>
@@ -96,12 +85,12 @@ export const BasicsGenderScreen: React.FC<BasicsGenderScreenProps> = ({
       <View style={styles.content}>
         {/* Section label */}
         <Typography variant="body" style={styles.sectionLabel}>
-          Basics
+          Lifestyle
         </Typography>
 
         {/* Headline */}
         <Typography variant="headline" style={styles.headline}>
-          I am a...
+          Smoking{'\n'}preferences
         </Typography>
 
         {/* Options */}
@@ -110,21 +99,31 @@ export const BasicsGenderScreen: React.FC<BasicsGenderScreenProps> = ({
           contentContainerStyle={styles.scrollContent}
           showsVerticalScrollIndicator={false}
         >
-          <RadioGroup
-            options={options}
-            value={selectedGender}
-            onChange={setSelectedGender}
-            layout="vertical"
-          />
+          {/* My smoking */}
+          <View style={styles.questionGroup}>
+            <Typography variant="body" style={styles.questionLabel}>
+              Do you smoke?
+            </Typography>
+            <RadioGroup
+              options={MY_SMOKING_OPTIONS}
+              value={smokingMe}
+              onChange={setSmokingMe}
+              layout="horizontal"
+            />
+          </View>
 
-          {/* See All button */}
-          {!showAll && (
-            <Pressable onPress={handleSeeAll} style={styles.seeAllButton}>
-              <Typography variant="body" style={styles.seeAllText}>
-                See All Options ▼
-              </Typography>
-            </Pressable>
-          )}
+          {/* Partner's smoking preference */}
+          <View style={styles.questionGroup}>
+            <Typography variant="body" style={styles.questionLabel}>
+              Partner smoking?
+            </Typography>
+            <RadioGroup
+              options={PARTNER_SMOKING_OPTIONS}
+              value={smokingPartner}
+              onChange={setSmokingPartner}
+              layout="horizontal"
+            />
+          </View>
         </ScrollView>
 
         {/* Spacer */}
@@ -133,7 +132,7 @@ export const BasicsGenderScreen: React.FC<BasicsGenderScreenProps> = ({
         {/* Continue button */}
         <GlassButton
           onPress={handleNext}
-          disabled={!selectedGender}
+          disabled={!isValid}
           variant="primary"
           style={styles.continueButton}
         >
@@ -149,7 +148,7 @@ export const BasicsGenderScreen: React.FC<BasicsGenderScreenProps> = ({
       />
       <Pressable
         onPress={handleNext}
-        disabled={!selectedGender}
+        disabled={!isValid}
         style={styles.secretMiddleTrigger}
         hitSlop={0}
       />
@@ -207,16 +206,15 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     paddingBottom: 24,
+    gap: 32,
   },
-  seeAllButton: {
-    marginTop: 16,
-    paddingVertical: 12,
-    alignItems: 'center',
+  questionGroup: {
+    gap: 16,
   },
-  seeAllText: {
-    fontSize: 16,
-    color: 'rgba(255, 255, 255, 0.8)',
-    textDecorationLine: 'underline',
+  questionLabel: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: 'rgba(255, 255, 255, 0.9)',
   },
   continueButton: {
     marginTop: 24,
@@ -257,4 +255,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default BasicsGenderScreen;
+export default SmokingScreen;

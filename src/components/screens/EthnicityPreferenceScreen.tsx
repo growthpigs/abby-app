@@ -1,8 +1,9 @@
 /**
- * BasicsGenderScreen - "I am a..." gender selection
+ * EthnicityPreferenceScreen - Preferred partner ethnicities
  *
- * Screen 6 in onboarding flow. User selects their gender identity.
- * Options: Man, Woman, See All (expands to full list)
+ * Screen 9 in client onboarding spec.
+ * Multi-select - user can choose multiple ethnicities.
+ * Includes "Don't care" option.
  */
 
 import React, { useState } from 'react';
@@ -14,50 +15,61 @@ import {
 } from 'react-native';
 import * as Haptics from 'expo-haptics';
 import { Typography } from '../ui/Typography';
-import { RadioGroup, RadioOption } from '../ui/RadioGroup';
+import { Checkbox } from '../ui/Checkbox';
 import { GlassButton } from '../ui/GlassButton';
 
-interface BasicsGenderScreenProps {
-  onNext?: (gender: string) => void;
+interface EthnicityPreferenceScreenProps {
+  onNext?: (ethnicities: string[]) => void;
   onSecretBack?: () => void;
   onSecretForward?: () => void;
 }
 
-const BASIC_OPTIONS: RadioOption[] = [
-  { label: 'Man', value: 'man' },
-  { label: 'Woman', value: 'woman' },
+// Client spec: Screen 9 - Ethnicity Preferred (multi-select)
+const ETHNICITY_OPTIONS = [
+  { label: 'White', value: 'white' },
+  { label: 'Black', value: 'black' },
+  { label: 'Hispanic', value: 'hispanic' },
+  { label: 'Asian', value: 'asian' },
+  { label: 'Indian', value: 'indian' },
+  { label: 'Middle Eastern', value: 'middle_eastern' },
+  { label: 'Native American', value: 'native_american' },
+  { label: 'Caribbean', value: 'caribbean' },
+  { label: 'European', value: 'european' },
+  { label: "Don't care", value: 'dont_care' },
 ];
 
-// Client spec: Screen 6 - Sexual Identity
-// Primary options (1 choice) + Other options (multi-select capable)
-const EXPANDED_OPTIONS: RadioOption[] = [
-  { label: 'Man', value: 'man' },
-  { label: 'Woman', value: 'woman' },
-  { label: 'Agender', value: 'agender' },
-  { label: 'Androgynous', value: 'androgynous' },
-  { label: 'Bigender', value: 'bigender' },
-  { label: 'Cis Woman', value: 'cis_woman' },
-  { label: 'Genderfluid', value: 'genderfluid' },
-  { label: 'Genderqueer', value: 'genderqueer' },
-  { label: 'Gender Nonconforming', value: 'gender_nonconforming' },
-  { label: 'Non-binary', value: 'non_binary' },
-  { label: 'Other', value: 'other' },
-];
-
-export const BasicsGenderScreen: React.FC<BasicsGenderScreenProps> = ({
+export const EthnicityPreferenceScreen: React.FC<EthnicityPreferenceScreenProps> = ({
   onNext,
   onSecretBack,
   onSecretForward,
 }) => {
-  const [selectedGender, setSelectedGender] = useState<string | null>(null);
-  const [showAll, setShowAll] = useState(false);
+  const [selectedEthnicities, setSelectedEthnicities] = useState<string[]>([]);
 
-  const options = showAll ? EXPANDED_OPTIONS : BASIC_OPTIONS;
+  const handleToggle = (value: string) => {
+    Haptics.selectionAsync();
+
+    // If "Don't care" is selected, clear all others
+    if (value === 'dont_care') {
+      setSelectedEthnicities(['dont_care']);
+      return;
+    }
+
+    // If selecting something else, remove "Don't care"
+    setSelectedEthnicities(prev => {
+      const withoutDontCare = prev.filter(v => v !== 'dont_care');
+
+      if (withoutDontCare.includes(value)) {
+        return withoutDontCare.filter(v => v !== value);
+      } else {
+        return [...withoutDontCare, value];
+      }
+    });
+  };
 
   const handleNext = () => {
-    if (selectedGender) {
+    if (selectedEthnicities.length > 0) {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-      onNext?.(selectedGender);
+      onNext?.(selectedEthnicities);
     }
   };
 
@@ -71,10 +83,7 @@ export const BasicsGenderScreen: React.FC<BasicsGenderScreenProps> = ({
     onSecretForward?.();
   };
 
-  const handleSeeAll = () => {
-    Haptics.selectionAsync();
-    setShowAll(true);
-  };
+  const isValid = selectedEthnicities.length > 0;
 
   return (
     <View style={styles.container}>
@@ -96,12 +105,17 @@ export const BasicsGenderScreen: React.FC<BasicsGenderScreenProps> = ({
       <View style={styles.content}>
         {/* Section label */}
         <Typography variant="body" style={styles.sectionLabel}>
-          Basics
+          Preferences
         </Typography>
 
         {/* Headline */}
         <Typography variant="headline" style={styles.headline}>
-          I am a...
+          Who would you{'\n'}like to meet?
+        </Typography>
+
+        {/* Subtext */}
+        <Typography variant="body" style={styles.subtext}>
+          Select all that apply
         </Typography>
 
         {/* Options */}
@@ -110,21 +124,15 @@ export const BasicsGenderScreen: React.FC<BasicsGenderScreenProps> = ({
           contentContainerStyle={styles.scrollContent}
           showsVerticalScrollIndicator={false}
         >
-          <RadioGroup
-            options={options}
-            value={selectedGender}
-            onChange={setSelectedGender}
-            layout="vertical"
-          />
-
-          {/* See All button */}
-          {!showAll && (
-            <Pressable onPress={handleSeeAll} style={styles.seeAllButton}>
-              <Typography variant="body" style={styles.seeAllText}>
-                See All Options ▼
-              </Typography>
-            </Pressable>
-          )}
+          {ETHNICITY_OPTIONS.map((option) => (
+            <Checkbox
+              key={option.value}
+              checked={selectedEthnicities.includes(option.value)}
+              onChange={() => handleToggle(option.value)}
+              label={option.label}
+              style={styles.checkbox}
+            />
+          ))}
         </ScrollView>
 
         {/* Spacer */}
@@ -133,7 +141,7 @@ export const BasicsGenderScreen: React.FC<BasicsGenderScreenProps> = ({
         {/* Continue button */}
         <GlassButton
           onPress={handleNext}
-          disabled={!selectedGender}
+          disabled={!isValid}
           variant="primary"
           style={styles.continueButton}
         >
@@ -149,7 +157,7 @@ export const BasicsGenderScreen: React.FC<BasicsGenderScreenProps> = ({
       />
       <Pressable
         onPress={handleNext}
-        disabled={!selectedGender}
+        disabled={!isValid}
         style={styles.secretMiddleTrigger}
         hitSlop={0}
       />
@@ -200,23 +208,22 @@ const styles = StyleSheet.create({
     color: 'rgba(255, 255, 255, 0.95)',
     lineHeight: 40,
     letterSpacing: -0.5,
-    marginBottom: 32,
+    marginBottom: 8,
+  },
+  subtext: {
+    fontSize: 14,
+    color: 'rgba(255, 255, 255, 0.6)',
+    marginBottom: 24,
   },
   scrollView: {
     flex: 1,
   },
   scrollContent: {
     paddingBottom: 24,
+    gap: 16,
   },
-  seeAllButton: {
-    marginTop: 16,
-    paddingVertical: 12,
-    alignItems: 'center',
-  },
-  seeAllText: {
-    fontSize: 16,
-    color: 'rgba(255, 255, 255, 0.8)',
-    textDecorationLine: 'underline',
+  checkbox: {
+    paddingVertical: 4,
   },
   continueButton: {
     marginTop: 24,
@@ -257,4 +264,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default BasicsGenderScreen;
+export default EthnicityPreferenceScreen;

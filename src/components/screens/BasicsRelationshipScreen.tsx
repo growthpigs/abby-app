@@ -32,11 +32,17 @@ interface BasicsRelationshipScreenProps {
   onSecretForward?: () => void;
 }
 
+// Client spec: Screen 10 - Desired relationship type
 const BASIC_OPTIONS: RadioOption[] = [
   {
     label: 'Long-term relationship',
     value: 'long_term',
     description: 'Looking for a serious, committed relationship'
+  },
+  {
+    label: 'Marriage',
+    value: 'marriage',
+    description: 'Ready to find a life partner'
   },
   {
     label: 'Short-term dating',
