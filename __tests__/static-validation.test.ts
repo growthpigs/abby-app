@@ -219,14 +219,13 @@ describe('App.demo.tsx', () => {
 // ==============================================================================
 
 describe('LogBox Configuration', () => {
-  test('index.ts suppresses WebSocket warnings', () => {
+  test('index.ts suppresses warnings', () => {
     const source = readFile('index.ts');
 
     expect(source).toContain("import { LogBox } from 'react-native'");
     expect(source).toContain('LogBox.ignoreLogs([');
-    expect(source).toContain('Websocket got closed during');
-    expect(source).toContain('websocket closed');
-    expect(source).toContain('could not createOffer with closed peer connection');
+    expect(source).toContain('expo-av'); // Client API uses expo-av for TTS
+    expect(source).toContain('SafeAreaView has been deprecated'); // Internal to expo-blur
   });
 });
 

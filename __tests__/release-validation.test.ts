@@ -149,13 +149,13 @@ describe('Edge Cases', () => {
   test('LogBox warnings are suppressed in index.ts', () => {
     const source = readFile('index.ts');
     expect(source).toContain('LogBox.ignoreLogs');
-    expect(source).toContain('Websocket got closed during');
+    expect(source).toContain('expo-av'); // Client API uses expo-av for TTS playback
   });
 
-  test('ElevenLabsProvider is conditionally rendered', () => {
+  test('Client API services are imported in App.demo.tsx', () => {
     const source = readFile('App.demo.tsx');
-    expect(source).toContain('if (ElevenLabsProvider)');
-    expect(source).toContain('<ElevenLabsProvider>');
+    expect(source).toContain('AbbyRealtimeService');
+    expect(source).not.toContain('ElevenLabsProvider'); // Removed - using client API
   });
 });
 

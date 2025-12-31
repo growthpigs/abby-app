@@ -90,7 +90,7 @@ function DemoScreen() {
   }, []);
 
   // Initialize AbbyAgent for voice (enabled in COACH_INTRO and COACH modes)
-  const { startConversation, endConversation, isSpeaking, status } = useAbbyAgent({
+  const { startConversation, endConversation, isSpeaking } = useAbbyAgent({
     enabled: currentState === 'COACH_INTRO' || currentState === 'COACH',  // Uses Fal.ai TTS for INTERVIEW
     onAbbyResponse: (text) => {
       if (__DEV__) console.log('[Demo] Abby says:', text);
