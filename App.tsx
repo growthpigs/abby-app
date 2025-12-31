@@ -23,8 +23,20 @@ import { JetBrainsMono_400Regular } from '@expo-google-fonts/jetbrains-mono';
 import { VibeMatrixAnimated, VibeMatrixAnimatedRef } from './src/components/layers/VibeMatrixAnimated';
 import { AbbyOrb } from './src/components/layers/AbbyOrb';
 import { ErrorBoundary } from './src/components/ErrorBoundary';
+
+// Conditional ElevenLabsProvider - only load if native modules available
+let ElevenLabsProvider: React.ComponentType<{ children: React.ReactNode }> | null = null;
+try {
+  const elevenlabs = require('@elevenlabs/react-native');
+  ElevenLabsProvider = elevenlabs.ElevenLabsProvider;
+} catch (e) {
+  if (__DEV__) {
+    console.warn('[App] ElevenLabsProvider not available - voice features disabled');
+  }
+}
 import { useSettingsStore } from './src/store/useSettingsStore';
 import { useDemoStore, useDemoState, DemoState } from './src/store/useDemoStore';
+import { useOnboardingStore } from './src/store/useOnboardingStore';
 import { OrbMode } from './src/types/orb';
 import { useVibeController } from './src/store/useVibeController';
 
@@ -34,6 +46,13 @@ import { PhoneNumberScreen } from './src/components/screens/PhoneNumberScreen';
 import { VerificationCodeScreen } from './src/components/screens/VerificationCodeScreen';
 import { EmailScreen } from './src/components/screens/EmailScreen';
 import { EmailVerificationScreen } from './src/components/screens/EmailVerificationScreen';
+
+// Onboarding screens
+import { PermissionsScreen } from './src/components/screens/PermissionsScreen';
+import { BasicsGenderScreen } from './src/components/screens/BasicsGenderScreen';
+import { BasicsPreferencesScreen } from './src/components/screens/BasicsPreferencesScreen';
+import { BasicsRelationshipScreen } from './src/components/screens/BasicsRelationshipScreen';
+import { BasicsLocationScreen } from './src/components/screens/BasicsLocationScreen';
 
 // Main app screens
 import {
@@ -54,6 +73,11 @@ type AuthState =
   | 'VERIFICATION'
   | 'EMAIL'
   | 'EMAIL_VERIFICATION'
+  | 'PERMISSIONS'
+  | 'BASICS_GENDER'
+  | 'BASICS_PREFERENCES'
+  | 'BASICS_RELATIONSHIP'
+  | 'BASICS_LOCATION'
   | 'AUTHENTICATED';
 
 // Screen ordering for secret navigation
@@ -63,6 +87,11 @@ const AUTH_ORDER: AuthState[] = [
   'VERIFICATION',
   'EMAIL',
   'EMAIL_VERIFICATION',
+  'PERMISSIONS',
+  'BASICS_GENDER',
+  'BASICS_PREFERENCES',
+  'BASICS_RELATIONSHIP',
+  'BASICS_LOCATION',
   'AUTHENTICATED',
 ];
 
@@ -217,7 +246,40 @@ function AppContent() {
   };
 
   const handleEmailVerificationComplete = (code: string) => {
-    // Email verified, go to main app
+    // Email verified, go to permissions screen
+    setAuthState('PERMISSIONS');
+  };
+
+  // ONBOARDING FLOW HANDLERS
+  const setGender = useOnboardingStore((state) => state.setGender);
+  const setDatingPreference = useOnboardingStore((state) => state.setDatingPreference);
+  const setRelationshipType = useOnboardingStore((state) => state.setRelationshipType);
+  const setLocation = useOnboardingStore((state) => state.setLocation);
+  const markOnboardingComplete = useOnboardingStore((state) => state.markComplete);
+
+  const handlePermissionsComplete = () => {
+    setAuthState('BASICS_GENDER');
+  };
+
+  const handleGenderComplete = (gender: string) => {
+    setGender(gender);
+    setAuthState('BASICS_PREFERENCES');
+  };
+
+  const handlePreferencesComplete = (preference: string) => {
+    setDatingPreference(preference);
+    setAuthState('BASICS_RELATIONSHIP');
+  };
+
+  const handleRelationshipComplete = (relationshipType: string) => {
+    setRelationshipType(relationshipType);
+    setAuthState('BASICS_LOCATION');
+  };
+
+  const handleLocationComplete = (location: { type: 'gps' | 'zip'; value: string | { lat: number; lng: number } }) => {
+    setLocation(location);
+    markOnboardingComplete();
+    // All onboarding complete - go to main app
     setAuthState('AUTHENTICATED');
     reset(); // Reset demo state
     vibeRef.current?.setVibe('TRUST');
@@ -274,6 +336,51 @@ function AppContent() {
           <EmailVerificationScreen
             email={emailData}
             onNext={handleEmailVerificationComplete}
+            onSecretBack={handleSecretBack}
+            onSecretForward={handleSecretForward}
+          />
+        );
+
+      case 'PERMISSIONS':
+        return (
+          <PermissionsScreen
+            onNext={handlePermissionsComplete}
+            onSecretBack={handleSecretBack}
+            onSecretForward={handleSecretForward}
+          />
+        );
+
+      case 'BASICS_GENDER':
+        return (
+          <BasicsGenderScreen
+            onNext={handleGenderComplete}
+            onSecretBack={handleSecretBack}
+            onSecretForward={handleSecretForward}
+          />
+        );
+
+      case 'BASICS_PREFERENCES':
+        return (
+          <BasicsPreferencesScreen
+            onNext={handlePreferencesComplete}
+            onSecretBack={handleSecretBack}
+            onSecretForward={handleSecretForward}
+          />
+        );
+
+      case 'BASICS_RELATIONSHIP':
+        return (
+          <BasicsRelationshipScreen
+            onNext={handleRelationshipComplete}
+            onSecretBack={handleSecretBack}
+            onSecretForward={handleSecretForward}
+          />
+        );
+
+      case 'BASICS_LOCATION':
+        return (
+          <BasicsLocationScreen
+            onNext={handleLocationComplete}
             onSecretBack={handleSecretBack}
             onSecretForward={handleSecretForward}
           />
@@ -340,10 +447,16 @@ function AppContent() {
 }
 
 export default function App() {
+  // Wrap with ElevenLabsProvider if available (native build)
+  const content = <AppContent />;
+  const wrappedContent = ElevenLabsProvider ? (
+    <ElevenLabsProvider>{content}</ElevenLabsProvider>
+  ) : content;
+
   return (
     <SafeAreaProvider initialMetrics={initialWindowMetrics ?? fallbackMetrics}>
       <ErrorBoundary>
-        <AppContent />
+        {wrappedContent}
       </ErrorBoundary>
     </SafeAreaProvider>
   );

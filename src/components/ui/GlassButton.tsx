@@ -95,7 +95,13 @@ export const GlassButton: React.FC<GlassButtonProps> = ({
       onPressIn={handlePressIn}
       onPressOut={handlePressOut}
       disabled={disabled}
-      style={[styles.container, variantStyles.container, animatedStyle, style]}
+      style={[
+        styles.container,
+        variantStyles.container,
+        animatedStyle,
+        disabled && styles.disabled,
+        style,
+      ]}
     >
       <BlurView intensity={20} tint="dark" style={styles.blur}>
         <Text style={[styles.text, variantStyles.text, textStyle]}>
@@ -112,6 +118,9 @@ const styles = StyleSheet.create({
     borderRadius: 9999, // Pill shape
     borderWidth: 1,
     borderColor: 'rgba(255, 255, 255, 0.3)',
+  },
+  disabled: {
+    opacity: 0.4,
   },
   blur: {
     paddingVertical: 16,
