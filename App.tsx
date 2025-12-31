@@ -476,5 +476,6 @@ const styles = StyleSheet.create({
   },
   uiLayer: {
     ...StyleSheet.absoluteFillObject,
+    zIndex: 20, // Layer 2 - above AbbyOrb (layer 1), below SemanticOverlay (layer 3)
   },
 });

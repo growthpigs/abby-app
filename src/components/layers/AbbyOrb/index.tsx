@@ -4,24 +4,25 @@
  * LiquidGlass4 Orb - Abby's visual representation.
  * She is never hidden; she only transforms.
  *
- * Uses LiquidGlass4 shader with 5-blob pentagon structure.
+ * Uses LiquidGlass4 shader rendered FULL SCREEN with position/scale uniforms.
+ * The shader creates the orb shape internally - glow extends to affect background.
  *
  * Modes:
- * - center: Large (250px), top 15%, expressing/speaking
- * - docked: Small (80px), bottom 40px, waiting for user
+ * - center: Large orb at top 15% of screen
+ * - docked: Small orb at bottom of screen
  *
  * The orb color syncs with the VibeMatrix background.
  */
 
 import React, { useEffect, useMemo } from 'react';
-import { StyleSheet, Pressable, useWindowDimensions } from 'react-native';
+import { StyleSheet, View, Pressable, useWindowDimensions } from 'react-native';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
   withTiming,
   withSpring,
   Easing,
-  interpolate,
+  useDerivedValue,
 } from 'react-native-reanimated';
 import { AbbyOrbProps } from '../../../types/orb';
 import { useVibeStore } from '../../../store/useVibeStore';
@@ -45,16 +46,35 @@ const getShaderColors = (colorTheme: string): {
   };
 };
 
+/**
+ * Convert screen Y position to shader UV Y coordinate
+ * UV coords: (y * 2 - height) / min(width, height)
+ */
+const screenToUV = (screenY: number, width: number, height: number): number => {
+  return (screenY * 2 - height) / Math.min(width, height);
+};
+
 export const AbbyOrb: React.FC<AbbyOrbProps> = ({ mode, onTap }) => {
-  const { height: screenHeight } = useWindowDimensions();
+  const { width: screenWidth, height: screenHeight } = useWindowDimensions();
   const { colorTheme } = useVibeStore();
 
-  // Animation values
+  // Animation progress: 0 = center, 1 = docked
   const progress = useSharedValue(mode === 'center' ? 0 : 1);
   const tapScale = useSharedValue(1);
 
-  // Get colors based on current vibe (for LiquidGlass4)
+  // Get colors based on current vibe
   const shaderColors = useMemo(() => getShaderColors(colorTheme), [colorTheme]);
+
+  // Calculate UV positions for each mode
+  const centerModeY = useMemo(() => {
+    const screenY = screenHeight * 0.15 + ORB_SIZES.center.radius;
+    return screenToUV(screenY, screenWidth, screenHeight);
+  }, [screenWidth, screenHeight]);
+
+  const dockedModeY = useMemo(() => {
+    const screenY = screenHeight - 40 - ORB_SIZES.docked.radius;
+    return screenToUV(screenY, screenWidth, screenHeight);
+  }, [screenWidth, screenHeight]);
 
   // Animate mode transition
   useEffect(() => {
@@ -64,29 +84,41 @@ export const AbbyOrb: React.FC<AbbyOrbProps> = ({ mode, onTap }) => {
     });
   }, [mode, progress]);
 
-  // Animated container style
-  const animatedContainerStyle = useAnimatedStyle(() => {
-    const size = interpolate(
-      progress.value,
-      [0, 1],
-      [ORB_SIZES.center.diameter, ORB_SIZES.docked.diameter]
-    );
+  // Derived animated values for shader
+  const centerY = useDerivedValue(() => {
+    // Interpolate between center and docked Y positions
+    const centerVal = centerModeY;
+    const dockedVal = dockedModeY;
+    return centerVal + (dockedVal - centerVal) * progress.value;
+  }, [centerModeY, dockedModeY]);
 
-    // Calculate positions
-    // Center: top 15% of screen
-    // Docked: bottom 40px
-    const centerTop = screenHeight * 0.15;
-    const dockedTop = screenHeight - 40 - ORB_SIZES.docked.diameter;
+  const orbScale = useDerivedValue(() => {
+    // Interpolate between full scale and docked scale
+    const centerScale = 1.0;
+    const dockedScale = ORB_SIZES.docked.diameter / ORB_SIZES.center.diameter; // 0.32
+    return centerScale + (dockedScale - centerScale) * progress.value;
+  }, [progress]);
 
-    const top = interpolate(progress.value, [0, 1], [centerTop, dockedTop]);
+  // Animated style for tap overlay (positioned over the orb)
+  const animatedTapStyle = useAnimatedStyle(() => {
+    // Calculate screen position from UV
+    // Inverse of screenToUV: screenY = (uvY * min + height) / 2
+    const minDim = Math.min(screenWidth, screenHeight);
+    const screenY = (centerY.value * minDim + screenHeight) / 2;
+
+    // Calculate diameter based on scale
+    const diameter = ORB_SIZES.center.diameter * orbScale.value;
 
     return {
-      width: size,
-      height: size,
-      top,
+      position: 'absolute' as const,
+      top: screenY - diameter / 2,
+      left: screenWidth / 2 - diameter / 2,
+      width: diameter,
+      height: diameter,
+      borderRadius: diameter / 2,
       transform: [{ scale: tapScale.value }],
     };
-  }, [screenHeight]);
+  }, [screenWidth, screenHeight]);
 
   // Handle tap
   const handleTapIn = () => {
@@ -108,33 +140,37 @@ export const AbbyOrb: React.FC<AbbyOrbProps> = ({ mode, onTap }) => {
   };
 
   return (
-    <Pressable
-      onPressIn={handleTapIn}
-      onPressOut={handleTapOut}
-      onPress={handlePress}
-      style={styles.pressable}
-    >
-      <Animated.View style={[styles.container, animatedContainerStyle]}>
-        {/* LiquidGlass4 shader - renders large, shader handles orb shape + glow */}
-        <LiquidGlass4
-          audioLevel={0}
-          colorA={shaderColors.colorA}
-          colorB={shaderColors.colorB}
+    <View style={styles.container} pointerEvents="box-none">
+      {/* Full-screen shader canvas - pass SharedValues directly for smooth animation */}
+      <LiquidGlass4
+        audioLevel={0}
+        colorA={shaderColors.colorA}
+        colorB={shaderColors.colorB}
+        centerY={centerY}
+        orbScale={orbScale}
+      />
+
+      {/* Tap overlay - positioned over orb center */}
+      <Animated.View style={animatedTapStyle}>
+        <Pressable
+          onPressIn={handleTapIn}
+          onPressOut={handleTapOut}
+          onPress={handlePress}
+          style={styles.tapPressable}
         />
       </Animated.View>
-    </Pressable>
+    </View>
   );
 };
 
 const styles = StyleSheet.create({
-  pressable: {
-    position: 'absolute',
-    alignSelf: 'center',
-    zIndex: 10,
-  },
   container: {
-    alignItems: 'center',
-    justifyContent: 'center',
+    ...StyleSheet.absoluteFillObject,
+    // No zIndex - rendered between VibeMatrix (layer 0) and UI (layer 2)
+    // The JSX order in App.tsx handles layering
+  },
+  tapPressable: {
+    flex: 1,
   },
 });
 

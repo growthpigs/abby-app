@@ -22,11 +22,16 @@ import {
   Skia,
   useClock,
 } from '@shopify/react-native-skia';
-import { useDerivedValue, useSharedValue } from 'react-native-reanimated';
+import { useDerivedValue, useSharedValue, SharedValue } from 'react-native-reanimated';
 
 // Default vibe colors (PASSION: pink/red)
 const DEFAULT_COLOR_A = [0.957, 0.447, 0.714]; // #F472B6 Hot Pink
 const DEFAULT_COLOR_B = [0.659, 0.333, 0.969]; // #A855F7 Purple
+
+// Type guard for SharedValue - defined outside component to avoid recreation
+const isSharedValue = (val: unknown): val is SharedValue<number> => {
+  return val !== null && typeof val === 'object' && 'value' in val;
+};
 
 const ABBY_ORB_SHADER = Skia.RuntimeEffect.Make(`
   uniform float2 resolution;
@@ -34,6 +39,8 @@ const ABBY_ORB_SHADER = Skia.RuntimeEffect.Make(`
   uniform float audioLevel;
   uniform float3 colorA;
   uniform float3 colorB;
+  uniform float centerY;    // Y offset in UV space (moves orb vertically)
+  uniform float orbScale;   // Size multiplier (1.0 = full, 0.32 = small)
 
   // === NOISE FUNCTIONS ===
   float hash(vec2 p) {
@@ -102,6 +109,13 @@ const ABBY_ORB_SHADER = Skia.RuntimeEffect.Make(`
 
   vec4 main(vec2 fragCoord) {
     vec2 uv = (fragCoord * 2.0 - resolution) / min(resolution.x, resolution.y);
+
+    // Apply position offset (moves orb vertically on screen)
+    uv.y -= centerY;
+
+    // Apply scale (larger orbScale = larger orb, smaller = smaller orb)
+    // dividing UV makes the coordinate space larger, so orb appears smaller
+    uv /= max(orbScale, 0.1);  // Clamp to prevent division by zero
 
     float t = time;  // Full speed like G2
     float audio = audioLevel;
@@ -242,6 +256,8 @@ interface LiquidGlass4Props {
   colorA?: [number, number, number]; // Primary vibe color
   colorB?: [number, number, number]; // Secondary vibe color
   size?: number; // Optional size override (for when used in container)
+  centerY?: number | SharedValue<number>; // Y offset in UV space, or SharedValue for animation
+  orbScale?: number | SharedValue<number>; // Size multiplier, or SharedValue for animation
 }
 
 export const LiquidGlass4: React.FC<LiquidGlass4Props> = ({
@@ -249,6 +265,8 @@ export const LiquidGlass4: React.FC<LiquidGlass4Props> = ({
   colorA = DEFAULT_COLOR_A,
   colorB = DEFAULT_COLOR_B,
   size,
+  centerY = 0,
+  orbScale = 1,
 }) => {
   const windowDimensions = useWindowDimensions();
   // Use explicit size if provided, otherwise use window dimensions
@@ -256,13 +274,36 @@ export const LiquidGlass4: React.FC<LiquidGlass4Props> = ({
   const height = size ?? windowDimensions.height;
   const clock = useClock();
 
-  // Convert React prop to shared value for Reanimated
-  const audioLevelShared = useSharedValue(0);
+  // Check if props are SharedValues (cached to avoid re-checking)
+  const centerYIsShared = isSharedValue(centerY);
+  const orbScaleIsShared = isSharedValue(orbScale);
 
-  // Update shared value when prop changes
+  // Convert React props to shared values for smooth animation
+  // Initialize with defaults, update via useEffect to avoid reading .value during render
+  const audioLevelShared = useSharedValue(0);
+  const centerYInternal = useSharedValue(centerYIsShared ? 0 : (centerY as number));
+  const orbScaleInternal = useSharedValue(orbScaleIsShared ? 1 : (orbScale as number));
+
+  // If props are SharedValues, use them directly; otherwise use internal SharedValues
+  const centerYShared = centerYIsShared ? (centerY as SharedValue<number>) : centerYInternal;
+  const orbScaleShared = orbScaleIsShared ? (orbScale as SharedValue<number>) : orbScaleInternal;
+
+  // Update internal shared values when number props change
   React.useEffect(() => {
     audioLevelShared.value = audioLevel;
   }, [audioLevel]);
+
+  React.useEffect(() => {
+    if (!centerYIsShared) {
+      centerYInternal.value = centerY as number;
+    }
+  }, [centerY, centerYIsShared]);
+
+  React.useEffect(() => {
+    if (!orbScaleIsShared) {
+      orbScaleInternal.value = orbScale as number;
+    }
+  }, [orbScale, orbScaleIsShared]);
 
   // Compute final audio level (with idle breathing when silent)
   const finalAudioLevel = useDerivedValue(() => {
@@ -279,6 +320,8 @@ export const LiquidGlass4: React.FC<LiquidGlass4Props> = ({
     audioLevel: finalAudioLevel.value,
     colorA: colorA,
     colorB: colorB,
+    centerY: centerYShared.value,
+    orbScale: orbScaleShared.value,
   }), [clock, finalAudioLevel, colorA, colorB]);
 
   if (!ABBY_ORB_SHADER) {

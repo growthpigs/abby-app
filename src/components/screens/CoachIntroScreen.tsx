@@ -51,8 +51,8 @@ const detectVibeFromText = (text: string): VibeColorTheme | null => {
 const { height: SCREEN_HEIGHT } = Dimensions.get('window');
 
 // Snap points as percentages of screen height (from bottom)
-const SNAP_POINTS = [0.35, 0.55, 0.75, 0.9];
-const DEFAULT_SNAP = 0.55; // Start at 55% (enough room for conversation)
+const SNAP_POINTS = [0.35, 0.45, 0.55, 0.75];
+const DEFAULT_SNAP = 0.45; // Start at 45% - lower to give orb more space
 
 export interface CoachIntroScreenProps {
   onBackgroundChange?: (index: number) => void;
