@@ -69,7 +69,7 @@ export const GlassSheet: React.FC<GlassSheetProps> = ({
         },
       ]}
     >
-      <BlurView intensity={80} tint="light" style={styles.blur}>
+      <BlurView intensity={40} tint="light" style={styles.blur}>
         {showHandle && (
           <View style={styles.handleContainer}>
             <View style={styles.handle} />

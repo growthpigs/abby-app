@@ -51,7 +51,7 @@ export function ChatInput({
 
   return (
     <View style={styles.container}>
-      <BlurView intensity={60} tint="light" style={styles.blurContainer}>
+      <BlurView intensity={40} tint="light" style={styles.blurContainer}>
         <View style={styles.inputRow}>
           <TextInput
             style={styles.input}

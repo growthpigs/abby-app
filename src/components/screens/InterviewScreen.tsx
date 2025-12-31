@@ -135,7 +135,7 @@ export const InterviewScreen: React.FC<InterviewScreenProps> = ({
 
       {/* Bottom: Glass modal with question + button - extends to screen edge */}
       <View style={[styles.bottomModal, { bottom: -insets.bottom }]}>
-        <BlurView intensity={80} tint="light" style={styles.modalBlur}>
+        <BlurView intensity={40} tint="light" style={styles.modalBlur}>
           {/* Drag handle */}
           <View style={styles.handleContainer}>
             <View style={styles.handle} />

@@ -246,7 +246,7 @@ export const CoachIntroScreen: React.FC<CoachIntroScreenProps> = ({
           },
         ]}
       >
-        <BlurView intensity={80} tint="light" style={styles.blurContainer} pointerEvents="box-none">
+        <BlurView intensity={40} tint="light" style={styles.blurContainer} pointerEvents="box-none">
           {/* DRAGGABLE HEADER - Handle only, no buttons */}
           <View {...panResponder.panHandlers} style={styles.draggableHeader}>
             <View style={styles.handleContainer}>

@@ -76,7 +76,7 @@ export const SearchingScreen: React.FC = () => {
     <View style={styles.container}>
       {/* Glassmorphic content card - positioned below orb */}
       <View style={styles.cardWrapper}>
-        <BlurView intensity={60} tint="light" style={styles.card}>
+        <BlurView intensity={40} tint="light" style={styles.card}>
           <Text style={styles.headline}>
             Searching{dots}
           </Text>
