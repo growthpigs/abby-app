@@ -1,70 +1,436 @@
 /**
- * ABBY - VibeMatrix Test
+ * ABBY - Full App with Cognito Auth Flow
  *
- * Tests the animated blob background with controls
+ * Authentication flow matching the client API (dev.api.myaimatchmaker.ai):
+ *
+ * SIGNUP: Login → Name → Email → Password → Email Verification → Main App
+ * SIGNIN: Login → Email → Password → Main App
+ *
+ * Uses VibeMatrix shader background with glass overlay screens.
+ * Integrates with AuthService for Cognito authentication.
  */
 
-import React from 'react';
-import { StyleSheet, View, Text, TouchableOpacity, SafeAreaView } from 'react-native';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
+import { StyleSheet, View, ActivityIndicator } from 'react-native';
+import { SafeAreaProvider, initialWindowMetrics } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
-import { VibeMatrix } from './src/components/layers/VibeMatrix';
-import { useVibeStore } from './src/store/useVibeStore';
-import { VibeColorTheme, VibeComplexity } from './src/types/vibe';
+import {
+  useFonts,
+  Merriweather_300Light,
+  Merriweather_400Regular,
+  Merriweather_700Bold,
+} from '@expo-google-fonts/merriweather';
+import { JetBrainsMono_400Regular } from '@expo-google-fonts/jetbrains-mono';
+
+import { VibeMatrixAnimated, VibeMatrixAnimatedRef } from './src/components/layers/VibeMatrixAnimated';
 import { ErrorBoundary } from './src/components/ErrorBoundary';
+import { useSettingsStore } from './src/store/useSettingsStore';
+import { useDemoStore, useDemoState, DemoState } from './src/store/useDemoStore';
 
-const COLOR_THEMES: VibeColorTheme[] = ['TRUST', 'PASSION', 'CAUTION', 'GROWTH', 'DEEP'];
-const COMPLEXITY_LEVELS: VibeComplexity[] = ['SMOOTHIE', 'FLOW', 'OCEAN', 'STORM', 'PAISLEY'];
+// Auth screens
+import { LoginScreen } from './src/components/screens/LoginScreen';
+import { NameScreen } from './src/components/screens/NameScreen';
+import { EmailScreen } from './src/components/screens/EmailScreen';
+import { PasswordScreen } from './src/components/screens/PasswordScreen';
+import { EmailVerificationScreen } from './src/components/screens/EmailVerificationScreen';
 
-export default function App() {
-  const { colorTheme, complexity, setColorTheme, setComplexity } = useVibeStore();
+// Main app screens
+import {
+  CoachIntroScreen,
+  InterviewScreen,
+  SearchingScreen,
+  MatchScreen,
+  PaymentScreen,
+  RevealScreen,
+  CoachScreen,
+} from './src/components/screens';
 
-  const nextTheme = () => {
-    const currentIndex = COLOR_THEMES.indexOf(colorTheme);
-    const nextIndex = (currentIndex + 1) % COLOR_THEMES.length;
-    setColorTheme(COLOR_THEMES[nextIndex]);
+// Auth service
+import { AuthService } from './src/services/AuthService';
+
+// =============================================================================
+// TYPES
+// =============================================================================
+
+type AuthMode = 'signup' | 'signin';
+
+type AuthState =
+  | 'LOADING'        // Checking existing auth
+  | 'LOGIN'          // Entry screen
+  | 'NAME'           // Signup: enter name
+  | 'EMAIL'          // Enter email
+  | 'PASSWORD'       // Enter/create password
+  | 'VERIFICATION'   // Verify email code
+  | 'AUTHENTICATED'; // Logged in
+
+// Screen ordering for secret navigation
+const SIGNUP_ORDER: AuthState[] = [
+  'LOGIN',
+  'NAME',
+  'EMAIL',
+  'PASSWORD',
+  'VERIFICATION',
+  'AUTHENTICATED',
+];
+
+const SIGNIN_ORDER: AuthState[] = [
+  'LOGIN',
+  'EMAIL',
+  'PASSWORD',
+  'AUTHENTICATED',
+];
+
+const DEMO_ORDER: DemoState[] = [
+  'COACH_INTRO',
+  'INTERVIEW',
+  'SEARCHING',
+  'MATCH',
+  'PAYMENT',
+  'REVEAL',
+  'COACH',
+];
+
+// Fallback metrics for when native module hasn't initialized
+const fallbackMetrics = {
+  frame: { x: 0, y: 0, width: 393, height: 852 },
+  insets: { top: 59, right: 0, bottom: 34, left: 0 },
+};
+
+// =============================================================================
+// APP CONTENT
+// =============================================================================
+
+function AppContent() {
+  // Auth state
+  const [authState, setAuthState] = useState<AuthState>('LOADING');
+  const [authMode, setAuthMode] = useState<AuthMode>('signup');
+
+  // Form data (undefined = not yet entered, allows default placeholders)
+  const [userName, setUserName] = useState<string | undefined>(undefined);
+  const [userEmail, setUserEmail] = useState<string | undefined>(undefined);
+  const [userPassword, setUserPassword] = useState<string | undefined>(undefined);
+
+  // Loading/error states
+  const [isLoading, setIsLoading] = useState(false);
+  const [authError, setAuthError] = useState<string | null>(null);
+
+  // Demo state from store
+  const demoState = useDemoState();
+  const advance = useDemoStore((state) => state.advance);
+  const goToState = useDemoStore((state) => state.goToState);
+  const reset = useDemoStore((state) => state.reset);
+
+  // Vibe controller ref
+  const vibeRef = useRef<VibeMatrixAnimatedRef>(null);
+
+  // Settings
+  const settingsLoaded = useSettingsStore((state) => state.isLoaded);
+  const loadSettings = useSettingsStore((state) => state.loadSettings);
+
+  // Load fonts
+  const [fontsLoaded] = useFonts({
+    Merriweather_300Light,
+    Merriweather_400Regular,
+    Merriweather_700Bold,
+    JetBrainsMono_400Regular,
+  });
+
+  // Load settings on mount
+  useEffect(() => {
+    loadSettings();
+  }, [loadSettings]);
+
+  // Check existing authentication on startup
+  useEffect(() => {
+    const checkAuth = async () => {
+      if (!fontsLoaded || !settingsLoaded) return;
+
+      try {
+        const isAuth = await AuthService.isAuthenticated();
+        if (isAuth) {
+          if (__DEV__) console.log('[App] User already authenticated');
+          setAuthState('AUTHENTICATED');
+          reset();
+          vibeRef.current?.setVibe('TRUST');
+        } else {
+          if (__DEV__) console.log('[App] No existing auth, showing login');
+          setAuthState('LOGIN');
+          vibeRef.current?.setVibe('DEEP');
+        }
+      } catch (error) {
+        if (__DEV__) console.error('[App] Auth check failed:', error);
+        setAuthState('LOGIN');
+        vibeRef.current?.setVibe('DEEP');
+      }
+    };
+
+    checkAuth();
+  }, [fontsLoaded, settingsLoaded, reset]);
+
+  // Get current auth order based on mode
+  const getAuthOrder = useCallback(() => {
+    return authMode === 'signup' ? SIGNUP_ORDER : SIGNIN_ORDER;
+  }, [authMode]);
+
+  // SECRET NAVIGATION HANDLERS
+  const handleSecretBack = useCallback(() => {
+    setAuthError(null);
+
+    if (authState !== 'AUTHENTICATED') {
+      const order = getAuthOrder();
+      const currentIndex = order.indexOf(authState);
+      if (currentIndex > 0) {
+        const prevState = order[currentIndex - 1];
+        if (prevState !== 'LOADING') {
+          setAuthState(prevState);
+        }
+      }
+    } else {
+      const currentIndex = DEMO_ORDER.indexOf(demoState);
+      if (currentIndex > 0) {
+        goToState(DEMO_ORDER[currentIndex - 1]);
+      } else {
+        // Return to login (logout)
+        AuthService.logout();
+        setAuthState('LOGIN');
+        setAuthMode('signup');
+        setUserName(undefined);
+        setUserEmail(undefined);
+        setUserPassword(undefined);
+        vibeRef.current?.setVibe('DEEP');
+      }
+    }
+  }, [authState, authMode, demoState, goToState, getAuthOrder]);
+
+  const handleSecretForward = useCallback(() => {
+    setAuthError(null);
+
+    if (authState !== 'AUTHENTICATED') {
+      const order = getAuthOrder();
+      const currentIndex = order.indexOf(authState);
+      if (currentIndex < order.length - 1) {
+        const nextState = order[currentIndex + 1];
+        setAuthState(nextState);
+        if (nextState === 'AUTHENTICATED') {
+          reset();
+          vibeRef.current?.setVibe('TRUST');
+        }
+      }
+    } else {
+      advance();
+    }
+  }, [authState, authMode, advance, reset, getAuthOrder]);
+
+  // AUTH FLOW HANDLERS
+  const handleCreateAccount = () => {
+    setAuthMode('signup');
+    setAuthError(null);
+    setAuthState('NAME');
   };
 
-  const nextComplexity = () => {
-    const currentIndex = COMPLEXITY_LEVELS.indexOf(complexity);
-    const nextIndex = (currentIndex + 1) % COMPLEXITY_LEVELS.length;
-    setComplexity(COMPLEXITY_LEVELS[nextIndex]);
+  const handleSignIn = () => {
+    setAuthMode('signin');
+    setAuthError(null);
+    setAuthState('EMAIL');
   };
+
+  const handleNameNext = (name: string) => {
+    setUserName(name);
+    setAuthState('EMAIL');
+  };
+
+  const handleEmailNext = (email: string) => {
+    setUserEmail(email);
+    setAuthState('PASSWORD');
+  };
+
+  const handlePasswordNext = async (password: string) => {
+    setUserPassword(password);
+    setAuthError(null);
+    setIsLoading(true);
+
+    try {
+      if (authMode === 'signup') {
+        // Signup flow
+        if (__DEV__) console.log('[App] Starting signup...');
+        await AuthService.signup(
+          userEmail!,
+          password,
+          userName!
+        );
+        setAuthState('VERIFICATION');
+      } else {
+        // Signin flow
+        if (__DEV__) console.log('[App] Starting signin...');
+        await AuthService.login(userEmail!, password);
+        setAuthState('AUTHENTICATED');
+        reset();
+        vibeRef.current?.setVibe('TRUST');
+      }
+    } catch (error) {
+      if (__DEV__) console.error('[App] Auth error:', error);
+      setAuthError(
+        error instanceof Error
+          ? error.message
+          : 'Authentication failed. Please try again.'
+      );
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleVerificationNext = async (code: string) => {
+    setAuthError(null);
+    setIsLoading(true);
+
+    try {
+      if (__DEV__) console.log('[App] Verifying email...');
+      await AuthService.verify(userEmail!, code);
+
+      // After verification, log in automatically
+      if (__DEV__) console.log('[App] Verification success, logging in...');
+      await AuthService.login(userEmail!, userPassword!);
+
+      setAuthState('AUTHENTICATED');
+      reset();
+      vibeRef.current?.setVibe('TRUST');
+    } catch (error) {
+      if (__DEV__) console.error('[App] Verification error:', error);
+      setAuthError(
+        error instanceof Error
+          ? error.message
+          : 'Verification failed. Please try again.'
+      );
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // DEMO FLOW - background change handler
+  const handleBackgroundChange = useCallback((index: number) => {
+    // Background changes handled by screens internally
+  }, []);
+
+  // RENDER AUTH SCREENS
+  const renderAuthScreen = () => {
+    switch (authState) {
+      case 'LOGIN':
+        return (
+          <LoginScreen
+            onCreateAccount={handleCreateAccount}
+            onSignIn={handleSignIn}
+            onSecretBack={handleSecretBack}
+            onSecretForward={handleSecretForward}
+          />
+        );
+
+      case 'NAME':
+        return (
+          <NameScreen
+            onNext={handleNameNext}
+            onSecretBack={handleSecretBack}
+            onSecretForward={handleSecretForward}
+          />
+        );
+
+      case 'EMAIL':
+        return (
+          <EmailScreen
+            onNext={handleEmailNext}
+            onSecretBack={handleSecretBack}
+            onSecretForward={handleSecretForward}
+          />
+        );
+
+      case 'PASSWORD':
+        return (
+          <PasswordScreen
+            mode={authMode}
+            email={userEmail ?? ''}
+            onNext={handlePasswordNext}
+            onSecretBack={handleSecretBack}
+            onSecretForward={handleSecretForward}
+            isLoading={isLoading}
+            error={authError}
+          />
+        );
+
+      case 'VERIFICATION':
+        return (
+          <EmailVerificationScreen
+            email={userEmail}
+            onNext={handleVerificationNext}
+            onSecretBack={handleSecretBack}
+            onSecretForward={handleSecretForward}
+          />
+        );
+
+      default:
+        return null;
+    }
+  };
+
+  // RENDER DEMO SCREENS
+  const renderDemoScreen = () => {
+    switch (demoState) {
+      case 'COACH_INTRO':
+        return <CoachIntroScreen onBackgroundChange={handleBackgroundChange} />;
+      case 'INTERVIEW':
+        return <InterviewScreen onBackgroundChange={handleBackgroundChange} />;
+      case 'SEARCHING':
+        return <SearchingScreen />;
+      case 'MATCH':
+        return <MatchScreen />;
+      case 'PAYMENT':
+        return <PaymentScreen />;
+      case 'REVEAL':
+        return <RevealScreen />;
+      case 'COACH':
+        return <CoachScreen onBackgroundChange={handleBackgroundChange} />;
+      default:
+        return <CoachIntroScreen onBackgroundChange={handleBackgroundChange} />;
+    }
+  };
+
+  // LOADING STATE
+  if (!fontsLoaded || !settingsLoaded || authState === 'LOADING') {
+    return (
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color="#fff" />
+      </View>
+    );
+  }
 
   return (
-    <ErrorBoundary>
-      <View style={styles.container}>
-        {/* Layer 0: Animated Background */}
-        <VibeMatrix />
+    <View style={styles.container}>
+      <StatusBar hidden />
 
-        {/* Controls Overlay */}
-        <SafeAreaView style={styles.overlay}>
-          <View style={styles.header}>
-            <Text style={styles.title}>VIBE MATRIX</Text>
-            <Text style={styles.subtitle}>Tap buttons to change</Text>
-          </View>
+      {/* Layer 0: Animated shader background */}
+      <VibeMatrixAnimated
+        ref={vibeRef}
+        initialTheme="DEEP"
+        initialComplexity="FLOW"
+      />
 
-          <View style={styles.controls}>
-            <TouchableOpacity style={styles.button} onPress={nextTheme}>
-              <Text style={styles.buttonLabel}>COLOR</Text>
-              <Text style={styles.buttonValue}>{colorTheme}</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity style={styles.button} onPress={nextComplexity}>
-              <Text style={styles.buttonLabel}>COMPLEXITY</Text>
-              <Text style={styles.buttonValue}>{complexity}</Text>
-            </TouchableOpacity>
-          </View>
-
-          <View style={styles.info}>
-            <Text style={styles.infoText}>
-              5 colors × 5 complexity levels = 25 vibes
-            </Text>
-          </View>
-        </SafeAreaView>
-
-        <StatusBar hidden />
+      {/* Layer 2: UI (auth or demo screens) */}
+      <View style={styles.uiLayer}>
+        {authState !== 'AUTHENTICATED' ? renderAuthScreen() : renderDemoScreen()}
       </View>
-    </ErrorBoundary>
+    </View>
+  );
+}
+
+// =============================================================================
+// MAIN APP
+// =============================================================================
+
+export default function App() {
+  return (
+    <SafeAreaProvider initialMetrics={initialWindowMetrics ?? fallbackMetrics}>
+      <ErrorBoundary>
+        <AppContent />
+      </ErrorBoundary>
+    </SafeAreaProvider>
   );
 }
 
@@ -73,59 +439,13 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#000',
   },
-  overlay: {
-    ...StyleSheet.absoluteFillObject,
-    justifyContent: 'space-between',
-  },
-  header: {
-    alignItems: 'center',
-    paddingTop: 60,
-  },
-  title: {
-    fontSize: 28,
-    fontWeight: '800',
-    color: '#fff',
-    letterSpacing: 4,
-  },
-  subtitle: {
-    fontSize: 12,
-    color: 'rgba(255,255,255,0.5)',
-    marginTop: 8,
-  },
-  controls: {
-    flexDirection: 'row',
+  loadingContainer: {
+    flex: 1,
+    backgroundColor: '#000',
     justifyContent: 'center',
-    gap: 20,
-    paddingHorizontal: 20,
-  },
-  button: {
-    backgroundColor: 'rgba(255,255,255,0.15)',
-    paddingVertical: 16,
-    paddingHorizontal: 24,
-    borderRadius: 16,
     alignItems: 'center',
-    minWidth: 140,
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.2)',
   },
-  buttonLabel: {
-    fontSize: 10,
-    fontWeight: '600',
-    color: 'rgba(255,255,255,0.5)',
-    letterSpacing: 2,
-    marginBottom: 4,
-  },
-  buttonValue: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: '#fff',
-  },
-  info: {
-    alignItems: 'center',
-    paddingBottom: 40,
-  },
-  infoText: {
-    fontSize: 12,
-    color: 'rgba(255,255,255,0.4)',
+  uiLayer: {
+    ...StyleSheet.absoluteFillObject,
   },
 });

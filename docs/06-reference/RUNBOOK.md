@@ -36,9 +36,35 @@
 
 | Service | Purpose | Status |
 |---------|---------|--------|
-| ElevenLabs | Real-time voice conversation | ✅ Working |
+| AWS Cognito | Authentication | 🟡 Stubbed (UI complete) |
+| OpenAI Realtime | Voice conversation | 🟡 Service ready, needs auth |
+| Client API | Backend (dev.api.myaimatchmaker.ai) | 🟡 Ready, needs real tokens |
 | Sentry | Error tracking | To configure |
-| AWS S3 (Nathan) | Voice file storage | Nathan manages |
+
+### Current State (2025-12-31)
+
+**Branch:** `client-api-integration` in `/abby-client-api` worktree
+
+**Auth Flow (UI Complete):**
+- SIGNUP: Login → Name → Email → Password → Email Verification → Main App
+- SIGNIN: Login → Email → Password → Main App
+
+**What's Working:**
+- ✅ LoginScreen displays with VibeMatrix shader background
+- ✅ Auth flow UI navigates between screens
+- ✅ Typography component supports variant prop
+- ✅ Metro bundle compiles (3277+ modules)
+- ✅ iOS build succeeds on simulator
+
+**What's Stubbed:**
+- 🟡 AuthService.ts - Returns mock tokens, not calling real Cognito
+- 🟡 AbbyRealtimeService.ts - Service ready but needs valid auth tokens
+- 🟡 CoachIntroScreen/CoachScreen - Will error without real API connection
+
+**Next Steps:**
+1. Connect AuthService to real Cognito (User Pool: us-east-1_l3JxaWpl5)
+2. Add graceful fallback for AbbyRealtimeService when unavailable
+3. Test full flow with real authentication
 
 ### Performance Targets
 

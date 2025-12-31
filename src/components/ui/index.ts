@@ -16,4 +16,5 @@ export {
   BodySmall,
   Caption,
   Question,
+  Typography,
 } from './Typography';
