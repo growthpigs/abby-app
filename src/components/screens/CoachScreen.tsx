@@ -20,7 +20,7 @@ import { BlurView } from 'expo-blur';
 import * as Haptics from 'expo-haptics';
 import { Pause, Play } from 'lucide-react-native';
 import { useDemoStore } from '../../store/useDemoStore';
-import { useAbbyAgent } from '../../services/AbbyAgent';
+import { useAbbyAgent } from '../../services/AbbyRealtimeService';
 import { ChatInput } from '../ui/ChatInput';
 import { useDraggableSheet } from '../../hooks/useDraggableSheet';
 

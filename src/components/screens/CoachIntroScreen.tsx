@@ -23,7 +23,7 @@ import { BlurView } from 'expo-blur';
 import * as Haptics from 'expo-haptics';
 import { Pause, Play } from 'lucide-react-native';
 import { useDemoStore } from '../../store/useDemoStore';
-import { useAbbyAgent } from '../../services/AbbyAgent';
+import { useAbbyAgent } from '../../services/AbbyRealtimeService';
 import { useVibeController } from '../../store/useVibeController';
 import { VibeColorTheme } from '../../types/vibe';
 

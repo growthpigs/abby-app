@@ -26,8 +26,6 @@
       "bitcode": false
     },
     "plugins": [
-      "@livekit/react-native-expo-plugin",
-      "@config-plugins/react-native-webrtc",
       "expo-font"
     ],
     "extra": {
