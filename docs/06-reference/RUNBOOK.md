@@ -6,6 +6,27 @@
 
 ---
 
+## 🔴 CRITICAL: CORRECT WORKTREE
+
+**ALWAYS work in `/abby-client-api` (client-api-integration branch)**
+
+| Worktree | Branch | Purpose | Use For |
+|----------|--------|---------|---------|
+| `/abby-client-api` | `client-api-integration` | **ACTIVE WORK** | All development |
+| `/abby` | `main` | Legacy ElevenLabs demo | Reference only |
+
+```bash
+# ALWAYS start here:
+cd /Users/rodericandrews/_PAI/projects/abby-client-api
+```
+
+**Why:**
+- `abby-client-api` uses mocks and client backend API
+- `abby` uses ElevenLabs (legacy, don't modify)
+- Making changes in wrong worktree breaks the app
+
+---
+
 ## Project Info
 
 ### Google Drive Folders
