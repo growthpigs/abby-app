@@ -23,7 +23,9 @@ import {
 import { JetBrainsMono_400Regular } from '@expo-google-fonts/jetbrains-mono';
 
 import { VibeMatrixAnimated, VibeMatrixAnimatedRef } from './src/components/layers/VibeMatrixAnimated';
+import { AbbyOrb } from './src/components/layers/AbbyOrb';
 import { ErrorBoundary } from './src/components/ErrorBoundary';
+import { OrbMode } from './src/types/orb';
 import { useSettingsStore } from './src/store/useSettingsStore';
 import { useDemoStore, useDemoState, DemoState } from './src/store/useDemoStore';
 
@@ -119,6 +121,28 @@ function AppContent() {
   const advance = useDemoStore((state) => state.advance);
   const goToState = useDemoStore((state) => state.goToState);
   const reset = useDemoStore((state) => state.reset);
+
+  // Orb mode based on current screen - center when Abby is speaking, docked when user is focused
+  const getOrbMode = (): OrbMode => {
+    // Orb only shows in demo screens (after auth)
+    if (authState !== 'AUTHENTICATED') return 'docked';
+
+    // Determine mode based on screen
+    switch (demoState) {
+      case 'COACH_INTRO':
+      case 'INTERVIEW':
+      case 'SEARCHING':
+      case 'REVEAL':
+      case 'COACH':
+        return 'center'; // Abby is center stage
+      case 'MATCH':
+      case 'PAYMENT':
+        return 'docked'; // User is focused on content
+      default:
+        return 'center';
+    }
+  };
+  const orbMode = getOrbMode();
 
   // Vibe controller ref
   const vibeRef = useRef<VibeMatrixAnimatedRef>(null);
@@ -411,6 +435,11 @@ function AppContent() {
         initialTheme="DEEP"
         initialComplexity="FLOW"
       />
+
+      {/* Layer 1: Abby Orb (only in demo mode) */}
+      {authState === 'AUTHENTICATED' && (
+        <AbbyOrb mode={orbMode} />
+      )}
 
       {/* Layer 2: UI (auth or demo screens) */}
       <View style={styles.uiLayer}>
