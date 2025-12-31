@@ -1,6 +1,9 @@
 /**
  * App.abby.tsx - Abby Voice Conversation
  *
+ * ⚠️ DEPRECATED - Uses old ElevenLabs SDK (removed)
+ * This file needs updating to use AbbyRealtimeService
+ *
  * Auto-starts conversation when entering.
  * No buttons - just speak and Abby responds.
  * Minimal UI - orb takes center stage.

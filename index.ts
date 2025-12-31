@@ -2,17 +2,11 @@ import { registerRootComponent } from 'expo';
 import { LogBox } from 'react-native';
 
 // Suppress warnings that don't affect functionality
-// - LiveKit WebSocket warnings during reconnection
-// - expo-av deprecation (AbbyVoice still uses it, migration deferred)
+// - expo-av deprecation (AbbyTTSService uses it for audio playback)
 // - SafeAreaView deprecation (internal to expo-blur, not our code)
 LogBox.ignoreLogs([
-  'Websocket got closed during',
-  'websocket closed',
-  'could not createOffer with closed peer connection',
-  'rn-webrtc',
   '[expo-av]',
   'SafeAreaView has been deprecated',
-  'Cannot send message: room not connected',
 ]);
 
 /**

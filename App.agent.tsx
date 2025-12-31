@@ -1,8 +1,9 @@
 /**
- * App.agent.tsx - ElevenLabs Agent Test Entry Point
+ * App.agent.tsx - Voice Agent Test Entry Point
  *
  * Standalone test screen for voice conversation.
  * Includes background + orb + conversation UI.
+ * Now uses client API instead of ElevenLabs.
  *
  * To use: Rename to App.tsx or import in App.tsx
  */
@@ -10,7 +11,6 @@
 import React from 'react';
 import { StyleSheet, View, Text, SafeAreaView } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
-import { ElevenLabsProvider } from '@elevenlabs/react-native';
 
 // Background
 import VibeMatrix3 from './src/components/layers/VibeMatrix3';
@@ -56,27 +56,25 @@ function StatusHeader() {
 
 export default function AppAgent() {
   return (
-    <ElevenLabsProvider>
-      <View style={styles.container}>
-        {/* Layer 0: Background */}
-        <View style={styles.backgroundLayer} pointerEvents="none">
-          <VibeMatrix3 />
-        </View>
-
-        {/* Layer 1: Orb */}
-        <View style={styles.orbLayer} pointerEvents="none">
-          <ConnectedOrb />
-        </View>
-
-        {/* Layer 2: Interface */}
-        <SafeAreaView style={styles.interfaceLayer}>
-          <StatusHeader />
-          <AbbyConversation />
-        </SafeAreaView>
-
-        <StatusBar hidden />
+    <View style={styles.container}>
+      {/* Layer 0: Background */}
+      <View style={styles.backgroundLayer} pointerEvents="none">
+        <VibeMatrix3 />
       </View>
-    </ElevenLabsProvider>
+
+      {/* Layer 1: Orb */}
+      <View style={styles.orbLayer} pointerEvents="none">
+        <ConnectedOrb />
+      </View>
+
+      {/* Layer 2: Interface */}
+      <SafeAreaView style={styles.interfaceLayer}>
+        <StatusHeader />
+        <AbbyConversation />
+      </SafeAreaView>
+
+      <StatusBar hidden />
+    </View>
   );
 }
 
