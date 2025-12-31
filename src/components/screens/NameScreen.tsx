@@ -212,9 +212,6 @@ const styles = StyleSheet.create({
     width: 70,
     height: 70,
     zIndex: 9999,
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.2)',
-    borderRadius: 8,
   },
   secretMiddleTrigger: {
     position: 'absolute',
@@ -224,9 +221,6 @@ const styles = StyleSheet.create({
     width: 70,
     height: 70,
     zIndex: 9999,
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.2)',
-    borderRadius: 8,
   },
   secretForwardTrigger: {
     position: 'absolute',
@@ -235,9 +229,6 @@ const styles = StyleSheet.create({
     width: 70,
     height: 70,
     zIndex: 9999,
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.2)',
-    borderRadius: 8,
   },
 });
 
