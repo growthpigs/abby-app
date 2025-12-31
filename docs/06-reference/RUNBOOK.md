@@ -81,15 +81,23 @@ npm start
 
 ### Why Dev Build (not Expo Go)?
 
-ElevenLabs voice requires native modules (LiveKit WebRTC). NOT available in Expo Go.
+**CRITICAL: NEVER use Expo Go for ABBY. Always use `npx expo run:ios`.**
 
-| Command | Mode | Voice | Metro |
-|---------|------|-------|-------|
-| `npx expo run:ios` | Dev Build | ✅ | Starts automatically |
-| `npm start` | Metro only | - | Must run app separately |
-| `expo start` | Expo Go | ❌ | Don't use for ABBY |
+Two features require native modules NOT available in Expo Go:
 
-**Error:** "VOICE REQUIRES A DEVELOPMENT BUILD" → You ran `expo start` instead of `expo run:ios`
+1. **Skia Shaders** (VibeMatrix background) - Requires native Skia runtime
+   - Error: `Expected arraybuffer as first parameter` in Container.native.ts
+
+2. **Voice Conversation** (ElevenLabs/OpenAI Realtime) - Requires LiveKit WebRTC
+   - Error: `VOICE REQUIRES A DEVELOPMENT BUILD`
+
+| Command | Mode | Shaders | Voice | Metro |
+|---------|------|---------|-------|-------|
+| `npx expo run:ios` | Dev Build | ✅ | ✅ | Starts automatically |
+| `npm start` | Metro only | - | - | Must run app separately |
+| `expo start` | Expo Go | ❌ | ❌ | **NEVER USE** |
+
+**Visual perfection is non-negotiable** - The shader background and orb must render correctly.
 
 ---
 
@@ -415,4 +423,4 @@ const STATE_ORDER = ['COACH_INTRO','INTERVIEW','SEARCHING','MATCH','PAYMENT','RE
 
 ---
 
-*Last Updated: 2025-12-23*
+*Last Updated: 2025-12-31*
