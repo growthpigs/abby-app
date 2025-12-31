@@ -1,8 +1,10 @@
 /**
  * AbbyOrb - Layer 1 of the Glass Sandwich
  *
- * The Petal Orb - Abby's visual representation.
+ * LiquidGlass4 Orb - Abby's visual representation.
  * She is never hidden; she only transforms.
+ *
+ * Uses LiquidGlass4 shader with 5-blob pentagon structure.
  *
  * Modes:
  * - center: Large (250px), top 15%, expressing/speaking
@@ -12,7 +14,7 @@
  */
 
 import React, { useEffect, useMemo } from 'react';
-import { View, StyleSheet, Pressable, useWindowDimensions } from 'react-native';
+import { StyleSheet, Pressable, useWindowDimensions, View } from 'react-native';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -20,41 +22,26 @@ import Animated, {
   withSpring,
   Easing,
   interpolate,
-  runOnJS,
 } from 'react-native-reanimated';
-import { AbbyOrbProps, OrbColors } from '../../../types/orb';
+import { AbbyOrbProps } from '../../../types/orb';
 import { useVibeStore } from '../../../store/useVibeStore';
 import { VIBE_COLORS } from '../../../constants/colors';
 import { ORB_SIZES, ORB_TIMING, ORB_EASING } from './constants';
-import OrbCore2D from './OrbCore2D';
-import OrbPetalsShader from './OrbPetalsShader';
-import OrbParticles from './OrbParticles';
+import { LiquidGlass4 } from '../LiquidGlass4';
 
 /**
- * Convert RGB array to CSS rgba string
+ * Get LiquidGlass4 colors from vibe theme
+ * Returns RGB arrays normalized to 0-1 range
  */
-const rgbToString = (rgb: [number, number, number], alpha: number = 1): string => {
-  return `rgba(${Math.round(rgb[0] * 255)}, ${Math.round(rgb[1] * 255)}, ${Math.round(rgb[2] * 255)}, ${alpha})`;
-};
-
-/**
- * Generate orb colors from vibe theme
- */
-const getOrbColors = (colorTheme: string): OrbColors => {
+const getShaderColors = (colorTheme: string): {
+  colorA: [number, number, number];
+  colorB: [number, number, number];
+} => {
   const palette = VIBE_COLORS[colorTheme as keyof typeof VIBE_COLORS] || VIBE_COLORS.TRUST;
 
-  // Core uses warm tones with bright highlight
   return {
-    core: {
-      highlight: 'rgba(255, 255, 255, 0.95)',
-      inner: rgbToString(palette.primary, 0.8),
-      outer: rgbToString(palette.secondary, 0.4),
-    },
-    petals: {
-      warm: rgbToString(palette.primary, 0.8),
-      cool: rgbToString(palette.secondary, 0.6),
-    },
-    particles: rgbToString(palette.secondary, 0.8),
+    colorA: palette.primary,
+    colorB: palette.secondary,
   };
 };
 
@@ -66,8 +53,8 @@ export const AbbyOrb: React.FC<AbbyOrbProps> = ({ mode, onTap }) => {
   const progress = useSharedValue(mode === 'center' ? 0 : 1);
   const tapScale = useSharedValue(1);
 
-  // Get colors based on current vibe
-  const colors = useMemo(() => getOrbColors(colorTheme), [colorTheme]);
+  // Get colors based on current vibe (for LiquidGlass4)
+  const shaderColors = useMemo(() => getShaderColors(colorTheme), [colorTheme]);
 
   // Animate mode transition
   useEffect(() => {
@@ -120,10 +107,6 @@ export const AbbyOrb: React.FC<AbbyOrbProps> = ({ mode, onTap }) => {
     onTap?.();
   };
 
-  // Determine if petals/particles should be visible
-  const showPetals = mode === 'center';
-  const showParticles = mode === 'center';
-
   // Current size for child components
   const currentSize = mode === 'center' ? ORB_SIZES.center.diameter : ORB_SIZES.docked.diameter;
 
@@ -135,26 +118,14 @@ export const AbbyOrb: React.FC<AbbyOrbProps> = ({ mode, onTap }) => {
       style={styles.pressable}
     >
       <Animated.View style={[styles.container, animatedContainerStyle]}>
-        {/* Particles layer (behind core) */}
-        <OrbParticles
-          orbSize={currentSize}
-          color={colors.particles}
-          visible={showParticles}
-        />
-
-        {/* Petals layer - GPU shader version */}
-        <OrbPetalsShader
-          size={currentSize}
-          colors={colors}
-          visible={showPetals}
-        />
-
-        {/* Core layer (on top) */}
-        <OrbCore2D
-          size={currentSize}
-          colors={colors}
-          breathing={mode === 'center'}
-        />
+        {/* LiquidGlass4 shader - 5-blob pentagon orb */}
+        <View style={[styles.shaderContainer, { width: currentSize, height: currentSize }]}>
+          <LiquidGlass4
+            audioLevel={0}
+            colorA={shaderColors.colorA}
+            colorB={shaderColors.colorB}
+          />
+        </View>
       </Animated.View>
     </Pressable>
   );
@@ -169,6 +140,10 @@ const styles = StyleSheet.create({
   container: {
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  shaderContainer: {
+    borderRadius: 1000, // Large enough to be circular
+    overflow: 'hidden',
   },
 });
 
