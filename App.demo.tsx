@@ -11,6 +11,7 @@
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { StyleSheet, View, SafeAreaView, ActivityIndicator, Text, Switch } from 'react-native';
+import { SafeAreaProvider, initialWindowMetrics } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 import {
   useFonts,
@@ -286,24 +287,34 @@ function DemoScreen() {
   );
 }
 
+// Fallback metrics for when native module hasn't initialized yet
+const fallbackMetrics = {
+  frame: { x: 0, y: 0, width: 393, height: 852 },
+  insets: { top: 59, right: 0, bottom: 34, left: 0 }, // iPhone 14 Pro defaults
+};
+
 // Main Demo App - conditionally wraps with ElevenLabsProvider
 export default function AppDemo() {
   // Only wrap with ElevenLabsProvider if native modules are available
   if (ElevenLabsProvider) {
     return (
-      <ErrorBoundary>
-        <ElevenLabsProvider>
-          <DemoScreen />
-        </ElevenLabsProvider>
-      </ErrorBoundary>
+      <SafeAreaProvider initialMetrics={initialWindowMetrics ?? fallbackMetrics}>
+        <ErrorBoundary>
+          <ElevenLabsProvider>
+            <DemoScreen />
+          </ElevenLabsProvider>
+        </ErrorBoundary>
+      </SafeAreaProvider>
     );
   }
 
   // Fallback without provider (UI dev mode)
   return (
-    <ErrorBoundary>
-      <DemoScreen />
-    </ErrorBoundary>
+    <SafeAreaProvider initialMetrics={initialWindowMetrics ?? fallbackMetrics}>
+      <ErrorBoundary>
+        <DemoScreen />
+      </ErrorBoundary>
+    </SafeAreaProvider>
   );
 }
 

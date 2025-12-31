@@ -16,7 +16,7 @@ import * as Haptics from 'expo-haptics';
 import Animated, { FadeIn, FadeOut } from 'react-native-reanimated';
 import { useDemoStore } from '../../store/useDemoStore';
 import { useVibeController } from '../../store/useVibeController';
-import { ALL_DATA_POINTS } from '../../../docs/data/questions-schema';
+import { ALL_DATA_POINTS } from '../../data/questions-schema';
 import { isValidVibeTheme } from '../../types/vibe';
 import { abbyVoice } from '../../services/AbbyVoice';
 

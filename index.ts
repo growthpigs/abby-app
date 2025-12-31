@@ -16,15 +16,12 @@ LogBox.ignoreLogs([
 ]);
 
 /**
- * DEMO MODE
+ * FULL AUTH FLOW
  *
- * Full demo flow: Onboarding → Interview → Searching → Match → Payment → Reveal
- * Includes:
- * - Settings (input mode selection)
- * - ConversationOverlay (transcript display)
- * - Voice input (hold mic to speak)
+ * Complete flow: Login → Phone → Email → CoachIntro → Interview → Match → etc.
+ * Uses VibeMatrix animated shader backgrounds.
  */
-import App from './App.demo';
+import App from './App';
 
 // registerRootComponent calls AppRegistry.registerComponent('main', () => App);
 // It also ensures that whether you load the app in Expo Go or in a native build,
