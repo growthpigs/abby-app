@@ -14,7 +14,7 @@
  */
 
 import React, { useEffect, useMemo } from 'react';
-import { StyleSheet, Pressable, useWindowDimensions, View } from 'react-native';
+import { StyleSheet, Pressable, useWindowDimensions } from 'react-native';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -107,9 +107,6 @@ export const AbbyOrb: React.FC<AbbyOrbProps> = ({ mode, onTap }) => {
     onTap?.();
   };
 
-  // Current size for child components
-  const currentSize = mode === 'center' ? ORB_SIZES.center.diameter : ORB_SIZES.docked.diameter;
-
   return (
     <Pressable
       onPressIn={handleTapIn}
@@ -118,15 +115,12 @@ export const AbbyOrb: React.FC<AbbyOrbProps> = ({ mode, onTap }) => {
       style={styles.pressable}
     >
       <Animated.View style={[styles.container, animatedContainerStyle]}>
-        {/* LiquidGlass4 shader - 5-blob pentagon orb */}
-        <View style={[styles.shaderContainer, { width: currentSize, height: currentSize }]}>
-          <LiquidGlass4
-            audioLevel={0}
-            colorA={shaderColors.colorA}
-            colorB={shaderColors.colorB}
-            size={currentSize}
-          />
-        </View>
+        {/* LiquidGlass4 shader - renders large, shader handles orb shape + glow */}
+        <LiquidGlass4
+          audioLevel={0}
+          colorA={shaderColors.colorA}
+          colorB={shaderColors.colorB}
+        />
       </Animated.View>
     </Pressable>
   );
@@ -141,10 +135,6 @@ const styles = StyleSheet.create({
   container: {
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  shaderContainer: {
-    borderRadius: 1000, // Large enough to be circular
-    overflow: 'hidden',
   },
 });
 
