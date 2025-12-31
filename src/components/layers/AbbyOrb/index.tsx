@@ -124,6 +124,7 @@ export const AbbyOrb: React.FC<AbbyOrbProps> = ({ mode, onTap }) => {
             audioLevel={0}
             colorA={shaderColors.colorA}
             colorB={shaderColors.colorB}
+            size={currentSize}
           />
         </View>
       </Animated.View>

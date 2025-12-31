@@ -241,14 +241,19 @@ interface LiquidGlass4Props {
   audioLevel?: number; // 0.0 - 1.0
   colorA?: [number, number, number]; // Primary vibe color
   colorB?: [number, number, number]; // Secondary vibe color
+  size?: number; // Optional size override (for when used in container)
 }
 
 export const LiquidGlass4: React.FC<LiquidGlass4Props> = ({
   audioLevel = 0,
   colorA = DEFAULT_COLOR_A,
   colorB = DEFAULT_COLOR_B,
+  size,
 }) => {
-  const { width, height } = useWindowDimensions();
+  const windowDimensions = useWindowDimensions();
+  // Use explicit size if provided, otherwise use window dimensions
+  const width = size ?? windowDimensions.width;
+  const height = size ?? windowDimensions.height;
   const clock = useClock();
 
   // Convert React prop to shared value for Reanimated
