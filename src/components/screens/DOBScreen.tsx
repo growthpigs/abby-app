@@ -108,13 +108,21 @@ export const DOBScreen: React.FC<DOBScreenProps> = ({
   const ageMinNum = parseInt(ageMin);
   const ageMaxNum = parseInt(ageMax);
 
+  // Check if date is valid for the given month/year (handles Feb 30, etc.)
+  const isValidCalendarDate = (m: number, d: number, y: number): boolean => {
+    if (m < 1 || m > 12 || d < 1) return false;
+    const daysInMonth = new Date(y, m, 0).getDate(); // Day 0 of next month = last day of this month
+    return d <= daysInMonth;
+  };
+
   const isValidDOB = (
     month.length === 2 &&
     day.length === 2 &&
     year.length === 4 &&
     monthNum >= 1 && monthNum <= 12 &&
     dayNum >= 1 && dayNum <= 31 &&
-    yearNum >= 1900 && yearNum <= new Date().getFullYear() - 18
+    yearNum >= 1900 && yearNum <= new Date().getFullYear() - 18 &&
+    isValidCalendarDate(monthNum, dayNum, yearNum)
   );
 
   const isValidAgeRange = (
