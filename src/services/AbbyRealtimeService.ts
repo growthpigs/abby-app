@@ -16,8 +16,15 @@
  */
 
 import { TokenManager } from './TokenManager';
+import { secureFetch, type SecureFetchError } from '../utils/secureFetch';
 
 const API_BASE_URL = 'https://dev.api.myaimatchmaker.ai/v1';
+
+// Request timeout for realtime API (20 seconds - slightly longer for voice)
+const REQUEST_TIMEOUT_MS = 20000;
+
+// Availability check timeout (5 seconds - fast fail)
+const AVAILABILITY_TIMEOUT_MS = 5000;
 
 // ========================================
 // Demo Mode Responses
@@ -104,7 +111,7 @@ export class AbbyRealtimeService {
       }
 
       // Create session
-      const response = await fetch(`${API_BASE_URL}/abby/realtime/session`, {
+      const response = await secureFetch(`${API_BASE_URL}/abby/realtime/session`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -113,6 +120,7 @@ export class AbbyRealtimeService {
         body: JSON.stringify({
           // TODO: Add session config if needed
         }),
+        timeout: REQUEST_TIMEOUT_MS,
       });
 
       if (!response.ok) {
@@ -217,11 +225,12 @@ export class AbbyRealtimeService {
         throw new Error('Not authenticated');
       }
 
-      await fetch(`${API_BASE_URL}/abby/session/${this.sessionId}/end`, {
+      await secureFetch(`${API_BASE_URL}/abby/session/${encodeURIComponent(this.sessionId)}/end`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
         },
+        timeout: REQUEST_TIMEOUT_MS,
       });
 
       // Cleanup
@@ -270,8 +279,8 @@ export class AbbyRealtimeService {
         throw new Error('Not authenticated');
       }
 
-      const response = await fetch(
-        `${API_BASE_URL}/abby/realtime/${this.sessionId}/message`,
+      const response = await secureFetch(
+        `${API_BASE_URL}/abby/realtime/${encodeURIComponent(this.sessionId)}/message`,
         {
           method: 'POST',
           headers: {
@@ -281,12 +290,17 @@ export class AbbyRealtimeService {
           body: JSON.stringify({
             message,
           } as RealtimeMessageRequest),
+          timeout: REQUEST_TIMEOUT_MS,
         }
       );
 
       if (!response.ok) {
-        const error = await response.text();
-        throw new Error(`Failed to send message: ${error}`);
+        const fetchError: SecureFetchError = {
+          code: `HTTP_${response.status}`,
+          message: 'Failed to send message',
+          status: response.status,
+        };
+        throw fetchError;
       }
 
       const data = await response.json();
@@ -299,7 +313,10 @@ export class AbbyRealtimeService {
       if (__DEV__) console.log('[AbbyRealtime] Message sent, response received');
     } catch (error) {
       if (__DEV__) console.error('[AbbyRealtime] Failed to send message:', error);
-      throw error;
+      if (error && typeof error === 'object' && 'code' in error) {
+        throw error;
+      }
+      throw { code: 'REQUEST_FAILED', message: 'Failed to send message' };
     }
   }
 
@@ -345,7 +362,9 @@ export class AbbyRealtimeService {
    */
   private async checkAvailability(): Promise<boolean> {
     try {
-      const response = await fetch(`${API_BASE_URL}/abby/realtime/available`);
+      const response = await secureFetch(`${API_BASE_URL}/abby/realtime/available`, {
+        timeout: AVAILABILITY_TIMEOUT_MS,
+      });
       return response.ok;
     } catch (error) {
       if (__DEV__) console.error('[AbbyRealtime] Availability check failed:', error);
@@ -363,20 +382,29 @@ export class AbbyRealtimeService {
         throw new Error('Not authenticated');
       }
 
-      const response = await fetch(`${API_BASE_URL}/abby/memory/context`, {
+      const response = await secureFetch(`${API_BASE_URL}/abby/memory/context`, {
         headers: {
           'Authorization': `Bearer ${token}`,
         },
+        timeout: REQUEST_TIMEOUT_MS,
       });
 
       if (!response.ok) {
-        throw new Error('Failed to fetch context');
+        const fetchError: SecureFetchError = {
+          code: `HTTP_${response.status}`,
+          message: 'Failed to get context',
+          status: response.status,
+        };
+        throw fetchError;
       }
 
       return await response.json();
     } catch (error) {
       if (__DEV__) console.error('[AbbyRealtime] Failed to get context:', error);
-      throw error;
+      if (error && typeof error === 'object' && 'code' in error) {
+        throw error;
+      }
+      throw { code: 'REQUEST_FAILED', message: 'Failed to get context' };
     }
   }
 

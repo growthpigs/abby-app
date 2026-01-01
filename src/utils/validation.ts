@@ -4,8 +4,61 @@
  * Common validation functions for all form inputs
  * No external dependencies - pure TypeScript validation
  *
+ * Security features:
+ * - Input sanitization to prevent XSS
+ * - Length limits to prevent overflow attacks
+ * - Pattern validation for all input types
+ *
  * Returns: { valid: boolean, error?: string }
  */
+
+// ========================================
+// Input Sanitization (XSS Prevention)
+// ========================================
+
+/**
+ * Sanitize text input to prevent XSS attacks
+ * Removes potentially dangerous HTML and JavaScript
+ */
+export function sanitizeText(input: string): string {
+  if (!input || typeof input !== 'string') return '';
+
+  return input
+    .replace(/[<>]/g, '') // Remove HTML angle brackets
+    .replace(/javascript:/gi, '') // Remove javascript: protocol
+    .replace(/on\w+=/gi, '') // Remove event handlers (onclick=, etc.)
+    .replace(/data:/gi, '') // Remove data: URIs
+    .trim();
+}
+
+/**
+ * Sanitize email - lowercase and trim only
+ */
+export function sanitizeEmail(email: string): string {
+  if (!email || typeof email !== 'string') return '';
+  return email.toLowerCase().trim().slice(0, 254);
+}
+
+/**
+ * Sanitize name - remove non-name characters
+ */
+export function sanitizeName(name: string): string {
+  if (!name || typeof name !== 'string') return '';
+  return name
+    .replace(/[^a-zA-Z\s\-']/g, '')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .slice(0, 100);
+}
+
+/**
+ * Extract only digits from input
+ */
+export function sanitizeDigits(input: string, maxLength?: number): string {
+  if (!input || typeof input !== 'string') return '';
+  const digits = input.replace(/\D/g, '');
+  return maxLength ? digits.slice(0, maxLength) : digits;
+}
 
 export interface ValidationResult {
   valid: boolean;
@@ -289,6 +342,12 @@ export function validateForm(
 // ========================================
 
 export const Validators = {
+  // Sanitizers
+  sanitizeText,
+  sanitizeEmail,
+  sanitizeName,
+  sanitizeDigits,
+  // Validators
   email: validateEmail,
   password: validatePassword,
   passwordConfirm: validatePasswordConfirm,

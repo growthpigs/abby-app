@@ -20,8 +20,12 @@
  */
 
 import { TokenManager } from './TokenManager';
+import { secureFetch, type SecureFetchError } from '../utils/secureFetch';
 
 const API_BASE_URL = 'https://dev.api.myaimatchmaker.ai/v1';
+
+// Request timeout for questions API (15 seconds)
+const REQUEST_TIMEOUT_MS = 15000;
 
 // ========================================
 // Types
@@ -108,15 +112,20 @@ export class QuestionsService {
         throw new Error('Not authenticated');
       }
 
-      const response = await fetch(`${API_BASE_URL}/questions/next`, {
+      const response = await secureFetch(`${API_BASE_URL}/questions/next`, {
         headers: {
           'Authorization': `Bearer ${token}`,
         },
+        timeout: REQUEST_TIMEOUT_MS,
       });
 
       if (!response.ok) {
-        const error = await response.text();
-        throw new Error(`Failed to get next question: ${error}`);
+        const fetchError: SecureFetchError = {
+          code: `HTTP_${response.status}`,
+          message: 'Failed to get next question',
+          status: response.status,
+        };
+        throw fetchError;
       }
 
       const data: NextQuestionResponse = await response.json();
@@ -129,7 +138,11 @@ export class QuestionsService {
       return data;
     } catch (error) {
       if (__DEV__) console.error('[Questions] Get next failed:', error);
-      throw error;
+      // Re-throw secure errors, sanitize others
+      if (error && typeof error === 'object' && 'code' in error) {
+        throw error;
+      }
+      throw { code: 'REQUEST_FAILED', message: 'Failed to get next question' };
     }
   }
 
@@ -149,7 +162,7 @@ export class QuestionsService {
         throw new Error('Not authenticated');
       }
 
-      const response = await fetch(`${API_BASE_URL}/answers`, {
+      const response = await secureFetch(`${API_BASE_URL}/answers`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -160,11 +173,16 @@ export class QuestionsService {
           answer,
           responseTime,
         } as SubmitAnswerRequest),
+        timeout: REQUEST_TIMEOUT_MS,
       });
 
       if (!response.ok) {
-        const error = await response.text();
-        throw new Error(`Failed to submit answer: ${error}`);
+        const fetchError: SecureFetchError = {
+          code: `HTTP_${response.status}`,
+          message: 'Failed to submit answer',
+          status: response.status,
+        };
+        throw fetchError;
       }
 
       const data: SubmitAnswerResponse = await response.json();
@@ -174,7 +192,10 @@ export class QuestionsService {
       return data;
     } catch (error) {
       if (__DEV__) console.error('[Questions] Submit answer failed:', error);
-      throw error;
+      if (error && typeof error === 'object' && 'code' in error) {
+        throw error;
+      }
+      throw { code: 'REQUEST_FAILED', message: 'Failed to submit answer' };
     }
   }
 
@@ -194,7 +215,7 @@ export class QuestionsService {
         throw new Error('Not authenticated');
       }
 
-      const response = await fetch(`${API_BASE_URL}/answers/parse`, {
+      const response = await secureFetch(`${API_BASE_URL}/answers/parse`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -204,11 +225,16 @@ export class QuestionsService {
           questionId,
           naturalLanguageAnswer,
         } as ParseAnswerRequest),
+        timeout: REQUEST_TIMEOUT_MS,
       });
 
       if (!response.ok) {
-        const error = await response.text();
-        throw new Error(`Failed to parse answer: ${error}`);
+        const fetchError: SecureFetchError = {
+          code: `HTTP_${response.status}`,
+          message: 'Failed to parse answer',
+          status: response.status,
+        };
+        throw fetchError;
       }
 
       const data: ParseAnswerResponse = await response.json();
@@ -221,7 +247,10 @@ export class QuestionsService {
       return data;
     } catch (error) {
       if (__DEV__) console.error('[Questions] Parse answer failed:', error);
-      throw error;
+      if (error && typeof error === 'object' && 'code' in error) {
+        throw error;
+      }
+      throw { code: 'REQUEST_FAILED', message: 'Failed to parse answer' };
     }
   }
 
@@ -237,15 +266,20 @@ export class QuestionsService {
         throw new Error('Not authenticated');
       }
 
-      const response = await fetch(`${API_BASE_URL}/questions/categories`, {
+      const response = await secureFetch(`${API_BASE_URL}/questions/categories`, {
         headers: {
           'Authorization': `Bearer ${token}`,
         },
+        timeout: REQUEST_TIMEOUT_MS,
       });
 
       if (!response.ok) {
-        const error = await response.text();
-        throw new Error(`Failed to get categories: ${error}`);
+        const fetchError: SecureFetchError = {
+          code: `HTTP_${response.status}`,
+          message: 'Failed to get categories',
+          status: response.status,
+        };
+        throw fetchError;
       }
 
       const data: Category[] = await response.json();
@@ -255,7 +289,10 @@ export class QuestionsService {
       return data;
     } catch (error) {
       if (__DEV__) console.error('[Questions] Get categories failed:', error);
-      throw error;
+      if (error && typeof error === 'object' && 'code' in error) {
+        throw error;
+      }
+      throw { code: 'REQUEST_FAILED', message: 'Failed to get categories' };
     }
   }
 
@@ -271,18 +308,23 @@ export class QuestionsService {
         throw new Error('Not authenticated');
       }
 
-      const response = await fetch(
-        `${API_BASE_URL}/questions/category/${categorySlug}`,
+      const response = await secureFetch(
+        `${API_BASE_URL}/questions/category/${encodeURIComponent(categorySlug)}`,
         {
           headers: {
             'Authorization': `Bearer ${token}`,
           },
+          timeout: REQUEST_TIMEOUT_MS,
         }
       );
 
       if (!response.ok) {
-        const error = await response.text();
-        throw new Error(`Failed to get questions: ${error}`);
+        const fetchError: SecureFetchError = {
+          code: `HTTP_${response.status}`,
+          message: 'Failed to get questions',
+          status: response.status,
+        };
+        throw fetchError;
       }
 
       const data: Question[] = await response.json();
@@ -292,7 +334,10 @@ export class QuestionsService {
       return data;
     } catch (error) {
       if (__DEV__) console.error('[Questions] Get questions failed:', error);
-      throw error;
+      if (error && typeof error === 'object' && 'code' in error) {
+        throw error;
+      }
+      throw { code: 'REQUEST_FAILED', message: 'Failed to get questions' };
     }
   }
 
@@ -309,15 +354,20 @@ export class QuestionsService {
         throw new Error('Not authenticated');
       }
 
-      const response = await fetch(`${API_BASE_URL}/questions/gaps`, {
+      const response = await secureFetch(`${API_BASE_URL}/questions/gaps`, {
         headers: {
           'Authorization': `Bearer ${token}`,
         },
+        timeout: REQUEST_TIMEOUT_MS,
       });
 
       if (!response.ok) {
-        const error = await response.text();
-        throw new Error(`Failed to get gaps: ${error}`);
+        const fetchError: SecureFetchError = {
+          code: `HTTP_${response.status}`,
+          message: 'Failed to get profile gaps',
+          status: response.status,
+        };
+        throw fetchError;
       }
 
       const data: ProfileGap[] = await response.json();
@@ -327,7 +377,10 @@ export class QuestionsService {
       return data;
     } catch (error) {
       if (__DEV__) console.error('[Questions] Get gaps failed:', error);
-      throw error;
+      if (error && typeof error === 'object' && 'code' in error) {
+        throw error;
+      }
+      throw { code: 'REQUEST_FAILED', message: 'Failed to get profile gaps' };
     }
   }
 
@@ -343,15 +396,20 @@ export class QuestionsService {
         throw new Error('Not authenticated');
       }
 
-      const response = await fetch(`${API_BASE_URL}/answers`, {
+      const response = await secureFetch(`${API_BASE_URL}/answers`, {
         headers: {
           'Authorization': `Bearer ${token}`,
         },
+        timeout: REQUEST_TIMEOUT_MS,
       });
 
       if (!response.ok) {
-        const error = await response.text();
-        throw new Error(`Failed to get answers: ${error}`);
+        const fetchError: SecureFetchError = {
+          code: `HTTP_${response.status}`,
+          message: 'Failed to get answers',
+          status: response.status,
+        };
+        throw fetchError;
       }
 
       const data: Answer[] = await response.json();
@@ -361,7 +419,10 @@ export class QuestionsService {
       return data;
     } catch (error) {
       if (__DEV__) console.error('[Questions] Get answers failed:', error);
-      throw error;
+      if (error && typeof error === 'object' && 'code' in error) {
+        throw error;
+      }
+      throw { code: 'REQUEST_FAILED', message: 'Failed to get answers' };
     }
   }
 
@@ -377,15 +438,20 @@ export class QuestionsService {
         throw new Error('Not authenticated');
       }
 
-      const response = await fetch(`${API_BASE_URL}/questions/${questionId}`, {
+      const response = await secureFetch(`${API_BASE_URL}/questions/${encodeURIComponent(questionId)}`, {
         headers: {
           'Authorization': `Bearer ${token}`,
         },
+        timeout: REQUEST_TIMEOUT_MS,
       });
 
       if (!response.ok) {
-        const error = await response.text();
-        throw new Error(`Failed to get question: ${error}`);
+        const fetchError: SecureFetchError = {
+          code: `HTTP_${response.status}`,
+          message: 'Failed to get question',
+          status: response.status,
+        };
+        throw fetchError;
       }
 
       const data: Question = await response.json();
@@ -395,7 +461,10 @@ export class QuestionsService {
       return data;
     } catch (error) {
       if (__DEV__) console.error('[Questions] Get question failed:', error);
-      throw error;
+      if (error && typeof error === 'object' && 'code' in error) {
+        throw error;
+      }
+      throw { code: 'REQUEST_FAILED', message: 'Failed to get question' };
     }
   }
 }
