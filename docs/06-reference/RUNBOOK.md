@@ -6,6 +6,70 @@
 
 ---
 
+## 🔴 CRITICAL: Worktree Verification (RUN FIRST)
+
+**Before ANY work, verify you're in the correct worktree:**
+
+```bash
+# Must show "client-api-integration"
+git branch --show-current
+
+# Must show "/abby-client-api"
+git rev-parse --show-toplevel | grep -o "abby-client-api" && echo "✅ CORRECT" || echo "❌ WRONG WORKTREE!"
+
+# Quick verification
+pwd | grep -q "abby-client-api" && echo "✅ Correct" || echo "❌ Go to /abby-client-api"
+```
+
+| Worktree | Branch | Purpose |
+|----------|--------|---------|
+| `/abby` | `main` | ❌ LEGACY - ElevenLabs demo, reference only |
+| `/abby-client-api` | `client-api-integration` | ✅ ACTIVE - Client API |
+
+**If you're in `/abby`, STOP and run:**
+```bash
+cd /Users/rodericandrews/_PAI/projects/abby-client-api
+```
+
+---
+
+## Verification Commands
+
+Run these after ANY changes to auth, API, or environment:
+
+### App Builds and Runs
+```bash
+# Kill stale Metro, rebuild from correct worktree
+pkill -f "expo\|metro" 2>/dev/null
+cd /Users/rodericandrews/_PAI/projects/abby-client-api
+npx expo run:ios
+
+# Expected log: "[App] No existing auth, showing login"
+# NOT: "[AbbyAgent] Starting session with agent" (wrong worktree!)
+```
+
+### TypeScript Compiles
+```bash
+cd /Users/rodericandrews/_PAI/projects/abby-client-api
+npx tsc --noEmit 2>&1 | head -20
+# Should show no errors for new screens
+```
+
+### Client API is Reachable
+```bash
+curl -s https://dev.api.myaimatchmaker.ai/docs | head -c 100
+# Should return HTML, not 404 or connection error
+```
+
+### Cognito Config Valid
+```bash
+# AWS Cognito values (for reference, not secrets)
+echo "User Pool ID: us-east-1_l3JxaWpl5"
+echo "Client ID: 2ljj7mif1k7jjc2ajiq676fhm1"
+```
+
+---
+
 ## Project Info
 
 ### Google Drive Folders
