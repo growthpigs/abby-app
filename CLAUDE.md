@@ -4,6 +4,30 @@
 
 ---
 
+## 🔴 CRITICAL: WRONG WORKTREE - DO NOT WORK HERE
+
+**STOP! You are in `/abby` (main branch) - this is the LEGACY ElevenLabs demo.**
+
+```bash
+# IMMEDIATELY switch to the correct worktree:
+cd /Users/rodericandrews/_PAI/projects/abby-client-api
+```
+
+| Worktree | Branch | Purpose |
+|----------|--------|---------|
+| `/abby` (HERE) | `main` | ❌ LEGACY - ElevenLabs demo, reference only |
+| `/abby-client-api` | `client-api-integration` | ✅ ACTIVE WORK - Client API |
+
+**Why this matters:**
+- This worktree uses ElevenLabs (deprecated)
+- Client API is at `dev.api.myaimatchmaker.ai`
+- Voice uses OpenAI Realtime API (NOT ElevenLabs)
+- All new work MUST go in `abby-client-api`
+
+**If you're reading this, STOP and switch worktrees before doing anything.**
+
+---
+
 ## Project Overview
 
 ABBY is a high-end matchmaking app where users interact with an AI entity (Abby), not profiles. The interface is "living" - it breathes, morphs, and reacts like a biological organism.
