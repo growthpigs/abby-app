@@ -14,6 +14,7 @@
 | question-flow | 🚧 Partially Implemented | question-flow-spec.md | Chi | MVP |
 | glass-interface | 📝 Needs Implementation | glass-interface-spec.md | Chi | MVP |
 | onboarding-auth | 📝 Needs Implementation | onboarding-auth-spec.md | Chi | MVP |
+| cognito-auth | 🔨 In Development | cognito-auth.md | Chi | MVP |
 | voice-integration | 📝 Needs Implementation | voice-integration-spec.md | Chi | MVP |
 | **settings** | 📝 Needs Implementation | **settings-spec.md** | Chi | MVP |
 

@@ -1,36 +1,26 @@
 /**
- * AuthService - Authentication API client
+ * AuthService - AWS Cognito Authentication
  *
- * Handles all authentication operations against the MyAIMatchmaker API.
- * Currently stubbed with mock responses - will connect to real API when credentials provided.
+ * Handles all authentication operations via Cognito SDK.
+ * Uses client's Cognito User Pool for email/password auth.
  *
- * BLOCKER STATUS: Waiting for client API credentials
- * - Signup endpoint returns 401 (should be public)
- * - Cannot test without test user or admin access
- * - See: docs/API-TEST-RESULTS.md
- *
- * API Spec: https://dev.api.myaimatchmaker.ai/docs
+ * User Pool: us-east-1_l3JxaWpl5
+ * Client ID: 2ljj7mif1k7jjc2ajiq676fhm1
  */
 
+import { CognitoRefreshToken } from 'amazon-cognito-identity-js';
 import { TokenManager } from './TokenManager';
-
-const API_BASE_URL = 'https://dev.api.myaimatchmaker.ai/v1';
-const COGNITO_CLIENT_ID = '2ljj7mif1k7jjc2ajiq676fhm1';
+import {
+  userPool,
+  getCognitoUser,
+  getAuthDetails,
+  createUserAttributes,
+  type CognitoUserSession,
+} from './CognitoConfig';
 
 // ========================================
-// Types (matching client API spec)
+// Types
 // ========================================
-
-export interface SignupRequest {
-  clientId: string;
-  username: string; // Email address
-  password: string;
-  userAttributes: {
-    email: string;
-    name: string;
-    preferred_username: string;
-  };
-}
 
 export interface SignupResponse {
   userSub: string;
@@ -41,20 +31,8 @@ export interface SignupResponse {
   };
 }
 
-export interface VerifyRequest {
-  clientId: string;
-  username: string;
-  confirmationCode: string;
-}
-
 export interface VerifyResponse {
   message: string;
-}
-
-export interface LoginRequest {
-  clientId: string;
-  username: string;
-  password: string;
 }
 
 export interface LoginResponse {
@@ -65,11 +43,6 @@ export interface LoginResponse {
   tokenType: string;
 }
 
-export interface RefreshTokenRequest {
-  clientId: string;
-  refreshToken: string;
-}
-
 export interface RefreshTokenResponse {
   accessToken: string;
   idToken: string;
@@ -77,10 +50,38 @@ export interface RefreshTokenResponse {
   tokenType: string;
 }
 
-export interface ApiError {
+export interface AuthError {
   message: string;
-  code?: string;
-  statusCode?: number;
+  code: string;
+}
+
+// ========================================
+// Error Mapping
+// ========================================
+
+/**
+ * Map Cognito error codes to user-friendly messages
+ */
+function mapCognitoError(error: Error & { code?: string }): AuthError {
+  const code = error.code || 'UnknownError';
+
+  const errorMessages: Record<string, string> = {
+    UsernameExistsException: 'This email is already registered',
+    InvalidPasswordException: 'Password does not meet requirements',
+    UserNotConfirmedException: 'Please verify your email first',
+    NotAuthorizedException: 'Incorrect email or password',
+    CodeMismatchException: 'Invalid verification code',
+    ExpiredCodeException: 'Verification code expired. Request a new one.',
+    LimitExceededException: 'Too many attempts. Please wait and try again.',
+    UserNotFoundException: 'No account found with this email',
+    InvalidParameterException: 'Invalid input provided',
+    NetworkError: 'Network error. Please check your connection.',
+  };
+
+  return {
+    code,
+    message: errorMessages[code] || error.message || 'An error occurred',
+  };
 }
 
 // ========================================
@@ -89,10 +90,12 @@ export interface ApiError {
 
 export const AuthService = {
   /**
-   * Sign up a new user
-   * POST /v1/auth/signup
+   * Sign up a new user with email and password
    *
-   * CURRENT STATUS: Stubbed - real endpoint returns 401 Unauthorized
+   * Flow:
+   * 1. Call Cognito signUp with email, password, and attributes
+   * 2. Cognito sends 6-digit verification code to email
+   * 3. User must call verify() with the code
    */
   async signup(
     email: string,
@@ -100,175 +103,232 @@ export const AuthService = {
     name: string
   ): Promise<SignupResponse> {
     if (__DEV__) {
-      console.log('[AuthService] signup() called (STUBBED)');
+      console.log('[AuthService] signup() - Starting registration');
       console.log('[AuthService] Email:', email);
     }
 
-    // TODO: Replace with real API call when credentials available
-    // const response = await fetch(`${API_BASE_URL}/auth/signup`, {
-    //   method: 'POST',
-    //   headers: { 'Content-Type': 'application/json' },
-    //   body: JSON.stringify({
-    //     clientId: COGNITO_CLIENT_ID,
-    //     username: email,
-    //     password,
-    //     userAttributes: {
-    //       email,
-    //       name,
-    //       preferred_username: email.split('@')[0],
-    //     },
-    //   } as SignupRequest),
-    // });
+    // Split name into first/last if space present, otherwise use as first name
+    const nameParts = name.trim().split(' ');
+    const firstName = nameParts[0] || name;
+    const lastName = nameParts.slice(1).join(' ') || '';
 
-    // Simulate network delay
-    await new Promise((resolve) => setTimeout(resolve, 1000));
+    const attributes = createUserAttributes(email, firstName, lastName);
 
-    // Mock successful signup response
-    return {
-      userSub: 'mock-user-sub-12345',
-      codeDeliveryDetails: {
-        destination: email,
-        deliveryMedium: 'EMAIL',
-        attributeName: 'email',
-      },
-    };
+    return new Promise((resolve, reject) => {
+      userPool.signUp(email, password, attributes, [], (err, result) => {
+        if (err) {
+          if (__DEV__) console.log('[AuthService] Signup error:', err);
+          reject(mapCognitoError(err as Error & { code?: string }));
+          return;
+        }
+
+        if (!result) {
+          reject({ code: 'UnknownError', message: 'Signup failed' });
+          return;
+        }
+
+        if (__DEV__) {
+          console.log('[AuthService] Signup successful');
+          console.log('[AuthService] UserSub:', result.userSub);
+        }
+
+        resolve({
+          userSub: result.userSub,
+          codeDeliveryDetails: {
+            destination: result.codeDeliveryDetails?.Destination || email,
+            deliveryMedium:
+              (result.codeDeliveryDetails?.DeliveryMedium as 'EMAIL' | 'SMS') ||
+              'EMAIL',
+            attributeName:
+              result.codeDeliveryDetails?.AttributeName || 'email',
+          },
+        });
+      });
+    });
   },
 
   /**
-   * Verify email with confirmation code
-   * POST /v1/auth/verify
+   * Verify email with 6-digit confirmation code
    *
-   * CURRENT STATUS: Stubbed - cannot test without signup working
+   * Called after signup to confirm the user's email address.
    */
   async verify(email: string, code: string): Promise<VerifyResponse> {
     if (__DEV__) {
-      console.log('[AuthService] verify() called (STUBBED)');
+      console.log('[AuthService] verify() - Confirming registration');
       console.log('[AuthService] Email:', email);
-      console.log('[AuthService] Code:', code);
     }
 
-    // TODO: Replace with real API call when credentials available
-    // const response = await fetch(`${API_BASE_URL}/auth/verify`, {
-    //   method: 'POST',
-    //   headers: { 'Content-Type': 'application/json' },
-    //   body: JSON.stringify({
-    //     clientId: COGNITO_CLIENT_ID,
-    //     username: email,
-    //     confirmationCode: code,
-    //   } as VerifyRequest),
-    // });
+    const cognitoUser = getCognitoUser(email);
 
-    // Simulate network delay
-    await new Promise((resolve) => setTimeout(resolve, 800));
+    return new Promise((resolve, reject) => {
+      cognitoUser.confirmRegistration(code, true, (err, result) => {
+        if (err) {
+          if (__DEV__) console.log('[AuthService] Verify error:', err);
+          reject(mapCognitoError(err as Error & { code?: string }));
+          return;
+        }
 
-    // Mock successful verification
-    return {
-      message: 'Email verified successfully',
-    };
+        if (__DEV__) console.log('[AuthService] Email verified:', result);
+
+        resolve({
+          message: 'Email verified successfully',
+        });
+      });
+    });
   },
 
   /**
-   * Log in existing user
-   * POST /v1/auth/login
+   * Resend verification code to email
    *
-   * CURRENT STATUS: Stubbed - cannot test without verified user
+   * Use when the original code expired or wasn't received.
+   */
+  async resendVerificationCode(email: string): Promise<void> {
+    if (__DEV__) {
+      console.log('[AuthService] resendVerificationCode()');
+    }
+
+    const cognitoUser = getCognitoUser(email);
+
+    return new Promise((resolve, reject) => {
+      cognitoUser.resendConfirmationCode((err, result) => {
+        if (err) {
+          if (__DEV__) console.log('[AuthService] Resend error:', err);
+          reject(mapCognitoError(err as Error & { code?: string }));
+          return;
+        }
+
+        if (__DEV__) console.log('[AuthService] Code resent:', result);
+        resolve();
+      });
+    });
+  },
+
+  /**
+   * Log in with email and password
+   *
+   * Flow:
+   * 1. Authenticate with Cognito
+   * 2. Store tokens in secure storage
+   * 3. Return token info
    */
   async login(email: string, password: string): Promise<LoginResponse> {
     if (__DEV__) {
-      console.log('[AuthService] login() called (STUBBED)');
+      console.log('[AuthService] login() - Authenticating');
       console.log('[AuthService] Email:', email);
     }
 
-    // TODO: Replace with real API call when credentials available
-    // const response = await fetch(`${API_BASE_URL}/auth/login`, {
-    //   method: 'POST',
-    //   headers: { 'Content-Type': 'application/json' },
-    //   body: JSON.stringify({
-    //     clientId: COGNITO_CLIENT_ID,
-    //     username: email,
-    //     password,
-    //   } as LoginRequest),
-    // });
+    const cognitoUser = getCognitoUser(email);
+    const authDetails = getAuthDetails(email, password);
 
-    // Simulate network delay
-    await new Promise((resolve) => setTimeout(resolve, 1200));
+    return new Promise((resolve, reject) => {
+      cognitoUser.authenticateUser(authDetails, {
+        onSuccess: async (session: CognitoUserSession) => {
+          if (__DEV__) console.log('[AuthService] Login successful');
 
-    // Mock JWT tokens (structure matches Cognito)
-    const mockTokens: LoginResponse = {
-      accessToken: 'mock.access.token.eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9',
-      idToken: 'mock.id.token.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IlRlc3QgVXNlciJ9',
-      refreshToken: 'mock-refresh-token-abcdef123456',
-      expiresIn: 3600, // 1 hour
-      tokenType: 'Bearer',
-    };
+          const accessToken = session.getAccessToken().getJwtToken();
+          const idToken = session.getIdToken().getJwtToken();
+          const refreshToken = session.getRefreshToken().getToken();
+          const expiresIn = session.getAccessToken().getExpiration();
 
-    // Store tokens using TokenManager
-    await TokenManager.setToken(mockTokens.accessToken);
-    await TokenManager.setRefreshToken(mockTokens.refreshToken);
+          // Store tokens securely
+          await TokenManager.setToken(accessToken);
+          await TokenManager.setRefreshToken(refreshToken);
 
-    if (__DEV__) console.log('[AuthService] Tokens stored in secure storage');
+          if (__DEV__) console.log('[AuthService] Tokens stored');
 
-    return mockTokens;
+          resolve({
+            accessToken,
+            idToken,
+            refreshToken,
+            expiresIn,
+            tokenType: 'Bearer',
+          });
+        },
+
+        onFailure: (err) => {
+          if (__DEV__) console.log('[AuthService] Login error:', err);
+          reject(mapCognitoError(err as Error & { code?: string }));
+        },
+
+        // Handle MFA if required (not currently used)
+        // mfaRequired: (codeDeliveryDetails) => { ... },
+        // newPasswordRequired: (userAttributes) => { ... },
+      });
+    });
   },
 
   /**
-   * Refresh access token using refresh token
-   * POST /v1/auth/refresh
+   * Refresh access token using stored refresh token
    *
-   * CURRENT STATUS: Stubbed
+   * Called automatically when access token expires (1 hour).
    */
   async refreshToken(): Promise<RefreshTokenResponse> {
-    if (__DEV__) console.log('[AuthService] refreshToken() called (STUBBED)');
+    if (__DEV__) console.log('[AuthService] refreshToken()');
 
-    const refreshToken = await TokenManager.getRefreshToken();
-    if (!refreshToken) {
-      throw new Error('No refresh token available');
+    const storedRefreshToken = await TokenManager.getRefreshToken();
+    if (!storedRefreshToken) {
+      throw { code: 'NoRefreshToken', message: 'No refresh token available' };
     }
 
-    // TODO: Replace with real API call when credentials available
-    // const response = await fetch(`${API_BASE_URL}/auth/refresh`, {
-    //   method: 'POST',
-    //   headers: { 'Content-Type': 'application/json' },
-    //   body: JSON.stringify({
-    //     clientId: COGNITO_CLIENT_ID,
-    //     refreshToken,
-    //   } as RefreshTokenRequest),
-    // });
+    // Get the current user from pool
+    const cognitoUser = userPool.getCurrentUser();
+    if (!cognitoUser) {
+      throw { code: 'NoUser', message: 'No user session found' };
+    }
 
-    // Simulate network delay
-    await new Promise((resolve) => setTimeout(resolve, 600));
+    const refreshTokenObj = new CognitoRefreshToken({
+      RefreshToken: storedRefreshToken,
+    });
 
-    // Mock refreshed tokens
-    const mockRefresh: RefreshTokenResponse = {
-      accessToken: 'mock.new.access.token.eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9',
-      idToken: 'mock.new.id.token.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IlRlc3QgVXNlciJ9',
-      expiresIn: 3600,
-      tokenType: 'Bearer',
-    };
+    return new Promise((resolve, reject) => {
+      cognitoUser.refreshSession(refreshTokenObj, async (err, session) => {
+        if (err) {
+          if (__DEV__) console.log('[AuthService] Refresh error:', err);
+          reject(mapCognitoError(err as Error & { code?: string }));
+          return;
+        }
 
-    // Update access token
-    await TokenManager.setToken(mockRefresh.accessToken);
+        const accessToken = session.getAccessToken().getJwtToken();
+        const idToken = session.getIdToken().getJwtToken();
+        const expiresIn = session.getAccessToken().getExpiration();
 
-    if (__DEV__) console.log('[AuthService] Access token refreshed');
+        // Update stored access token
+        await TokenManager.setToken(accessToken);
 
-    return mockRefresh;
+        if (__DEV__) console.log('[AuthService] Token refreshed');
+
+        resolve({
+          accessToken,
+          idToken,
+          expiresIn,
+          tokenType: 'Bearer',
+        });
+      });
+    });
   },
 
   /**
-   * Log out current user (clear tokens)
-   * No API call required - just clear local tokens
+   * Log out current user
+   *
+   * Clears local tokens and signs out from Cognito.
    */
   async logout(): Promise<void> {
-    if (__DEV__) console.log('[AuthService] logout() called');
+    if (__DEV__) console.log('[AuthService] logout()');
 
+    // Sign out from Cognito (local only, doesn't invalidate refresh token on server)
+    const cognitoUser = userPool.getCurrentUser();
+    if (cognitoUser) {
+      cognitoUser.signOut();
+    }
+
+    // Clear stored tokens
     await TokenManager.clearTokens();
 
-    if (__DEV__) console.log('[AuthService] User logged out, tokens cleared');
+    if (__DEV__) console.log('[AuthService] User logged out');
   },
 
   /**
    * Check if user is currently authenticated
-   * (Has valid access token stored)
    */
   async isAuthenticated(): Promise<boolean> {
     const token = await TokenManager.getToken();
@@ -277,10 +337,17 @@ export const AuthService = {
 
   /**
    * Get current access token
-   * Returns null if not authenticated
    */
   async getAccessToken(): Promise<string | null> {
     return await TokenManager.getToken();
+  },
+
+  /**
+   * Get current user's email from Cognito session
+   */
+  getCurrentUserEmail(): string | null {
+    const cognitoUser = userPool.getCurrentUser();
+    return cognitoUser?.getUsername() || null;
   },
 };
 
