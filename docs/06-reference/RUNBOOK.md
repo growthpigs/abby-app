@@ -21,10 +21,12 @@ git rev-parse --show-toplevel | grep -o "abby-client-api" && echo "✅ CORRECT" 
 pwd | grep -q "abby-client-api" && echo "✅ Correct" || echo "❌ Go to /abby-client-api"
 ```
 
-| Worktree | Branch | Purpose |
-|----------|--------|---------|
-| `/abby` | `main` | ❌ LEGACY - ElevenLabs demo, reference only |
-| `/abby-client-api` | `client-api-integration` | ✅ ACTIVE - Client API |
+| Worktree | Branch | Voice Service | Purpose |
+|----------|--------|---------------|---------|
+| `/abby` | `main` | AbbyAgent.ts (ElevenLabs) | ❌ LEGACY |
+| `/abby-client-api` | `client-api-integration` | AbbyRealtimeService.ts (OpenAI) | ✅ ACTIVE |
+
+**NEVER copy files from `/abby` to `/abby-client-api` - the service imports are different!**
 
 **If you're in `/abby`, STOP and run:**
 ```bash
@@ -68,6 +70,46 @@ echo "User Pool ID: us-east-1_l3JxaWpl5"
 echo "Client ID: 2ljj7mif1k7jjc2ajiq676fhm1"
 ```
 
+### Cognito Debugging (2026-01-01 Learning)
+
+**Key Insight:** If the same error (`InvalidParameterException`) occurs for ALL parameter variations, the issue is likely the CREDENTIALS, not the parameters.
+
+```bash
+# WRONG - only proves file exists (File Existence Fallacy)
+cat src/services/CognitoConfig.ts | grep UserPoolId  # "Found it! ✅"
+
+# RIGHT - proves credentials WORK at runtime
+# Ask Nathan to verify in AWS Console:
+# 1. Pool ID exists and is correct
+# 2. Client ID belongs to that pool
+# 3. Pool has correct attributes configured (email, name)
+```
+
+**When console logs aren't visible (device testing):**
+
+Add `Alert.alert()` in App.tsx to display params on screen:
+```typescript
+import { Alert } from 'react-native';
+
+// In handlePasswordComplete or signup handler:
+if (__DEV__) {
+  Alert.alert(
+    'DEBUG: Signup Params',
+    `Email: ${email}\nName: "${name}"\nPassword length: ${password?.length}`,
+    [{ text: 'OK' }]
+  );
+}
+```
+
+**Tested Parameter Combinations (all returned InvalidParameterException):**
+1. email + given_name + family_name
+2. email + given_name only
+3. email only (minimal)
+4. email + 'name' attribute
+5. Generated username vs email as username
+
+**Conclusion:** When all variations fail with same generic error, stop testing parameters and verify the Pool ID / Client ID are correct with the backend owner.
+
 ---
 
 ## Project Info
@@ -100,35 +142,46 @@ echo "Client ID: 2ljj7mif1k7jjc2ajiq676fhm1"
 
 | Service | Purpose | Status |
 |---------|---------|--------|
-| AWS Cognito | Authentication | 🟡 Stubbed (UI complete) |
+| AWS Cognito | Authentication | ✅ Working (frontend) |
 | OpenAI Realtime | Voice conversation | 🟡 Service ready, needs auth |
-| Client API | Backend (dev.api.myaimatchmaker.ai) | 🟡 Ready, needs real tokens |
+| Client API | Backend (dev.api.myaimatchmaker.ai) | ❌ 500 errors (backend Lambda issue) |
 | Sentry | Error tracking | To configure |
 
-### Current State (2025-12-31)
+### Current State (2026-01-01)
 
 **Branch:** `client-api-integration` in `/abby-client-api` worktree
 
-**Auth Flow (UI Complete):**
+**Auth Flow:**
 - SIGNUP: Login → Name → Email → Password → Email Verification → Main App
 - SIGNIN: Login → Email → Password → Main App
 
 **What's Working:**
 - ✅ LoginScreen displays with VibeMatrix shader background
 - ✅ Auth flow UI navigates between screens
-- ✅ Typography component supports variant prop
+- ✅ **Real Cognito signup** with amazon-cognito-identity-js SDK
+- ✅ **Email verification** - codes delivered, verification works
+- ✅ **Login** - returns valid JWT tokens (Access + ID)
 - ✅ Metro bundle compiles (3277+ modules)
 - ✅ iOS build succeeds on simulator
 
-**What's Stubbed:**
-- 🟡 AuthService.ts - Returns mock tokens, not calling real Cognito
-- 🟡 AbbyRealtimeService.ts - Service ready but needs valid auth tokens
-- 🟡 CoachIntroScreen/CoachScreen - Will error without real API connection
+**Backend Issues (Nathan to Fix):**
+- ❌ PostConfirmation Lambda: `AccessDeniedException`
+- ❌ API endpoints return 500 (user not created in DB)
+- ❌ /docs endpoint returns 500
 
-**Next Steps:**
-1. Connect AuthService to real Cognito (User Pool: us-east-1_l3JxaWpl5)
-2. Add graceful fallback for AbbyRealtimeService when unavailable
-3. Test full flow with real authentication
+**Test Account:**
+```
+Email:    rodericandrews+4@gmail.com
+Password: TestPass123!
+Username: rodericandrews4_1767262412580
+UserSub:  f4b854d8-30d1-7062-c933-ea7071a64b64
+Status:   Verified ✅, Login works ✅, API blocked ❌
+```
+
+**Next Steps (Blocked on Backend):**
+1. Nathan fixes PostConfirmation Lambda IAM permissions
+2. Once Lambda works, test full API integration
+3. Connect voice endpoints after auth works
 
 ### Performance Targets
 
