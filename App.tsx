@@ -75,6 +75,7 @@ import {
   SignInScreen,
   SettingsScreen,
   PhotosScreen,
+  MatchesScreen,
 } from './src/components/screens';
 
 // Auth flow states (matches Nathan's API: Login → Name → Email → Password → Verify)
@@ -189,7 +190,7 @@ function AppContent() {
   const [authError, setAuthError] = useState<string | null>(null);
 
   // Menu screen state (for hamburger menu navigation)
-  const [menuScreen, setMenuScreen] = useState<'none' | 'photos' | 'settings'>('none');
+  const [menuScreen, setMenuScreen] = useState<'none' | 'photos' | 'settings' | 'matches'>('none');
 
   // Demo state from store
   const demoState = useDemoState();
@@ -778,6 +779,9 @@ function AppContent() {
           onPhotosPress={() => {
             setMenuScreen('photos');
           }}
+          onMatchesPress={() => {
+            setMenuScreen('matches');
+          }}
           onSettingsPress={() => {
             setMenuScreen('settings');
           }}
@@ -789,28 +793,17 @@ function AppContent() {
         />
       )}
 
-      {/* Settings Screen Overlay */}
+      {/* Settings Screen Overlay (Input Mode only per settings-spec.md) */}
       {menuScreen === 'settings' && (
         <SettingsScreen
           onClose={() => setMenuScreen('none')}
-          onEditProfile={() => {
-            if (__DEV__) console.log('[App] Edit profile pressed');
-          }}
-          onNotifications={() => {
-            if (__DEV__) console.log('[App] Notifications pressed');
-          }}
-          onPrivacy={() => {
-            if (__DEV__) console.log('[App] Privacy pressed');
-          }}
-          onSubscription={() => {
-            if (__DEV__) console.log('[App] Subscription pressed');
-          }}
-          onHelp={() => {
-            if (__DEV__) console.log('[App] Help pressed');
-          }}
-          onDeleteAccount={() => {
-            if (__DEV__) console.log('[App] Delete account pressed');
-          }}
+        />
+      )}
+
+      {/* Matches Screen Overlay (/v1/matches/candidates) */}
+      {menuScreen === 'matches' && (
+        <MatchesScreen
+          onClose={() => setMenuScreen('none')}
         />
       )}
 

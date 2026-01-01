@@ -1,8 +1,14 @@
 /**
- * HamburgerMenu - Subtle overlay menu for settings/photos access
+ * HamburgerMenu - Subtle overlay menu for app navigation
  *
  * Top-left positioned, white/subtle hamburger icon.
  * Opens a glass-styled slide-out menu.
+ *
+ * Menu items (based on API endpoints):
+ * - My Photos (/v1/photos/*)
+ * - Matches (/v1/matches/candidates)
+ * - Settings (input mode only per settings-spec.md)
+ * - Log Out
  */
 
 import React, { useState, useCallback } from 'react';
@@ -16,7 +22,7 @@ import {
 } from 'react-native';
 import { BlurView } from 'expo-blur';
 import * as Haptics from 'expo-haptics';
-import { Menu, X, Camera, Settings, LogOut } from 'lucide-react-native';
+import { Menu, X, Camera, Heart, Settings, LogOut } from 'lucide-react-native';
 import { Body, Caption } from './Typography';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
@@ -24,12 +30,14 @@ const MENU_WIDTH = SCREEN_WIDTH * 0.75;
 
 export interface HamburgerMenuProps {
   onPhotosPress?: () => void;
+  onMatchesPress?: () => void;
   onSettingsPress?: () => void;
   onLogoutPress?: () => void;
 }
 
 export const HamburgerMenu: React.FC<HamburgerMenuProps> = ({
   onPhotosPress,
+  onMatchesPress,
   onSettingsPress,
   onLogoutPress,
 }) => {
@@ -113,6 +121,7 @@ export const HamburgerMenu: React.FC<HamburgerMenuProps> = ({
 
             {/* Menu Items */}
             <View style={styles.menuItems}>
+              {/* My Photos - /v1/photos/* */}
               <Pressable
                 onPress={() => handleMenuItemPress(onPhotosPress)}
                 style={({ pressed }) => [
@@ -124,6 +133,19 @@ export const HamburgerMenu: React.FC<HamburgerMenuProps> = ({
                 <Body style={styles.menuItemText}>My Photos</Body>
               </Pressable>
 
+              {/* Matches - /v1/matches/candidates */}
+              <Pressable
+                onPress={() => handleMenuItemPress(onMatchesPress)}
+                style={({ pressed }) => [
+                  styles.menuItem,
+                  pressed && styles.menuItemPressed,
+                ]}
+              >
+                <Heart size={22} stroke="rgba(0, 0, 0, 0.7)" />
+                <Body style={styles.menuItemText}>Interested in You</Body>
+              </Pressable>
+
+              {/* Settings - Input mode only */}
               <Pressable
                 onPress={() => handleMenuItemPress(onSettingsPress)}
                 style={({ pressed }) => [
@@ -137,6 +159,7 @@ export const HamburgerMenu: React.FC<HamburgerMenuProps> = ({
 
               <View style={styles.divider} />
 
+              {/* Log Out */}
               <Pressable
                 onPress={() => handleMenuItemPress(onLogoutPress)}
                 style={({ pressed }) => [

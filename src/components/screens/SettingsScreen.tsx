@@ -1,7 +1,10 @@
 /**
- * SettingsScreen - App settings and preferences
+ * SettingsScreen - Input Mode Selection
  *
- * Glass-styled settings page accessible from hamburger menu.
+ * Per settings-spec.md: ONLY input mode selection for MVP.
+ * V2 will add notifications, voice customization, privacy, accessibility.
+ *
+ * 3 modes: voice only, text only, voice+text (default)
  */
 
 import React, { useCallback } from 'react';
@@ -9,82 +12,74 @@ import {
   View,
   StyleSheet,
   Pressable,
-  ScrollView,
 } from 'react-native';
 import { BlurView } from 'expo-blur';
 import * as Haptics from 'expo-haptics';
-import {
-  User,
-  Bell,
-  Shield,
-  CreditCard,
-  HelpCircle,
-  Trash2,
-  ChevronRight,
-} from 'lucide-react-native';
+import { Mic, MessageSquare, MicOff } from 'lucide-react-native';
 import { Headline, Body, Caption } from '../ui/Typography';
+import { useSettingsStore, InputMode } from '../../store/useSettingsStore';
 
 export interface SettingsScreenProps {
   onClose?: () => void;
-  onEditProfile?: () => void;
-  onNotifications?: () => void;
-  onPrivacy?: () => void;
-  onSubscription?: () => void;
-  onHelp?: () => void;
-  onDeleteAccount?: () => void;
 }
 
-interface SettingsItemProps {
+interface InputModeOptionProps {
+  mode: InputMode;
+  currentMode: InputMode;
   icon: React.ReactNode;
-  label: string;
-  description?: string;
-  onPress?: () => void;
-  isDestructive?: boolean;
+  title: string;
+  description: string;
+  onSelect: (mode: InputMode) => void;
 }
 
-const SettingsItem: React.FC<SettingsItemProps> = ({
+const InputModeOption: React.FC<InputModeOptionProps> = ({
+  mode,
+  currentMode,
   icon,
-  label,
+  title,
   description,
-  onPress,
-  isDestructive,
+  onSelect,
 }) => {
+  const isSelected = mode === currentMode;
+
   const handlePress = useCallback(() => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    onPress?.();
-  }, [onPress]);
+    onSelect(mode);
+  }, [mode, onSelect]);
 
   return (
     <Pressable
       onPress={handlePress}
       style={({ pressed }) => [
-        styles.settingsItem,
-        pressed && styles.settingsItemPressed,
+        styles.modeOption,
+        isSelected && styles.modeOptionSelected,
+        pressed && styles.modeOptionPressed,
       ]}
     >
-      <View style={styles.settingsItemIcon}>{icon}</View>
-      <View style={styles.settingsItemContent}>
-        <Body style={[styles.settingsItemLabel, isDestructive && styles.destructiveText]}>
-          {label}
-        </Body>
-        {description && (
-          <Caption style={styles.settingsItemDescription}>{description}</Caption>
-        )}
+      <View style={[styles.radioOuter, isSelected && styles.radioOuterSelected]}>
+        {isSelected && <View style={styles.radioInner} />}
       </View>
-      <ChevronRight size={20} stroke="rgba(0, 0, 0, 0.3)" />
+      <View style={styles.modeIcon}>{icon}</View>
+      <View style={styles.modeContent}>
+        <Body style={[styles.modeTitle, isSelected && styles.modeTitleSelected]}>
+          {title}
+        </Body>
+        <Caption style={styles.modeDescription}>{description}</Caption>
+      </View>
     </Pressable>
   );
 };
 
 export const SettingsScreen: React.FC<SettingsScreenProps> = ({
   onClose,
-  onEditProfile,
-  onNotifications,
-  onPrivacy,
-  onSubscription,
-  onHelp,
-  onDeleteAccount,
 }) => {
+  const inputMode = useSettingsStore((state) => state.inputMode);
+  const setInputMode = useSettingsStore((state) => state.setInputMode);
+
+  const handleSelectMode = useCallback((mode: InputMode) => {
+    setInputMode(mode);
+  }, [setInputMode]);
+
   return (
     <View style={styles.container}>
       <BlurView intensity={90} tint="light" style={styles.blurContainer}>
@@ -96,68 +91,45 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
           </Pressable>
         </View>
 
-        {/* Settings List */}
-        <ScrollView style={styles.content} contentContainerStyle={styles.contentContainer}>
-          {/* Account Section */}
-          <Caption style={styles.sectionTitle}>ACCOUNT</Caption>
-          <View style={styles.section}>
-            <SettingsItem
-              icon={<User size={22} stroke="rgba(0, 0, 0, 0.7)" />}
-              label="Edit Profile"
-              description="Name, bio, and preferences"
-              onPress={onEditProfile}
+        {/* Content */}
+        <View style={styles.content}>
+          <Headline style={styles.questionText}>
+            How do you want to talk with Abby?
+          </Headline>
+
+          <View style={styles.optionsContainer}>
+            <InputModeOption
+              mode="voice_only"
+              currentMode={inputMode}
+              icon={<Mic size={24} stroke="rgba(0, 0, 0, 0.7)" />}
+              title="Voice only"
+              description="Just speak - no text display"
+              onSelect={handleSelectMode}
             />
-            <SettingsItem
-              icon={<Bell size={22} stroke="rgba(0, 0, 0, 0.7)" />}
-              label="Notifications"
-              description="Match alerts, messages"
-              onPress={onNotifications}
+
+            <InputModeOption
+              mode="voice_and_text"
+              currentMode={inputMode}
+              icon={<Mic size={24} stroke="rgba(0, 0, 0, 0.7)" />}
+              title="Voice + Text"
+              description="Speak and see transcript"
+              onSelect={handleSelectMode}
             />
-            <SettingsItem
-              icon={<Shield size={22} stroke="rgba(0, 0, 0, 0.7)" />}
-              label="Privacy"
-              description="Who can see your profile"
-              onPress={onPrivacy}
+
+            <InputModeOption
+              mode="text_only"
+              currentMode={inputMode}
+              icon={<MessageSquare size={24} stroke="rgba(0, 0, 0, 0.7)" />}
+              title="Text only"
+              description="Type your responses"
+              onSelect={handleSelectMode}
             />
           </View>
 
-          {/* Subscription Section */}
-          <Caption style={styles.sectionTitle}>SUBSCRIPTION</Caption>
-          <View style={styles.section}>
-            <SettingsItem
-              icon={<CreditCard size={22} stroke="rgba(0, 0, 0, 0.7)" />}
-              label="Manage Subscription"
-              description="View plan and billing"
-              onPress={onSubscription}
-            />
-          </View>
-
-          {/* Support Section */}
-          <Caption style={styles.sectionTitle}>SUPPORT</Caption>
-          <View style={styles.section}>
-            <SettingsItem
-              icon={<HelpCircle size={22} stroke="rgba(0, 0, 0, 0.7)" />}
-              label="Help & Support"
-              description="FAQ, contact us"
-              onPress={onHelp}
-            />
-          </View>
-
-          {/* Danger Zone */}
-          <Caption style={styles.sectionTitle}>DANGER ZONE</Caption>
-          <View style={styles.section}>
-            <SettingsItem
-              icon={<Trash2 size={22} stroke="rgba(239, 68, 68, 0.8)" />}
-              label="Delete Account"
-              description="Permanently remove your data"
-              onPress={onDeleteAccount}
-              isDestructive
-            />
-          </View>
-
-          {/* Version Info */}
-          <Caption style={styles.versionText}>ABBY v1.0.0</Caption>
-        </ScrollView>
+          <Caption style={styles.defaultNote}>
+            Default is Voice + Text
+          </Caption>
+        </View>
       </BlurView>
     </View>
   );
@@ -196,64 +168,81 @@ const styles = StyleSheet.create({
   },
   content: {
     flex: 1,
+    paddingVertical: 32,
+    paddingHorizontal: 24,
   },
-  contentContainer: {
-    paddingVertical: 24,
-    paddingHorizontal: 20,
+  questionText: {
+    fontSize: 24,
+    textAlign: 'center',
+    marginBottom: 32,
+    color: 'rgba(0, 0, 0, 0.85)',
   },
-  sectionTitle: {
-    fontSize: 11,
-    letterSpacing: 2,
-    color: 'rgba(0, 0, 0, 0.4)',
-    marginBottom: 12,
-    marginTop: 24,
+  optionsContainer: {
+    gap: 12,
   },
-  section: {
-    backgroundColor: 'rgba(255, 255, 255, 0.6)',
-    borderRadius: 16,
-    overflow: 'hidden',
-  },
-  settingsItem: {
+  modeOption: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 16,
-    paddingHorizontal: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: 'rgba(0, 0, 0, 0.05)',
+    padding: 16,
+    backgroundColor: 'rgba(255, 255, 255, 0.5)',
+    borderRadius: 16,
+    borderWidth: 2,
+    borderColor: 'rgba(0, 0, 0, 0.1)',
+    gap: 12,
   },
-  settingsItemPressed: {
-    backgroundColor: 'rgba(0, 0, 0, 0.03)',
+  modeOptionSelected: {
+    borderColor: '#3B82F6',
+    backgroundColor: 'rgba(59, 130, 246, 0.08)',
   },
-  settingsItemIcon: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
+  modeOptionPressed: {
+    opacity: 0.8,
+  },
+  radioOuter: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    borderWidth: 2,
+    borderColor: 'rgba(0, 0, 0, 0.3)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  radioOuterSelected: {
+    borderColor: '#3B82F6',
+  },
+  radioInner: {
+    width: 12,
+    height: 12,
+    borderRadius: 6,
+    backgroundColor: '#3B82F6',
+  },
+  modeIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
     backgroundColor: 'rgba(0, 0, 0, 0.05)',
     alignItems: 'center',
     justifyContent: 'center',
-    marginRight: 12,
   },
-  settingsItemContent: {
+  modeContent: {
     flex: 1,
   },
-  settingsItemLabel: {
-    fontSize: 16,
+  modeTitle: {
+    fontSize: 17,
     color: 'rgba(0, 0, 0, 0.85)',
     marginBottom: 2,
   },
-  settingsItemDescription: {
-    fontSize: 12,
+  modeTitleSelected: {
+    color: '#3B82F6',
+    fontWeight: '600',
+  },
+  modeDescription: {
+    fontSize: 13,
     color: 'rgba(0, 0, 0, 0.5)',
   },
-  destructiveText: {
-    color: 'rgba(239, 68, 68, 0.9)',
-  },
-  versionText: {
+  defaultNote: {
     textAlign: 'center',
-    marginTop: 32,
-    color: 'rgba(0, 0, 0, 0.3)',
-    fontSize: 11,
-    letterSpacing: 1,
+    marginTop: 24,
+    color: 'rgba(0, 0, 0, 0.4)',
   },
 });
 
