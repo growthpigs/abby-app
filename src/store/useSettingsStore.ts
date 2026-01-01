@@ -63,7 +63,7 @@ export const useSettingsStore = create<SettingsStore>((set, get) => ({
         })
       );
     } catch (error) {
-      console.error('[SettingsStore] Failed to save settings:', error);
+      if (__DEV__) console.error('[SettingsStore] Failed to save settings:', error);
     }
   },
 
@@ -79,7 +79,7 @@ export const useSettingsStore = create<SettingsStore>((set, get) => ({
         try {
           parsed = JSON.parse(stored);
         } catch {
-          console.warn('[SettingsStore] Corrupted settings data, using defaults');
+          if (__DEV__) console.warn('[SettingsStore] Corrupted settings data, using defaults');
           set({ isLoaded: true });
           return;
         }
@@ -90,7 +90,7 @@ export const useSettingsStore = create<SettingsStore>((set, get) => ({
 
           // Check version for future migrations
           if (data.version !== SETTINGS_VERSION) {
-            console.warn(`[SettingsStore] Settings version mismatch (${data.version} vs ${SETTINGS_VERSION}), using defaults`);
+            if (__DEV__) console.warn(`[SettingsStore] Settings version mismatch (${data.version} vs ${SETTINGS_VERSION}), using defaults`);
             set({ isLoaded: true });
             return;
           }
@@ -99,7 +99,7 @@ export const useSettingsStore = create<SettingsStore>((set, get) => ({
           if (isValidInputMode(data.inputMode)) {
             set({ inputMode: data.inputMode, isLoaded: true });
           } else {
-            console.warn(`[SettingsStore] Invalid inputMode "${data.inputMode}", using default`);
+            if (__DEV__) console.warn(`[SettingsStore] Invalid inputMode "${data.inputMode}", using default`);
             set({ isLoaded: true });
           }
         } else {
@@ -109,7 +109,7 @@ export const useSettingsStore = create<SettingsStore>((set, get) => ({
         set({ isLoaded: true });
       }
     } catch (error) {
-      console.error('[SettingsStore] Failed to load settings:', error);
+      if (__DEV__) console.error('[SettingsStore] Failed to load settings:', error);
       set({ isLoaded: true });
     }
   },
