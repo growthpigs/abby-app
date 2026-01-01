@@ -4,6 +4,50 @@
 
 ---
 
+## ✅ CORRECT WORKTREE - YOU ARE IN THE RIGHT PLACE
+
+**This is `/abby-client-api` (client-api-integration branch) - ACTIVE DEVELOPMENT.**
+
+| Worktree | Branch | Purpose |
+|----------|--------|---------|
+| `/abby` | `main` | ❌ LEGACY - ElevenLabs demo, reference only |
+| `/abby-client-api` (HERE) | `client-api-integration` | ✅ ACTIVE WORK - Client API |
+
+---
+
+## Client Backend API
+
+**Base URL:** `https://dev.api.myaimatchmaker.ai`
+**API Docs:** https://dev.api.myaimatchmaker.ai/docs#/
+
+### Authentication: AWS Cognito
+
+```
+User Pool ID: us-east-1_l3JxaWpl5
+Client ID:    2ljj7mif1k7jjc2ajiq676fhm1
+Region:       us-east-1
+```
+
+**Flow:** SignUp → Email Verification → SignIn → Get Tokens
+
+### Voice: OpenAI Realtime API (NOT ElevenLabs!)
+
+| Endpoint | Method | Purpose |
+|----------|--------|---------|
+| `/v1/abby/realtime/session` | POST | Create voice session |
+| `/v1/abby/session/{id}/end` | POST | End voice session |
+| `/v1/abby/realtime/available` | GET | Check API availability |
+
+### Key Endpoints
+
+- **Auth:** `/v1/auth/*` (Cognito)
+- **Profile:** `/v1/me`, `/v1/profile/*`
+- **Questions:** `/v1/questions/*`, `/v1/answers`
+- **Matching:** `/v1/matches/*`
+- **Photos:** `/v1/photos/*`
+
+---
+
 ## Project Overview
 
 ABBY is a high-end matchmaking app where users interact with an AI entity (Abby), not profiles. The interface is "living" - it breathes, morphs, and reacts like a biological organism.
