@@ -18,7 +18,7 @@ import { useDemoStore } from '../../store/useDemoStore';
 import { useVibeController } from '../../store/useVibeController';
 import { ALL_DATA_POINTS } from '../../data/questions-schema';
 import { isValidVibeTheme } from '../../types/vibe';
-import { abbyTTS as abbyVoice } from '../../services/AbbyTTSService';
+import { abbyTTS } from '../../services/AbbyTTSService';
 
 // Use the full 150 questions for interview mode
 const INTERVIEW_QUESTIONS = ALL_DATA_POINTS;
@@ -32,10 +32,14 @@ const getBackgroundIndexForQuestion = (questionIndex: number): number => {
 
 export interface InterviewScreenProps {
   onBackgroundChange?: (index: number) => void;
+  onSecretBack?: () => void;
+  onSecretForward?: () => void;
 }
 
 export const InterviewScreen: React.FC<InterviewScreenProps> = ({
   onBackgroundChange,
+  onSecretBack,
+  onSecretForward,
 }) => {
   const currentIndex = useDemoStore((state) => state.currentQuestionIndex);
   const answerQuestion = useDemoStore((state) => state.answerQuestion);
@@ -95,6 +99,17 @@ export const InterviewScreen: React.FC<InterviewScreenProps> = ({
     submitAnswer('Answered');
   };
 
+  // Secret navigation handlers
+  const handleSecretBack = useCallback(() => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
+    onSecretBack?.();
+  }, [onSecretBack]);
+
+  const handleSecretForward = useCallback(() => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
+    onSecretForward?.();
+  }, [onSecretForward]);
+
   // Calculate background index for current question
   useEffect(() => {
     if (onBackgroundChange) {
@@ -115,7 +130,7 @@ export const InterviewScreen: React.FC<InterviewScreenProps> = ({
 
       addMessage('abby', question.question);
 
-      abbyVoice.speak(question.question, (level) => {
+      abbyTTS.speak(question.question, (level) => {
         audioLevelRef.current?.(level);
       }).catch((err) => {
         console.warn('[Interview] TTS error:', err);
@@ -124,7 +139,7 @@ export const InterviewScreen: React.FC<InterviewScreenProps> = ({
     }
 
     return () => {
-      abbyVoice.stop();
+      abbyTTS.stop();
     };
   }, [currentIndex, setColorTheme]);
 
@@ -135,7 +150,7 @@ export const InterviewScreen: React.FC<InterviewScreenProps> = ({
 
       {/* Bottom: Glass modal with question + button - extends to screen edge */}
       <View style={[styles.bottomModal, { bottom: -insets.bottom }]}>
-        <BlurView intensity={40} tint="light" style={styles.modalBlur}>
+        <BlurView intensity={80} tint="light" style={styles.modalBlur}>
           {/* Drag handle */}
           <View style={styles.handleContainer}>
             <View style={styles.handle} />
@@ -205,6 +220,26 @@ export const InterviewScreen: React.FC<InterviewScreenProps> = ({
           <View style={styles.homeIndicatorPadding} />
         </BlurView>
       </View>
+
+      {/* Secret navigation triggers (all 70x70, invisible) */}
+      {/* Left = Back */}
+      <Pressable
+        onPress={handleSecretBack}
+        style={styles.secretBackTrigger}
+        hitSlop={0}
+      />
+      {/* Middle = Primary action (Submit Yes) */}
+      <Pressable
+        onPress={() => submitAnswer('Yes')}
+        style={styles.secretMiddleTrigger}
+        hitSlop={0}
+      />
+      {/* Right = Forward */}
+      <Pressable
+        onPress={handleSecretForward}
+        style={styles.secretForwardTrigger}
+        hitSlop={0}
+      />
     </View>
   );
 };
@@ -336,6 +371,42 @@ const styles = StyleSheet.create({
   // Extra padding at bottom for home indicator
   homeIndicatorPadding: {
     height: 34,
+  },
+
+  // Secret navigation triggers
+  secretBackTrigger: {
+    position: 'absolute',
+    top: 10,
+    left: 10,
+    width: 70,
+    height: 70,
+    zIndex: 9999,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.5)',
+    borderRadius: 8,
+  },
+  secretMiddleTrigger: {
+    position: 'absolute',
+    top: 10,
+    left: '50%',
+    marginLeft: -35,
+    width: 70,
+    height: 70,
+    zIndex: 9999,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.5)',
+    borderRadius: 8,
+  },
+  secretForwardTrigger: {
+    position: 'absolute',
+    top: 10,
+    right: 10,
+    width: 70,
+    height: 70,
+    zIndex: 9999,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.5)',
+    borderRadius: 8,
   },
 });
 

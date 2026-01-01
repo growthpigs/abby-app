@@ -1,8 +1,36 @@
 # ABBY API Integration Plan
 
-**Status:** 🚨 SCOPE CREEP ALERT
-**Date:** 2024-12-30
+**Status:** 🟡 PHASE 1 COMPLETE - BLOCKED ON BACKEND
+**Date:** 2026-01-01
 **Issue:** Client backend API requires full dating app features, NOT just MVP
+
+---
+
+## 🔴 CURRENT BLOCKER (2026-01-01)
+
+**Backend Lambda Error:** PostConfirmation Lambda fails with `AccessDeniedException`
+- Cognito signup ✅
+- Email verification ✅
+- Login + JWT tokens ✅
+- API calls → 500 Internal Server Error ❌
+
+**Root Cause:** Lambda that creates user in PostgreSQL after signup doesn't have IAM permissions.
+
+**Action Required:** Nathan must fix Lambda IAM role to allow database write access.
+
+---
+
+## Progress Tracker
+
+| Phase | Description | Status |
+|-------|-------------|--------|
+| 1 | Auth + Core Data | ✅ Complete (blocked by backend) |
+| 2 | Onboarding Flow | 🟡 UI ready, needs API |
+| 3 | Interview API Swap | ❌ Not started |
+| 4 | Matching | ❌ Not started |
+| 5 | Profile & Photos | ❌ Not started |
+| 6 | Payments | ❌ Not started |
+| 7 | Polish | ❌ Not started |
 
 ---
 

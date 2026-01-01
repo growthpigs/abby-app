@@ -33,9 +33,6 @@ export const LoadingScreen: React.FC<LoadingScreenProps> = ({
 
   return (
     <View style={styles.container}>
-      {/* Full-screen glass overlay */}
-      <View style={styles.glassOverlay} />
-
       {/* Content centered */}
       <View style={styles.content}>
         {/* Logo */}
@@ -62,10 +59,6 @@ export const LoadingScreen: React.FC<LoadingScreenProps> = ({
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-  },
-  glassOverlay: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(255, 255, 255, 0.05)',
   },
   content: {
     flex: 1,

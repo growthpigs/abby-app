@@ -1,19 +1,15 @@
 /**
- * ABBY - Full App with Cognito Auth Flow
+ * ABBY - Full App with Auth Flow
  *
- * Authentication flow matching the client API (dev.api.myaimatchmaker.ai):
- *
- * SIGNUP: Login → Name → Email → Password → Email Verification → Onboarding → Main App
- * SIGNIN: Login → Email → Password → Main App
- *
- * Onboarding: DOB → Permissions → Gender → Preferences → Ethnicity → EthnicityPref → Relationship → Smoking → Location
+ * Entry point with complete authentication flow (Nathan's API):
+ * LOGIN → NAME → EMAIL → PASSWORD → EMAIL_VERIFICATION → DOB → (Onboarding)
  *
  * Uses VibeMatrix shader background with glass overlay screens.
- * Integrates with AuthService for Cognito authentication.
+ * State machine controls screen transitions.
  */
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { StyleSheet, View, ActivityIndicator } from 'react-native';
+import { StyleSheet, View, ActivityIndicator, Alert } from 'react-native';
 import { SafeAreaProvider, initialWindowMetrics } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 import {
@@ -26,21 +22,39 @@ import { JetBrainsMono_400Regular } from '@expo-google-fonts/jetbrains-mono';
 
 import { VibeMatrixAnimated, VibeMatrixAnimatedRef } from './src/components/layers/VibeMatrixAnimated';
 import { AbbyOrb } from './src/components/layers/AbbyOrb';
+import { GlassFloor } from './src/components/ui/GlassFloor';
+import { HamburgerMenu } from './src/components/ui/HamburgerMenu';
 import { ErrorBoundary } from './src/components/ErrorBoundary';
-import { OrbMode } from './src/types/orb';
-import { useSettingsStore } from './src/store/useSettingsStore';
-import { useDemoStore, useDemoState, DemoState } from './src/store/useDemoStore';
 
-// Auth screens
+// Conditional ElevenLabsProvider - only load if native modules available
+let ElevenLabsProvider: React.ComponentType<{ children: React.ReactNode }> | null = null;
+try {
+  const elevenlabs = require('@elevenlabs/react-native');
+  ElevenLabsProvider = elevenlabs.ElevenLabsProvider;
+} catch (e) {
+  if (__DEV__) {
+    console.warn('[App] ElevenLabsProvider not available - voice features disabled');
+  }
+}
+import { useSettingsStore } from './src/store/useSettingsStore';
+import { AuthService } from './src/services/AuthService';
+import { useDemoStore, useDemoState, DemoState } from './src/store/useDemoStore';
+import { DEMO_MATCH } from './src/data/demo-match';
+import { useOnboardingStore } from './src/store/useOnboardingStore';
+import { OrbMode } from './src/types/orb';
+import { VibeColorTheme, VibeComplexity } from './src/types/vibe';
+import { useVibeController } from './src/store/useVibeController';
+
+// Auth screens (Nathan's API flow)
 import { LoginScreen } from './src/components/screens/LoginScreen';
-import { NameScreen } from './src/components/screens/NameScreen';
 import { EmailScreen } from './src/components/screens/EmailScreen';
 import { PasswordScreen } from './src/components/screens/PasswordScreen';
 import { EmailVerificationScreen } from './src/components/screens/EmailVerificationScreen';
 
 // Onboarding screens
-import { DOBScreen } from './src/components/screens/DOBScreen';
 import { PermissionsScreen } from './src/components/screens/PermissionsScreen';
+import { NameScreen } from './src/components/screens/NameScreen';
+import { DOBScreen } from './src/components/screens/DOBScreen';
 import { BasicsGenderScreen } from './src/components/screens/BasicsGenderScreen';
 import { BasicsPreferencesScreen } from './src/components/screens/BasicsPreferencesScreen';
 import { EthnicityScreen } from './src/components/screens/EthnicityScreen';
@@ -48,9 +62,6 @@ import { EthnicityPreferenceScreen } from './src/components/screens/EthnicityPre
 import { BasicsRelationshipScreen } from './src/components/screens/BasicsRelationshipScreen';
 import { SmokingScreen } from './src/components/screens/SmokingScreen';
 import { BasicsLocationScreen } from './src/components/screens/BasicsLocationScreen';
-
-// Onboarding store
-import { useOnboardingStore } from './src/store/useOnboardingStore';
 
 // Main app screens
 import {
@@ -61,60 +72,47 @@ import {
   PaymentScreen,
   RevealScreen,
   CoachScreen,
+  SignInScreen,
+  SettingsScreen,
+  PhotosScreen,
 } from './src/components/screens';
 
-// Auth service
-import { AuthService } from './src/services/AuthService';
-
-// =============================================================================
-// TYPES
-// =============================================================================
-
-type AuthMode = 'signup' | 'signin';
-
+// Auth flow states (matches Nathan's API: Login → Name → Email → Password → Verify)
 type AuthState =
-  | 'LOADING'            // Checking existing auth
-  | 'LOGIN'              // Entry screen
-  | 'NAME'               // Signup: enter name
-  | 'EMAIL'              // Enter email
-  | 'PASSWORD'           // Enter/create password
-  | 'VERIFICATION'       // Verify email code
-  // Onboarding states
-  | 'DOB'                // Date of birth
-  | 'PERMISSIONS'        // iOS permissions
-  | 'BASICS_GENDER'      // Gender selection
-  | 'BASICS_PREFERENCES' // Gender preferences
-  | 'ETHNICITY'          // Ethnicity selection
-  | 'ETHNICITY_PREF'     // Ethnicity preferences
-  | 'BASICS_RELATIONSHIP'// Relationship type
-  | 'SMOKING'            // Smoking habits
-  | 'BASICS_LOCATION'    // Location
-  | 'AUTHENTICATED';     // Logged in
+  | 'LOADING'
+  | 'LOGIN'
+  | 'SIGNIN'           // Single-screen signin (email + password together)
+  | 'NAME'
+  | 'EMAIL'
+  | 'PASSWORD'
+  | 'EMAIL_VERIFICATION'
+  | 'DOB'
+  | 'PERMISSIONS'
+  | 'BASICS_GENDER'
+  | 'BASICS_PREFERENCES'
+  | 'ETHNICITY'
+  | 'ETHNICITY_PREFERENCE'
+  | 'BASICS_RELATIONSHIP'
+  | 'SMOKING'
+  | 'BASICS_LOCATION'
+  | 'AUTHENTICATED';
 
-// Screen ordering for secret navigation
-const SIGNUP_ORDER: AuthState[] = [
+// Screen ordering for secret navigation (matches Nathan's API order)
+const AUTH_ORDER: AuthState[] = [
   'LOGIN',
-  'NAME',
-  'EMAIL',
-  'PASSWORD',
-  'VERIFICATION',
-  // Onboarding
-  'DOB',
+  'NAME',               // Collect name first (for Cognito signup)
+  'EMAIL',              // Then email
+  'PASSWORD',           // Then password
+  'EMAIL_VERIFICATION', // Verify email with 6-digit code
+  'DOB',                // Then profile info
   'PERMISSIONS',
   'BASICS_GENDER',
   'BASICS_PREFERENCES',
   'ETHNICITY',
-  'ETHNICITY_PREF',
+  'ETHNICITY_PREFERENCE',
   'BASICS_RELATIONSHIP',
   'SMOKING',
   'BASICS_LOCATION',
-  'AUTHENTICATED',
-];
-
-const SIGNIN_ORDER: AuthState[] = [
-  'LOGIN',
-  'EMAIL',
-  'PASSWORD',
   'AUTHENTICATED',
 ];
 
@@ -128,35 +126,77 @@ const DEMO_ORDER: DemoState[] = [
   'COACH',
 ];
 
-// Fallback metrics for when native module hasn't initialized
-const fallbackMetrics = {
-  frame: { x: 0, y: 0, width: 393, height: 852 },
-  insets: { top: 59, right: 0, bottom: 34, left: 0 },
+// ===========================================
+// VIBE MAPPINGS FOR SCREEN TRANSITIONS
+// ===========================================
+
+// Auth/Onboarding screen vibes - TRUE RAINBOW: Purple → Blue → Green → Yellow
+// Complexity increases throughout: SMOOTHIE → FLOW → OCEAN → STORM
+const AUTH_VIBES: Partial<Record<AuthState, { theme: VibeColorTheme; complexity: VibeComplexity }>> = {
+  // === PURPLE PHASE (Deep violet - start) ===
+  LOGIN: { theme: 'DEEP', complexity: 'SMOOTHIE' },        // 1. Purple, calm
+  SIGNIN: { theme: 'DEEP', complexity: 'SMOOTHIE' },       // 1b. Purple, calm
+  NAME: { theme: 'DEEP', complexity: 'FLOW' },             // 2. Purple, flowing
+  EMAIL: { theme: 'DEEP', complexity: 'FLOW' },            // 3. Purple, flowing
+
+  // === BLUE PHASE (Trust blue - building) ===
+  PASSWORD: { theme: 'TRUST', complexity: 'FLOW' },        // 4. Blue, flowing
+  EMAIL_VERIFICATION: { theme: 'TRUST', complexity: 'OCEAN' }, // 5. Blue, active
+  DOB: { theme: 'TRUST', complexity: 'OCEAN' },            // 6. Blue, active
+  PERMISSIONS: { theme: 'TRUST', complexity: 'OCEAN' },    // 7. Blue, active
+
+  // === GREEN PHASE (Growth green - progressing) ===
+  BASICS_GENDER: { theme: 'GROWTH', complexity: 'OCEAN' }, // 8. Green, active
+  BASICS_PREFERENCES: { theme: 'GROWTH', complexity: 'OCEAN' }, // 9. Green, active
+  ETHNICITY: { theme: 'GROWTH', complexity: 'STORM' },     // 10. Green, energetic
+  ETHNICITY_PREFERENCE: { theme: 'GROWTH', complexity: 'STORM' }, // 11. Green, energetic
+
+  // === YELLOW/ORANGE PHASE (Caution amber - finale) ===
+  BASICS_RELATIONSHIP: { theme: 'CAUTION', complexity: 'STORM' }, // 12. Orange, energetic
+  SMOKING: { theme: 'CAUTION', complexity: 'STORM' },      // 13. Orange, energetic
+  BASICS_LOCATION: { theme: 'CAUTION', complexity: 'STORM' }, // 14. Orange, peak energy
 };
 
-// =============================================================================
-// APP CONTENT
-// =============================================================================
+// Demo screen vibes
+const DEMO_VIBES: Record<DemoState, { theme: VibeColorTheme; complexity: VibeComplexity }> = {
+  COACH_INTRO: { theme: 'GROWTH', complexity: 'SMOOTHIE' }, // Green - coaching start
+  INTERVIEW: { theme: 'TRUST', complexity: 'FLOW' },        // Blue - questions
+  SEARCHING: { theme: 'CAUTION', complexity: 'OCEAN' },     // Orange - processing
+  MATCH: { theme: 'PASSION', complexity: 'STORM' },         // Red - excitement!
+  PAYMENT: { theme: 'GROWTH', complexity: 'FLOW' },         // Green - value
+  REVEAL: { theme: 'PASSION', complexity: 'STORM' },        // Red - big moment
+  COACH: { theme: 'GROWTH', complexity: 'SMOOTHIE' },       // Green - coaching
+};
+
+// Fallback metrics for when native module hasn't initialized yet
+const fallbackMetrics = {
+  frame: { x: 0, y: 0, width: 393, height: 852 },
+  insets: { top: 59, right: 0, bottom: 34, left: 0 }, // iPhone 14 Pro defaults
+};
 
 function AppContent() {
   // Auth state
   const [authState, setAuthState] = useState<AuthState>('LOADING');
-  const [authMode, setAuthMode] = useState<AuthMode>('signup');
+  const [isSignUp, setIsSignUp] = useState(true); // true = signup flow, false = signin flow
 
-  // Form data (undefined = not yet entered, allows default placeholders)
-  const [userName, setUserName] = useState<string | undefined>(undefined);
-  const [userEmail, setUserEmail] = useState<string | undefined>(undefined);
-  const [userPassword, setUserPassword] = useState<string | undefined>(undefined);
+  // Form data (persisted across screens)
+  const [emailData, setEmailData] = useState('');
+  const [passwordData, setPasswordData] = useState('');
+  const [usernameData, setUsernameData] = useState(''); // Cognito username (generated at signup)
 
-  // Loading/error states
-  const [isLoading, setIsLoading] = useState(false);
+  // Auth loading and error states
+  const [isAuthLoading, setIsAuthLoading] = useState(false);
   const [authError, setAuthError] = useState<string | null>(null);
+
+  // Menu screen state (for hamburger menu navigation)
+  const [menuScreen, setMenuScreen] = useState<'none' | 'photos' | 'settings'>('none');
 
   // Demo state from store
   const demoState = useDemoState();
   const advance = useDemoStore((state) => state.advance);
   const goToState = useDemoStore((state) => state.goToState);
   const reset = useDemoStore((state) => state.reset);
+  const setMatchData = useDemoStore((state) => state.setMatchData);
 
   // Orb mode based on current screen - center when Abby is speaking, docked when user is focused
   const getOrbMode = (): OrbMode => {
@@ -200,192 +240,314 @@ function AppContent() {
     loadSettings();
   }, [loadSettings]);
 
-  // Check existing authentication on startup
+  // Initialize: go to login after loading
   useEffect(() => {
-    const checkAuth = async () => {
-      if (!fontsLoaded || !settingsLoaded) return;
+    if (fontsLoaded && settingsLoaded && authState === 'LOADING') {
+      console.log('[App] Initializing auth state to LOGIN');
+      setAuthState('LOGIN');
+      // Set initial vibe for login (DEEP purple)
+      vibeRef.current?.setVibe('DEEP');
+    }
+  }, [fontsLoaded, settingsLoaded, authState]);
 
-      try {
-        const isAuth = await AuthService.isAuthenticated();
-        if (isAuth) {
-          if (__DEV__) console.log('[App] User already authenticated');
-          setAuthState('AUTHENTICATED');
-          reset();
-          vibeRef.current?.setVibe('TRUST');
-        } else {
-          if (__DEV__) console.log('[App] No existing auth, showing login');
-          setAuthState('LOGIN');
-          vibeRef.current?.setVibe('DEEP');
-        }
-      } catch (error) {
-        if (__DEV__) console.error('[App] Auth check failed:', error);
-        setAuthState('LOGIN');
-        vibeRef.current?.setVibe('DEEP');
-      }
-    };
+  // Apply vibe on auth state change
+  useEffect(() => {
+    if (authState === 'LOADING' || authState === 'AUTHENTICATED') return;
 
-    checkAuth();
-  }, [fontsLoaded, settingsLoaded, reset]);
+    const vibe = AUTH_VIBES[authState];
+    if (vibe) {
+      console.log('[App] Setting vibe for', authState, '→', vibe.theme, vibe.complexity);
+      vibeRef.current?.setVibeAndComplexity(vibe.theme, vibe.complexity);
+    }
+  }, [authState]);
 
-  // Get current auth order based on mode
-  const getAuthOrder = useCallback(() => {
-    return authMode === 'signup' ? SIGNUP_ORDER : SIGNIN_ORDER;
-  }, [authMode]);
+  // Apply vibe on demo state change
+  useEffect(() => {
+    if (authState !== 'AUTHENTICATED') return;
+
+    const vibe = DEMO_VIBES[demoState];
+    if (vibe) {
+      console.log('[App] Setting vibe for', demoState, '→', vibe.theme, vibe.complexity);
+      vibeRef.current?.setVibeAndComplexity(vibe.theme, vibe.complexity);
+    }
+  }, [authState, demoState]);
 
   // SECRET NAVIGATION HANDLERS
+  // Back: go to previous screen
   const handleSecretBack = useCallback(() => {
-    setAuthError(null);
-
     if (authState !== 'AUTHENTICATED') {
-      const order = getAuthOrder();
-      const currentIndex = order.indexOf(authState);
+      // Navigate backwards in auth flow
+      const currentIndex = AUTH_ORDER.indexOf(authState);
       if (currentIndex > 0) {
-        const prevState = order[currentIndex - 1];
+        const prevState = AUTH_ORDER[currentIndex - 1];
         if (prevState !== 'LOADING') {
           setAuthState(prevState);
         }
       }
     } else {
+      // Navigate backwards in demo flow
       const currentIndex = DEMO_ORDER.indexOf(demoState);
       if (currentIndex > 0) {
         goToState(DEMO_ORDER[currentIndex - 1]);
       } else {
-        // Return to login (logout)
-        AuthService.logout();
-        setAuthState('LOGIN');
-        setAuthMode('signup');
-        setUserName(undefined);
-        setUserEmail(undefined);
-        setUserPassword(undefined);
-        vibeRef.current?.setVibe('DEEP');
+        // Go back to auth flow
+        setAuthState('EMAIL_VERIFICATION');
       }
     }
-  }, [authState, authMode, demoState, goToState, getAuthOrder]);
+  }, [authState, demoState, goToState]);
 
+  // Forward: go to next screen
   const handleSecretForward = useCallback(() => {
-    setAuthError(null);
-
     if (authState !== 'AUTHENTICATED') {
-      const order = getAuthOrder();
-      const currentIndex = order.indexOf(authState);
-      if (currentIndex < order.length - 1) {
-        const nextState = order[currentIndex + 1];
+      // Navigate forward in auth flow
+      const currentIndex = AUTH_ORDER.indexOf(authState);
+      if (currentIndex < AUTH_ORDER.length - 1) {
+        const nextState = AUTH_ORDER[currentIndex + 1];
         setAuthState(nextState);
         if (nextState === 'AUTHENTICATED') {
+          // Initialize demo state
           reset();
           vibeRef.current?.setVibe('TRUST');
         }
       }
     } else {
+      // Navigate forward in demo flow
+      // Ensure matchData is set when entering MATCH state (for secret nav skip)
+      if (demoState === 'SEARCHING' || demoState === 'INTERVIEW' || demoState === 'COACH_INTRO') {
+        setMatchData(DEMO_MATCH);
+      }
       advance();
     }
-  }, [authState, authMode, advance, reset, getAuthOrder]);
+  }, [authState, demoState, advance, reset, setMatchData]);
 
   // AUTH FLOW HANDLERS
   const handleCreateAccount = () => {
-    setAuthMode('signup');
-    setAuthError(null);
+    // Signup flow: Login → Name → Email → Password → Verify → Onboarding
+    setIsSignUp(true);
     setAuthState('NAME');
   };
 
   const handleSignIn = () => {
-    setAuthMode('signin');
-    setAuthError(null);
-    setAuthState('EMAIL');
-  };
-
-  const handleNameNext = (name: string) => {
-    setUserName(name);
-    setAuthState('EMAIL');
+    // Signin flow: Single screen with email + password → AUTHENTICATED
+    setIsSignUp(false);
+    setAuthState('SIGNIN');
   };
 
   const handleEmailNext = (email: string) => {
-    setUserEmail(email);
+    setEmailData(email);
     setAuthState('PASSWORD');
   };
 
-  const handlePasswordNext = async (password: string) => {
-    setUserPassword(password);
+  const handlePasswordComplete = async (password: string) => {
+    // Store password for login after verification
+    setPasswordData(password);
     setAuthError(null);
-    setIsLoading(true);
+    setIsAuthLoading(true);
 
     try {
-      if (authMode === 'signup') {
-        // Signup flow
-        if (__DEV__) console.log('[App] Starting signup...');
-        await AuthService.signup(
-          userEmail!,
-          password,
-          userName!
+      // Call Cognito SignUp
+      const name = fullName || 'User';
+
+      // DEBUG: Show parameters in Alert
+      if (__DEV__) {
+        Alert.alert(
+          'DEBUG: Signup Params',
+          `Email: ${emailData}\nName: "${name}"\nPassword length: ${password?.length}`,
+          [{ text: 'OK' }]
         );
-        setAuthState('VERIFICATION');
-      } else {
-        // Signin flow
-        if (__DEV__) console.log('[App] Starting signin...');
-        await AuthService.login(userEmail!, password);
-        setAuthState('AUTHENTICATED');
-        reset();
-        vibeRef.current?.setVibe('TRUST');
       }
-    } catch (error) {
-      if (__DEV__) console.error('[App] Auth error:', error);
-      // AuthService throws { code, message } objects, not Error instances
-      const authError = error as { code?: string; message?: string };
-      setAuthError(
-        authError?.message || 'Authentication failed. Please try again.'
-      );
+
+      const signupResult = await AuthService.signup(emailData, password, name);
+
+      // Store the generated username (needed for verify/login)
+      setUsernameData(signupResult.username);
+
+      if (__DEV__) console.log('[App] Signup successful, username:', signupResult.username);
+      setAuthState('EMAIL_VERIFICATION');
+    } catch (error: unknown) {
+      // Show full error details in Alert for debugging
+      const authError = error as { message?: string; code?: string };
+      const errorMsg = authError?.message || (error instanceof Error ? error.message : 'Signup failed');
+      const errorCode = authError?.code || 'Unknown';
+
+      if (__DEV__) {
+        Alert.alert(
+          'Signup Failed',
+          `Code: ${errorCode}\n\nMessage: ${errorMsg}\n\nEmail: ${emailData}\nName: ${fullName || 'User'}`,
+          [{ text: 'OK' }]
+        );
+      }
+
+      setAuthError(`${errorCode}: ${errorMsg}`);
     } finally {
-      setIsLoading(false);
+      setIsAuthLoading(false);
     }
   };
 
-  const handleVerificationNext = async (code: string) => {
+  // Signin password handler - just login, no signup/verify flow
+  const handleSignInPassword = async (password: string) => {
     setAuthError(null);
-    setIsLoading(true);
+    setIsAuthLoading(true);
 
     try {
-      if (__DEV__) console.log('[App] Verifying email...');
-      await AuthService.verify(userEmail!, code);
+      if (__DEV__) console.log('[App] Signing in with email:', emailData);
 
-      // After verification, log in automatically
-      if (__DEV__) console.log('[App] Verification success, logging in...');
-      await AuthService.login(userEmail!, userPassword!);
+      // Login with email as username (Cognito allows this)
+      await AuthService.login(emailData, password);
 
-      // Go to onboarding instead of directly to authenticated
-      setAuthState('DOB');
+      if (__DEV__) console.log('[App] Sign-in successful');
+
+      // Go directly to authenticated (skip onboarding for existing users)
+      setAuthState('AUTHENTICATED');
+      reset(); // Reset demo state
       vibeRef.current?.setVibe('TRUST');
-    } catch (error) {
-      if (__DEV__) console.error('[App] Verification error:', error);
-      // AuthService throws { code, message } objects, not Error instances
-      const authError = error as { code?: string; message?: string };
-      setAuthError(
-        authError?.message || 'Verification failed. Please try again.'
-      );
+    } catch (error: unknown) {
+      const authError = error as { message?: string; code?: string };
+      const errorMsg = authError?.message || (error instanceof Error ? error.message : 'Sign in failed');
+      const errorCode = authError?.code || 'Unknown';
+
+      if (__DEV__) {
+        Alert.alert(
+          'Sign In Failed',
+          `Code: ${errorCode}\n\nMessage: ${errorMsg}`,
+          [{ text: 'OK' }]
+        );
+      }
+
+      setAuthError(`${errorCode}: ${errorMsg}`);
     } finally {
-      setIsLoading(false);
+      setIsAuthLoading(false);
     }
   };
 
-  // ONBOARDING HANDLERS
-  const handleDOBComplete = () => setAuthState('PERMISSIONS');
-  const handlePermissionsComplete = () => setAuthState('BASICS_GENDER');
-  const handleGenderComplete = () => setAuthState('BASICS_PREFERENCES');
-  const handlePreferencesComplete = () => setAuthState('ETHNICITY');
-  const handleEthnicityComplete = () => setAuthState('ETHNICITY_PREF');
-  const handleEthnicityPrefComplete = () => setAuthState('BASICS_RELATIONSHIP');
-  const handleRelationshipComplete = () => setAuthState('SMOKING');
-  const handleSmokingComplete = () => setAuthState('BASICS_LOCATION');
-  const handleLocationComplete = () => {
-    setAuthState('AUTHENTICATED');
-    reset();
+  const handleEmailVerificationComplete = async (code: string) => {
+    setAuthError(null);
+    setIsAuthLoading(true);
+
+    // Safety check: ensure we have the username from signup
+    if (!usernameData) {
+      if (__DEV__) console.error('[App] No username stored - signup may have failed');
+      setAuthError('Session expired. Please start over.');
+      setIsAuthLoading(false);
+      return;
+    }
+
+    try {
+      // Verify with username (not email) - Cognito requires the actual username
+      if (__DEV__) console.log('[App] Verifying with username:', usernameData, 'code:', code);
+      await AuthService.verify(usernameData, code);
+
+      // Auto-login after verification using username
+      if (__DEV__) console.log('[App] Logging in after verification');
+      await AuthService.login(usernameData, passwordData);
+
+      if (__DEV__) console.log('[App] Auth complete, tokens stored');
+      setAuthState('DOB');
+    } catch (error: unknown) {
+      if (__DEV__) console.error('[App] Verification/login error:', JSON.stringify(error, null, 2));
+      // Handle AuthError object from mapCognitoError (not an Error instance)
+      const authError = error as { message?: string; code?: string };
+      const message = authError?.message || (error instanceof Error ? error.message : 'Verification failed');
+      setAuthError(message);
+    } finally {
+      setIsAuthLoading(false);
+    }
   };
 
-  // DEMO FLOW - background change handler
+  // ONBOARDING FLOW HANDLERS
+  const fullName = useOnboardingStore((state) => state.fullName);
+  const setFullName = useOnboardingStore((state) => state.setFullName);
+  const setNickname = useOnboardingStore((state) => state.setNickname);
+  const setDateOfBirth = useOnboardingStore((state) => state.setDateOfBirth);
+  const setAgeRange = useOnboardingStore((state) => state.setAgeRange);
+  const setGender = useOnboardingStore((state) => state.setGender);
+  const setDatingPreference = useOnboardingStore((state) => state.setDatingPreference);
+  const setEthnicity = useOnboardingStore((state) => state.setEthnicity);
+  const setEthnicityPreferences = useOnboardingStore((state) => state.setEthnicityPreferences);
+  const setRelationshipType = useOnboardingStore((state) => state.setRelationshipType);
+  const setSmokingMe = useOnboardingStore((state) => state.setSmokingMe);
+  const setSmokingPartner = useOnboardingStore((state) => state.setSmokingPartner);
+  const setLocation = useOnboardingStore((state) => state.setLocation);
+  const markOnboardingComplete = useOnboardingStore((state) => state.markComplete);
+
+  // Name screen (comes first in Nathan's API flow)
+  const handleNameComplete = (name: string) => {
+    setFullName(name);
+    setNickname(name); // Use same as full name for now
+    setAuthState('EMAIL');  // Name → Email → Password → Verify
+  };
+
+  // Screen 5: DOB
+  const handleDOBComplete = (
+    dob: { month: number; day: number; year: number },
+    ageRange: { min: number; max: number }
+  ) => {
+    setDateOfBirth(new Date(dob.year, dob.month - 1, dob.day));
+    setAgeRange(ageRange.min, ageRange.max);
+    setAuthState('PERMISSIONS');
+  };
+
+  const handlePermissionsComplete = () => {
+    setAuthState('BASICS_GENDER');
+  };
+
+  // Screen 6: Gender
+  const handleGenderComplete = (gender: string) => {
+    setGender(gender);
+    setAuthState('BASICS_PREFERENCES');
+  };
+
+  // Screen 7: Preferences
+  const handlePreferencesComplete = (preference: string) => {
+    setDatingPreference(preference);
+    setAuthState('ETHNICITY');
+  };
+
+  // Screen 8: Ethnicity
+  const handleEthnicityComplete = (ethnicity: string) => {
+    setEthnicity(ethnicity);
+    setAuthState('ETHNICITY_PREFERENCE');
+  };
+
+  // Screen 9: Ethnicity Preference
+  const handleEthnicityPreferenceComplete = (ethnicities: string[]) => {
+    setEthnicityPreferences(ethnicities);
+    setAuthState('BASICS_RELATIONSHIP');
+  };
+
+  // Screen 10: Relationship
+  const handleRelationshipComplete = (relationshipType: string) => {
+    setRelationshipType(relationshipType);
+    setAuthState('SMOKING');
+  };
+
+  // Screen 11: Smoking
+  const handleSmokingComplete = (smokingMe: string, smokingPartner: string) => {
+    setSmokingMe(smokingMe);
+    setSmokingPartner(smokingPartner);
+    setAuthState('BASICS_LOCATION');
+  };
+
+  const handleLocationComplete = (location: { type: 'gps' | 'zip'; value: string | { lat: number; lng: number } }) => {
+    setLocation(location);
+    markOnboardingComplete();
+    // All onboarding complete - go to main app
+    setAuthState('AUTHENTICATED');
+    reset(); // Reset demo state
+    vibeRef.current?.setVibe('TRUST');
+  };
+
+  // DEMO FLOW - just passes through to screens
   const handleBackgroundChange = useCallback((index: number) => {
-    // Background changes handled by screens internally
+    // Background changes handled by InterviewScreen internally
   }, []);
 
-  // RENDER AUTH SCREENS
+  // Dynamic vibe changes (for CoachScreen emotion-based transitions)
+  const handleVibeChange = useCallback((theme: VibeColorTheme, complexity: VibeComplexity) => {
+    vibeRef.current?.setVibeAndComplexity(theme, complexity);
+  }, []);
+
+  // Render auth screens
   const renderAuthScreen = () => {
     switch (authState) {
       case 'LOGIN':
@@ -398,12 +560,47 @@ function AppContent() {
           />
         );
 
-      case 'NAME':
+      case 'SIGNIN':
         return (
-          <NameScreen
-            onNext={handleNameNext}
+          <SignInScreen
+            onSignIn={async (email: string, password: string) => {
+              setAuthError(null);
+              setIsAuthLoading(true);
+              try {
+                if (__DEV__) console.log('[App] Signing in with email:', email);
+                await AuthService.login(email, password);
+                if (__DEV__) console.log('[App] Sign-in successful');
+                setAuthState('AUTHENTICATED');
+                reset();
+                vibeRef.current?.setVibe('TRUST');
+              } catch (error: unknown) {
+                const authErr = error as { message?: string; code?: string };
+                const errorMsg = authErr?.message || (error instanceof Error ? error.message : 'Sign in failed');
+                setAuthError(errorMsg);
+              } finally {
+                setIsAuthLoading(false);
+              }
+            }}
+            onBack={() => setAuthState('LOGIN')}
+            onForgotPassword={() => {
+              // TODO: Implement forgot password flow
+              if (__DEV__) console.log('[App] Forgot password pressed');
+            }}
+            isLoading={isAuthLoading}
+            error={authError}
+          />
+        );
+
+      case 'PASSWORD':
+        return (
+          <PasswordScreen
+            mode={isSignUp ? 'signup' : 'signin'}
+            email={emailData}
+            onNext={isSignUp ? handlePasswordComplete : handleSignInPassword}
             onSecretBack={handleSecretBack}
             onSecretForward={handleSecretForward}
+            isLoading={isAuthLoading}
+            error={authError}
           />
         );
 
@@ -416,33 +613,27 @@ function AppContent() {
           />
         );
 
-      case 'PASSWORD':
-        return (
-          <PasswordScreen
-            mode={authMode}
-            email={userEmail ?? ''}
-            onNext={handlePasswordNext}
-            onSecretBack={handleSecretBack}
-            onSecretForward={handleSecretForward}
-            isLoading={isLoading}
-            error={authError}
-          />
-        );
-
-      case 'VERIFICATION':
+      case 'EMAIL_VERIFICATION':
         return (
           <EmailVerificationScreen
-            email={userEmail}
-            onNext={handleVerificationNext}
-            onResend={() => AuthService.resendVerificationCode(userEmail!)}
+            email={emailData}
+            onNext={handleEmailVerificationComplete}
             onSecretBack={handleSecretBack}
             onSecretForward={handleSecretForward}
-            isLoading={isLoading}
+            isLoading={isAuthLoading}
             error={authError}
           />
         );
 
-      // Onboarding screens
+      case 'NAME':
+        return (
+          <NameScreen
+            onNext={handleNameComplete}
+            onSecretBack={handleSecretBack}
+            onSecretForward={handleSecretForward}
+          />
+        );
+
       case 'DOB':
         return (
           <DOBScreen
@@ -488,10 +679,10 @@ function AppContent() {
           />
         );
 
-      case 'ETHNICITY_PREF':
+      case 'ETHNICITY_PREFERENCE':
         return (
           <EthnicityPreferenceScreen
-            onNext={handleEthnicityPrefComplete}
+            onNext={handleEthnicityPreferenceComplete}
             onSecretBack={handleSecretBack}
             onSecretForward={handleSecretForward}
           />
@@ -529,29 +720,29 @@ function AppContent() {
     }
   };
 
-  // RENDER DEMO SCREENS
+  // Render demo screens
   const renderDemoScreen = () => {
     switch (demoState) {
       case 'COACH_INTRO':
-        return <CoachIntroScreen onBackgroundChange={handleBackgroundChange} />;
+        return <CoachIntroScreen onBackgroundChange={handleBackgroundChange} onSecretBack={handleSecretBack} onSecretForward={handleSecretForward} />;
       case 'INTERVIEW':
-        return <InterviewScreen onBackgroundChange={handleBackgroundChange} />;
+        return <InterviewScreen onBackgroundChange={handleBackgroundChange} onSecretBack={handleSecretBack} onSecretForward={handleSecretForward} />;
       case 'SEARCHING':
-        return <SearchingScreen />;
+        return <SearchingScreen onSecretBack={handleSecretBack} onSecretForward={handleSecretForward} />;
       case 'MATCH':
-        return <MatchScreen />;
+        return <MatchScreen onSecretBack={handleSecretBack} onSecretForward={handleSecretForward} />;
       case 'PAYMENT':
-        return <PaymentScreen />;
+        return <PaymentScreen onSecretBack={handleSecretBack} onSecretForward={handleSecretForward} />;
       case 'REVEAL':
-        return <RevealScreen />;
+        return <RevealScreen onSecretBack={handleSecretBack} onSecretForward={handleSecretForward} />;
       case 'COACH':
-        return <CoachScreen onBackgroundChange={handleBackgroundChange} />;
+        return <CoachScreen onBackgroundChange={handleBackgroundChange} onVibeChange={handleVibeChange} onSecretBack={handleSecretBack} onSecretForward={handleSecretForward} />;
       default:
-        return <CoachIntroScreen onBackgroundChange={handleBackgroundChange} />;
+        return <CoachIntroScreen onBackgroundChange={handleBackgroundChange} onSecretBack={handleSecretBack} onSecretForward={handleSecretForward} />;
     }
   };
 
-  // LOADING STATE
+  // Loading state
   if (!fontsLoaded || !settingsLoaded || authState === 'LOADING') {
     return (
       <View style={styles.loadingContainer}>
@@ -571,9 +762,73 @@ function AppContent() {
         initialComplexity="FLOW"
       />
 
+      {/* Layer 0.5: GlassFloor (auth/onboarding screens only) */}
+      {(authState as AuthState) !== 'AUTHENTICATED' && (authState as AuthState) !== 'LOADING' && (
+        <GlassFloor />
+      )}
+
       {/* Layer 1: Abby Orb (only in demo mode) */}
       {authState === 'AUTHENTICATED' && (
         <AbbyOrb mode={orbMode} />
+      )}
+
+      {/* Hamburger Menu (only when authenticated) */}
+      {authState === 'AUTHENTICATED' && (
+        <HamburgerMenu
+          onPhotosPress={() => {
+            setMenuScreen('photos');
+          }}
+          onSettingsPress={() => {
+            setMenuScreen('settings');
+          }}
+          onLogoutPress={() => {
+            // Logout and return to login screen
+            AuthService.logout();
+            setAuthState('LOGIN');
+          }}
+        />
+      )}
+
+      {/* Settings Screen Overlay */}
+      {menuScreen === 'settings' && (
+        <SettingsScreen
+          onClose={() => setMenuScreen('none')}
+          onEditProfile={() => {
+            if (__DEV__) console.log('[App] Edit profile pressed');
+          }}
+          onNotifications={() => {
+            if (__DEV__) console.log('[App] Notifications pressed');
+          }}
+          onPrivacy={() => {
+            if (__DEV__) console.log('[App] Privacy pressed');
+          }}
+          onSubscription={() => {
+            if (__DEV__) console.log('[App] Subscription pressed');
+          }}
+          onHelp={() => {
+            if (__DEV__) console.log('[App] Help pressed');
+          }}
+          onDeleteAccount={() => {
+            if (__DEV__) console.log('[App] Delete account pressed');
+          }}
+        />
+      )}
+
+      {/* Photos Screen Overlay */}
+      {menuScreen === 'photos' && (
+        <PhotosScreen
+          photos={[]} // TODO: Load from user profile
+          onClose={() => setMenuScreen('none')}
+          onAddPhoto={() => {
+            if (__DEV__) console.log('[App] Add photo pressed');
+          }}
+          onDeletePhoto={(id) => {
+            if (__DEV__) console.log('[App] Delete photo:', id);
+          }}
+          onSetPrimary={(id) => {
+            if (__DEV__) console.log('[App] Set primary photo:', id);
+          }}
+        />
       )}
 
       {/* Layer 2: UI (auth or demo screens) */}
@@ -584,15 +839,17 @@ function AppContent() {
   );
 }
 
-// =============================================================================
-// MAIN APP
-// =============================================================================
-
 export default function App() {
+  // Wrap with ElevenLabsProvider if available (native build)
+  const content = <AppContent />;
+  const wrappedContent = ElevenLabsProvider ? (
+    <ElevenLabsProvider>{content}</ElevenLabsProvider>
+  ) : content;
+
   return (
     <SafeAreaProvider initialMetrics={initialWindowMetrics ?? fallbackMetrics}>
       <ErrorBoundary>
-        <AppContent />
+        {wrappedContent}
       </ErrorBoundary>
     </SafeAreaProvider>
   );
@@ -611,6 +868,5 @@ const styles = StyleSheet.create({
   },
   uiLayer: {
     ...StyleSheet.absoluteFillObject,
-    zIndex: 20, // Layer 2 - above AbbyOrb (layer 1), below SemanticOverlay (layer 3)
   },
 });

@@ -11,10 +11,21 @@ import {
   StyleSheet,
   Pressable,
   TextInput,
-  useWindowDimensions,
 } from 'react-native';
 import * as Haptics from 'expo-haptics';
 import { Typography } from '../ui/Typography';
+import { GlassButton } from '../ui/GlassButton';
+
+// Format phone number as XXX-XXX-XXXX
+const formatPhoneNumber = (value: string): string => {
+  const digits = value.replace(/\D/g, '').slice(0, 10);
+  if (digits.length <= 3) return digits;
+  if (digits.length <= 6) return `${digits.slice(0, 3)}-${digits.slice(3)}`;
+  return `${digits.slice(0, 3)}-${digits.slice(3, 6)}-${digits.slice(6)}`;
+};
+
+// Extract raw digits from formatted number
+const getDigitsOnly = (value: string): string => value.replace(/\D/g, '');
 
 interface PhoneNumberScreenProps {
   onNext?: (countryCode: string, phoneNumber: string) => void;
@@ -52,9 +63,6 @@ export const PhoneNumberScreen: React.FC<PhoneNumberScreenProps> = ({
 
   return (
     <View style={styles.container}>
-      {/* Full-screen glass overlay */}
-      <View style={styles.glassOverlay} />
-
       {/* Back button */}
       <Pressable
         onPress={handleSecretBack}
@@ -83,9 +91,9 @@ export const PhoneNumberScreen: React.FC<PhoneNumberScreenProps> = ({
 
           <TextInput
             style={styles.phoneInput}
-            value={phoneNumber}
-            onChangeText={setPhoneNumber}
-            placeholder=""
+            value={formatPhoneNumber(phoneNumber)}
+            onChangeText={(text) => setPhoneNumber(getDigitsOnly(text))}
+            placeholder="123-456-7890"
             keyboardType="phone-pad"
             autoFocus={true}
             returnKeyType="done"
@@ -103,7 +111,17 @@ export const PhoneNumberScreen: React.FC<PhoneNumberScreenProps> = ({
             </Typography>
           </Typography>
         </View>
+      </View>
 
+      {/* Fixed footer with Continue button */}
+      <View style={styles.footer}>
+        <GlassButton
+          onPress={handleNext}
+          disabled={!isValid}
+          variant="primary"
+        >
+          Continue
+        </GlassButton>
       </View>
 
       {/* Secret navigation triggers (all 70x70, invisible) */}
@@ -133,10 +151,6 @@ export const PhoneNumberScreen: React.FC<PhoneNumberScreenProps> = ({
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-  },
-  glassOverlay: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(255, 255, 255, 0.05)',
   },
   backButton: {
     position: 'absolute',
@@ -200,6 +214,12 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: 'rgba(255, 255, 255, 0.8)',
     textDecorationLine: 'underline',
+  },
+  footer: {
+    position: 'absolute',
+    bottom: 48,
+    left: 24,
+    right: 24,
   },
   nextButton: {
     width: '100%',

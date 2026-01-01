@@ -24,6 +24,7 @@ import {
 
 export interface SignupResponse {
   userSub: string;
+  username: string; // The generated username (needed for verify/login)
   codeDeliveryDetails: {
     destination: string;
     deliveryMedium: 'EMAIL' | 'SMS';
@@ -76,6 +77,8 @@ function mapCognitoError(error: Error & { code?: string }): AuthError {
     UserNotFoundException: 'No account found with this email',
     InvalidParameterException: 'Invalid input provided',
     NetworkError: 'Network error. Please check your connection.',
+    UnexpectedLambdaException: 'Server error. Please try again.',
+    AliasExistsException: 'An account with this email already exists',
   };
 
   return {
@@ -102,11 +105,6 @@ export const AuthService = {
     password: string,
     name: string
   ): Promise<SignupResponse> {
-    if (__DEV__) {
-      console.log('[AuthService] signup() - Starting registration');
-      console.log('[AuthService] Email:', email);
-    }
-
     // Split name into first/last if space present, otherwise use as first name
     const nameParts = name.trim().split(' ');
     const firstName = nameParts[0] || name;
@@ -114,17 +112,36 @@ export const AuthService = {
 
     const attributes = createUserAttributes(email, firstName, lastName);
 
-    // Generate username from email (Cognito pool uses email alias, so username can't be email format)
-    // Extract part before @ and add random suffix to ensure uniqueness
-    // Guard against empty prefix (e.g., emails starting with special chars like +test@gmail.com)
-    const emailPrefix = email.split('@')[0].replace(/[^a-zA-Z0-9]/g, '') || 'user';
-    const username = `${emailPrefix}_${Date.now()}`;
+    // TEST: Try using email AS username (some pools require email format)
+    // Previously tried: `${emailPrefix}_${Date.now()}` - got InvalidParameterException
+    const username = email; // Use email directly as username
+
+    // DETAILED DEBUG LOGGING - see exactly what we're sending
+    if (__DEV__) {
+      console.log('=== COGNITO SIGNUP DEBUG ===');
+      console.log('Input email:', JSON.stringify(email));
+      console.log('Input name:', JSON.stringify(name));
+      console.log('Parsed firstName:', JSON.stringify(firstName));
+      console.log('Parsed lastName:', JSON.stringify(lastName));
+      console.log('Generated username:', username);
+      console.log('Password length:', password?.length);
+      console.log('Attributes count:', attributes.length);
+      attributes.forEach((attr, i) => {
+        console.log(`  Attr[${i}]: ${attr.getName()} = "${attr.getValue()}"`);
+      });
+      console.log('=== END DEBUG ===');
+    }
 
     return new Promise((resolve, reject) => {
       userPool.signUp(username, password, attributes, [], (err, result) => {
         if (err) {
-          if (__DEV__) console.log('[AuthService] Signup error:', err);
-          reject(mapCognitoError(err as Error & { code?: string }));
+          const cognitoErr = err as Error & { code?: string; message?: string };
+          if (__DEV__) {
+            console.log('[AuthService] Signup FAILED');
+            console.log('Error code:', cognitoErr.code);
+            console.log('Error message:', cognitoErr.message);
+          }
+          reject(mapCognitoError(cognitoErr));
           return;
         }
 
@@ -140,6 +157,7 @@ export const AuthService = {
 
         resolve({
           userSub: result.userSub,
+          username, // Return the generated username for verify/login
           codeDeliveryDetails: {
             destination: result.codeDeliveryDetails?.Destination || email,
             deliveryMedium:
@@ -158,19 +176,24 @@ export const AuthService = {
    *
    * Called after signup to confirm the user's email address.
    */
-  async verify(email: string, code: string): Promise<VerifyResponse> {
+  async verify(username: string, code: string): Promise<VerifyResponse> {
     if (__DEV__) {
       console.log('[AuthService] verify() - Confirming registration');
-      console.log('[AuthService] Email:', email);
+      console.log('[AuthService] Username:', username);
     }
 
-    const cognitoUser = getCognitoUser(email);
+    const cognitoUser = getCognitoUser(username);
 
     return new Promise((resolve, reject) => {
       cognitoUser.confirmRegistration(code, true, (err, result) => {
         if (err) {
-          if (__DEV__) console.log('[AuthService] Verify error:', err);
-          reject(mapCognitoError(err as Error & { code?: string }));
+          const cognitoErr = err as Error & { code?: string; message?: string };
+          if (__DEV__) {
+            console.log('[AuthService] Verify error code:', cognitoErr.code);
+            console.log('[AuthService] Verify error message:', cognitoErr.message);
+            console.log('[AuthService] Full error:', JSON.stringify(err, null, 2));
+          }
+          reject(mapCognitoError(cognitoErr));
           return;
         }
 
@@ -188,12 +211,12 @@ export const AuthService = {
    *
    * Use when the original code expired or wasn't received.
    */
-  async resendVerificationCode(email: string): Promise<void> {
+  async resendVerificationCode(username: string): Promise<void> {
     if (__DEV__) {
       console.log('[AuthService] resendVerificationCode()');
     }
 
-    const cognitoUser = getCognitoUser(email);
+    const cognitoUser = getCognitoUser(username);
 
     return new Promise((resolve, reject) => {
       cognitoUser.resendConfirmationCode((err, result) => {
@@ -217,14 +240,14 @@ export const AuthService = {
    * 2. Store tokens in secure storage
    * 3. Return token info
    */
-  async login(email: string, password: string): Promise<LoginResponse> {
+  async login(username: string, password: string): Promise<LoginResponse> {
     if (__DEV__) {
       console.log('[AuthService] login() - Authenticating');
-      console.log('[AuthService] Email:', email);
+      console.log('[AuthService] Username:', username);
     }
 
-    const cognitoUser = getCognitoUser(email);
-    const authDetails = getAuthDetails(email, password);
+    const cognitoUser = getCognitoUser(username);
+    const authDetails = getAuthDetails(username, password);
 
     return new Promise((resolve, reject) => {
       cognitoUser.authenticateUser(authDetails, {

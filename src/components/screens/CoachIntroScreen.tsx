@@ -51,15 +51,19 @@ const detectVibeFromText = (text: string): VibeColorTheme | null => {
 const { height: SCREEN_HEIGHT } = Dimensions.get('window');
 
 // Snap points as percentages of screen height (from bottom)
-const SNAP_POINTS = [0.35, 0.45, 0.55, 0.75];
-const DEFAULT_SNAP = 0.45; // Start at 45% - lower to give orb more space
+const SNAP_POINTS = [0.35, 0.55, 0.75, 0.9];
+const DEFAULT_SNAP = 0.55; // Start at 55% (enough room for conversation)
 
 export interface CoachIntroScreenProps {
   onBackgroundChange?: (index: number) => void;
+  onSecretBack?: () => void;
+  onSecretForward?: () => void;
 }
 
 export const CoachIntroScreen: React.FC<CoachIntroScreenProps> = ({
   onBackgroundChange,
+  onSecretBack,
+  onSecretForward,
 }) => {
   const scrollRef = useRef<ScrollView>(null);
 
@@ -75,10 +79,9 @@ export const CoachIntroScreen: React.FC<CoachIntroScreenProps> = ({
   // Animated value for bottom sheet position
   const translateY = useRef(new Animated.Value(SCREEN_HEIGHT)).current;
 
-  // Initialize Abby Agent (uses demo mode if API unavailable)
-  const { startConversation, endConversation, toggleMute, isSpeaking, isConnected, isMuted, isDemoMode } = useAbbyAgent({
+  // Initialize ElevenLabs Agent
+  const { startConversation, endConversation, toggleMute, isSpeaking, isConnected, isMuted } = useAbbyAgent({
     enabled: true,
-    screenType: 'intro',
     onAbbyResponse: (text) => {
       addMessage('abby', text);
 
@@ -105,12 +108,10 @@ export const CoachIntroScreen: React.FC<CoachIntroScreenProps> = ({
     },
     onDisconnect: () => {
       setAgentStatus('Disconnected');
-      // AUTO-ADVANCE: When conversation ends, transition to interview
-      // (Skip auto-advance in demo mode - user controls flow)
-      if (!isDemoMode) {
-        if (__DEV__) console.log('[CoachIntro] 🚀 Conversation ended, advancing to interview');
-        advance();
-      }
+      // AUTO-ADVANCE: When ElevenLabs conversation ends (via End node in workflow),
+      // automatically transition to interview
+      if (__DEV__) console.log('[CoachIntro] 🚀 ElevenLabs disconnected, advancing to interview');
+      advance();
     },
     onError: (error) => {
       setAgentStatus(`Error: ${error.message}`);
@@ -232,6 +233,17 @@ export const CoachIntroScreen: React.FC<CoachIntroScreenProps> = ({
     await toggleMute();
   }, [toggleMute]);
 
+  // Secret navigation handlers
+  const handleSecretBack = useCallback(() => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
+    onSecretBack?.();
+  }, [onSecretBack]);
+
+  const handleSecretForward = useCallback(() => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
+    onSecretForward?.();
+  }, [onSecretForward]);
+
   return (
     <View style={styles.container}>
       {/* Backdrop - not tappable for this screen */}
@@ -246,7 +258,7 @@ export const CoachIntroScreen: React.FC<CoachIntroScreenProps> = ({
           },
         ]}
       >
-        <BlurView intensity={40} tint="light" style={styles.blurContainer} pointerEvents="box-none">
+        <BlurView intensity={80} tint="light" style={styles.blurContainer} pointerEvents="box-none">
           {/* DRAGGABLE HEADER - Handle only, no buttons */}
           <View {...panResponder.panHandlers} style={styles.draggableHeader}>
             <View style={styles.handleContainer}>
@@ -261,7 +273,7 @@ export const CoachIntroScreen: React.FC<CoachIntroScreenProps> = ({
               isConnected ? (isMuted ? styles.statusMuted : styles.statusConnected) : styles.statusDisconnected
             ]} />
             <Text style={styles.statusText}>
-              {isMuted ? 'Muted' : (isConnected ? (isDemoMode ? 'Demo Mode' : (isSpeaking ? 'Abby is speaking...' : 'Listening')) : agentStatus)}
+              {isMuted ? 'Muted' : (isConnected ? (isSpeaking ? 'Abby is speaking...' : 'Listening') : agentStatus)}
             </Text>
 
             {/* Mute/Unmute button - 44x44 for iOS HIG compliance */}
@@ -331,6 +343,26 @@ export const CoachIntroScreen: React.FC<CoachIntroScreenProps> = ({
           </View>
         </BlurView>
       </Animated.View>
+
+      {/* Secret navigation triggers (all 70x70, invisible) */}
+      {/* Left = Back */}
+      <Pressable
+        onPress={handleSecretBack}
+        style={styles.secretBackTrigger}
+        hitSlop={0}
+      />
+      {/* Middle = Primary action (Start Interview) */}
+      <Pressable
+        onPress={handleStartInterview}
+        style={styles.secretMiddleTrigger}
+        hitSlop={0}
+      />
+      {/* Right = Forward */}
+      <Pressable
+        onPress={handleSecretForward}
+        style={styles.secretForwardTrigger}
+        hitSlop={0}
+      />
     </View>
   );
 };
@@ -493,6 +525,42 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#FFFFFF',
     fontWeight: '600',
+  },
+
+  // Secret navigation triggers
+  secretBackTrigger: {
+    position: 'absolute',
+    top: 10,
+    left: 10,
+    width: 70,
+    height: 70,
+    zIndex: 9999,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.5)',
+    borderRadius: 8,
+  },
+  secretMiddleTrigger: {
+    position: 'absolute',
+    top: 10,
+    left: '50%',
+    marginLeft: -35,
+    width: 70,
+    height: 70,
+    zIndex: 9999,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.5)',
+    borderRadius: 8,
+  },
+  secretForwardTrigger: {
+    position: 'absolute',
+    top: 10,
+    right: 10,
+    width: 70,
+    height: 70,
+    zIndex: 9999,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.5)',
+    borderRadius: 8,
   },
 });
 

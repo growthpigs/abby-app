@@ -109,9 +109,6 @@ export const BasicsRelationshipScreen: React.FC<BasicsRelationshipScreenProps> =
 
   return (
     <View style={styles.container}>
-      {/* Full-screen glass overlay */}
-      <View style={styles.glassOverlay} />
-
       {/* Back button */}
       <Pressable
         onPress={handleSecretBack}
@@ -155,16 +152,14 @@ export const BasicsRelationshipScreen: React.FC<BasicsRelationshipScreenProps> =
             </Typography>
           </Pressable>
         </ScrollView>
+      </View>
 
-        {/* Spacer */}
-        <View style={{ flex: 1 }} />
-
-        {/* Continue button */}
+      {/* Fixed footer with Continue button */}
+      <View style={styles.footer}>
         <GlassButton
           onPress={handleNext}
           disabled={!selectedType}
           variant="primary"
-          style={styles.continueButton}
         >
           Continue
         </GlassButton>
@@ -194,10 +189,6 @@ export const BasicsRelationshipScreen: React.FC<BasicsRelationshipScreenProps> =
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-  },
-  glassOverlay: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(255, 255, 255, 0.05)',
   },
   backButton: {
     position: 'absolute',
@@ -247,8 +238,11 @@ const styles = StyleSheet.create({
     color: 'rgba(255, 255, 255, 0.8)',
     textDecorationLine: 'underline',
   },
-  continueButton: {
-    marginTop: 24,
+  footer: {
+    position: 'absolute',
+    bottom: 48,
+    left: 24,
+    right: 24,
   },
   secretBackTrigger: {
     position: 'absolute',

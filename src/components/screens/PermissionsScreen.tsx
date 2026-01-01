@@ -176,6 +176,27 @@ export const PermissionsScreen: React.FC<PermissionsScreenProps> = ({
     }
   };
 
+  const handlePermissionTap = async (permissionId: string) => {
+    Haptics.selectionAsync();
+
+    switch (permissionId) {
+      case 'microphone':
+        await requestMicrophonePermission();
+        break;
+      case 'location':
+        await requestLocationPermission();
+        break;
+      case 'notifications':
+        // Will be requested later when needed
+        Alert.alert('Coming Soon', 'Push notifications will be requested when you get a match!');
+        break;
+      case 'camera':
+        // Will be requested later when needed
+        Alert.alert('Coming Soon', 'Camera access will be requested when you upload photos!');
+        break;
+    }
+  };
+
   const handleSecretBack = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
     onSecretBack?.();
@@ -192,9 +213,6 @@ export const PermissionsScreen: React.FC<PermissionsScreenProps> = ({
 
   return (
     <View style={styles.container}>
-      {/* Full-screen glass overlay */}
-      <View style={styles.glassOverlay} />
-
       {/* Back button */}
       <Pressable
         onPress={handleSecretBack}
@@ -228,8 +246,8 @@ export const PermissionsScreen: React.FC<PermissionsScreenProps> = ({
             <Checkbox
               key={permission.id}
               checked={getCheckboxState(permission)}
-              disabled={true}
-              onChange={() => {}}
+              disabled={false}
+              onChange={() => handlePermissionTap(permission.id)}
               label={permission.label}
               description={permission.description}
               style={styles.permissionItem}
@@ -247,16 +265,14 @@ export const PermissionsScreen: React.FC<PermissionsScreenProps> = ({
             />
           </View>
         </ScrollView>
+      </View>
 
-        {/* Spacer */}
-        <View style={{ flex: 1 }} />
-
-        {/* Continue button */}
+      {/* Fixed footer with Continue button */}
+      <View style={styles.footer}>
         <GlassButton
           onPress={handleNext}
           disabled={!termsAccepted || isRequesting}
           variant="primary"
-          style={styles.continueButton}
         >
           {isRequesting ? 'Requesting...' : 'Continue'}
         </GlassButton>
@@ -287,10 +303,6 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
-  glassOverlay: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(255, 255, 255, 0.05)',
-  },
   backButton: {
     position: 'absolute',
     top: 60,
@@ -317,7 +329,7 @@ const styles = StyleSheet.create({
   },
   subtext: {
     fontSize: 16,
-    color: 'rgba(255, 255, 255, 0.7)',
+    color: 'rgba(255, 255, 255, 0.9)',
     marginBottom: 32,
   },
   scrollView: {
@@ -336,8 +348,11 @@ const styles = StyleSheet.create({
     borderTopWidth: 1,
     borderTopColor: 'rgba(255, 255, 255, 0.1)',
   },
-  continueButton: {
-    marginTop: 24,
+  footer: {
+    position: 'absolute',
+    bottom: 48,
+    left: 24,
+    right: 24,
   },
   secretBackTrigger: {
     position: 'absolute',

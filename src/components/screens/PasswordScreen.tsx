@@ -73,9 +73,6 @@ export const PasswordScreen: React.FC<PasswordScreenProps> = ({
 
   return (
     <View style={styles.container}>
-      {/* Full-screen glass overlay */}
-      <View style={styles.glassOverlay} />
-
       {/* Back button */}
       <Pressable
         onPress={handleSecretBack}
@@ -99,7 +96,7 @@ export const PasswordScreen: React.FC<PasswordScreenProps> = ({
           {email}
         </Typography>
 
-        {/* Password input */}
+        {/* Password input with eye toggle */}
         <View style={styles.inputContainer}>
           <TextInput
             style={styles.passwordInput}
@@ -118,6 +115,7 @@ export const PasswordScreen: React.FC<PasswordScreenProps> = ({
           <Pressable
             onPress={() => setShowPassword(!showPassword)}
             style={styles.eyeButton}
+            hitSlop={12}
           >
             <Typography variant="body" style={styles.eyeText}>
               {showPassword ? '👁' : '👁‍🗨'}
@@ -125,83 +123,70 @@ export const PasswordScreen: React.FC<PasswordScreenProps> = ({
           </Pressable>
         </View>
 
-        {/* Confirm password (signup only) */}
+        {/* Confirm password - directly below first input (signup only) */}
         {mode === 'signup' && (
-          <TextInput
-            style={styles.passwordInput}
-            value={confirmPassword}
-            onChangeText={setConfirmPassword}
-            placeholder="Confirm password"
-            secureTextEntry={!showPassword}
-            autoCapitalize="none"
-            autoCorrect={false}
-            returnKeyType="done"
-            onSubmitEditing={handleNext}
-            placeholderTextColor="rgba(255, 255, 255, 0.3)"
-            editable={!isLoading}
-          />
+          <View style={styles.inputContainer}>
+            <TextInput
+              style={styles.passwordInput}
+              value={confirmPassword}
+              onChangeText={setConfirmPassword}
+              placeholder="Confirm password"
+              secureTextEntry={!showPassword}
+              autoCapitalize="none"
+              autoCorrect={false}
+              returnKeyType="done"
+              onSubmitEditing={handleNext}
+              placeholderTextColor="rgba(255, 255, 255, 0.3)"
+              editable={!isLoading}
+            />
+          </View>
         )}
 
-        {/* Password requirements (signup only) */}
-        {mode === 'signup' && password.length > 0 && (
+        {/* Password requirements - compact, below inputs (signup only) */}
+        {mode === 'signup' && (
           <View style={styles.requirementsContainer}>
-            <Typography
-              variant="caption"
-              style={[
-                styles.requirement,
-                password.length >= 8 && styles.requirementMet,
-              ]}
-            >
-              {password.length >= 8 ? '✓' : '○'} 8+ characters
-            </Typography>
-            <Typography
-              variant="caption"
-              style={[
-                styles.requirement,
-                /[A-Z]/.test(password) && styles.requirementMet,
-              ]}
-            >
-              {/[A-Z]/.test(password) ? '✓' : '○'} Uppercase letter
-            </Typography>
-            <Typography
-              variant="caption"
-              style={[
-                styles.requirement,
-                /[a-z]/.test(password) && styles.requirementMet,
-              ]}
-            >
-              {/[a-z]/.test(password) ? '✓' : '○'} Lowercase letter
-            </Typography>
-            <Typography
-              variant="caption"
-              style={[
-                styles.requirement,
-                /[0-9]/.test(password) && styles.requirementMet,
-              ]}
-            >
-              {/[0-9]/.test(password) ? '✓' : '○'} Number
-            </Typography>
-            <Typography
-              variant="caption"
-              style={[
-                styles.requirement,
-                /[!@#$%^&*(),.?":{}|<>]/.test(password) && styles.requirementMet,
-              ]}
-            >
-              {/[!@#$%^&*(),.?":{}|<>]/.test(password) ? '✓' : '○'} Special
-              character
-            </Typography>
-            {confirmPassword.length > 0 && (
+            <View style={styles.requirementsRow}>
               <Typography
                 variant="caption"
-                style={[
-                  styles.requirement,
-                  password === confirmPassword && styles.requirementMet,
-                ]}
+                style={[styles.requirement, password.length >= 8 && styles.requirementMet]}
               >
-                {password === confirmPassword ? '✓' : '○'} Passwords match
+                {password.length >= 8 ? '✓' : '○'} 8+ chars
               </Typography>
-            )}
+              <Typography
+                variant="caption"
+                style={[styles.requirement, /[A-Z]/.test(password) && styles.requirementMet]}
+              >
+                {/[A-Z]/.test(password) ? '✓' : '○'} Uppercase
+              </Typography>
+              <Typography
+                variant="caption"
+                style={[styles.requirement, /[a-z]/.test(password) && styles.requirementMet]}
+              >
+                {/[a-z]/.test(password) ? '✓' : '○'} Lowercase
+              </Typography>
+            </View>
+            <View style={styles.requirementsRow}>
+              <Typography
+                variant="caption"
+                style={[styles.requirement, /[0-9]/.test(password) && styles.requirementMet]}
+              >
+                {/[0-9]/.test(password) ? '✓' : '○'} Number
+              </Typography>
+              <Typography
+                variant="caption"
+                style={[styles.requirement, /[!@#$%^&*(),.?":{}|<>]/.test(password) && styles.requirementMet]}
+              >
+                {/[!@#$%^&*(),.?":{}|<>]/.test(password) ? '✓' : '○'} Special
+              </Typography>
+              {confirmPassword.length > 0 && (
+                <Typography
+                  variant="caption"
+                  style={[styles.requirement, password === confirmPassword && styles.requirementMet]}
+                >
+                  {password === confirmPassword ? '✓' : '○'} Match
+                </Typography>
+              )}
+            </View>
           </View>
         )}
 
@@ -214,10 +199,10 @@ export const PasswordScreen: React.FC<PasswordScreenProps> = ({
           </View>
         )}
 
-        {/* Spacer */}
-        <View style={{ flex: 1 }} />
+      </View>
 
-        {/* Continue button */}
+      {/* Fixed footer with Continue button */}
+      <View style={styles.footer}>
         <Pressable
           onPress={handleNext}
           disabled={!isValid || isLoading}
@@ -261,10 +246,6 @@ export const PasswordScreen: React.FC<PasswordScreenProps> = ({
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-  },
-  glassOverlay: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(255, 255, 255, 0.05)',
   },
   backButton: {
     position: 'absolute',
@@ -319,12 +300,17 @@ const styles = StyleSheet.create({
     fontSize: 20,
   },
   requirementsContainer: {
-    marginTop: 16,
+    marginTop: 20,
+  },
+  requirementsRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 16,
+    marginBottom: 8,
   },
   requirement: {
-    fontSize: 12,
+    fontSize: 11,
     color: 'rgba(255, 255, 255, 0.4)',
-    marginBottom: 4,
   },
   requirementMet: {
     color: 'rgba(100, 255, 150, 0.9)',
@@ -339,6 +325,12 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: 'rgba(255, 150, 150, 0.95)',
     textAlign: 'center',
+  },
+  footer: {
+    position: 'absolute',
+    bottom: 48,
+    left: 24,
+    right: 24,
   },
   continueButton: {
     width: '100%',

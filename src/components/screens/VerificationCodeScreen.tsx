@@ -14,6 +14,7 @@ import {
 } from 'react-native';
 import * as Haptics from 'expo-haptics';
 import { Typography } from '../ui/Typography';
+import { GlassButton } from '../ui/GlassButton';
 
 interface VerificationCodeScreenProps {
   phoneNumber?: string;
@@ -58,9 +59,6 @@ export const VerificationCodeScreen: React.FC<VerificationCodeScreenProps> = ({
 
   return (
     <View style={styles.container}>
-      {/* Full-screen glass overlay */}
-      <View style={styles.glassOverlay} />
-
       {/* Back button */}
       <Pressable
         onPress={handleSecretBack}
@@ -98,10 +96,17 @@ export const VerificationCodeScreen: React.FC<VerificationCodeScreenProps> = ({
           placeholderTextColor="rgba(255, 255, 255, 0.3)"
         />
 
-        {/* Spacer */}
-        <View style={{ flex: 1 }} />
+      </View>
 
-        {/* Resend link */}
+      {/* Fixed footer with Continue button and resend link */}
+      <View style={styles.footer}>
+        <GlassButton
+          onPress={handleNext}
+          disabled={!isValid}
+          variant="primary"
+        >
+          Continue
+        </GlassButton>
         <Pressable onPress={handleResend} style={styles.resendButton}>
           <Typography variant="body" style={styles.resendText}>
             Didn't receive a code?
@@ -136,10 +141,6 @@ export const VerificationCodeScreen: React.FC<VerificationCodeScreenProps> = ({
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-  },
-  glassOverlay: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(255, 255, 255, 0.05)',
   },
   backButton: {
     position: 'absolute',
@@ -181,6 +182,12 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     letterSpacing: 8,
     textAlign: 'center',
+  },
+  footer: {
+    position: 'absolute',
+    bottom: 48,
+    left: 24,
+    right: 24,
   },
   resendButton: {
     paddingVertical: 12,

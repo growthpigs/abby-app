@@ -4,12 +4,21 @@
  * Clean payment UI with glassmorphism. Auto-approves for demo.
  */
 
-import React from 'react';
-import { View, StyleSheet } from 'react-native';
+import React, { useCallback } from 'react';
+import { View, StyleSheet, Pressable } from 'react-native';
+import * as Haptics from 'expo-haptics';
 import { GlassSheet, GlassButton, Headline, Body, Caption } from '../ui';
 import { useDemoStore } from '../../store/useDemoStore';
 
-export const PaymentScreen: React.FC = () => {
+export interface PaymentScreenProps {
+  onSecretBack?: () => void;
+  onSecretForward?: () => void;
+}
+
+export const PaymentScreen: React.FC<PaymentScreenProps> = ({
+  onSecretBack,
+  onSecretForward,
+}) => {
   const advance = useDemoStore((state) => state.advance);
   const matchData = useDemoStore((state) => state.matchData);
 
@@ -18,13 +27,24 @@ export const PaymentScreen: React.FC = () => {
     advance();
   };
 
+  // Secret navigation handlers
+  const handleSecretBack = useCallback(() => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
+    onSecretBack?.();
+  }, [onSecretBack]);
+
+  const handleSecretForward = useCallback(() => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
+    onSecretForward?.();
+  }, [onSecretForward]);
+
   if (!matchData) {
     return null;
   }
 
   return (
     <View style={styles.container}>
-      <GlassSheet height={0.55}>
+      <GlassSheet height={0.67}>
         {/* Header */}
         <Caption style={styles.label}>UNLOCK PHOTO</Caption>
 
@@ -52,6 +72,26 @@ export const PaymentScreen: React.FC = () => {
           </GlassButton>
         </View>
       </GlassSheet>
+
+      {/* Secret navigation triggers (all 70x70, invisible) */}
+      {/* Left = Back */}
+      <Pressable
+        onPress={handleSecretBack}
+        style={styles.secretBackTrigger}
+        hitSlop={0}
+      />
+      {/* Middle = Primary action (Unlock Photo) */}
+      <Pressable
+        onPress={handlePay}
+        style={styles.secretMiddleTrigger}
+        hitSlop={0}
+      />
+      {/* Right = Forward */}
+      <Pressable
+        onPress={handleSecretForward}
+        style={styles.secretForwardTrigger}
+        hitSlop={0}
+      />
     </View>
   );
 };
@@ -106,6 +146,42 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginTop: 'auto',
     paddingBottom: 32,
+  },
+
+  // Secret navigation triggers
+  secretBackTrigger: {
+    position: 'absolute',
+    top: 10,
+    left: 10,
+    width: 70,
+    height: 70,
+    zIndex: 9999,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.5)',
+    borderRadius: 8,
+  },
+  secretMiddleTrigger: {
+    position: 'absolute',
+    top: 10,
+    left: '50%',
+    marginLeft: -35,
+    width: 70,
+    height: 70,
+    zIndex: 9999,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.5)',
+    borderRadius: 8,
+  },
+  secretForwardTrigger: {
+    position: 'absolute',
+    top: 10,
+    right: 10,
+    width: 70,
+    height: 70,
+    zIndex: 9999,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.5)',
+    borderRadius: 8,
   },
 });
 

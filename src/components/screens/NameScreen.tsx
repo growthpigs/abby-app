@@ -14,6 +14,7 @@ import {
 } from 'react-native';
 import * as Haptics from 'expo-haptics';
 import { Typography } from '../ui/Typography';
+import { GlassButton } from '../ui/GlassButton';
 
 interface NameScreenProps {
   onNext?: (name: string) => void;
@@ -50,9 +51,6 @@ export const NameScreen: React.FC<NameScreenProps> = ({
 
   return (
     <View style={styles.container}>
-      {/* Full-screen glass overlay */}
-      <View style={styles.glassOverlay} />
-
       {/* Back button */}
       <Pressable
         onPress={handleSecretBack}
@@ -93,6 +91,17 @@ export const NameScreen: React.FC<NameScreenProps> = ({
         </View>
       </View>
 
+      {/* Fixed footer with Continue button */}
+      <View style={styles.footer}>
+        <GlassButton
+          onPress={handleNext}
+          disabled={!isValid}
+          variant="primary"
+        >
+          Continue
+        </GlassButton>
+      </View>
+
       {/* Secret navigation triggers */}
       <Pressable
         onPress={handleSecretBack}
@@ -117,10 +126,6 @@ export const NameScreen: React.FC<NameScreenProps> = ({
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-  },
-  glassOverlay: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(255, 255, 255, 0.05)',
   },
   backButton: {
     position: 'absolute',
@@ -163,6 +168,12 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: 'rgba(255, 255, 255, 0.6)',
     lineHeight: 18,
+  },
+  footer: {
+    position: 'absolute',
+    bottom: 48,
+    left: 24,
+    right: 24,
   },
   secretBackTrigger: {
     position: 'absolute',

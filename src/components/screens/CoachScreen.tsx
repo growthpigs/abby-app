@@ -4,6 +4,9 @@
  * Same visual pattern as CoachIntroScreen but for post-interview conversation.
  * Uses useDraggableSheet hook for bottom sheet behavior.
  * Snap points at 35%, 55%, 75%, 90% of screen height.
+ *
+ * DYNAMIC VIBES: Background changes based on conversation emotion.
+ * Uses EmotionVibeService to detect emotions from Abby's responses.
  */
 
 import React, { useCallback, useEffect, useState, useRef } from 'react';
@@ -23,15 +26,23 @@ import { useDemoStore } from '../../store/useDemoStore';
 import { useAbbyAgent } from '../../services/AbbyRealtimeService';
 import { ChatInput } from '../ui/ChatInput';
 import { useDraggableSheet } from '../../hooks/useDraggableSheet';
+import { analyzeTextForVibe } from '../../services/EmotionVibeService';
+import { VibeColorTheme, VibeComplexity } from '../../types/vibe';
 
 const { height: SCREEN_HEIGHT } = Dimensions.get('window');
 
 export interface CoachScreenProps {
   onBackgroundChange?: (index: number) => void;
+  onVibeChange?: (theme: VibeColorTheme, complexity: VibeComplexity) => void;
+  onSecretBack?: () => void;
+  onSecretForward?: () => void;
 }
 
 export const CoachScreen: React.FC<CoachScreenProps> = ({
   onBackgroundChange,
+  onVibeChange,
+  onSecretBack,
+  onSecretForward,
 }) => {
   const scrollRef = useRef<ScrollView>(null);
   const scrollTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -67,13 +78,17 @@ export const CoachScreen: React.FC<CoachScreenProps> = ({
     };
   }, []);
 
-  // Initialize Abby Agent (uses demo mode if API unavailable)
-  const { startConversation, endConversation, toggleMute, sendTextMessage, isSpeaking, isConnected, isMuted, isDemoMode } = useAbbyAgent({
+  // Initialize ElevenLabs Agent
+  const { startConversation, endConversation, toggleMute, sendTextMessage, isSpeaking, isConnected, isMuted } = useAbbyAgent({
     enabled: true,
-    screenType: 'coach',
     onAbbyResponse: (text) => {
       addMessage('abby', text);
       scrollToTop();
+
+      // Detect emotion from Abby's response and trigger dynamic vibe change
+      const vibeConfig = analyzeTextForVibe(text);
+      onBackgroundChange?.(vibeConfig.backgroundIndex);
+      onVibeChange?.(vibeConfig.theme, vibeConfig.complexity);
     },
     onUserTranscript: (text) => {
       // Dedup: Don't add if last user message has same text (prevents double-add from typed input)
@@ -85,7 +100,7 @@ export const CoachScreen: React.FC<CoachScreenProps> = ({
       scrollToTop();
     },
     onConnect: () => {
-      setAgentStatus(isDemoMode ? 'Demo Mode' : 'Connected');
+      setAgentStatus('Connected');
     },
     onDisconnect: () => {
       setAgentStatus('Disconnected');
@@ -151,6 +166,17 @@ export const CoachScreen: React.FC<CoachScreenProps> = ({
     scrollToTop();
   }, [addMessage, sendTextMessage, scrollToTop]);
 
+  // Secret navigation handlers
+  const handleSecretBack = useCallback(() => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
+    onSecretBack?.();
+  }, [onSecretBack]);
+
+  const handleSecretForward = useCallback(() => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
+    onSecretForward?.();
+  }, [onSecretForward]);
+
   return (
     <View style={styles.container}>
       {/* Backdrop - not tappable for this screen */}
@@ -165,7 +191,7 @@ export const CoachScreen: React.FC<CoachScreenProps> = ({
           },
         ]}
       >
-        <BlurView intensity={40} tint="light" style={styles.blurContainer} pointerEvents="box-none">
+        <BlurView intensity={80} tint="light" style={styles.blurContainer} pointerEvents="box-none">
           {/* DRAGGABLE HEADER - Handle only, no buttons */}
           <View {...panHandlers} style={styles.draggableHeader}>
             <View style={styles.handleContainer}>
@@ -180,7 +206,7 @@ export const CoachScreen: React.FC<CoachScreenProps> = ({
               isConnected ? (isMuted ? styles.statusMuted : styles.statusConnected) : styles.statusDisconnected
             ]} />
             <Text style={styles.statusText}>
-              {isMuted ? 'Muted' : (isConnected ? (isDemoMode ? 'Demo Mode' : (isSpeaking ? 'Abby is speaking...' : 'Listening')) : agentStatus)}
+              {isMuted ? 'Muted' : (isConnected ? (isSpeaking ? 'Abby is speaking...' : 'Listening') : agentStatus)}
             </Text>
 
             {/* Mute/Unmute button - 44x44 for iOS HIG compliance */}
@@ -256,6 +282,26 @@ export const CoachScreen: React.FC<CoachScreenProps> = ({
           </View>
         </BlurView>
       </Animated.View>
+
+      {/* Secret navigation triggers (all 70x70, invisible) */}
+      {/* Left = Back */}
+      <Pressable
+        onPress={handleSecretBack}
+        style={styles.secretBackTrigger}
+        hitSlop={0}
+      />
+      {/* Middle = Primary action (End Chat) */}
+      <Pressable
+        onPress={handleEndChat}
+        style={styles.secretMiddleTrigger}
+        hitSlop={0}
+      />
+      {/* Right = Forward */}
+      <Pressable
+        onPress={handleSecretForward}
+        style={styles.secretForwardTrigger}
+        hitSlop={0}
+      />
     </View>
   );
 };
@@ -414,6 +460,42 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#FFFFFF',
     fontWeight: '600',
+  },
+
+  // Secret navigation triggers
+  secretBackTrigger: {
+    position: 'absolute',
+    top: 10,
+    left: 10,
+    width: 70,
+    height: 70,
+    zIndex: 9999,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.5)',
+    borderRadius: 8,
+  },
+  secretMiddleTrigger: {
+    position: 'absolute',
+    top: 10,
+    left: '50%',
+    marginLeft: -35,
+    width: 70,
+    height: 70,
+    zIndex: 9999,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.5)',
+    borderRadius: 8,
+  },
+  secretForwardTrigger: {
+    position: 'absolute',
+    top: 10,
+    right: 10,
+    width: 70,
+    height: 70,
+    zIndex: 9999,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.5)',
+    borderRadius: 8,
   },
 });
 

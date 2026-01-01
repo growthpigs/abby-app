@@ -48,17 +48,26 @@ export function getAuthDetails(
 
 /**
  * Create user attributes for signup
+ *
+ * IMPORTANT: Only send attributes that Nathan's Cognito pool has configured.
+ * We've tested: email only (fails), given_name (fails)
+ * Now testing: 'name' attribute instead of 'given_name'
  */
 export function createUserAttributes(
   email: string,
   firstName: string,
   lastName: string
 ): CognitoUserAttribute[] {
-  return [
+  // Build full name for 'name' attribute
+  const fullName = lastName ? `${firstName} ${lastName}` : firstName;
+
+  const attributes = [
     new CognitoUserAttribute({ Name: 'email', Value: email }),
-    new CognitoUserAttribute({ Name: 'given_name', Value: firstName }),
-    new CognitoUserAttribute({ Name: 'family_name', Value: lastName }),
+    // Try 'name' instead of 'given_name' - some pools require this
+    new CognitoUserAttribute({ Name: 'name', Value: fullName }),
   ];
+
+  return attributes;
 }
 
 // Re-export types for convenience

@@ -13,6 +13,7 @@
 
 // Auth screens
 export { LoginScreen } from './LoginScreen';
+export { SignInScreen } from './SignInScreen';
 export { NameScreen } from './NameScreen';
 export { EmailScreen } from './EmailScreen';
 export { PasswordScreen } from './PasswordScreen';
@@ -38,3 +39,7 @@ export { MatchScreen } from './MatchScreen';
 export { PaymentScreen } from './PaymentScreen';
 export { RevealScreen } from './RevealScreen';
 export { CoachScreen } from './CoachScreen';
+
+// Settings screens (accessible from hamburger menu)
+export { SettingsScreen } from './SettingsScreen';
+export { PhotosScreen } from './PhotosScreen';

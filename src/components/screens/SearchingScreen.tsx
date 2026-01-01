@@ -6,8 +6,9 @@
  * Glass aesthetic with blur backing.
  */
 
-import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import React, { useEffect, useState, useCallback } from 'react';
+import { View, Text, StyleSheet, Pressable } from 'react-native';
+import * as Haptics from 'expo-haptics';
 import { BlurView } from 'expo-blur';
 import { useDemoStore } from '../../store/useDemoStore';
 import { useVibeController } from '../../store/useVibeController';
@@ -21,7 +22,15 @@ const STATUS_MESSAGES = [
   'Found someone special!',
 ];
 
-export const SearchingScreen: React.FC = () => {
+export interface SearchingScreenProps {
+  onSecretBack?: () => void;
+  onSecretForward?: () => void;
+}
+
+export const SearchingScreen: React.FC<SearchingScreenProps> = ({
+  onSecretBack,
+  onSecretForward,
+}) => {
   const advance = useDemoStore((state) => state.advance);
   const setMatchData = useDemoStore((state) => state.setMatchData);
   const setFromAppState = useVibeController((state) => state.setFromAppState);
@@ -58,6 +67,17 @@ export const SearchingScreen: React.FC = () => {
     setOrbEnergy('ENGAGED');
   }, []);
 
+  // Secret navigation handlers
+  const handleSecretBack = useCallback(() => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
+    onSecretBack?.();
+  }, [onSecretBack]);
+
+  const handleSecretForward = useCallback(() => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
+    onSecretForward?.();
+  }, [onSecretForward]);
+
   // Auto-advance after finding match
   useEffect(() => {
     if (statusIndex === STATUS_MESSAGES.length - 1) {
@@ -76,7 +96,7 @@ export const SearchingScreen: React.FC = () => {
     <View style={styles.container}>
       {/* Glassmorphic content card - positioned below orb */}
       <View style={styles.cardWrapper}>
-        <BlurView intensity={40} tint="light" style={styles.card}>
+        <BlurView intensity={60} tint="light" style={styles.card}>
           <Text style={styles.headline}>
             Searching{dots}
           </Text>
@@ -99,6 +119,26 @@ export const SearchingScreen: React.FC = () => {
           </Text>
         </BlurView>
       </View>
+
+      {/* Secret navigation triggers (all 70x70, invisible) */}
+      {/* Left = Back */}
+      <Pressable
+        onPress={handleSecretBack}
+        style={styles.secretBackTrigger}
+        hitSlop={0}
+      />
+      {/* Middle = Primary action (Skip/Advance) */}
+      <Pressable
+        onPress={handleSecretForward}
+        style={styles.secretMiddleTrigger}
+        hitSlop={0}
+      />
+      {/* Right = Forward */}
+      <Pressable
+        onPress={handleSecretForward}
+        style={styles.secretForwardTrigger}
+        hitSlop={0}
+      />
     </View>
   );
 };
@@ -154,6 +194,42 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: '#888',
     textAlign: 'center',
+  },
+
+  // Secret navigation triggers
+  secretBackTrigger: {
+    position: 'absolute',
+    top: 10,
+    left: 10,
+    width: 70,
+    height: 70,
+    zIndex: 9999,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.5)',
+    borderRadius: 8,
+  },
+  secretMiddleTrigger: {
+    position: 'absolute',
+    top: 10,
+    left: '50%',
+    marginLeft: -35,
+    width: 70,
+    height: 70,
+    zIndex: 9999,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.5)',
+    borderRadius: 8,
+  },
+  secretForwardTrigger: {
+    position: 'absolute',
+    top: 10,
+    right: 10,
+    width: 70,
+    height: 70,
+    zIndex: 9999,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.5)',
+    borderRadius: 8,
   },
 });
 

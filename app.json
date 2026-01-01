@@ -33,7 +33,8 @@
         {
           "locationWhenInUsePermission": "Abby uses your location to find matches near you."
         }
-      ]
+      ],
+      "expo-secure-store"
     ],
     "extra": {
       "eas": {

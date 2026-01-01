@@ -15,6 +15,7 @@ import {
 } from 'react-native';
 import * as Haptics from 'expo-haptics';
 import { Typography } from '../ui/Typography';
+import { GlassButton } from '../ui/GlassButton';
 
 interface EmailVerificationScreenProps {
   email?: string;
@@ -70,9 +71,6 @@ export const EmailVerificationScreen: React.FC<EmailVerificationScreenProps> = (
 
   return (
     <View style={styles.container}>
-      {/* Full-screen glass overlay */}
-      <View style={styles.glassOverlay} />
-
       {/* Back button */}
       <Pressable
         onPress={handleSecretBack}
@@ -139,10 +137,17 @@ export const EmailVerificationScreen: React.FC<EmailVerificationScreenProps> = (
           </View>
         )}
 
-        {/* Spacer */}
-        <View style={{ flex: 1 }} />
+      </View>
 
-        {/* Resend link */}
+      {/* Fixed footer with Continue button and resend link */}
+      <View style={styles.footer}>
+        <GlassButton
+          onPress={handleNext}
+          disabled={!isValid || isLoading}
+          variant="primary"
+        >
+          {isLoading ? 'Verifying...' : 'Continue'}
+        </GlassButton>
         <Pressable onPress={handleResend} disabled={isLoading} style={styles.resendButton}>
           <Typography variant="body" style={[styles.resendText, isLoading && styles.resendTextDisabled]}>
             Didn't receive a code?
@@ -177,10 +182,6 @@ export const EmailVerificationScreen: React.FC<EmailVerificationScreenProps> = (
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-  },
-  glassOverlay: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(255, 255, 255, 0.05)',
   },
   backButton: {
     position: 'absolute',
@@ -222,6 +223,12 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     letterSpacing: 8,
     textAlign: 'center',
+  },
+  footer: {
+    position: 'absolute',
+    bottom: 48,
+    left: 24,
+    right: 24,
   },
   resendButton: {
     paddingVertical: 12,

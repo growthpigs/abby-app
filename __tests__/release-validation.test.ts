@@ -2,12 +2,13 @@
  * Release Validation Tests
  *
  * Static validation for release readiness:
- * 1. Conditional ElevenLabs imports
+ * 1. OpenAI Realtime Service (replaces ElevenLabs)
  * 2. TypeScript structure validation
  * 3. COACH_INTRO feature integration
  * 4. State machine consistency
  *
  * Uses static file analysis to avoid React Native runtime dependencies.
+ * Updated for client-api-integration branch (Nathan's API).
  */
 
 import { describe, test, expect } from '@jest/globals';
@@ -25,34 +26,33 @@ function fileExists(relativePath: string): boolean {
 }
 
 // ==============================================================================
-// TEST 1: Conditional Import Logic
+// TEST 1: OpenAI Realtime Service (Nathan's API)
 // ==============================================================================
 
-describe('Conditional ElevenLabs Imports', () => {
-  test('AbbyAgent exports VOICE_AVAILABLE flag', () => {
-    const source = readFile('src/services/AbbyAgent.ts');
-    expect(source).toContain('export let VOICE_AVAILABLE');
+describe('OpenAI Realtime Service', () => {
+  test('AbbyRealtimeService file exists', () => {
+    expect(fileExists('src/services/AbbyRealtimeService.ts')).toBe(true);
   });
 
-  test('useAbbyAgent hook is exported', () => {
-    const source = readFile('src/services/AbbyAgent.ts');
+  test('AbbyRealtimeService exports class', () => {
+    const source = readFile('src/services/AbbyRealtimeService.ts');
+    expect(source).toContain('export class AbbyRealtimeService');
+  });
+
+  test('useAbbyAgent hook is exported (for compatibility)', () => {
+    const source = readFile('src/services/AbbyRealtimeService.ts');
     expect(source).toContain('export function useAbbyAgent');
   });
 
-  test('Mock conversation provides error feedback', () => {
-    const source = readFile('src/services/AbbyAgent.ts');
-    expect(source).toContain('Voice features require a development build');
-    expect(source).toContain('native_modules_unavailable');
+  test('Service has conversation management methods', () => {
+    const source = readFile('src/services/AbbyRealtimeService.ts');
+    expect(source).toContain('startConversation');
+    expect(source).toContain('endConversation');
   });
 
-  test('AGENT_ID validation checks for empty string', () => {
-    const source = readFile('src/services/AbbyAgent.ts');
-    expect(source).toContain('!AGENT_ID || AGENT_ID.trim().length === 0');
-  });
-
-  test('AGENT_ID format validation requires agent_ prefix', () => {
-    const source = readFile('src/services/AbbyAgent.ts');
-    expect(source).toContain("!AGENT_ID.startsWith('agent_')");
+  test('Service uses client API base URL', () => {
+    const source = readFile('src/services/AbbyRealtimeService.ts');
+    expect(source).toContain('dev.api.myaimatchmaker.ai');
   });
 });
 
@@ -133,11 +133,10 @@ describe('COACH_INTRO Feature Integration', () => {
 // ==============================================================================
 
 describe('Edge Cases', () => {
-  test('AbbyAgent has cleanup handlers', () => {
-    const source = readFile('src/services/AbbyAgent.ts');
+  test('AbbyRealtimeService has cleanup in useAbbyAgent hook', () => {
+    const source = readFile('src/services/AbbyRealtimeService.ts');
     expect(source).toContain('useEffect(() => {');
     expect(source).toContain('return () => {');
-    expect(source).toContain('clearInterval');
   });
 
   test('CoachIntroScreen has cleanup handlers', () => {
@@ -149,13 +148,11 @@ describe('Edge Cases', () => {
   test('LogBox warnings are suppressed in index.ts', () => {
     const source = readFile('index.ts');
     expect(source).toContain('LogBox.ignoreLogs');
-    expect(source).toContain('expo-av'); // Client API uses expo-av for TTS playback
   });
 
-  test('Client API services are imported in App.demo.tsx', () => {
-    const source = readFile('App.demo.tsx');
-    expect(source).toContain('AbbyRealtimeService');
-    expect(source).not.toContain('ElevenLabsProvider'); // Removed - using client API
+  test('App.tsx uses client API services', () => {
+    const source = readFile('App.tsx');
+    expect(source).toContain('AuthService');
   });
 });
 
@@ -167,9 +164,11 @@ describe('Dependencies', () => {
   test('All required packages are in package.json', () => {
     const pkg = JSON.parse(readFile('package.json'));
 
-    // ElevenLabs
-    expect(pkg.dependencies['@elevenlabs/react-native']).toBeDefined();
-    expect(pkg.dependencies['@livekit/react-native']).toBeDefined();
+    // Auth (Cognito)
+    expect(pkg.dependencies['amazon-cognito-identity-js']).toBeDefined();
+
+    // Audio (for TTS)
+    expect(pkg.dependencies['expo-av']).toBeDefined();
 
     // UI
     expect(pkg.dependencies['expo-blur']).toBeDefined();
@@ -180,8 +179,8 @@ describe('Dependencies', () => {
     expect(pkg.dependencies['zustand']).toBeDefined();
   });
 
-  test('Merriweather font is loaded in App.demo', () => {
-    const source = readFile('App.demo.tsx');
+  test('Merriweather font is loaded in App.tsx', () => {
+    const source = readFile('App.tsx');
     expect(source).toContain('@expo-google-fonts/merriweather');
     expect(source).toContain('Merriweather_400Regular');
   });
@@ -193,7 +192,6 @@ describe('Dependencies', () => {
       'BlurView',
       'Haptics',
       'useDemoStore',
-      'useAbbyAgent',
       'PanResponder',
       'Animated',
       'ScrollView',
@@ -224,10 +222,9 @@ describe('State Machine', () => {
     expect(demoSource).toContain('SEARCHING');
   });
 
-  test('COACH_INTRO enables voice agent in App.demo', () => {
-    const source = readFile('App.demo.tsx');
-    expect(source).toContain("currentState === 'COACH_INTRO'");
-    expect(source).toContain('enabled:');
+  test('Demo state machine handles COACH_INTRO state', () => {
+    const source = readFile('src/store/useDemoStore.ts');
+    expect(source).toContain("'COACH_INTRO'");
   });
 
   test('Messages state structure is correct', () => {
@@ -268,27 +265,23 @@ describe('Style Properties', () => {
 });
 
 // ==============================================================================
-// TEST 8: Audio Configuration
+// TEST 8: TTS Service
 // ==============================================================================
 
-describe('Audio Configuration', () => {
-  test('AbbyAgent configures iOS audio session', () => {
-    const source = readFile('src/services/AbbyAgent.ts');
-    expect(source).toContain('setAppleAudioConfiguration');
-    expect(source).toContain('playAndRecord');
-    expect(source).toContain('voiceChat');
+describe('TTS Service', () => {
+  test('AbbyTTSService file exists', () => {
+    expect(fileExists('src/services/AbbyTTSService.ts')).toBe(true);
   });
 
-  test('AbbyAgent manages audio session lifecycle', () => {
-    const source = readFile('src/services/AbbyAgent.ts');
-    expect(source).toContain('startAudioSession');
-    expect(source).toContain('stopAudioSession');
+  test('AbbyTTSService exports speak method', () => {
+    const source = readFile('src/services/AbbyTTSService.ts');
+    expect(source).toContain('speak');
+    expect(source).toContain('stop');
   });
 
-  test('Speaker output is forced', () => {
-    const source = readFile('src/services/AbbyAgent.ts');
-    expect(source).toContain('selectAudioOutput');
-    expect(source).toContain('force_speaker');
+  test('AbbyTTSService uses expo-av for audio', () => {
+    const source = readFile('src/services/AbbyTTSService.ts');
+    expect(source).toContain('expo-av');
   });
 });
 
@@ -297,17 +290,16 @@ describe('Audio Configuration', () => {
 // ==============================================================================
 
 describe('Mute Functionality', () => {
-  test('AbbyAgent exports mute functions', () => {
-    const source = readFile('src/services/AbbyAgent.ts');
-    expect(source).toContain('muteConversation');
-    expect(source).toContain('unmuteConversation');
+  test('AbbyRealtimeService has mute functionality', () => {
+    const source = readFile('src/services/AbbyRealtimeService.ts');
     expect(source).toContain('toggleMute');
+    expect(source).toContain('isMuted');
   });
 
-  test('Mute state is tracked', () => {
-    const source = readFile('src/services/AbbyAgent.ts');
-    expect(source).toContain('isMuted');
-    expect(source).toContain('setIsMuted');
+  test('useAbbyAgent hook exposes mute controls', () => {
+    const source = readFile('src/services/AbbyRealtimeService.ts');
+    expect(source).toContain('toggleMute,');
+    expect(source).toContain('isMuted,');
   });
 
   test('CoachIntroScreen has mute button', () => {

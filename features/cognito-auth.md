@@ -3,7 +3,36 @@
 **What:** Email/password authentication via AWS Cognito
 **Who:** New users signing up, returning users logging in
 **Why:** Establishes user identity with client's backend infrastructure
-**Status:** 🔨 Building
+**Status:** ✅ COMPLETE (Frontend) | ❌ BLOCKED (Backend Lambda)
+
+---
+
+## 🔴 CURRENT STATUS (2026-01-01)
+
+**Frontend Implementation:** ✅ Complete and tested
+**Backend Integration:** ❌ Blocked by PostConfirmation Lambda
+
+### What Works
+- ✅ Real Cognito signup with amazon-cognito-identity-js
+- ✅ Email verification codes delivered and accepted
+- ✅ Login returns valid JWT tokens (Access + ID)
+- ✅ Tokens stored securely in SecureStore
+- ✅ Error handling with user-friendly messages
+
+### Backend Blocker
+```
+UnexpectedLambdaException: PostConfirmation invocation failed due to error AccessDeniedException
+```
+- Lambda that creates user in PostgreSQL lacks IAM permissions
+- API calls return 500 because user doesn't exist in backend DB
+- **Nathan must fix Lambda IAM role**
+
+### Test Account
+```
+Email:    rodericandrews+4@gmail.com
+Password: TestPass123!
+UserSub:  f4b854d8-30d1-7062-c933-ea7071a64b64
+```
 
 ---
 

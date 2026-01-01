@@ -100,9 +100,6 @@ export const BasicsLocationScreen: React.FC<BasicsLocationScreenProps> = ({
 
   return (
     <View style={styles.container}>
-      {/* Full-screen glass overlay */}
-      <View style={styles.glassOverlay} />
-
       {/* Back button */}
       <Pressable
         onPress={handleSecretBack}
@@ -173,15 +170,14 @@ export const BasicsLocationScreen: React.FC<BasicsLocationScreenProps> = ({
           </View>
         </View>
 
-        {/* Spacer */}
-        <View style={{ flex: 1 }} />
+      </View>
 
-        {/* Continue button */}
+      {/* Fixed footer with Continue button */}
+      <View style={styles.footer}>
         <GlassButton
           onPress={handleNext}
           disabled={!isValid}
           variant="primary"
-          style={styles.continueButton}
         >
           Continue
         </GlassButton>
@@ -211,10 +207,6 @@ export const BasicsLocationScreen: React.FC<BasicsLocationScreenProps> = ({
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-  },
-  glassOverlay: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(255, 255, 255, 0.05)',
   },
   backButton: {
     position: 'absolute',
@@ -294,8 +286,11 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     backgroundColor: 'rgba(255, 255, 255, 0.05)',
   },
-  continueButton: {
-    marginTop: 24,
+  footer: {
+    position: 'absolute',
+    bottom: 48,
+    left: 24,
+    right: 24,
   },
   secretBackTrigger: {
     position: 'absolute',

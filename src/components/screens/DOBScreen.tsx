@@ -19,6 +19,7 @@ import {
 } from 'react-native';
 import * as Haptics from 'expo-haptics';
 import { Typography } from '../ui/Typography';
+import { GlassButton } from '../ui/GlassButton';
 
 interface DOBScreenProps {
   onNext?: (dob: { month: number; day: number; year: number }, ageRange: { min: number; max: number }) => void;
@@ -153,9 +154,6 @@ export const DOBScreen: React.FC<DOBScreenProps> = ({
       style={styles.container}
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
     >
-      {/* Full-screen glass overlay */}
-      <View style={styles.glassOverlay} />
-
       {/* Back button */}
       <Pressable
         onPress={handleSecretBack}
@@ -263,6 +261,18 @@ export const DOBScreen: React.FC<DOBScreenProps> = ({
             </View>
           </View>
         </View>
+
+      </View>
+
+      {/* Fixed footer with Continue button */}
+      <View style={styles.footer}>
+        <GlassButton
+          onPress={handleNext}
+          disabled={!isValid}
+          variant="primary"
+        >
+          Continue
+        </GlassButton>
       </View>
 
       {/* Secret navigation triggers */}
@@ -289,10 +299,6 @@ export const DOBScreen: React.FC<DOBScreenProps> = ({
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-  },
-  glassOverlay: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(255, 255, 255, 0.05)',
   },
   backButton: {
     position: 'absolute',
@@ -383,6 +389,12 @@ const styles = StyleSheet.create({
     fontSize: 20,
     color: 'rgba(255, 255, 255, 0.5)',
     marginHorizontal: 16,
+  },
+  footer: {
+    position: 'absolute',
+    bottom: 48,
+    left: 24,
+    right: 24,
   },
   secretBackTrigger: {
     position: 'absolute',

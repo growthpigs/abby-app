@@ -4,14 +4,40 @@
 
 ---
 
+## 🚨 MANDATORY STARTUP CHECKLIST (DO THIS FIRST)
+
+**Before ANY work, verify these EVERY time:**
+
+```bash
+# 1. Confirm correct worktree (MUST be abby-client-api)
+pwd  # Should show: /Users/rodericandrews/_PAI/projects/abby-client-api
+
+# 2. Confirm correct branch
+git branch --show-current  # Should show: client-api-integration
+
+# 3. Confirm NOT in /abby (the legacy worktree)
+# If pwd shows /abby without -client-api, STOP and cd to correct location
+```
+
+**Service Files (CRITICAL - do NOT copy from /abby):**
+- ✅ Use: `AbbyRealtimeService.ts` (OpenAI Realtime API)
+- ❌ NOT: `AbbyAgent.ts` (ElevenLabs - legacy only)
+
+**Build Command:**
+```bash
+npx expo run:ios  # NOT 'expo start' (Expo Go doesn't support Skia)
+```
+
+---
+
 ## ✅ CORRECT WORKTREE - YOU ARE IN THE RIGHT PLACE
 
 **This is `/abby-client-api` (client-api-integration branch) - ACTIVE DEVELOPMENT.**
 
-| Worktree | Branch | Purpose |
-|----------|--------|---------|
-| `/abby` | `main` | ❌ LEGACY - ElevenLabs demo, reference only |
-| `/abby-client-api` (HERE) | `client-api-integration` | ✅ ACTIVE WORK - Client API |
+| Worktree | Branch | Services |
+|----------|--------|----------|
+| `/abby` | `main` | ❌ LEGACY - ElevenLabs (AbbyAgent.ts) |
+| `/abby-client-api` (HERE) | `client-api-integration` | ✅ ACTIVE - OpenAI (AbbyRealtimeService.ts) |
 
 ---
 

@@ -27,7 +27,7 @@ import Animated, {
 import { AbbyOrbProps } from '../../../types/orb';
 import { useVibeStore } from '../../../store/useVibeStore';
 import { VIBE_COLORS } from '../../../constants/colors';
-import { ORB_SIZES, ORB_TIMING, ORB_EASING } from './constants';
+import { ORB_SIZES, ORB_POSITIONS, ORB_TIMING, ORB_EASING } from './constants';
 import { LiquidGlass4 } from '../LiquidGlass4';
 
 /**
@@ -72,7 +72,8 @@ export const AbbyOrb: React.FC<AbbyOrbProps> = ({ mode, onTap }) => {
   }, [screenWidth, screenHeight]);
 
   const dockedModeY = useMemo(() => {
-    const screenY = screenHeight - 40 - ORB_SIZES.docked.radius;
+    const bottomOffset = ORB_POSITIONS.docked.bottom ?? 60;
+    const screenY = screenHeight - bottomOffset - ORB_SIZES.docked.radius;
     return screenToUV(screenY, screenWidth, screenHeight);
   }, [screenWidth, screenHeight]);
 
