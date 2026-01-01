@@ -114,8 +114,13 @@ export const AuthService = {
 
     const attributes = createUserAttributes(email, firstName, lastName);
 
+    // Generate username from email (Cognito pool uses email alias, so username can't be email format)
+    // Extract part before @ and add random suffix to ensure uniqueness
+    const emailPrefix = email.split('@')[0].replace(/[^a-zA-Z0-9]/g, '');
+    const username = `${emailPrefix}_${Date.now()}`;
+
     return new Promise((resolve, reject) => {
-      userPool.signUp(email, password, attributes, [], (err, result) => {
+      userPool.signUp(username, password, attributes, [], (err, result) => {
         if (err) {
           if (__DEV__) console.log('[AuthService] Signup error:', err);
           reject(mapCognitoError(err as Error & { code?: string }));
