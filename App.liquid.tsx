@@ -6,11 +6,16 @@
  * - ROW 2 (BG): 1-7 (original backgrounds)
  * - ROW 3 (BG2): 8-13 (William Mapan inspired)
  * - ROW 4 (BG3): 14-18 (artistic effects)
+ *
+ * REFACTORED: Now uses ParametricVibeMatrix with shader registry
+ * instead of 18 individual component imports.
  */
 
 import React, { useState } from 'react';
-import { StyleSheet, View, Text, Pressable, ScrollView } from 'react-native';
+import { StyleSheet, View, Text, Pressable } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
+
+// Glass components (still need individual imports for now)
 import { LiquidGlass } from './src/components/layers/LiquidGlass';
 import { LiquidGlass2 } from './src/components/layers/LiquidGlass2';
 import { LiquidGlass3 } from './src/components/layers/LiquidGlass3';
@@ -21,31 +26,17 @@ import { LiquidGlass7 } from './src/components/layers/LiquidGlass7';
 import { LiquidGlass8 } from './src/components/layers/LiquidGlass8';
 import { LiquidGlass9 } from './src/components/layers/LiquidGlass9';
 import { LiquidGlass10 } from './src/components/layers/LiquidGlass10';
-import { VibeMatrix } from './src/components/layers/VibeMatrix';
-import { VibeMatrix2 } from './src/components/layers/VibeMatrix2';
-import { VibeMatrix3 } from './src/components/layers/VibeMatrix3';
-import { VibeMatrix4 } from './src/components/layers/VibeMatrix4';
-import { VibeMatrix5 } from './src/components/layers/VibeMatrix5';
-import { VibeMatrix6 } from './src/components/layers/VibeMatrix6';
-import { VibeMatrix7 } from './src/components/layers/VibeMatrix7';
-import { VibeMatrix8 } from './src/components/layers/VibeMatrix8';
-import { VibeMatrix9 } from './src/components/layers/VibeMatrix9';
-import { VibeMatrix10 } from './src/components/layers/VibeMatrix10';
-import { VibeMatrix11 } from './src/components/layers/VibeMatrix11';
-import { VibeMatrix12 } from './src/components/layers/VibeMatrix12';
-import { VibeMatrix13 } from './src/components/layers/VibeMatrix13';
-import { VibeMatrix14 } from './src/components/layers/VibeMatrix14';
-import { VibeMatrix15 } from './src/components/layers/VibeMatrix15';
-import { VibeMatrix16 } from './src/components/layers/VibeMatrix16';
-import { VibeMatrix17 } from './src/components/layers/VibeMatrix17';
-import { VibeMatrix18 } from './src/components/layers/VibeMatrix18';
+
+// Single parametric component replaces 18 VibeMatrix imports!
+import { ParametricVibeMatrix } from './src/components/layers/ParametricVibeMatrix';
+
 import { FPSMonitor } from './src/components/dev/FPSMonitor';
 
 // Glass/orb modes
 type GlassMode = 'none' | 'G1' | 'G2' | 'G3' | 'G4' | 'G5' | 'G6' | 'G7' | 'G8' | 'G9' | 'G10';
 
-// Background modes (18 versions)
-type BgMode = '1' | '2' | '3' | '4' | '5' | '6' | '7' | '8' | '9' | '10' | '11' | '12' | '13' | '14' | '15' | '16' | '17' | '18';
+// Background modes (18 versions) - now just numeric IDs
+type BgMode = 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12 | 13 | 14 | 15 | 16 | 17 | 18;
 
 const GLASS_INFO: Record<GlassMode, { label: string; hint: string }> = {
   none: { label: '-', hint: 'No glass' },
@@ -62,29 +53,29 @@ const GLASS_INFO: Record<GlassMode, { label: string; hint: string }> = {
 };
 
 const BG_INFO: Record<BgMode, { label: string; hint: string }> = {
-  '1': { label: '1', hint: 'Tie-dye pink' },
-  '2': { label: '2', hint: 'Fire swirls' },
-  '3': { label: '3', hint: 'Aurora spirals' },
-  '4': { label: '4', hint: 'Aerial reef' },
-  '5': { label: '5', hint: 'Liquid marble' },
-  '6': { label: '6', hint: 'Kaleidoscope' },
-  '7': { label: '7', hint: 'Ocean shore' },
-  '8': { label: '8', hint: 'Deep ocean' },
-  '9': { label: '9', hint: 'Blob metaballs' },
-  '10': { label: '10', hint: 'Chromatic bloom' },
-  '11': { label: '11', hint: 'Coral reef' },
-  '12': { label: '12', hint: 'Stippled gradient' },
-  '13': { label: '13', hint: 'Fluid shoreline' },
-  '14': { label: '14', hint: 'Tidal pools' },
-  '15': { label: '15', hint: 'Seafoam' },
-  '16': { label: '16', hint: 'Ink bloom' },
-  '17': { label: '17', hint: 'Lagoon' },
-  '18': { label: '18', hint: 'Ocean currents' },
+  1: { label: '1', hint: 'Tie-dye pink' },
+  2: { label: '2', hint: 'Fire swirls' },
+  3: { label: '3', hint: 'Aurora spirals' },
+  4: { label: '4', hint: 'Aerial reef' },
+  5: { label: '5', hint: 'Liquid marble' },
+  6: { label: '6', hint: 'Kaleidoscope' },
+  7: { label: '7', hint: 'Ocean shore' },
+  8: { label: '8', hint: 'Deep ocean' },
+  9: { label: '9', hint: 'Blob metaballs' },
+  10: { label: '10', hint: 'Chromatic bloom' },
+  11: { label: '11', hint: 'Coral reef' },
+  12: { label: '12', hint: 'Stippled gradient' },
+  13: { label: '13', hint: 'Fluid shoreline' },
+  14: { label: '14', hint: 'Tidal pools' },
+  15: { label: '15', hint: 'Seafoam' },
+  16: { label: '16', hint: 'Ink bloom' },
+  17: { label: '17', hint: 'Lagoon' },
+  18: { label: '18', hint: 'Ocean currents' },
 };
 
 export default function AppLiquid() {
   const [glassMode, setGlassMode] = useState<GlassMode>('none');
-  const [bgMode, setBgMode] = useState<BgMode>('1');
+  const [bgMode, setBgMode] = useState<BgMode>(1);
 
   const renderGlass = () => {
     switch (glassMode) {
@@ -99,30 +90,6 @@ export default function AppLiquid() {
       case 'G9': return <LiquidGlass9 />;
       case 'G10': return <LiquidGlass10 />;
       default: return null;
-    }
-  };
-
-  const renderBackground = () => {
-    switch (bgMode) {
-      case '1': return <VibeMatrix />;
-      case '2': return <VibeMatrix2 />;
-      case '3': return <VibeMatrix3 />;
-      case '4': return <VibeMatrix4 />;
-      case '5': return <VibeMatrix5 />;
-      case '6': return <VibeMatrix6 />;
-      case '7': return <VibeMatrix7 />;
-      case '8': return <VibeMatrix8 />;
-      case '9': return <VibeMatrix9 />;
-      case '10': return <VibeMatrix10 />;
-      case '11': return <VibeMatrix11 />;
-      case '12': return <VibeMatrix12 />;
-      case '13': return <VibeMatrix13 />;
-      case '14': return <VibeMatrix14 />;
-      case '15': return <VibeMatrix15 />;
-      case '16': return <VibeMatrix16 />;
-      case '17': return <VibeMatrix17 />;
-      case '18': return <VibeMatrix18 />;
-      default: return <VibeMatrix />;
     }
   };
 
@@ -144,9 +111,9 @@ export default function AppLiquid() {
 
   return (
     <View style={styles.container}>
-      {/* Background layer */}
+      {/* Background layer - now uses single parametric component! */}
       <View style={styles.shaderLayer} pointerEvents="none">
-        {renderBackground()}
+        <ParametricVibeMatrix shaderId={bgMode} />
       </View>
 
       {/* Glass/orb layer (topmost) */}
@@ -194,7 +161,7 @@ export default function AppLiquid() {
       <View style={[styles.row, { top: 121 }]}>
         <Text style={styles.rowLabel}>BG:</Text>
         <View style={styles.rowContent}>
-          {(['1', '2', '3', '4', '5', '6', '7'] as BgMode[]).map((m) => (
+          {([1, 2, 3, 4, 5, 6, 7] as BgMode[]).map((m) => (
             <Pressable
               key={m}
               style={[styles.btn, bgMode === m && styles.btnActive]}
@@ -212,7 +179,7 @@ export default function AppLiquid() {
       <View style={[styles.row, { top: 154 }]}>
         <Text style={styles.rowLabel}>BG2:</Text>
         <View style={styles.rowContent}>
-          {(['8', '9', '10', '11', '12', '13'] as BgMode[]).map((m) => (
+          {([8, 9, 10, 11, 12, 13] as BgMode[]).map((m) => (
             <Pressable
               key={m}
               style={[styles.btn, bgMode === m && styles.btnActive]}
@@ -230,7 +197,7 @@ export default function AppLiquid() {
       <View style={[styles.row, { top: 187 }]}>
         <Text style={styles.rowLabel}>BG3:</Text>
         <View style={styles.rowContent}>
-          {(['14', '15', '16', '17', '18'] as BgMode[]).map((m) => (
+          {([14, 15, 16, 17, 18] as BgMode[]).map((m) => (
             <Pressable
               key={m}
               style={[styles.btn, bgMode === m && styles.btnActive]}
@@ -276,11 +243,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     zIndex: 100,
     paddingLeft: 12,
-  },
-  scrollContent: {
-    flexDirection: 'row',
-    gap: 4,
-    paddingRight: 12,
   },
   rowContent: {
     flexDirection: 'row',

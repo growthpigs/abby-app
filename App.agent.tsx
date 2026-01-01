@@ -12,8 +12,8 @@ import React from 'react';
 import { StyleSheet, View, Text, SafeAreaView } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 
-// Background
-import VibeMatrix3 from './src/components/layers/VibeMatrix3';
+// Background - uses parametric shader with registry
+import { ParametricVibeMatrix } from './src/components/layers/ParametricVibeMatrix';
 
 // Orb (G4 - audio reactive)
 import { LiquidGlass4 } from './src/components/layers/LiquidGlass4';
@@ -57,9 +57,9 @@ function StatusHeader() {
 export default function AppAgent() {
   return (
     <View style={styles.container}>
-      {/* Layer 0: Background */}
+      {/* Layer 0: Background - Aurora spirals (shader 3) */}
       <View style={styles.backgroundLayer} pointerEvents="none">
-        <VibeMatrix3 />
+        <ParametricVibeMatrix shaderId={3} />
       </View>
 
       {/* Layer 1: Orb */}
