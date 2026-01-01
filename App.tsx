@@ -329,10 +329,10 @@ function AppContent() {
       }
     } catch (error) {
       if (__DEV__) console.error('[App] Auth error:', error);
+      // AuthService throws { code, message } objects, not Error instances
+      const authError = error as { code?: string; message?: string };
       setAuthError(
-        error instanceof Error
-          ? error.message
-          : 'Authentication failed. Please try again.'
+        authError?.message || 'Authentication failed. Please try again.'
       );
     } finally {
       setIsLoading(false);
@@ -356,10 +356,10 @@ function AppContent() {
       vibeRef.current?.setVibe('TRUST');
     } catch (error) {
       if (__DEV__) console.error('[App] Verification error:', error);
+      // AuthService throws { code, message } objects, not Error instances
+      const authError = error as { code?: string; message?: string };
       setAuthError(
-        error instanceof Error
-          ? error.message
-          : 'Verification failed. Please try again.'
+        authError?.message || 'Verification failed. Please try again.'
       );
     } finally {
       setIsLoading(false);
@@ -434,8 +434,11 @@ function AppContent() {
           <EmailVerificationScreen
             email={userEmail}
             onNext={handleVerificationNext}
+            onResend={() => AuthService.resendVerificationCode(userEmail!)}
             onSecretBack={handleSecretBack}
             onSecretForward={handleSecretForward}
+            isLoading={isLoading}
+            error={authError}
           />
         );
 

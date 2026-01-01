@@ -116,7 +116,8 @@ export const AuthService = {
 
     // Generate username from email (Cognito pool uses email alias, so username can't be email format)
     // Extract part before @ and add random suffix to ensure uniqueness
-    const emailPrefix = email.split('@')[0].replace(/[^a-zA-Z0-9]/g, '');
+    // Guard against empty prefix (e.g., emails starting with special chars like +test@gmail.com)
+    const emailPrefix = email.split('@')[0].replace(/[^a-zA-Z0-9]/g, '') || 'user';
     const username = `${emailPrefix}_${Date.now()}`;
 
     return new Promise((resolve, reject) => {
