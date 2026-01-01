@@ -3,8 +3,10 @@
  *
  * Authentication flow matching the client API (dev.api.myaimatchmaker.ai):
  *
- * SIGNUP: Login → Name → Email → Password → Email Verification → Main App
+ * SIGNUP: Login → Name → Email → Password → Email Verification → Onboarding → Main App
  * SIGNIN: Login → Email → Password → Main App
+ *
+ * Onboarding: DOB → Permissions → Gender → Preferences → Ethnicity → EthnicityPref → Relationship → Smoking → Location
  *
  * Uses VibeMatrix shader background with glass overlay screens.
  * Integrates with AuthService for Cognito authentication.
@@ -36,6 +38,20 @@ import { EmailScreen } from './src/components/screens/EmailScreen';
 import { PasswordScreen } from './src/components/screens/PasswordScreen';
 import { EmailVerificationScreen } from './src/components/screens/EmailVerificationScreen';
 
+// Onboarding screens
+import { DOBScreen } from './src/components/screens/DOBScreen';
+import { PermissionsScreen } from './src/components/screens/PermissionsScreen';
+import { BasicsGenderScreen } from './src/components/screens/BasicsGenderScreen';
+import { BasicsPreferencesScreen } from './src/components/screens/BasicsPreferencesScreen';
+import { EthnicityScreen } from './src/components/screens/EthnicityScreen';
+import { EthnicityPreferenceScreen } from './src/components/screens/EthnicityPreferenceScreen';
+import { BasicsRelationshipScreen } from './src/components/screens/BasicsRelationshipScreen';
+import { SmokingScreen } from './src/components/screens/SmokingScreen';
+import { BasicsLocationScreen } from './src/components/screens/BasicsLocationScreen';
+
+// Onboarding store
+import { useOnboardingStore } from './src/store/useOnboardingStore';
+
 // Main app screens
 import {
   CoachIntroScreen,
@@ -57,13 +73,23 @@ import { AuthService } from './src/services/AuthService';
 type AuthMode = 'signup' | 'signin';
 
 type AuthState =
-  | 'LOADING'        // Checking existing auth
-  | 'LOGIN'          // Entry screen
-  | 'NAME'           // Signup: enter name
-  | 'EMAIL'          // Enter email
-  | 'PASSWORD'       // Enter/create password
-  | 'VERIFICATION'   // Verify email code
-  | 'AUTHENTICATED'; // Logged in
+  | 'LOADING'            // Checking existing auth
+  | 'LOGIN'              // Entry screen
+  | 'NAME'               // Signup: enter name
+  | 'EMAIL'              // Enter email
+  | 'PASSWORD'           // Enter/create password
+  | 'VERIFICATION'       // Verify email code
+  // Onboarding states
+  | 'DOB'                // Date of birth
+  | 'PERMISSIONS'        // iOS permissions
+  | 'BASICS_GENDER'      // Gender selection
+  | 'BASICS_PREFERENCES' // Gender preferences
+  | 'ETHNICITY'          // Ethnicity selection
+  | 'ETHNICITY_PREF'     // Ethnicity preferences
+  | 'BASICS_RELATIONSHIP'// Relationship type
+  | 'SMOKING'            // Smoking habits
+  | 'BASICS_LOCATION'    // Location
+  | 'AUTHENTICATED';     // Logged in
 
 // Screen ordering for secret navigation
 const SIGNUP_ORDER: AuthState[] = [
@@ -72,6 +98,16 @@ const SIGNUP_ORDER: AuthState[] = [
   'EMAIL',
   'PASSWORD',
   'VERIFICATION',
+  // Onboarding
+  'DOB',
+  'PERMISSIONS',
+  'BASICS_GENDER',
+  'BASICS_PREFERENCES',
+  'ETHNICITY',
+  'ETHNICITY_PREF',
+  'BASICS_RELATIONSHIP',
+  'SMOKING',
+  'BASICS_LOCATION',
   'AUTHENTICATED',
 ];
 
@@ -315,8 +351,8 @@ function AppContent() {
       if (__DEV__) console.log('[App] Verification success, logging in...');
       await AuthService.login(userEmail!, userPassword!);
 
-      setAuthState('AUTHENTICATED');
-      reset();
+      // Go to onboarding instead of directly to authenticated
+      setAuthState('DOB');
       vibeRef.current?.setVibe('TRUST');
     } catch (error) {
       if (__DEV__) console.error('[App] Verification error:', error);
@@ -328,6 +364,20 @@ function AppContent() {
     } finally {
       setIsLoading(false);
     }
+  };
+
+  // ONBOARDING HANDLERS
+  const handleDOBComplete = () => setAuthState('PERMISSIONS');
+  const handlePermissionsComplete = () => setAuthState('BASICS_GENDER');
+  const handleGenderComplete = () => setAuthState('BASICS_PREFERENCES');
+  const handlePreferencesComplete = () => setAuthState('ETHNICITY');
+  const handleEthnicityComplete = () => setAuthState('ETHNICITY_PREF');
+  const handleEthnicityPrefComplete = () => setAuthState('BASICS_RELATIONSHIP');
+  const handleRelationshipComplete = () => setAuthState('SMOKING');
+  const handleSmokingComplete = () => setAuthState('BASICS_LOCATION');
+  const handleLocationComplete = () => {
+    setAuthState('AUTHENTICATED');
+    reset();
   };
 
   // DEMO FLOW - background change handler
@@ -384,6 +434,88 @@ function AppContent() {
           <EmailVerificationScreen
             email={userEmail}
             onNext={handleVerificationNext}
+            onSecretBack={handleSecretBack}
+            onSecretForward={handleSecretForward}
+          />
+        );
+
+      // Onboarding screens
+      case 'DOB':
+        return (
+          <DOBScreen
+            onNext={handleDOBComplete}
+            onSecretBack={handleSecretBack}
+            onSecretForward={handleSecretForward}
+          />
+        );
+
+      case 'PERMISSIONS':
+        return (
+          <PermissionsScreen
+            onNext={handlePermissionsComplete}
+            onSecretBack={handleSecretBack}
+            onSecretForward={handleSecretForward}
+          />
+        );
+
+      case 'BASICS_GENDER':
+        return (
+          <BasicsGenderScreen
+            onNext={handleGenderComplete}
+            onSecretBack={handleSecretBack}
+            onSecretForward={handleSecretForward}
+          />
+        );
+
+      case 'BASICS_PREFERENCES':
+        return (
+          <BasicsPreferencesScreen
+            onNext={handlePreferencesComplete}
+            onSecretBack={handleSecretBack}
+            onSecretForward={handleSecretForward}
+          />
+        );
+
+      case 'ETHNICITY':
+        return (
+          <EthnicityScreen
+            onNext={handleEthnicityComplete}
+            onSecretBack={handleSecretBack}
+            onSecretForward={handleSecretForward}
+          />
+        );
+
+      case 'ETHNICITY_PREF':
+        return (
+          <EthnicityPreferenceScreen
+            onNext={handleEthnicityPrefComplete}
+            onSecretBack={handleSecretBack}
+            onSecretForward={handleSecretForward}
+          />
+        );
+
+      case 'BASICS_RELATIONSHIP':
+        return (
+          <BasicsRelationshipScreen
+            onNext={handleRelationshipComplete}
+            onSecretBack={handleSecretBack}
+            onSecretForward={handleSecretForward}
+          />
+        );
+
+      case 'SMOKING':
+        return (
+          <SmokingScreen
+            onNext={handleSmokingComplete}
+            onSecretBack={handleSecretBack}
+            onSecretForward={handleSecretForward}
+          />
+        );
+
+      case 'BASICS_LOCATION':
+        return (
+          <BasicsLocationScreen
+            onNext={handleLocationComplete}
             onSecretBack={handleSecretBack}
             onSecretForward={handleSecretForward}
           />

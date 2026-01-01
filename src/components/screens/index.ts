@@ -4,6 +4,9 @@
  * Auth Flow:
  * LOGIN → NAME → EMAIL → PASSWORD → VERIFICATION → (Authenticated)
  *
+ * Onboarding Flow:
+ * DOB → PERMISSIONS → GENDER → PREFERENCES → ETHNICITY → ETHNICITY_PREF → RELATIONSHIP → SMOKING → LOCATION
+ *
  * Main App Flow:
  * COACH_INTRO → INTERVIEW → SEARCHING → MATCH → PAYMENT → REVEAL → COACH
  */
@@ -15,6 +18,17 @@ export { EmailScreen } from './EmailScreen';
 export { PasswordScreen } from './PasswordScreen';
 export { EmailVerificationScreen } from './EmailVerificationScreen';
 export { LoadingScreen } from './LoadingScreen';
+
+// Onboarding screens
+export { DOBScreen } from './DOBScreen';
+export { PermissionsScreen } from './PermissionsScreen';
+export { BasicsGenderScreen } from './BasicsGenderScreen';
+export { BasicsPreferencesScreen } from './BasicsPreferencesScreen';
+export { EthnicityScreen } from './EthnicityScreen';
+export { EthnicityPreferenceScreen } from './EthnicityPreferenceScreen';
+export { BasicsRelationshipScreen } from './BasicsRelationshipScreen';
+export { SmokingScreen } from './SmokingScreen';
+export { BasicsLocationScreen } from './BasicsLocationScreen';
 
 // Main app screens
 export { CoachIntroScreen } from './CoachIntroScreen';

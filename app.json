@@ -18,6 +18,7 @@
       "deploymentTarget": "16.0",
       "infoPlist": {
         "NSMicrophoneUsageDescription": "Abby needs your microphone to have a conversation with you.",
+        "NSLocationWhenInUseUsageDescription": "Abby uses your location to find matches near you.",
         "UIBackgroundModes": [
           "audio"
         ],
@@ -26,7 +27,13 @@
       "bitcode": false
     },
     "plugins": [
-      "expo-font"
+      "expo-font",
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "Abby uses your location to find matches near you."
+        }
+      ]
     ],
     "extra": {
       "eas": {
