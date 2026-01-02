@@ -10,6 +10,8 @@
  */
 
 import { API_CONFIG } from '../config';
+import { TokenManager } from '../services/TokenManager';
+import { AuthService } from '../services/AuthService';
 
 // Maximum allowed timeout (60 seconds)
 const MAX_TIMEOUT_MS = 60000;
@@ -35,6 +37,43 @@ export interface SecureFetchOptions extends RequestInit {
   maxRetries?: number;
   /** Disable retry for this request */
   noRetry?: boolean;
+  /** Skip automatic token refresh on 401 (use for auth endpoints) */
+  skipTokenRefresh?: boolean;
+}
+
+// Track if a token refresh is in progress to avoid race conditions
+let tokenRefreshPromise: Promise<string | null> | null = null;
+
+/**
+ * Attempt to refresh the auth token
+ */
+async function refreshAuthToken(): Promise<string | null> {
+  // If a refresh is already in progress, wait for it
+  if (tokenRefreshPromise) {
+    return tokenRefreshPromise;
+  }
+
+  tokenRefreshPromise = (async () => {
+    try {
+      const refreshToken = await TokenManager.getRefreshToken();
+      if (!refreshToken) {
+        if (__DEV__) console.log('[secureFetch] No refresh token available');
+        return null;
+      }
+
+      // Use AuthService to refresh the session
+      const newToken = await AuthService.refreshSession();
+      if (__DEV__) console.log('[secureFetch] Token refreshed successfully');
+      return newToken;
+    } catch (error) {
+      if (__DEV__) console.log('[secureFetch] Token refresh failed:', error);
+      return null;
+    } finally {
+      tokenRefreshPromise = null;
+    }
+  })();
+
+  return tokenRefreshPromise;
 }
 
 /**
@@ -223,12 +262,31 @@ export async function secureFetch(
 
 /**
  * Secure JSON fetch - fetches and parses JSON with all security features
+ * Includes automatic token refresh on 401 responses
  */
 export async function secureFetchJSON<T = unknown>(
   url: string,
   options: SecureFetchOptions = {}
 ): Promise<T> {
-  const response = await secureFetch(url, options);
+  const { skipTokenRefresh = false, ...fetchOptions } = options;
+
+  let response = await secureFetch(url, fetchOptions);
+
+  // Handle 401 with token refresh
+  if (response.status === 401 && !skipTokenRefresh) {
+    const newToken = await refreshAuthToken();
+
+    if (newToken) {
+      // Retry with new token
+      const headers = new Headers(fetchOptions.headers);
+      headers.set('Authorization', `Bearer ${newToken}`);
+
+      response = await secureFetch(url, {
+        ...fetchOptions,
+        headers,
+      });
+    }
+  }
 
   if (!response.ok) {
     throw sanitizeError(null, response.status);
