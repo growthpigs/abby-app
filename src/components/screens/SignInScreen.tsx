@@ -102,6 +102,7 @@ export const SignInScreen: React.FC<SignInScreenProps> = ({
             returnKeyType="next"
             placeholderTextColor="rgba(255, 255, 255, 0.3)"
             editable={!isLoading}
+            maxLength={254}
           />
         </View>
         {emailError && (
@@ -124,6 +125,7 @@ export const SignInScreen: React.FC<SignInScreenProps> = ({
             onSubmitEditing={handleSignIn}
             placeholderTextColor="rgba(255, 255, 255, 0.3)"
             editable={!isLoading}
+            maxLength={128}
           />
           <Pressable
             onPress={() => setShowPassword(!showPassword)}

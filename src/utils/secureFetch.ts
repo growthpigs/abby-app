@@ -46,6 +46,7 @@ let tokenRefreshPromise: Promise<string | null> | null = null;
 
 /**
  * Attempt to refresh the auth token
+ * Returns new access token on success, null on failure
  */
 async function refreshAuthToken(): Promise<string | null> {
   // If a refresh is already in progress, wait for it
@@ -55,16 +56,16 @@ async function refreshAuthToken(): Promise<string | null> {
 
   tokenRefreshPromise = (async () => {
     try {
-      const refreshToken = await TokenManager.getRefreshToken();
-      if (!refreshToken) {
+      const storedRefreshToken = await TokenManager.getRefreshToken();
+      if (!storedRefreshToken) {
         if (__DEV__) console.log('[secureFetch] No refresh token available');
         return null;
       }
 
-      // Use AuthService to refresh the session
-      const newToken = await AuthService.refreshSession();
+      // Use AuthService to refresh the token (it handles the mutex internally)
+      const response = await AuthService.refreshToken();
       if (__DEV__) console.log('[secureFetch] Token refreshed successfully');
-      return newToken;
+      return response.accessToken;
     } catch (error) {
       if (__DEV__) console.log('[secureFetch] Token refresh failed:', error);
       return null;

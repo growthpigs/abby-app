@@ -196,6 +196,7 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
                 autoFocus
                 placeholder={`Enter ${editingField}`}
                 placeholderTextColor="rgba(0, 0, 0, 0.4)"
+                maxLength={100}
               />
               <View style={styles.editButtons}>
                 <Pressable

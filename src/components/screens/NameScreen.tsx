@@ -83,6 +83,7 @@ export const NameScreen: React.FC<NameScreenProps> = ({
           autoFocus={true}
           returnKeyType="next"
           placeholderTextColor="rgba(255, 255, 255, 0.3)"
+          maxLength={100}
         />
 
         {/* Nickname section */}
@@ -99,6 +100,7 @@ export const NameScreen: React.FC<NameScreenProps> = ({
           returnKeyType="done"
           onSubmitEditing={handleNext}
           placeholderTextColor="rgba(255, 255, 255, 0.3)"
+          maxLength={100}
         />
 
         {/* Help text */}

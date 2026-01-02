@@ -17,6 +17,7 @@ interface TypographyProps {
   children: React.ReactNode;
   style?: StyleProp<TextStyle>;
   color?: string;
+  numberOfLines?: number;
 }
 
 // Headers - The Voice of Abby (Serif feel, high contrast)
@@ -39,8 +40,8 @@ export const HeadlineSmall: React.FC<TypographyProps> = ({ children, style, colo
 );
 
 // Body - The Data (System Sans, clean)
-export const Body: React.FC<TypographyProps> = ({ children, style, color }) => (
-  <Text style={[styles.body, color ? { color } : null, style]}>
+export const Body: React.FC<TypographyProps> = ({ children, style, color, numberOfLines }) => (
+  <Text style={[styles.body, color ? { color } : null, style]} numberOfLines={numberOfLines}>
     {children}
   </Text>
 );

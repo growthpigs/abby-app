@@ -106,6 +106,12 @@ export const RevealScreen: React.FC<RevealScreenProps> = ({
     onViewAllMatches?.();
   }, [onViewAllMatches]);
 
+  // Navigate to coach screen (secret middle trigger or "Meet Your Coach" button)
+  const handleMeetCoach = useCallback(() => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    advance(); // Advance to CoachScreen
+  }, [advance]);
+
   // Guard against missing or incomplete matchData
   if (!matchData || !matchData.name || typeof matchData.age !== 'number') {
     return null;

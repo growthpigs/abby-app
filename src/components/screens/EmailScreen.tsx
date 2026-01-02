@@ -82,6 +82,7 @@ export const EmailScreen: React.FC<EmailScreenProps> = ({
           returnKeyType="done"
           onSubmitEditing={handleNext}
           placeholderTextColor="rgba(255, 255, 255, 0.3)"
+          maxLength={254}
         />
 
         {/* Help text */}

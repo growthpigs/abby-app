@@ -839,16 +839,9 @@ function AppContent() {
       {/* Photos Screen Overlay */}
       {menuScreen === 'photos' && (
         <PhotosScreen
-          photos={[]} // TODO: Load from user profile
           onClose={() => setMenuScreen('none')}
           onAddPhoto={() => {
             if (__DEV__) console.log('[App] Add photo pressed');
-          }}
-          onDeletePhoto={(id) => {
-            if (__DEV__) console.log('[App] Delete photo:', id);
-          }}
-          onSetPrimary={(id) => {
-            if (__DEV__) console.log('[App] Set primary photo:', id);
           }}
         />
       )}
