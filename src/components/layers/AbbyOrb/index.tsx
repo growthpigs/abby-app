@@ -25,7 +25,7 @@ import Animated, {
   useDerivedValue,
 } from 'react-native-reanimated';
 import { AbbyOrbProps } from '../../../types/orb';
-import { useVibeStore } from '../../../store/useVibeStore';
+import { useVibeController } from '../../../store/useVibeController';
 import { VIBE_COLORS } from '../../../constants/colors';
 import { ORB_SIZES, ORB_POSITIONS, ORB_TIMING, ORB_EASING } from './constants';
 import { LiquidGlass4 } from '../LiquidGlass4';
@@ -56,7 +56,7 @@ const screenToUV = (screenY: number, width: number, height: number): number => {
 
 export const AbbyOrb: React.FC<AbbyOrbProps> = ({ mode, onTap }) => {
   const { width: screenWidth, height: screenHeight } = useWindowDimensions();
-  const { colorTheme } = useVibeStore();
+  const colorTheme = useVibeController((state) => state.colorTheme);
 
   // Animation progress: 0 = center, 1 = docked
   const progress = useSharedValue(mode === 'center' ? 0 : 1);
