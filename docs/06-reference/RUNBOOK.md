@@ -143,6 +143,66 @@ grep "loadOnboarding\|saveOnboarding" App.tsx
 | `__DEV__` guards | 5 files | No logs in production |
 | Onboarding persistence | App.tsx, useOnboardingStore.ts | Crash recovery |
 
+### Glass UI Typography Fix (2026-01-02)
+
+**Issue:** Text looks heavy with ugly shadows on glass/blur backgrounds.
+**Root Cause:** `Typography.tsx` has built-in `textShadow` designed for shader backgrounds.
+
+```bash
+# Find shadow definitions in Typography
+grep -n "textShadow" src/components/ui/Typography.tsx
+# Output: textShadowColor: 'rgba(0, 0, 0, 0.5)', offset: {0,2}, radius: 4
+
+# Override in component styles:
+textShadowColor: 'transparent',
+```
+
+**Font Size Guidelines for Glass:**
+| Context | Shader BG | Glass BG |
+|---------|-----------|----------|
+| Detail name | 28px | 22px |
+| Section title | 22px | 18px |
+| Card title | 18px | 16px |
+| Body text | 16px | 15px |
+
+---
+
+### API Field Mapping Verification (2026-01-02)
+
+**CRITICAL:** Verify API response fields match code expectations BEFORE claiming integration works.
+
+```bash
+# 1. Check Swagger docs for field names (snake_case vs camelCase)
+open https://dev.api.myaimatchmaker.ai/docs#/
+
+# 2. Verify MatchCandidate API schema (with auth token)
+TOKEN="<from_login>"
+curl -s https://dev.api.myaimatchmaker.ai/v1/matches/candidates \
+  -H "Authorization: Bearer $TOKEN" | jq '.candidates[0] | keys'
+# Expected: ["user_id", "display_name", "compatibility_score", "photos", ...]
+
+# 3. Verify code has transformer for snake_case → camelCase
+grep -A10 "transformCandidate" src/components/screens/MatchesScreen.tsx
+# Should show: id: raw.user_id, name: raw.display_name, etc.
+
+# 4. Check RawMatchCandidate interface matches API
+grep -A10 "interface RawMatchCandidate" src/components/screens/MatchesScreen.tsx
+# Fields should be: user_id, display_name, compatibility_score (snake_case)
+
+# 5. Check internal MatchCandidate interface
+grep -A10 "interface MatchCandidate" src/components/screens/MatchesScreen.tsx
+# Fields should be: id, name, compatibilityScore (camelCase)
+```
+
+**Static vs Runtime Verification:**
+| What to Check | Static (❌ Insufficient) | Runtime (✅ Correct) |
+|---------------|--------------------------|----------------------|
+| Interface exists | `grep "interface"` | curl API, compare fields |
+| Fetch present | `grep "secureFetch"` | Verify response parsing |
+| Types compile | `npx tsc --noEmit` | App displays real data |
+
+---
+
 ### API Integration Verification (2026-01-02)
 
 **Run these to verify full API integration is working:**

@@ -73,21 +73,62 @@ interface RawMatchCandidate {
 }
 
 /**
+ * Normalize compatibility score to 0-1 range
+ * Handles various API formats: 0-1, 0-100, and edge cases
+ */
+const normalizeScore = (rawScore: number | undefined | null): number => {
+  // Handle undefined/null/NaN
+  if (rawScore == null || Number.isNaN(rawScore)) {
+    if (__DEV__) console.warn('[MatchesScreen] Invalid score:', rawScore);
+    return 0;
+  }
+
+  // Handle negative scores
+  if (rawScore < 0) {
+    if (__DEV__) console.warn('[MatchesScreen] Negative score clamped:', rawScore);
+    return 0;
+  }
+
+  // Normalize based on value range
+  let normalized: number;
+  if (rawScore <= 1) {
+    // Already in 0-1 range
+    normalized = rawScore;
+  } else if (rawScore <= 100) {
+    // Assume 0-100 scale
+    normalized = rawScore / 100;
+  } else {
+    // Assume 0-1000 or higher - normalize and clamp
+    if (__DEV__) console.warn('[MatchesScreen] Unusual score range:', rawScore);
+    normalized = Math.min(rawScore / 100, 1);
+  }
+
+  // Final clamp to ensure valid range
+  return Math.max(0, Math.min(1, normalized));
+};
+
+/**
+ * Validate and sanitize age value
+ * Returns undefined for invalid ages (allows UI to handle gracefully)
+ */
+const sanitizeAge = (age: number | undefined | null): number | undefined => {
+  if (age == null || Number.isNaN(age)) return undefined;
+  if (age <= 0 || age > 150) return undefined; // Sanity bounds
+  return Math.floor(age); // Ensure integer
+};
+
+/**
  * Transform raw API response to our internal format
  * Handles: snake_case → camelCase, score normalization, photo array → single URL
  */
 const transformCandidate = (raw: RawMatchCandidate): MatchCandidate => {
-  // Normalize score: if > 1, assume it's 0-100 and convert to 0-1
-  const rawScore = raw.compatibility_score ?? 0;
-  const normalizedScore = rawScore > 1 ? rawScore / 100 : rawScore;
-
   return {
     id: raw.user_id,
-    name: raw.display_name || 'Unknown',  // Fallback for empty name
-    age: raw.age && raw.age > 0 ? raw.age : undefined,  // Filter invalid ages
+    name: raw.display_name || 'Unknown',
+    age: sanitizeAge(raw.age),
     bio: raw.short_bio,
-    compatibilityScore: normalizedScore,
-    photoUrl: raw.photos?.[0],  // Use first photo as primary
+    compatibilityScore: normalizeScore(raw.compatibility_score),
+    photoUrl: raw.photos?.[0],
   };
 };
 
@@ -120,12 +161,13 @@ export const MatchesScreen: React.FC<MatchesScreenProps> = ({
       }
 
       // Authenticated mode - fetch from API
-      // secureFetchJSON handles token injection automatically
+      const token = await TokenManager.getToken();
       const response = await secureFetchJSON<{ candidates: RawMatchCandidate[] }>(
         `${API_BASE}/v1/matches/candidates`,
         {
           method: 'GET',
           headers: {
+            'Authorization': `Bearer ${token}`,
             'Content-Type': 'application/json',
           },
         }
@@ -396,16 +438,18 @@ const styles = StyleSheet.create({
     marginBottom: 24,
   },
   emptyTitle: {
-    fontSize: 22,
+    fontSize: 18,
     textAlign: 'center',
     marginBottom: 12,
     color: 'rgba(0, 0, 0, 0.85)',
+    textShadowColor: 'transparent',
   },
   emptyText: {
     fontSize: 15,
     textAlign: 'center',
     lineHeight: 22,
     color: 'rgba(0, 0, 0, 0.5)',
+    textShadowColor: 'transparent',
   },
   // Loading state
   loadingState: {
@@ -417,6 +461,7 @@ const styles = StyleSheet.create({
   loadingText: {
     fontSize: 15,
     color: 'rgba(0, 0, 0, 0.5)',
+    textShadowColor: 'transparent',
   },
   // Error state
   errorState: {
@@ -435,10 +480,11 @@ const styles = StyleSheet.create({
     marginBottom: 24,
   },
   errorTitle: {
-    fontSize: 22,
+    fontSize: 18,
     textAlign: 'center',
     marginBottom: 12,
     color: 'rgba(0, 0, 0, 0.85)',
+    textShadowColor: 'transparent',
   },
   errorText: {
     fontSize: 15,
@@ -446,6 +492,7 @@ const styles = StyleSheet.create({
     lineHeight: 22,
     color: 'rgba(0, 0, 0, 0.5)',
     marginBottom: 24,
+    textShadowColor: 'transparent',
   },
   retryButton: {
     paddingHorizontal: 24,
@@ -485,20 +532,23 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   matchName: {
-    fontSize: 18,
+    fontSize: 16,
     color: 'rgba(0, 0, 0, 0.85)',
     marginBottom: 4,
+    textShadowColor: 'transparent',
   },
   matchBio: {
     fontSize: 14,
     color: 'rgba(0, 0, 0, 0.5)',
     lineHeight: 20,
+    textShadowColor: 'transparent',
   },
   matchScore: {
     fontSize: 12,
     color: '#E11D48',
     fontWeight: '600',
     marginTop: 4,
+    textShadowColor: 'transparent',
   },
   matchCardPressed: {
     backgroundColor: 'rgba(255, 255, 255, 0.7)',
@@ -541,10 +591,11 @@ const styles = StyleSheet.create({
     borderRadius: 70,
   },
   detailName: {
-    fontSize: 28,
+    fontSize: 22,
     color: 'rgba(0, 0, 0, 0.85)',
     textAlign: 'center',
     marginBottom: 12,
+    textShadowColor: 'transparent',
   },
   detailScoreBadge: {
     flexDirection: 'row',
@@ -559,7 +610,8 @@ const styles = StyleSheet.create({
   detailScoreText: {
     color: '#E11D48',
     fontWeight: '600',
-    fontSize: 15,
+    fontSize: 14,
+    textShadowColor: 'transparent',
   },
   detailSection: {
     width: '100%',
@@ -572,9 +624,10 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   detailBio: {
-    fontSize: 16,
+    fontSize: 15,
     color: 'rgba(0, 0, 0, 0.7)',
-    lineHeight: 24,
+    lineHeight: 22,
+    textShadowColor: 'transparent',
   },
   detailActions: {
     width: '100%',
