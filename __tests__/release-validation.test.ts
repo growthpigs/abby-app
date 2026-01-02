@@ -215,8 +215,8 @@ describe('State Machine', () => {
     // Check that vibeController has APP_STATE_VIBES mapping
     expect(vibeSource).toContain('APP_STATE_VIBES');
 
-    // Check that key states are mapped in demoStore
-    expect(demoSource).toContain('DEMO_TO_APP_STATE');
+    // Check that STATE_ORDER defines all demo states
+    expect(demoSource).toContain('STATE_ORDER');
     expect(demoSource).toContain('COACH_INTRO');
     expect(demoSource).toContain('INTERVIEW');
     expect(demoSource).toContain('SEARCHING');
