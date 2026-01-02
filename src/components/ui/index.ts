@@ -29,3 +29,6 @@ export { CodeInput } from './CodeInput';
 
 // Navigation
 export { HamburgerMenu } from './HamburgerMenu';
+
+// Feedback
+export { ErrorModal } from './ErrorModal';

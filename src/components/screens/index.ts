@@ -42,5 +42,6 @@ export { CoachScreen } from './CoachScreen';
 
 // Menu screens (accessible from hamburger menu)
 export { SettingsScreen } from './SettingsScreen';
+export { ProfileScreen } from './ProfileScreen';
 export { PhotosScreen } from './PhotosScreen';
 export { MatchesScreen } from './MatchesScreen';
