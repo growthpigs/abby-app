@@ -243,11 +243,6 @@ function AppContent() {
     loadSettings();
   }, [loadSettings]);
 
-  // Load onboarding persistence on mount (for crash recovery)
-  useEffect(() => {
-    loadOnboarding();
-  }, [loadOnboarding]);
-
   // Initialize: go to login after loading
   useEffect(() => {
     if (fontsLoaded && settingsLoaded && authState === 'LOADING') {
@@ -479,7 +474,13 @@ function AppContent() {
   const markOnboardingComplete = useOnboardingStore((state) => state.markComplete);
   const loadOnboarding = useOnboardingStore((state) => state.loadFromStorage);
   const saveOnboarding = useOnboardingStore((state) => state.saveToStorage);
+  const clearOnboarding = useOnboardingStore((state) => state.clearStorage);
   const onboardingLoaded = useOnboardingStore((state) => state.isLoaded);
+
+  // Load onboarding persistence on mount (for crash recovery)
+  useEffect(() => {
+    loadOnboarding();
+  }, [loadOnboarding]);
 
   // Name screen (comes first in Nathan's API flow)
   const handleNameComplete = (name: string, nickname: string) => {
@@ -507,30 +508,35 @@ function AppContent() {
   // Screen 6: Gender
   const handleGenderComplete = (gender: string) => {
     setGender(gender);
+    saveOnboarding(); // Persist for crash recovery
     setAuthState('BASICS_PREFERENCES');
   };
 
   // Screen 7: Preferences
   const handlePreferencesComplete = (preference: string) => {
     setDatingPreference(preference);
+    saveOnboarding(); // Persist for crash recovery
     setAuthState('ETHNICITY');
   };
 
   // Screen 8: Ethnicity
   const handleEthnicityComplete = (ethnicity: string) => {
     setEthnicity(ethnicity);
+    saveOnboarding(); // Persist for crash recovery
     setAuthState('ETHNICITY_PREFERENCE');
   };
 
   // Screen 9: Ethnicity Preference
   const handleEthnicityPreferenceComplete = (ethnicities: string[]) => {
     setEthnicityPreferences(ethnicities);
+    saveOnboarding(); // Persist for crash recovery
     setAuthState('BASICS_RELATIONSHIP');
   };
 
   // Screen 10: Relationship
   const handleRelationshipComplete = (relationshipType: string) => {
     setRelationshipType(relationshipType);
+    saveOnboarding(); // Persist for crash recovery
     setAuthState('SMOKING');
   };
 
@@ -538,12 +544,14 @@ function AppContent() {
   const handleSmokingComplete = (smokingMe: string, smokingPartner: string) => {
     setSmokingMe(smokingMe);
     setSmokingPartner(smokingPartner);
+    saveOnboarding(); // Persist for crash recovery
     setAuthState('BASICS_LOCATION');
   };
 
   const handleLocationComplete = async (location: { type: 'gps' | 'zip'; value: string | { lat: number; lng: number } }) => {
     setLocation(location);
     markOnboardingComplete();
+    clearOnboarding(); // Clean up persisted data after completion
 
     // Submit profile to backend (don't block auth on failure)
     try {
