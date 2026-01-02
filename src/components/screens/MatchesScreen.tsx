@@ -24,27 +24,28 @@ import { secureFetchJSON } from '../../utils/secureFetch';
 const API_BASE = 'https://dev.api.myaimatchmaker.ai';
 
 // Demo data for when no auth token (demo mode)
+// Note: compatibilityScore is 0-1 decimal (API format), displayed as percentage
 const DEMO_MATCHES: MatchCandidate[] = [
   {
     id: 'demo-1',
     name: 'Sarah',
     age: 28,
     bio: 'Coffee enthusiast, book lover, and weekend hiker. Looking for someone who appreciates deep conversations and spontaneous adventures.',
-    compatibilityScore: 94,
+    compatibilityScore: 0.94,
   },
   {
     id: 'demo-2',
     name: 'Emma',
     age: 31,
     bio: 'Creative director by day, amateur chef by night. I believe the best relationships start with great food and honest conversation.',
-    compatibilityScore: 89,
+    compatibilityScore: 0.89,
   },
   {
     id: 'demo-3',
     name: 'Jessica',
     age: 26,
     bio: 'Yoga instructor with a passion for travel. Currently planning my next adventure and hoping to find someone to share it with.',
-    compatibilityScore: 85,
+    compatibilityScore: 0.85,
   },
 ];
 
