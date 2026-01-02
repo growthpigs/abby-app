@@ -13,6 +13,7 @@ import {
   ScrollView,
   ActivityIndicator,
   RefreshControl,
+  Image,
 } from 'react-native';
 import { BlurView } from 'expo-blur';
 import { Heart, AlertCircle, RefreshCw, ChevronLeft, MessageCircle, User } from 'lucide-react-native';
@@ -49,15 +50,45 @@ const DEMO_MATCHES: MatchCandidate[] = [
   },
 ];
 
+// Internal normalized interface (what our UI expects)
 interface MatchCandidate {
   id: string;
   name: string;
   age?: number;
   bio?: string;
-  compatibilityScore?: number;  // API returns compatibilityScore
-  matchScore?: number;          // Legacy fallback
+  compatibilityScore?: number;  // Normalized to 0-1 range
   photoUrl?: string;
 }
+
+// Raw API response interface (snake_case from backend)
+interface RawMatchCandidate {
+  user_id: string;
+  display_name: string;
+  city?: string;
+  age?: number;
+  short_bio?: string;
+  compatibility_score: number;
+  photos?: string[];
+}
+
+/**
+ * Transform raw API response to our internal format
+ * Handles: snake_case → camelCase, score normalization, photo array → single URL
+ */
+const transformCandidate = (raw: RawMatchCandidate): MatchCandidate => {
+  // Normalize score: if > 1, assume it's 0-100 and convert to 0-1
+  const rawScore = raw.compatibility_score ?? 0;
+  const normalizedScore = rawScore > 1 ? rawScore / 100 : rawScore;
+
+  return {
+    id: raw.user_id,
+    name: raw.display_name || 'Unknown',  // Fallback for empty name
+    age: raw.age && raw.age > 0 ? raw.age : undefined,  // Filter invalid ages
+    bio: raw.short_bio,
+    compatibilityScore: normalizedScore,
+    photoUrl: raw.photos?.[0],  // Use first photo as primary
+  };
+};
 
 export interface MatchesScreenProps {
   onClose?: () => void;
@@ -82,10 +113,11 @@ export const MatchesScreen: React.FC<MatchesScreenProps> = ({
         if (__DEV__) console.log('[MatchesScreen] No token - using demo data');
         setMatches(DEMO_MATCHES);
         setIsLoading(false);
+        setRefreshing(false);  // Must reset here since we bypass finally block
         return;
       }
 
-      const response = await secureFetchJSON<{ candidates: MatchCandidate[] }>(
+      const response = await secureFetchJSON<{ candidates: RawMatchCandidate[] }>(
         `${API_BASE}/v1/matches/candidates`,
         {
           method: 'GET',
@@ -96,7 +128,9 @@ export const MatchesScreen: React.FC<MatchesScreenProps> = ({
         }
       );
 
-      setMatches(response.candidates || []);
+      // Transform raw API response to our internal format
+      const transformedCandidates = (response.candidates || []).map(transformCandidate);
+      setMatches(transformedCandidates);
     } catch (err) {
       if (__DEV__) {
         if (__DEV__) console.log('[MatchesScreen] Fetch error:', err);
@@ -149,10 +183,11 @@ export const MatchesScreen: React.FC<MatchesScreenProps> = ({
             {/* Profile Photo/Avatar */}
             <View style={styles.detailAvatar}>
               {selectedMatch.photoUrl ? (
-                <View style={styles.detailPhoto}>
-                  {/* Photo would go here */}
-                  <User size={64} stroke="rgba(255, 255, 255, 0.8)" />
-                </View>
+                <Image
+                  source={{ uri: selectedMatch.photoUrl }}
+                  style={styles.detailPhotoImage}
+                  resizeMode="cover"
+                />
               ) : (
                 <Heart size={64} stroke="#E11D48" fill="#E11D48" />
               )}
@@ -164,11 +199,11 @@ export const MatchesScreen: React.FC<MatchesScreenProps> = ({
             </Headline>
 
             {/* Match Score */}
-            {(selectedMatch.compatibilityScore ?? selectedMatch.matchScore) !== undefined && (
+            {selectedMatch.compatibilityScore !== undefined && (
               <View style={styles.detailScoreBadge}>
                 <Heart size={16} stroke="#E11D48" fill="#E11D48" />
                 <Body style={styles.detailScoreText}>
-                  {Math.round((selectedMatch.compatibilityScore ?? selectedMatch.matchScore ?? 0) * 100)}% compatibility
+                  {Math.round(selectedMatch.compatibilityScore * 100)}% compatibility
                 </Body>
               </View>
             )}
@@ -185,15 +220,16 @@ export const MatchesScreen: React.FC<MatchesScreenProps> = ({
             <View style={styles.detailActions}>
               <GlassButton
                 onPress={() => {
-                  // TODO: Implement messaging
-                  if (__DEV__) console.log('[MatchesScreen] Message pressed for:', selectedMatch.id);
+                  // Messaging not yet implemented - button is disabled
+                  if (__DEV__) console.log('[MatchesScreen] Messaging coming soon');
                 }}
-                variant="primary"
-                style={styles.messageButton}
+                variant="secondary"
+                style={styles.messageButtonDisabled}
+                disabled={true}
               >
                 <View style={styles.buttonContent}>
-                  <MessageCircle size={20} stroke="#fff" />
-                  <Body style={styles.messageButtonText}>Send Message</Body>
+                  <MessageCircle size={20} stroke="rgba(0, 0, 0, 0.3)" />
+                  <Body style={styles.messageButtonTextDisabled}>Messaging Coming Soon</Body>
                 </View>
               </GlassButton>
             </View>
@@ -273,9 +309,9 @@ export const MatchesScreen: React.FC<MatchesScreenProps> = ({
                         {match.bio}
                       </Body>
                     )}
-                    {(match.compatibilityScore ?? match.matchScore) !== undefined && (
+                    {match.compatibilityScore !== undefined && (
                       <Caption style={styles.matchScore}>
-                        {Math.round((match.compatibilityScore ?? match.matchScore ?? 0) * 100)}% match
+                        {Math.round(match.compatibilityScore * 100)}% match
                       </Caption>
                     )}
                   </View>
@@ -496,13 +532,10 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     marginBottom: 24,
   },
-  detailPhoto: {
+  detailPhotoImage: {
     width: '100%',
     height: '100%',
     borderRadius: 70,
-    backgroundColor: 'rgba(0, 0, 0, 0.2)',
-    alignItems: 'center',
-    justifyContent: 'center',
   },
   detailName: {
     fontSize: 28,
@@ -548,6 +581,12 @@ const styles = StyleSheet.create({
     width: '100%',
     backgroundColor: '#E11D48',
   },
+  messageButtonDisabled: {
+    width: '100%',
+    backgroundColor: 'rgba(0, 0, 0, 0.05)',
+    borderWidth: 1,
+    borderColor: 'rgba(0, 0, 0, 0.1)',
+  },
   buttonContent: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -558,6 +597,11 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontWeight: '600',
     fontSize: 16,
+  },
+  messageButtonTextDisabled: {
+    color: 'rgba(0, 0, 0, 0.4)',
+    fontWeight: '500',
+    fontSize: 15,
   },
 });
 
