@@ -474,9 +474,9 @@ function AppContent() {
   const markOnboardingComplete = useOnboardingStore((state) => state.markComplete);
 
   // Name screen (comes first in Nathan's API flow)
-  const handleNameComplete = (name: string) => {
+  const handleNameComplete = (name: string, nickname: string) => {
     setFullName(name);
-    setNickname(name); // Use same as full name for now
+    setNickname(nickname); // User-provided nickname or their first name
     setAuthState('EMAIL');  // Name → Email → Password → Verify
   };
 
