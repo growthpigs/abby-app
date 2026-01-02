@@ -297,8 +297,9 @@ const styles = StyleSheet.create({
   },
   headerTitle: {
     fontSize: 12,
-    letterSpacing: 3,
-    color: 'rgba(0, 0, 0, 0.5)',
+    fontWeight: '600',
+    letterSpacing: 1.5,
+    color: 'rgba(0, 0, 0, 0.4)',
   },
   closeButton: {
     paddingVertical: 8,
@@ -306,7 +307,8 @@ const styles = StyleSheet.create({
   },
   closeText: {
     color: '#3B82F6',
-    fontWeight: '600',
+    fontWeight: '500',
+    fontSize: 17,
   },
   scrollView: {
     flex: 1,
@@ -317,10 +319,12 @@ const styles = StyleSheet.create({
     paddingBottom: 100,
   },
   sectionHeading: {
-    fontSize: 18,
-    color: 'rgba(0, 0, 0, 0.85)',
+    fontSize: 20,
+    fontWeight: '600',
+    color: 'rgba(0, 0, 0, 0.9)',
+    letterSpacing: -0.3,
     marginTop: 16,
-    marginBottom: 12,
+    marginBottom: 16,
   },
   section: {
     flexDirection: 'row',
@@ -349,13 +353,17 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   sectionTitle: {
-    fontSize: 12,
-    color: 'rgba(0, 0, 0, 0.5)',
+    fontSize: 11,
+    fontWeight: '500',
+    color: 'rgba(0, 0, 0, 0.45)',
+    letterSpacing: 0.5,
     marginBottom: 2,
   },
   sectionValue: {
-    fontSize: 16,
-    color: 'rgba(0, 0, 0, 0.85)',
+    fontSize: 17,
+    fontWeight: '400',
+    color: 'rgba(0, 0, 0, 0.9)',
+    letterSpacing: -0.2,
   },
   editIndicator: {
     fontSize: 14,

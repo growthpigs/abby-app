@@ -80,9 +80,6 @@ const styles = StyleSheet.create({
     letterSpacing: -0.5,
     color: '#FFFFFF',
     fontSize: 28,
-    textShadowColor: 'rgba(0, 0, 0, 0.5)',
-    textShadowOffset: { width: 0, height: 2 },
-    textShadowRadius: 4,
   },
   headlineLarge: {
     fontSize: 36,
@@ -127,9 +124,6 @@ const styles = StyleSheet.create({
     letterSpacing: -0.3,
     color: '#FFFFFF',
     textAlign: 'center',
-    textShadowColor: 'rgba(0, 0, 0, 0.4)',
-    textShadowOffset: { width: 0, height: 1 },
-    textShadowRadius: 3,
   },
 });
 
