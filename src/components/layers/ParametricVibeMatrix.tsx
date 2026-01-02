@@ -22,7 +22,7 @@ import {
 } from '@shopify/react-native-skia';
 import { useDerivedValue } from 'react-native-reanimated';
 import { useVibeController } from '../../store/useVibeController';
-import { getShaderById, getShaderByName, ShaderId } from '../../shaders/registry';
+import { getShaderById, getShaderByName, ShaderId } from '../../shaders/factory/registryV2';
 
 export interface ParametricVibeMatrixProps {
   /** Shader ID (0-18) - takes precedence over shaderName */

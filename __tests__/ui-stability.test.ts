@@ -134,121 +134,52 @@ describe('Mute Button UI', () => {
 });
 
 // ==============================================================================
-// TEST 3: VibeMatrix/Skia Shader Configuration
+// TEST 3: VibeMatrixAnimated Shader Configuration
 // ==============================================================================
 
-describe('VibeMatrix Shader System', () => {
-  test('VibeMatrix.tsx exists and uses Skia Canvas', () => {
-    expect(fileExists('src/components/layers/VibeMatrix.tsx')).toBe(true);
+describe('VibeMatrixAnimated Shader System', () => {
+  test('VibeMatrixAnimated.tsx exists and uses Skia Canvas', () => {
+    expect(fileExists('src/components/layers/VibeMatrixAnimated.tsx')).toBe(true);
 
-    const source = readFile('src/components/layers/VibeMatrix.tsx');
+    const source = readFile('src/components/layers/VibeMatrixAnimated.tsx');
     expect(source).toContain("from '@shopify/react-native-skia'");
     expect(source).toContain('Canvas');
-    expect(source).toContain('Shader');
-    expect(source).toContain('Fill');
   });
 
-  test('VibeMatrix uses useClock for animation', () => {
-    const source = readFile('src/components/layers/VibeMatrix.tsx');
-
-    expect(source).toContain('useClock');
-    expect(source).toContain('const clock = useClock()');
+  test('VibeMatrixAnimated uses forwardRef for ref forwarding', () => {
+    const source = readFile('src/components/layers/VibeMatrixAnimated.tsx');
+    expect(source).toContain('forwardRef');
+    expect(source).toContain('useImperativeHandle');
   });
 
-  test('VibeMatrix compiles shader safely with error handling', () => {
-    const source = readFile('src/components/layers/VibeMatrix.tsx');
-
-    expect(source).toContain('Skia.RuntimeEffect.Make');
-    expect(source).toContain('if (!effect)');
-    expect(source).toContain('SHADER COMPILE FAILED');
+  test('VibeMatrixAnimated exports ref type', () => {
+    const source = readFile('src/components/layers/VibeMatrixAnimated.tsx');
+    expect(source).toContain('export interface VibeMatrixAnimatedRef');
   });
 
-  test('VibeMatrix has fallback rendering when shader fails', () => {
-    const source = readFile('src/components/layers/VibeMatrix.tsx');
-
-    expect(source).toContain('if (!shader)');
-    expect(source).toContain("<Fill color=");
-  });
-
-  test('VibeMatrix uses useDerivedValue for uniforms', () => {
-    const source = readFile('src/components/layers/VibeMatrix.tsx');
-
-    expect(source).toContain('useDerivedValue');
-    expect(source).toContain('u_time');
-    expect(source).toContain('u_resolution');
-    expect(source).toContain('u_complexity');
-  });
-
-  test('VibeMatrix canvas uses absoluteFillObject', () => {
-    const source = readFile('src/components/layers/VibeMatrix.tsx');
-
-    expect(source).toContain('StyleSheet.absoluteFillObject');
+  test('VibeMatrixAnimated has setVibeAndComplexity method', () => {
+    const source = readFile('src/components/layers/VibeMatrixAnimated.tsx');
+    expect(source).toContain('setVibeAndComplexity');
   });
 });
 
 // ==============================================================================
-// TEST 4: AnimatedVibeLayer Integration
+// TEST 5: Shader Factory System
 // ==============================================================================
 
-describe('AnimatedVibeLayer', () => {
-  test('AnimatedVibeLayer exists and is properly structured', () => {
-    expect(fileExists('src/components/layers/AnimatedVibeLayer.tsx')).toBe(true);
-
-    const source = readFile('src/components/layers/AnimatedVibeLayer.tsx');
-    expect(source).toContain('export const AnimatedVibeLayer');
+describe('Shader Factory', () => {
+  test('Factory index file exists', () => {
+    expect(fileExists('src/shaders/factory/index.ts')).toBe(true);
   });
 
-  test('AnimatedVibeLayer uses VibeMatrixAnimated', () => {
-    const source = readFile('src/components/layers/AnimatedVibeLayer.tsx');
-
-    expect(source).toContain("from './VibeMatrixAnimated'");
-    expect(source).toContain('<VibeMatrixAnimated');
+  test('Factory exports createShader function', () => {
+    const source = readFile('src/shaders/factory/index.ts');
+    expect(source).toContain('export function createShader');
   });
 
-  test('AnimatedVibeLayer subscribes to VibeController', () => {
-    const source = readFile('src/components/layers/AnimatedVibeLayer.tsx');
-
-    expect(source).toContain("from '../../store/useVibeController'");
-    expect(source).toContain('useVibeController');
-    expect(source).toContain('colorTheme');
-    expect(source).toContain('complexity');
-  });
-
-  test('AnimatedVibeLayer has background index prop', () => {
-    const source = readFile('src/components/layers/AnimatedVibeLayer.tsx');
-
-    expect(source).toContain('backgroundIndex');
-    expect(source).toContain('getShaderByIndex');
-    expect(source).toContain('TOTAL_SHADERS');
-  });
-
-  test('AnimatedVibeLayer clamps background index safely', () => {
-    const source = readFile('src/components/layers/AnimatedVibeLayer.tsx');
-
-    // Should clamp to valid range
-    expect(source).toContain('Math.max(1, Math.min(backgroundIndex, TOTAL_SHADERS))');
-  });
-});
-
-// ==============================================================================
-// TEST 5: Shader Files Exist
-// ==============================================================================
-
-describe('Shader Files', () => {
-  test('Main shader file exists', () => {
-    expect(fileExists('src/shaders/vibeMatrix.ts')).toBe(true);
-  });
-
-  test('Shader exports VIBE_MATRIX_SHADER constant', () => {
-    const source = readFile('src/shaders/vibeMatrix.ts');
-    expect(source).toContain('export const VIBE_MATRIX_SHADER');
-  });
-
-  test('Multiple shader variations exist', () => {
-    // Check for at least some shader variations
-    expect(fileExists('src/shaders/vibeMatrix1.ts')).toBe(true);
-    expect(fileExists('src/shaders/vibeMatrix2.ts')).toBe(true);
-    expect(fileExists('src/shaders/vibeMatrix5.ts')).toBe(true);
+  test('All 19 shader presets exist in registryV2', () => {
+    const { getAllShaders } = require('../src/shaders/factory/registryV2');
+    expect(getAllShaders()).toHaveLength(19);
   });
 
   test('Background map exists and exports getShaderByIndex', () => {

@@ -24,81 +24,79 @@ function fileExists(relativePath: string): boolean {
 }
 
 // ==============================================================================
-// TEST 1: Main Shader Structure
+// TEST 1: Shader Factory Structure
 // ==============================================================================
 
-describe('Main Shader Source', () => {
-  test('vibeMatrix.ts exports shader string', () => {
-    const source = readFile('src/shaders/vibeMatrix.ts');
+describe('Shader Factory', () => {
+  test('Factory index.ts exports createShader function', () => {
+    const source = readFile('src/shaders/factory/index.ts');
 
-    expect(source).toContain('export const VIBE_MATRIX_SHADER');
-    expect(source).toContain('`'); // Template literal
+    expect(source).toContain('export function createShader');
   });
 
-  test('Shader has required uniform declarations', () => {
-    const source = readFile('src/shaders/vibeMatrix.ts');
+  test('Generated shaders have required uniform declarations', () => {
+    // Import the factory to test generated shaders
+    const { getShaderById } = require('../src/shaders/factory/registryV2');
+    const shader = getShaderById(0);
 
-    // Required uniforms for animation and coloring (Skia uses float2/float3 or vec2/vec3)
-    expect(source).toContain('u_time');
-    expect(source).toContain('u_resolution');
-    expect(source).toContain('u_complexity');
-    expect(source).toContain('u_colorA');
-    expect(source).toContain('u_colorB');
+    // Required uniforms for animation and coloring
+    expect(shader.source).toContain('u_time');
+    expect(shader.source).toContain('u_resolution');
+    expect(shader.source).toContain('u_complexity');
   });
 
-  test('Shader has main function', () => {
-    const source = readFile('src/shaders/vibeMatrix.ts');
+  test('Generated shaders have main function', () => {
+    const { getShaderById } = require('../src/shaders/factory/registryV2');
+    const shader = getShaderById(5);
 
     // SkSL uses half4 main
-    expect(source).toContain('half4 main(');
+    expect(shader.source).toContain('half4 main(');
   });
 
-  test('Shader uses xy or fragCoord for position', () => {
-    const source = readFile('src/shaders/vibeMatrix.ts');
+  test('Generated shaders use xy for position', () => {
+    const { getShaderById } = require('../src/shaders/factory/registryV2');
+    const shader = getShaderById(0);
 
-    // Skia shaders receive coordinates as xy or fragCoord
-    expect(source).toMatch(/half4 main\(float2 (xy|fragCoord)\)/);
+    // Skia shaders receive coordinates as xy
+    expect(shader.source).toContain('half4 main(float2 xy)');
   });
 });
 
 // ==============================================================================
-// TEST 2: Shader Variations
+// TEST 2: Shader Registry V2
 // ==============================================================================
 
-describe('Shader Variations', () => {
-  const shaderFiles = [
-    'vibeMatrix1.ts',
-    'vibeMatrix2.ts',
-    'vibeMatrix3.ts',
-    'vibeMatrix5.ts',
-    'vibeMatrix6.ts',
-    'vibeMatrix8.ts',
-    'vibeMatrix10.ts',
-    'vibeMatrix12.ts',
-    'vibeMatrix13.ts',
-    'vibeMatrix16.ts',
-    'vibeMatrix18.ts',
-  ];
+describe('Shader Registry V2', () => {
+  test('Registry has all 19 presets (0-18)', () => {
+    const { getAllShaders } = require('../src/shaders/factory/registryV2');
+    const all = getAllShaders();
+    expect(all).toHaveLength(19);
+  });
 
-  test('All shader variation files exist', () => {
-    shaderFiles.forEach(file => {
-      expect(fileExists(`src/shaders/${file}`)).toBe(true);
+  test('All shaders have valid source', () => {
+    const { getAllShaders } = require('../src/shaders/factory/registryV2');
+    const all = getAllShaders();
+
+    all.forEach((shader: { source: string; name: string }) => {
+      expect(shader.source).toContain('half4 main');
+      expect(shader.source).toContain('u_time');
+      expect(shader.source.length).toBeGreaterThan(100);
     });
   });
 
-  test('All shader variations export a constant', () => {
-    shaderFiles.forEach(file => {
-      const source = readFile(`src/shaders/${file}`);
-      expect(source).toContain('export const');
-    });
+  test('getShaderById returns correct shader', () => {
+    const { getShaderById } = require('../src/shaders/factory/registryV2');
+
+    const shader5 = getShaderById(5);
+    expect(shader5.id).toBe(5);
+    expect(shader5.name).toBe('LIQUID_MARBLE');
   });
 
-  test('Shader variations have main function', () => {
-    // Check a few key variations - SkSL uses half4 main
-    ['vibeMatrix2.ts', 'vibeMatrix5.ts', 'vibeMatrix10.ts'].forEach(file => {
-      const source = readFile(`src/shaders/${file}`);
-      expect(source).toContain('half4 main(');
-    });
+  test('getShaderById returns default for invalid ID', () => {
+    const { getShaderById } = require('../src/shaders/factory/registryV2');
+
+    const invalid = getShaderById(999);
+    expect(invalid.id).toBe(0);
   });
 });
 
@@ -115,29 +113,25 @@ describe('Background Mapping', () => {
     expect(source).toContain('export const TOTAL_SHADERS');
   });
 
-  test('getShaderByIndex handles all valid indices', () => {
-    const source = readFile('src/constants/backgroundMap.ts');
+  test('getShaderByIndex returns valid shader source', () => {
+    const { getShaderByIndex } = require('../src/constants/backgroundMap');
 
-    // Should have object map for indices
-    expect(source).toContain('SHADER_INDEX');
+    const shader = getShaderByIndex(5);
+    expect(typeof shader).toBe('string');
+    expect(shader).toContain('half4 main');
   });
 
-  test('TOTAL_SHADERS is a reasonable number', () => {
-    const source = readFile('src/constants/backgroundMap.ts');
+  test('TOTAL_SHADERS is 19', () => {
+    const { TOTAL_SHADERS } = require('../src/constants/backgroundMap');
 
-    const match = source.match(/TOTAL_SHADERS\s*=\s*(\d+)/);
-    expect(match).toBeTruthy();
-
-    const total = parseInt(match![1], 10);
-    expect(total).toBeGreaterThanOrEqual(10);
-    expect(total).toBeLessThanOrEqual(25);
+    expect(TOTAL_SHADERS).toBe(19);
   });
 
-  test('backgroundMap imports shader files', () => {
+  test('backgroundMap imports from shader factory', () => {
     const source = readFile('src/constants/backgroundMap.ts');
 
-    // Should import from shaders
-    expect(source).toContain("from '../shaders/");
+    // Should import from factory
+    expect(source).toContain("from '../shaders/factory/registryV2'");
   });
 });
 
