@@ -102,7 +102,7 @@ export const LiquidGlass3: React.FC = () => {
   }), [clock]);
 
   if (!LIQUID_GLASS_SHADER) {
-    console.error('[LiquidGlass3] Shader failed to compile');
+    if (__DEV__) console.error('[LiquidGlass3] Shader failed to compile');
     return null;
   }
 

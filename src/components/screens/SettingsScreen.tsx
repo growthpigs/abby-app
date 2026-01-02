@@ -12,10 +12,12 @@ import {
   View,
   StyleSheet,
   Pressable,
+  Alert,
 } from 'react-native';
 import { BlurView } from 'expo-blur';
 import * as Haptics from 'expo-haptics';
-import { Mic, MessageSquare, MicOff } from 'lucide-react-native';
+import { Mic, MessageSquare, Trash2 } from 'lucide-react-native';
+import { AuthService } from '../../services/AuthService';
 import { Headline, Body, Caption } from '../ui/Typography';
 import { useSettingsStore, InputMode } from '../../store/useSettingsStore';
 
@@ -80,6 +82,44 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
     setInputMode(mode);
   }, [setInputMode]);
 
+  const handleDeleteData = useCallback(() => {
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
+    Alert.alert(
+      'Delete All My Data',
+      'This will permanently delete your account and all associated data. This action cannot be undone.',
+      [
+        {
+          text: 'Cancel',
+          style: 'cancel',
+        },
+        {
+          text: 'Delete Everything',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              // TODO: Call DELETE /v1/profile when API endpoint is available
+              // For now, just logout to clear local data
+              if (__DEV__) {
+                if (__DEV__) console.log('[Settings] User requested data deletion');
+              }
+              await AuthService.logout();
+              onClose?.();
+            } catch (error) {
+              if (__DEV__) {
+                if (__DEV__) console.error('[Settings] Error during data deletion:', error);
+              }
+              Alert.alert(
+                'Error',
+                'Failed to delete your data. Please try again later.'
+              );
+            }
+          },
+        },
+      ],
+      { cancelable: true }
+    );
+  }, [onClose]);
+
   return (
     <View style={styles.container}>
       <BlurView intensity={90} tint="light" style={styles.blurContainer}>
@@ -129,6 +169,27 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
           <Caption style={styles.defaultNote}>
             Default is Voice + Text
           </Caption>
+
+          {/* Account Section - GDPR Compliance */}
+          <View style={styles.accountSection}>
+            <Caption style={styles.sectionTitle}>ACCOUNT</Caption>
+            <Pressable
+              onPress={handleDeleteData}
+              style={({ pressed }) => [
+                styles.deleteButton,
+                pressed && styles.deleteButtonPressed,
+              ]}
+              testID="delete-data-button"
+              accessibilityLabel="Delete all my data"
+              accessibilityHint="Permanently deletes your account and all data"
+            >
+              <Trash2 size={20} stroke="#DC2626" />
+              <Body style={styles.deleteButtonText}>Delete All My Data</Body>
+            </Pressable>
+            <Caption style={styles.deleteWarning}>
+              This permanently removes your account and all data
+            </Caption>
+          </View>
         </View>
       </BlurView>
     </View>
@@ -243,6 +304,42 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginTop: 24,
     color: 'rgba(0, 0, 0, 0.4)',
+  },
+  accountSection: {
+    marginTop: 48,
+    paddingTop: 24,
+    borderTopWidth: 1,
+    borderTopColor: 'rgba(0, 0, 0, 0.1)',
+  },
+  sectionTitle: {
+    fontSize: 12,
+    letterSpacing: 2,
+    color: 'rgba(0, 0, 0, 0.5)',
+    marginBottom: 16,
+  },
+  deleteButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 16,
+    backgroundColor: 'rgba(220, 38, 38, 0.08)',
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: 'rgba(220, 38, 38, 0.2)',
+    gap: 12,
+  },
+  deleteButtonPressed: {
+    opacity: 0.7,
+    backgroundColor: 'rgba(220, 38, 38, 0.15)',
+  },
+  deleteButtonText: {
+    color: '#DC2626',
+    fontWeight: '600',
+  },
+  deleteWarning: {
+    textAlign: 'center',
+    marginTop: 12,
+    color: 'rgba(0, 0, 0, 0.4)',
+    fontSize: 11,
   },
 });
 

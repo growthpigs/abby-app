@@ -145,9 +145,9 @@ describe('Background Shader Progression', () => {
   test('InterviewScreen has background cycling function', () => {
     const source = readFile('src/components/screens/InterviewScreen.tsx');
 
-    // Background index is computed dynamically (cycles 1-10 for 150 questions)
+    // Background index is computed dynamically using TOTAL_SHADERS constant
     expect(source).toContain('getBackgroundIndexForQuestion');
-    expect(source).toContain('% 10'); // Cycle through 10 backgrounds
+    expect(source).toContain('% TOTAL_SHADERS'); // Cycle through all available backgrounds
   });
 
   test('InterviewScreen passes onBackgroundChange to parent', () => {

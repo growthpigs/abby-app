@@ -1,7 +1,7 @@
 # ABBY - Features Index
 
 **Project:** ABBY - The Anti-Dating App
-**Last Updated:** December 20, 2024
+**Last Updated:** January 2, 2026
 
 ---
 
@@ -10,13 +10,12 @@
 | Feature | Status | Document | Owner | Priority |
 |---------|--------|----------|-------|----------|
 | vibematrix | 🚀 Implemented | vibematrix-spec.md | Chi | MVP |
-| abbyorb | 🚧 In Development | abbyorb-spec.md | Chi | MVP |
-| question-flow | 🚧 Partially Implemented | question-flow-spec.md | Chi | MVP |
-| glass-interface | 📝 Needs Implementation | glass-interface-spec.md | Chi | MVP |
-| onboarding-auth | 📝 Needs Implementation | onboarding-auth-spec.md | Chi | MVP |
-| cognito-auth | 🔨 In Development | cognito-auth.md | Chi | MVP |
-| voice-integration | 📝 Needs Implementation | voice-integration-spec.md | Chi | MVP |
-| **settings** | 📝 Needs Implementation | **settings-spec.md** | Chi | MVP |
+| abbyorb | 🚀 Implemented | abbyorb-spec.md | Chi | MVP |
+| question-flow | 🚧 In Development | question-flow-spec.md | Chi | MVP |
+| glass-interface | 🚀 Implemented | glass-interface-spec.md | Chi | MVP |
+| cognito-auth | 🚀 Implemented | onboarding-auth-spec.md | Chi | MVP |
+| voice-integration | 🚧 Demo Mode | voice-integration-spec.md | Chi | MVP |
+| settings | 🚀 Implemented | settings-spec.md | Chi | MVP |
 
 ---
 
@@ -37,40 +36,40 @@
 ### Layer 0: VibeMatrix (Background)
 - **Status**: 🚀 Implemented
 - **Description**: GLSL shader backgrounds that morph based on conversation state
-- **Key Components**: 18 shaders, noise-based transitions, performance monitoring
+- **Key Components**: 18 shaders, noise-based transitions, registry pattern
 - **Dependencies**: @shopify/react-native-skia
 
 ### Layer 1: AbbyOrb (AI Presence)
-- **Status**: 🚧 In Development
-- **Description**: 3D orb representing Abby with voice-reactive animations
-- **Key Components**: Breathing animations, voice sync, state transitions
-- **Dependencies**: ElevenLabs, VibeMatrix alpha blending
+- **Status**: 🚀 Implemented
+- **Description**: LiquidGlass4 orb with voice-reactive animations
+- **Key Components**: Breathing animations, amplitude sync, state transitions
+- **Dependencies**: VibeMatrix alpha blending
 
 ### Layer 2: GlassInterface (UI System)
-- **Status**: 📝 Needs Spec
+- **Status**: 🚀 Implemented
 - **Description**: Consistent blur-based UI maintaining glass metaphor
-- **Key Components**: GlassCard, GlassButton, BlurView wrappers
+- **Key Components**: GlassCard, BlurView wrappers, 28 screens
 - **Dependencies**: expo-blur
 
 ### Core Features
 
 #### Question Flow System
-- **Status**: 📝 Needs Spec
+- **Status**: 🚧 In Development
 - **Description**: Adaptive question presentation with voice/touch input
-- **Key Components**: Multiple choice, scales, text input, picturegram
+- **Key Components**: InterviewScreen, CoachScreen, QuestionsService
 - **Dependencies**: Voice integration, glass interface
 
-#### Onboarding & Authentication
-- **Status**: 📝 Needs Spec
-- **Description**: Phone/social login and basic profile setup
-- **Key Components**: Phone verification, Apple/Google/Facebook auth
-- **Dependencies**: Expo AuthSession
+#### Authentication (Cognito)
+- **Status**: 🚀 Implemented
+- **Description**: AWS Cognito email/password authentication
+- **Key Components**: AuthService, TokenManager, EmailScreen, LoginScreen
+- **Dependencies**: amazon-cognito-identity-js
 
-#### Voice Integration
-- **Status**: 📝 Needs Spec
-- **Description**: ElevenLabs conversational agent integration
-- **Key Components**: Real-time voice, transcription, intent recognition
-- **Dependencies**: @elevenlabs/react-native, LiveKit
+#### Voice Integration (OpenAI Realtime)
+- **Status**: 🚧 Demo Mode
+- **Description**: OpenAI Realtime API via client backend (replaced ElevenLabs)
+- **Key Components**: AbbyRealtimeService, AbbyTTSService
+- **Dependencies**: Client backend API (dev.api.myaimatchmaker.ai)
 
 ---
 
@@ -89,49 +88,110 @@
 ## Architecture Dependencies
 
 ```
-┌─────────────────┐
-│ Voice Integration│
-└─────────┬───────┘
+┌─────────────────────┐
+│ Voice Integration   │ ← 🚧 Demo Mode (needs real API)
+│ (OpenAI Realtime)   │
+└─────────┬───────────┘
           │
 ┌─────────▼───────┐    ┌─────────────────┐
 │   AbbyOrb       │◄───┤  VibeMatrix     │
-│   (Layer 1)     │    │  (Layer 0)      │
+│   (Layer 1) ✅  │    │  (Layer 0) ✅   │
 └─────────┬───────┘    └─────────────────┘
           │
 ┌─────────▼───────┐    ┌─────────────────┐
 │ GlassInterface  │◄───┤ Question Flow   │
-│ (Layer 2)       │    │                 │
+│ (Layer 2) ✅    │    │  🚧 In Dev      │
 └─────────────────┘    └─────────────────┘
           │
 ┌─────────▼───────┐
-│  Onboarding     │
-│  & Auth         │
+│  Cognito Auth   │
+│  ✅ Complete    │
 └─────────────────┘
 ```
 
 **Critical Path for MVP**:
 1. VibeMatrix (✅ Done)
-2. AbbyOrb (🚧 In Progress)
-3. GlassInterface + Question Flow (parallel development)
-4. Voice Integration (integrates with AbbyOrb)
-5. Onboarding & Auth (final integration)
+2. AbbyOrb (✅ Done - LiquidGlass4)
+3. GlassInterface (✅ Done - 28 screens)
+4. Cognito Auth (✅ Done)
+5. Question Flow (🚧 In Development)
+6. Voice Integration (🚧 Demo Mode → Needs real API connection)
 
 ---
 
-## Next Feature to Spec
+## Current Status
 
-**Status**: All MVP Features Specced ✅
+**Status**: MVP Implementation Nearly Complete ✅
 
-Voice Integration is now fully specced. All core MVP features have comprehensive SpecKit specifications:
+All core MVP features are implemented. Remaining work is connecting demo mode to real API:
 
-✅ **VibeMatrix** - Implemented & Optimized
-✅ **AbbyOrb** - In Development
-✅ **Question Flow** - Partially Implemented
-✅ **Glass Interface** - Ready for Implementation
-✅ **Onboarding & Auth** - Ready for Implementation
-✅ **Voice Integration** - Ready for Implementation
+✅ **VibeMatrix** - Implemented & Optimized (18 shaders, registry pattern)
+✅ **AbbyOrb** - Implemented (LiquidGlass4)
+✅ **Glass Interface** - Implemented (28 screens)
+✅ **Cognito Auth** - Implemented (email/password flow)
+✅ **Settings** - Implemented (SettingsScreen)
+🚧 **Question Flow** - In Development (QuestionsService exists, needs full 150 questions)
+🚧 **Voice Integration** - Demo Mode (AbbyRealtimeService needs real API connection)
 
-**Next Steps**: Begin implementation of remaining features, starting with highest priority dependencies.
+**Next Step**: Connect AbbyRealtimeService to real OpenAI Realtime API via client backend.
+
+---
+
+## 2026-01-02 Update (Session 2: Code Hardening)
+
+**What was done:**
+- Completed P0/P1 codebase hardening: TypeScript errors → console gating → error handling
+- Fixed TypeScript compilation (6 errors → 0 errors): removed legacy files, fixed props, added missing methods
+- Gated 84 console statements with `__DEV__` using perl batch processing
+- Fixed 3 empty catch blocks with proper DEV logging (cleanup errors)
+- Timer leak fixes verified with runtime tests (398 tests pass)
+
+**Files changed:**
+- `App.tsx` - fixed PhotosScreen props, deleted App.abby.tsx (legacy ElevenLabs)
+- `src/components/ui/Typography.tsx` - added numberOfLines prop
+- `src/components/screens/RevealScreen.tsx` - added handleMeetCoach method
+- `src/services/AbbyRealtimeService.ts` - timer tracking + cleanup logging
+- `src/components/screens/CoachScreen.tsx` - cleanup error logging
+- `src/components/screens/CoachIntroScreen.tsx` - cleanup error logging
+- 30+ files - console statements gated with `__DEV__` check
+
+**Quality metrics:**
+- TypeScript: 6 errors → 0 errors ✅
+- Console noise: 84 statements → 0 in production ✅
+- Silent failures: 3 empty catches → 0 ✅
+- Test coverage: 398 tests passing ✅
+
+**Commits:**
+- `e8031e8` - docs: align documentation with reality, fix TTS demo mode
+- `eb65fc1` - chore: gate all console statements with __DEV__
+
+---
+
+## 2026-01-02 Update (Session 1: Autonomous Security)
+
+**What was done:**
+- Autonomous improvement session: security, tests, code quality
+- Security layer added: `secureFetch.ts`, input validation, error sanitization
+- Test coverage increased: 246 → 344 tests (+40%)
+- Console statements gated with `__DEV__`
+- All changes pushed to client-api-integration, main, staging, production
+
+**Architecture changes:**
+- Voice integration now uses OpenAI Realtime API (client backend), NOT ElevenLabs
+- Authentication uses AWS Cognito (email/password), NOT phone verification
+- AbbyRealtimeService replaces AbbyAgent for voice
+
+**Feature status corrections:**
+- cognito-auth: 🚀 Implemented (was 🔨 In Development)
+- voice-integration: 🚧 Demo Mode (was 📝 Needs Implementation)
+- settings: 🚀 Implemented (was 📝 Needs Implementation)
+- glass-interface: 🚀 Implemented (was 📝 Needs Implementation)
+- abbyorb: 🚀 Implemented (was 🚧 In Development)
+
+**Commits:**
+- `fb092cc` - security: add request timeouts, error sanitization, and input validation
+- `5886f9a` - test: add security and validation test suites
+- `0eff38d` - chore: gate all console statements with __DEV__
 
 ---
 
@@ -185,5 +245,25 @@ Voice Integration is now fully specced. All core MVP features have comprehensive
 
 ---
 
+## Legacy/Deprecated Files (Do Not Use)
+
+The following files are legacy documentation and should NOT be referenced. Use the `-spec.md` versions instead.
+
+| File | Replaced By | Notes |
+|------|-------------|-------|
+| `abbyorb.md` | `abbyorb-spec.md` | Old Dec 2024, mentions Fal.ai TTS |
+| `vibematrix.md` | `vibematrix-spec.md` | Old Dec 2024, outdated shader count |
+| `abbyagent.md` | `voice-integration-spec.md` | Old Dec 2024, mentions ElevenLabs |
+| `abby-agent.md` | `voice-integration-spec.md` | Design doc, now superseded |
+| `cognito-auth.md` | `onboarding-auth-spec.md` | Old implementation notes |
+
+**Files to Keep:**
+- All `*-spec.md` files (current specifications)
+- `INDEX.md` (this file)
+- `chatinput.md` (unique component feature)
+- `test-configuration.md` (test setup docs)
+
+---
+
 *Index created: December 20, 2024*
-*Last updated: December 22, 2024*
+*Last updated: January 2, 2026*

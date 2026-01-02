@@ -4,7 +4,22 @@
 
 ---
 
-## 🚨 MANDATORY STARTUP CHECKLIST (DO THIS FIRST)
+## 🚨 BUILD COMMAND (Dev Build, NOT Expo Go)
+
+```bash
+npx expo run:ios
+```
+
+**Why dev build?** Skia shaders require native compilation. Expo Go doesn't include `@shopify/react-native-skia`.
+
+| Command | Mode | Skia | Use |
+|---------|------|------|-----|
+| `npx expo run:ios` | Dev Build | ✅ | **Always use this** |
+| `expo start` | Expo Go | ❌ | Never for ABBY |
+
+---
+
+## 🚨 MANDATORY STARTUP CHECKLIST
 
 **Before ANY work, verify these EVERY time:**
 
@@ -20,13 +35,8 @@ git branch --show-current  # Should show: client-api-integration
 ```
 
 **Service Files (CRITICAL - do NOT copy from /abby):**
-- ✅ Use: `AbbyRealtimeService.ts` (OpenAI Realtime API)
-- ❌ NOT: `AbbyAgent.ts` (ElevenLabs - legacy only)
-
-**Build Command:**
-```bash
-npx expo run:ios  # NOT 'expo start' (Expo Go doesn't support Skia)
-```
+- ✅ Use: `AbbyRealtimeService.ts` (OpenAI Realtime API via client backend)
+- ❌ NOT: `AbbyAgent.ts` (legacy worktree only)
 
 ---
 

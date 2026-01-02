@@ -4,11 +4,19 @@
  * Manages user onboarding data collected during the basics flow.
  * Updated to match client spec with all 11 screens.
  *
- * Data is held in memory during onboarding, then submitted to
- * /v1/profile/public API on completion.
+ * Persists to AsyncStorage for crash recovery (30-day timeout).
+ * Data submitted to /v1/profile/public API on completion.
  */
 
 import { create } from 'zustand';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+
+// Storage key and version
+const ONBOARDING_KEY = '@abby/onboarding';
+const ONBOARDING_VERSION = 1;
+
+// Session timeout: 30 days
+const ONBOARDING_TIMEOUT_MS = 30 * 24 * 60 * 60 * 1000;
 
 // Location types
 export interface GPSLocation {
@@ -56,6 +64,9 @@ interface OnboardingStoreState {
 
   // Progress tracking
   isComplete: boolean;
+  currentScreen: number; // For recovery (0-based index)
+  savedAt: number | null; // Timestamp for timeout check
+  isLoaded: boolean; // Whether persistence has been loaded
 }
 
 // Onboarding store actions
@@ -94,6 +105,12 @@ interface OnboardingStoreActions {
   markComplete: () => void;
   reset: () => void;
   getProfilePayload: () => Record<string, unknown>;
+
+  // Persistence
+  setCurrentScreen: (screen: number) => void;
+  saveToStorage: () => Promise<void>;
+  loadFromStorage: () => Promise<boolean>; // Returns true if recovered session
+  clearStorage: () => Promise<void>;
 }
 
 type OnboardingStore = OnboardingStoreState & OnboardingStoreActions;
@@ -133,6 +150,9 @@ const initialState: OnboardingStoreState = {
 
   // Progress
   isComplete: false,
+  currentScreen: 0,
+  savedAt: null,
+  isLoaded: false,
 };
 
 export const useOnboardingStore = create<OnboardingStore>((set, get) => ({
@@ -282,6 +302,127 @@ export const useOnboardingStore = create<OnboardingStore>((set, get) => ({
     }
 
     return payload;
+  },
+
+  // Persistence: Set current screen index
+  setCurrentScreen: (screen: number) => {
+    set({ currentScreen: screen });
+  },
+
+  // Persistence: Save to AsyncStorage
+  saveToStorage: async () => {
+    try {
+      const state = get();
+      // Don't save if already complete
+      if (state.isComplete) return;
+
+      const toSave = {
+        version: ONBOARDING_VERSION,
+        savedAt: Date.now(),
+        currentScreen: state.currentScreen,
+        fullName: state.fullName,
+        nickname: state.nickname,
+        dateOfBirth: state.dateOfBirth?.toISOString() || null,
+        ageRangeMin: state.ageRangeMin,
+        ageRangeMax: state.ageRangeMax,
+        gender: state.gender,
+        datingPreference: state.datingPreference,
+        ethnicity: state.ethnicity,
+        ethnicityPreferences: state.ethnicityPreferences,
+        relationshipType: state.relationshipType,
+        smokingMe: state.smokingMe,
+        smokingPartner: state.smokingPartner,
+        location: state.location,
+      };
+
+      await AsyncStorage.setItem(ONBOARDING_KEY, JSON.stringify(toSave));
+      set({ savedAt: toSave.savedAt });
+      if (__DEV__) {
+        if (__DEV__) console.log('[OnboardingStore] Saved to storage, screen:', state.currentScreen);
+      }
+    } catch (error) {
+      if (__DEV__) {
+        if (__DEV__) console.error('[OnboardingStore] Failed to save:', error);
+      }
+    }
+  },
+
+  // Persistence: Load from AsyncStorage (returns true if session recovered)
+  loadFromStorage: async () => {
+    try {
+      const stored = await AsyncStorage.getItem(ONBOARDING_KEY);
+      if (!stored) {
+        set({ isLoaded: true });
+        return false;
+      }
+
+      const data = JSON.parse(stored);
+
+      // Check version
+      if (data.version !== ONBOARDING_VERSION) {
+        if (__DEV__) {
+          if (__DEV__) console.warn('[OnboardingStore] Version mismatch, clearing');
+        }
+        await AsyncStorage.removeItem(ONBOARDING_KEY);
+        set({ isLoaded: true });
+        return false;
+      }
+
+      // Check timeout (30 days)
+      if (data.savedAt && Date.now() - data.savedAt > ONBOARDING_TIMEOUT_MS) {
+        if (__DEV__) {
+          if (__DEV__) console.log('[OnboardingStore] Session expired, clearing');
+        }
+        await AsyncStorage.removeItem(ONBOARDING_KEY);
+        set({ isLoaded: true });
+        return false;
+      }
+
+      // Restore state
+      set({
+        isLoaded: true,
+        savedAt: data.savedAt,
+        currentScreen: data.currentScreen || 0,
+        fullName: data.fullName || null,
+        nickname: data.nickname || null,
+        dateOfBirth: data.dateOfBirth ? new Date(data.dateOfBirth) : null,
+        ageRangeMin: data.ageRangeMin ?? 18,
+        ageRangeMax: data.ageRangeMax ?? 65,
+        gender: data.gender || null,
+        datingPreference: data.datingPreference || null,
+        ethnicity: data.ethnicity || null,
+        ethnicityPreferences: data.ethnicityPreferences || [],
+        relationshipType: data.relationshipType || null,
+        smokingMe: data.smokingMe || null,
+        smokingPartner: data.smokingPartner || null,
+        location: data.location || null,
+      });
+
+      if (__DEV__) {
+        if (__DEV__) console.log('[OnboardingStore] Recovered session, screen:', data.currentScreen);
+      }
+      return true; // Session recovered
+    } catch (error) {
+      if (__DEV__) {
+        if (__DEV__) console.error('[OnboardingStore] Failed to load:', error);
+      }
+      set({ isLoaded: true });
+      return false;
+    }
+  },
+
+  // Persistence: Clear storage on completion
+  clearStorage: async () => {
+    try {
+      await AsyncStorage.removeItem(ONBOARDING_KEY);
+      if (__DEV__) {
+        if (__DEV__) console.log('[OnboardingStore] Cleared storage');
+      }
+    } catch (error) {
+      if (__DEV__) {
+        if (__DEV__) console.error('[OnboardingStore] Failed to clear storage:', error);
+      }
+    }
   },
 }));
 

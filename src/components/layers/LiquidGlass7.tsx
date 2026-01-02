@@ -180,7 +180,7 @@ export const LiquidGlass7: React.FC = () => {
   }), [clock]);
 
   if (!WAVE_SHELL_SHADER) {
-    console.error('[LiquidGlass7] Shader failed to compile');
+    if (__DEV__) console.error('[LiquidGlass7] Shader failed to compile');
     return null;
   }
 

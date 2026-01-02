@@ -2,14 +2,16 @@
 
 **Product Name:** ABBY - The Anti-Dating App
 **Version:** 1.0 MVP
-**Last Updated:** December 20, 2024
-**References:** PRD.md (US-001 through US-010)
+**Last Updated:** January 2, 2026
+**References:** PRD.md (US-001 through US-012)
 
 ---
 
 ## Overview
 
-This document defines the data entities, relationships, and storage strategy for ABBY MVP. For MVP, data is stored locally with mock backend. V2 will integrate with Nathan's AWS backend.
+This document defines the data entities, relationships, and storage strategy for ABBY MVP.
+
+> **Implementation Note (2026-01-02):** MVP uses AWS Cognito for auth and client backend (dev.api.myaimatchmaker.ai) for API. Local storage uses Zustand + AsyncStorage. Phone/social auth deferred to V2.
 
 ---
 
@@ -19,28 +21,36 @@ This document defines the data entities, relationships, and storage strategy for
 
 Core user profile information collected during onboarding (US-001, US-002).
 
-| Field | Type | Required | Description |
-|-------|------|----------|-------------|
-| id | UUID | Yes | Primary key |
-| phoneNumber | string | Yes | Primary auth method |
-| email | string | No | Secondary auth (social login) |
-| authProvider | enum | Yes | phone / apple / google / facebook |
-| fullName | string | Yes | Legal name (private, never shown) |
-| displayName | string | Yes | Public name for matches |
-| dateOfBirth | Date | Yes | For age calculation |
-| preferredAgeMin | number | Yes | Minimum age preference |
-| preferredAgeMax | number | Yes | Maximum age preference |
-| gender | enum | Yes | User's sexual identity |
-| seekingGenders | enum[] | Yes | Who they're looking for |
-| ethnicity | enum | Yes | User's ethnicity |
-| ethnicityPrefs | enum[] | No | Preferences (empty = no preference) |
-| relationshipType | enum | Yes | serious / casual / unsure |
-| smokingPref | enum | Yes | never / sometimes / regularly / no_pref |
-| createdAt | DateTime | Yes | Account creation timestamp |
-| lastActiveAt | DateTime | Yes | Last app usage |
-| interviewStatus | enum | Yes | not_started / in_progress / completed |
+> **Implementation Note (2026-01-02):** Auth is via AWS Cognito. The `username` field is the Cognito user sub (UUID). Phone/social auth fields exist in schema but are V2.
 
-**Enum: Gender**
+| Field | Type | Required | Description | Status |
+|-------|------|----------|-------------|--------|
+| id | UUID | Yes | Primary key (Cognito userSub) | ✅ Implemented |
+| email | string | Yes | Primary auth method | ✅ Implemented |
+| ~~phoneNumber~~ | ~~string~~ | ~~Yes~~ | ~~Primary auth~~ | ❌ V2 |
+| ~~authProvider~~ | ~~enum~~ | ~~Yes~~ | ~~phone/apple/google/facebook~~ | ❌ V2 |
+| fullName | string | Yes | User's name | ✅ Implemented |
+| ~~displayName~~ | ~~string~~ | ~~Yes~~ | ~~Public name~~ | ❌ V2 (nickname) |
+| dateOfBirth | Date | Yes | For age calculation | ✅ Implemented |
+| ~~preferredAgeMin~~ | ~~number~~ | ~~Yes~~ | ~~Min age preference~~ | ❌ V2 (slider) |
+| ~~preferredAgeMax~~ | ~~number~~ | ~~Yes~~ | ~~Max age preference~~ | ❌ V2 (slider) |
+| gender | enum | Yes | User's gender (man/woman) | ✅ Implemented (2 options) |
+| seekingGenders | enum[] | Yes | Who they're looking for | ✅ Implemented |
+| ethnicity | enum | Yes | User's ethnicity | ✅ Implemented |
+| ethnicityPrefs | enum[] | No | Preferences | ✅ Implemented |
+| relationshipType | enum | Yes | serious / casual / unsure | ✅ Implemented |
+| smokingPref | enum | Yes | Smoking preference | ✅ Implemented |
+| location | object | Yes | Latitude/longitude | ✅ Implemented |
+| createdAt | DateTime | Yes | Account creation | ✅ Via Cognito |
+| lastActiveAt | DateTime | Yes | Last app usage | ⚠️ Not tracked |
+| interviewStatus | enum | Yes | not_started / in_progress / completed | ⚠️ Local only |
+
+**Enum: Gender (Current - 2 options)**
+```
+man | woman
+```
+
+**Enum: Gender (V2 - 10+ options per client spec)**
 ```
 male | female | non_binary | transgender_male | transgender_female |
 genderqueer | agender | two_spirit | other | prefer_not_to_say
@@ -170,45 +180,63 @@ User 1──────* InterviewResponse (denormalized for quick queries)
 
 ## Storage Strategy
 
-### MVP (Local-First)
+### MVP (Current Implementation)
 
-| Data | Storage | Persistence |
-|------|---------|-------------|
-| User profile | AsyncStorage | Permanent |
-| Interview progress | AsyncStorage | 7 days |
-| App state | Zustand + AsyncStorage | Session + persist |
-| Questions | Static JSON bundle | App binary |
+| Data | Storage | Persistence | Status |
+|------|---------|-------------|--------|
+| Auth tokens | expo-secure-store | Permanent | ✅ TokenManager |
+| Onboarding data | Zustand (memory) | Session only | ⚠️ Not persisted |
+| Settings (input mode) | AsyncStorage | Permanent | ✅ useSettingsStore |
+| Demo state | Zustand (memory) | Session only | ⚠️ Not persisted |
+| Interview progress | Zustand (memory) | Session only | ⚠️ Not persisted |
+| Questions | Static JSON bundle | App binary | ✅ QuestionsService |
 
-### V2 (Backend Integration)
+> **Gap Identified:** Interview progress and onboarding data are NOT persisted. If app crashes, user loses progress.
 
-| Data | Storage | Sync Strategy |
-|------|---------|---------------|
-| User profile | Nathan's PostgreSQL | On change |
-| Interview responses | Nathan's PostgreSQL | Real-time |
-| Voice recordings | AWS S3 | Upload on answer |
-| Match data | Nathan's PostgreSQL | Push notifications |
+### Backend Integration (Client API)
 
----
+| Data | API Endpoint | Status |
+|------|--------------|--------|
+| User profile | POST `/v1/profile/public` | ⚠️ Endpoint exists, not called |
+| Questions | GET `/v1/questions/*` | ✅ Available |
+| Answers | POST `/v1/answers` | ⚠️ Available, not integrated |
+| Matches | GET `/v1/matches/candidates` | ⚠️ TODO in MatchesScreen |
+| Photos | POST `/v1/photos/*` | ⚠️ Available, not integrated |
+| Voice | POST `/v1/abby/realtime/session` | ✅ Demo mode fallback |
 
-## Database Choice (V2)
+### Backend Services
 
-| Option | Decision | Reason |
-|--------|----------|--------|
-| Database | PostgreSQL (Nathan's AWS) | Team expertise, relational data |
-| ORM | TBD (Nathan's choice) | Backend team decision |
-| Hosting | AWS RDS | Nathan manages infrastructure |
-| File Storage | AWS S3 | Voice recordings, photos |
+| Service | Provider | Purpose |
+|---------|----------|---------|
+| Auth | AWS Cognito | Email/password authentication |
+| API | Client (dev.api.myaimatchmaker.ai) | REST API |
+| Voice | OpenAI Realtime API (via client) | Voice conversations |
+| ~~Database~~ | ~~Nathan's PostgreSQL~~ | ~~Replaced by client backend~~ |
 
 ---
 
 ## Security Considerations
 
 1. **fullName** is private - never exposed in API responses to other users
-2. **phoneNumber** used only for auth, never shared
-3. **voiceTranscript** may contain sensitive info - encrypt at rest
-4. **Interview responses** contain intimate personal data - strict access controls
-5. All data encrypted in transit (HTTPS) and at rest (AES-256)
+2. **email** used only for auth, never shared (via Cognito)
+3. **Auth tokens** stored in expo-secure-store (not AsyncStorage)
+4. **voiceTranscript** may contain sensitive info - encrypt at rest
+5. **Interview responses** contain intimate personal data - strict access controls
+6. All data encrypted in transit (HTTPS) and at rest (AES-256)
+7. **Console logs** gated with `__DEV__` to prevent sensitive data leakage
+8. **secureFetch** utility sanitizes error messages to prevent internal detail exposure
+
+### Security Implementation (Added 2026-01-02)
+
+| Feature | File | Status |
+|---------|------|--------|
+| Token storage | `TokenManager.ts` | ✅ Uses expo-secure-store |
+| Request timeouts | `secureFetch.ts` | ✅ 20s voice, 5s availability |
+| Error sanitization | `secureFetch.ts` | ✅ No internal details exposed |
+| Input validation | `validation.ts` | ✅ Email, password, DOB |
+| Dev-only logging | All services | ✅ `__DEV__` gated |
 
 ---
 
 *Document created: December 20, 2024*
+*Last updated: January 2, 2026*

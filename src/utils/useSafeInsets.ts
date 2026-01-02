@@ -24,7 +24,7 @@ export function useSafeInsets(): EdgeInsets {
   const insets = useContext(SafeAreaInsetsContext);
 
   if (__DEV__ && insets === null) {
-    console.warn('[useSafeInsets] Context is null, using fallback values');
+    if (__DEV__) console.warn('[useSafeInsets] Context is null, using fallback values');
   }
 
   return insets ?? DEFAULT_INSETS;

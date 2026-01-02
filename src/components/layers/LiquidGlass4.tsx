@@ -325,7 +325,7 @@ export const LiquidGlass4: React.FC<LiquidGlass4Props> = ({
   }), [clock, finalAudioLevel, colorA, colorB]);
 
   if (!ABBY_ORB_SHADER) {
-    console.error('[LiquidGlass4] Shader failed to compile');
+    if (__DEV__) console.error('[LiquidGlass4] Shader failed to compile');
     return null;
   }
 

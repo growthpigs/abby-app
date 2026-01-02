@@ -244,7 +244,7 @@ export function detectEmotion(text: string): ConversationEmotion {
   }
 
   if (__DEV__) {
-    console.log(`[EmotionVibe] Detected: ${maxEmotion} (score: ${maxScore})`);
+    if (__DEV__) console.log(`[EmotionVibe] Detected: ${maxEmotion} (score: ${maxScore})`);
   }
 
   return maxEmotion;

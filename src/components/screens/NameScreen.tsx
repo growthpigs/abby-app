@@ -17,7 +17,7 @@ import { Typography } from '../ui/Typography';
 import { GlassButton } from '../ui/GlassButton';
 
 interface NameScreenProps {
-  onNext?: (name: string) => void;
+  onNext?: (name: string, nickname: string) => void;
   onSecretBack?: () => void;
   onSecretForward?: () => void;
 }
@@ -28,11 +28,14 @@ export const NameScreen: React.FC<NameScreenProps> = ({
   onSecretForward,
 }) => {
   const [name, setName] = useState('');
+  const [nickname, setNickname] = useState('');
 
   const handleNext = () => {
     if (isValid) {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-      onNext?.(name.trim());
+      // Pass nickname or fall back to first name
+      const displayName = nickname.trim() || name.trim();
+      onNext?.(name.trim(), displayName);
     }
   };
 
@@ -78,15 +81,32 @@ export const NameScreen: React.FC<NameScreenProps> = ({
           autoCapitalize="words"
           autoCorrect={false}
           autoFocus={true}
+          returnKeyType="next"
+          placeholderTextColor="rgba(255, 255, 255, 0.3)"
+          maxLength={100}
+        />
+
+        {/* Nickname section */}
+        <Typography variant="body" style={styles.nicknameLabel}>
+          Nickname (optional)
+        </Typography>
+        <TextInput
+          style={styles.nicknameInput}
+          value={nickname}
+          onChangeText={setNickname}
+          placeholder="What should we call you?"
+          autoCapitalize="words"
+          autoCorrect={false}
           returnKeyType="done"
           onSubmitEditing={handleNext}
           placeholderTextColor="rgba(255, 255, 255, 0.3)"
+          maxLength={100}
         />
 
         {/* Help text */}
         <View style={styles.helpTextContainer}>
           <Typography variant="caption" style={styles.helpText}>
-            This is how you'll appear in the app
+            This is how you'll appear to your matches
           </Typography>
         </View>
       </View>
@@ -158,6 +178,22 @@ const styles = StyleSheet.create({
     borderBottomWidth: 2,
     borderBottomColor: 'rgba(255, 255, 255, 0.3)',
     fontSize: 24,
+    color: 'rgba(255, 255, 255, 0.95)',
+    fontWeight: '500',
+  },
+  nicknameLabel: {
+    marginTop: 32,
+    fontSize: 14,
+    color: 'rgba(255, 255, 255, 0.7)',
+    marginBottom: 8,
+  },
+  nicknameInput: {
+    width: '100%',
+    paddingVertical: 12,
+    paddingHorizontal: 8,
+    borderBottomWidth: 2,
+    borderBottomColor: 'rgba(255, 255, 255, 0.3)',
+    fontSize: 18,
     color: 'rgba(255, 255, 255, 0.95)',
     fontWeight: '500',
   },

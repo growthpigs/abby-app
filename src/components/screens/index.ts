@@ -40,7 +40,8 @@ export { PaymentScreen } from './PaymentScreen';
 export { RevealScreen } from './RevealScreen';
 export { CoachScreen } from './CoachScreen';
 
-// Menu screens (accessible from hamburger menu)
+// Menu screens (accessible from hamburger menu: Profile, Photos, Matches, Settings)
 export { SettingsScreen } from './SettingsScreen';
+export { ProfileScreen } from './ProfileScreen';
 export { PhotosScreen } from './PhotosScreen';
 export { MatchesScreen } from './MatchesScreen';

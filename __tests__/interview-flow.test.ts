@@ -128,11 +128,13 @@ describe('InterviewScreen Questions Integration', () => {
     expect(vibeShiftIndex).toBeLessThan(speakIndex);
   });
 
-  test('InterviewScreen cycles backgrounds 1-10 for all 150 questions', () => {
+  test('InterviewScreen cycles backgrounds using TOTAL_SHADERS constant', () => {
     const source = readFile('src/components/screens/InterviewScreen.tsx');
 
+    // Should import TOTAL_SHADERS instead of using hardcoded value
+    expect(source).toContain("import { TOTAL_SHADERS } from '../../constants/backgroundMap'");
     expect(source).toContain('const getBackgroundIndexForQuestion = (questionIndex: number): number =>');
-    expect(source).toContain('return (questionIndex % 10) + 1');
+    expect(source).toContain('return (questionIndex % TOTAL_SHADERS) + 1');
   });
 
   test('InterviewScreen handles last question properly', () => {
@@ -257,8 +259,9 @@ describe('Edge Cases', () => {
   test('Background cycling handles question 0 and question 149', () => {
     const source = readFile('src/components/screens/InterviewScreen.tsx');
 
-    // Modulo operation should work for all indices
-    expect(source).toContain('(questionIndex % 10) + 1');
+    // Uses TOTAL_SHADERS from constants instead of hardcoded value
+    expect(source).toContain('TOTAL_SHADERS');
+    expect(source).toContain('(questionIndex % TOTAL_SHADERS) + 1');
   });
 });
 

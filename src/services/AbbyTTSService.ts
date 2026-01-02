@@ -44,6 +44,8 @@ class AbbyTTSService {
   private sound: Audio.Sound | null = null;
   private audioLevelCallback: AudioLevelCallback | null = null;
   private audioLevelInterval: NodeJS.Timeout | null = null;
+  // Track speech duration timer for cleanup (prevents leak in simulateSpeechDuration)
+  private speechDurationTimer: NodeJS.Timeout | null = null;
 
   /**
    * Speak text using Abby's voice
@@ -60,7 +62,13 @@ class AbbyTTSService {
       // Get access token
       const token = await TokenManager.getToken();
       if (!token) {
-        throw new Error('Not authenticated');
+        // Not authenticated - skip TTS silently in demo mode
+        if (__DEV__) console.log('[AbbyTTS] No auth token - skipping TTS (demo mode)');
+        // Still simulate audio levels for orb animation
+        if (onAudioLevel) {
+          this.simulateSpeechDuration(text, onAudioLevel);
+        }
+        return;
       }
 
       // Request TTS from API
@@ -112,6 +120,12 @@ class AbbyTTSService {
       if (this.audioLevelInterval) {
         clearInterval(this.audioLevelInterval);
         this.audioLevelInterval = null;
+      }
+
+      // Clear speech duration timer (from simulateSpeechDuration)
+      if (this.speechDurationTimer) {
+        clearTimeout(this.speechDurationTimer);
+        this.speechDurationTimer = null;
       }
 
       if (__DEV__) console.log('[AbbyTTS] Stopped');
@@ -190,6 +204,26 @@ class AbbyTTSService {
       this.audioLevelCallback(level);
       phase += 0.2;
     }, 50); // Update every 50ms
+  }
+
+  /**
+   * Simulate speech duration for demo mode (no actual audio)
+   * Provides audio level callbacks for orb animation
+   */
+  private simulateSpeechDuration(text: string, onAudioLevel: AudioLevelCallback): void {
+    // Estimate speech duration: ~150ms per word
+    const words = text.split(/\s+/).length;
+    const duration = Math.max(1000, words * 150);
+
+    if (__DEV__) console.log(`[AbbyTTS] Simulating ${words} words (~${duration}ms)`);
+
+    this.audioLevelCallback = onAudioLevel;
+    this.startAudioLevelSimulation();
+
+    // Stop simulation after estimated duration (tracked for cleanup)
+    this.speechDurationTimer = setTimeout(() => {
+      this.stop();
+    }, duration);
   }
 }
 

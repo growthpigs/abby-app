@@ -206,7 +206,7 @@ export const LiquidGlass6: React.FC = () => {
   }), [clock]);
 
   if (!LIQUID_GLASS_SHADER) {
-    console.error('[LiquidGlass6] Shader failed to compile');
+    if (__DEV__) console.error('[LiquidGlass6] Shader failed to compile');
     return null;
   }
 

@@ -79,8 +79,8 @@ const ShaderLayer = React.memo(({
     const wrappedSource = wrapWithMorph(shaderSource);
     const effect = Skia.RuntimeEffect.Make(wrappedSource);
     if (!effect) {
-      console.error('[ShaderLayer] SHADER COMPILE FAILED');
-      console.error('[ShaderLayer] Source preview:', wrappedSource.slice(0, 500));
+      if (__DEV__) console.error('[ShaderLayer] SHADER COMPILE FAILED');
+      if (__DEV__) console.error('[ShaderLayer] Source preview:', wrappedSource.slice(0, 500));
       return null;
     }
     return effect;

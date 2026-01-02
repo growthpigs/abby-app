@@ -1,12 +1,17 @@
 /**
- * secureFetch - Secure HTTP client with timeout and error sanitization
+ * secureFetch - Secure HTTP client with timeout, retry, and error sanitization
  *
  * Security features:
  * - Request timeout (default 30s, max 60s)
  * - Sanitized error messages (no internal details exposed)
  * - Response size limits
  * - Request abort on timeout
+ * - Automatic retry with exponential backoff for transient failures
  */
+
+import { API_CONFIG } from '../config';
+import { TokenManager } from '../services/TokenManager';
+import { AuthService } from '../services/AuthService';
 
 // Maximum allowed timeout (60 seconds)
 const MAX_TIMEOUT_MS = 60000;
@@ -17,11 +22,88 @@ const DEFAULT_TIMEOUT_MS = 30000;
 // Maximum response size (10MB)
 const MAX_RESPONSE_SIZE = 10 * 1024 * 1024;
 
+// Retry configuration from central config
+const RETRY_CONFIG = API_CONFIG.RETRY;
+
+// HTTP status codes that should trigger a retry
+const RETRYABLE_STATUS_CODES = new Set([408, 429, 500, 502, 503, 504]);
+
 export interface SecureFetchOptions extends RequestInit {
   /** Request timeout in milliseconds (default: 30000, max: 60000) */
   timeout?: number;
   /** Maximum response size in bytes (default: 10MB) */
   maxResponseSize?: number;
+  /** Maximum retry attempts for transient failures (default: 3, set 0 to disable) */
+  maxRetries?: number;
+  /** Disable retry for this request */
+  noRetry?: boolean;
+  /** Skip automatic token refresh on 401 (use for auth endpoints) */
+  skipTokenRefresh?: boolean;
+}
+
+/**
+ * Attempt to refresh the auth token
+ * Returns new access token on success, null on failure
+ *
+ * IMPORTANT: AuthService.refreshToken() has its own mutex to prevent race conditions.
+ * We rely on that mutex (SINGLE SOURCE OF TRUTH) rather than maintaining a duplicate here.
+ * This ensures all token refresh logic is consolidated in AuthService.
+ */
+async function refreshAuthToken(): Promise<string | null> {
+  try {
+    const storedRefreshToken = await TokenManager.getRefreshToken();
+    if (!storedRefreshToken) {
+      if (__DEV__) console.log('[secureFetch] No refresh token available');
+      return null;
+    }
+
+    // AuthService.refreshToken() has its own mutex - concurrent calls return the same promise
+    const response = await AuthService.refreshToken();
+    if (__DEV__) console.log('[secureFetch] Token refreshed successfully');
+    return response.accessToken;
+  } catch (error) {
+    if (__DEV__) console.log('[secureFetch] Token refresh failed:', error);
+    return null;
+  }
+}
+
+/**
+ * Calculate delay for retry attempt with exponential backoff
+ */
+function getRetryDelay(attempt: number): number {
+  const baseDelay = RETRY_CONFIG.DELAY_MS;
+  const multiplier = RETRY_CONFIG.BACKOFF_MULTIPLIER;
+  // Exponential backoff: delay * multiplier^attempt (with some jitter)
+  const delay = baseDelay * Math.pow(multiplier, attempt);
+  // Add jitter of ±20% to prevent thundering herd
+  const jitter = delay * 0.2 * (Math.random() * 2 - 1);
+  return Math.floor(delay + jitter);
+}
+
+/**
+ * Check if an error/response should trigger a retry
+ */
+function shouldRetry(error: unknown, response?: Response): boolean {
+  // Retry on network errors (AbortError from timeout, network failures)
+  if (error instanceof Error) {
+    if (error.name === 'AbortError') return true;
+    if (error.message.includes('network') || error.message.includes('Network')) return true;
+    if (error.message.includes('fetch')) return true;
+  }
+
+  // Retry on specific HTTP status codes
+  if (response && RETRYABLE_STATUS_CODES.has(response.status)) {
+    return true;
+  }
+
+  return false;
+}
+
+/**
+ * Sleep for specified milliseconds
+ */
+function sleep(ms: number): Promise<void> {
+  return new Promise(resolve => setTimeout(resolve, ms));
 }
 
 export interface SecureFetchError {
@@ -81,7 +163,7 @@ function sanitizeError(error: unknown, status?: number): SecureFetchError {
 }
 
 /**
- * Secure fetch wrapper with timeout, size limits, and error sanitization
+ * Secure fetch wrapper with timeout, size limits, retry, and error sanitization
  */
 export async function secureFetch(
   url: string,
@@ -90,54 +172,112 @@ export async function secureFetch(
   const {
     timeout = DEFAULT_TIMEOUT_MS,
     maxResponseSize = MAX_RESPONSE_SIZE,
+    maxRetries = RETRY_CONFIG.MAX_ATTEMPTS,
+    noRetry = false,
     ...fetchOptions
   } = options;
 
   // Enforce timeout limits
   const safeTimeout = Math.min(Math.max(timeout, 1000), MAX_TIMEOUT_MS);
 
-  // Create abort controller for timeout
-  const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), safeTimeout);
+  // Determine effective retry count
+  const effectiveMaxRetries = noRetry ? 0 : maxRetries;
 
-  try {
-    const response = await fetch(url, {
-      ...fetchOptions,
-      signal: controller.signal,
-    });
+  let lastError: unknown = null;
+  let lastResponse: Response | null = null;
 
-    clearTimeout(timeoutId);
-
-    // Check response size via Content-Length header
-    const contentLength = response.headers.get('Content-Length');
-    if (contentLength && parseInt(contentLength, 10) > maxResponseSize) {
-      throw {
-        code: 'RESPONSE_TOO_LARGE',
-        message: 'Response exceeds size limit',
-      };
+  // Attempt request with retries
+  for (let attempt = 0; attempt <= effectiveMaxRetries; attempt++) {
+    // Wait before retry (skip on first attempt)
+    if (attempt > 0) {
+      const delay = getRetryDelay(attempt - 1);
+      if (__DEV__) console.log(`[secureFetch] Retry ${attempt}/${effectiveMaxRetries} after ${delay}ms`);
+      await sleep(delay);
     }
 
-    return response;
-  } catch (error) {
-    clearTimeout(timeoutId);
+    // Create abort controller for timeout
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), safeTimeout);
 
-    // Re-throw sanitized errors
-    if (error && typeof error === 'object' && 'code' in error) {
-      throw error;
+    try {
+      const response = await fetch(url, {
+        ...fetchOptions,
+        signal: controller.signal,
+      });
+
+      clearTimeout(timeoutId);
+
+      // Check response size via Content-Length header
+      const contentLength = response.headers.get('Content-Length');
+      if (contentLength && parseInt(contentLength, 10) > maxResponseSize) {
+        throw {
+          code: 'RESPONSE_TOO_LARGE',
+          message: 'Response exceeds size limit',
+        };
+      }
+
+      // Check if we should retry this response
+      if (shouldRetry(null, response) && attempt < effectiveMaxRetries) {
+        lastResponse = response;
+        lastError = null;
+        continue; // Try again
+      }
+
+      return response;
+    } catch (error) {
+      clearTimeout(timeoutId);
+      lastError = error;
+      lastResponse = null;
+
+      // Re-throw non-retryable sanitized errors immediately
+      if (error && typeof error === 'object' && 'code' in error) {
+        throw error;
+      }
+
+      // Check if we should retry this error
+      if (!shouldRetry(error) || attempt >= effectiveMaxRetries) {
+        throw sanitizeError(error);
+      }
+
+      // Continue to retry
     }
-
-    throw sanitizeError(error);
   }
+
+  // All retries exhausted
+  if (lastResponse && RETRYABLE_STATUS_CODES.has(lastResponse.status)) {
+    throw sanitizeError(null, lastResponse.status);
+  }
+
+  throw sanitizeError(lastError);
 }
 
 /**
  * Secure JSON fetch - fetches and parses JSON with all security features
+ * Includes automatic token refresh on 401 responses
  */
 export async function secureFetchJSON<T = unknown>(
   url: string,
   options: SecureFetchOptions = {}
 ): Promise<T> {
-  const response = await secureFetch(url, options);
+  const { skipTokenRefresh = false, ...fetchOptions } = options;
+
+  let response = await secureFetch(url, fetchOptions);
+
+  // Handle 401 with token refresh
+  if (response.status === 401 && !skipTokenRefresh) {
+    const newToken = await refreshAuthToken();
+
+    if (newToken) {
+      // Retry with new token
+      const headers = new Headers(fetchOptions.headers);
+      headers.set('Authorization', `Bearer ${newToken}`);
+
+      response = await secureFetch(url, {
+        ...fetchOptions,
+        headers,
+      });
+    }
+  }
 
   if (!response.ok) {
     throw sanitizeError(null, response.status);

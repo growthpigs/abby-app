@@ -110,6 +110,186 @@ if (__DEV__) {
 
 **Conclusion:** When all variations fail with same generic error, stop testing parameters and verify the Pool ID / Client ID are correct with the backend owner.
 
+### Security Hardening Verification (2026-01-02)
+
+**After any security-related code changes, run these to verify fixes:**
+
+```bash
+# 1. TypeScript compiles clean (catches type errors from changes)
+npx tsc --noEmit 2>&1 | head -20
+# Expected: No output (clean)
+
+# 2. All tests pass (catches regressions)
+npm test
+# Expected: 344+ tests passing
+
+# 3. Search for security fixes applied
+grep -l "maxLength" src/components/screens/*.tsx | wc -l
+# Expected: 6+ files (EmailScreen, NameScreen, PasswordScreen, etc.)
+
+# 4. Verify console logs are gated
+grep -rn "console\." src/ | grep -v "__DEV__" | grep -v "node_modules" | head -20
+# Expected: No ungated console statements
+
+# 5. Verify onboarding persistence integrated
+grep "loadOnboarding\|saveOnboarding" App.tsx
+# Expected: Multiple matches for load/save calls
+```
+
+**Security Fixes Applied (2026-01-02):**
+| Fix | Files | Purpose |
+|-----|-------|---------|
+| maxLength on TextInputs | 6 screens | Prevent buffer overflow |
+| `__DEV__` guards | 5 files | No logs in production |
+| Onboarding persistence | App.tsx, useOnboardingStore.ts | Crash recovery |
+
+### Glass UI Typography Fix (2026-01-02)
+
+**Issue:** Text looks heavy with ugly shadows on glass/blur backgrounds.
+**Root Cause:** `Typography.tsx` has built-in `textShadow` designed for shader backgrounds.
+
+```bash
+# Find shadow definitions in Typography
+grep -n "textShadow" src/components/ui/Typography.tsx
+# Output: textShadowColor: 'rgba(0, 0, 0, 0.5)', offset: {0,2}, radius: 4
+
+# Override in component styles:
+textShadowColor: 'transparent',
+```
+
+**Font Size Guidelines for Glass:**
+| Context | Shader BG | Glass BG |
+|---------|-----------|----------|
+| Detail name | 28px | 22px |
+| Section title | 22px | 18px |
+| Card title | 18px | 16px |
+| Body text | 16px | 15px |
+
+---
+
+### API Field Mapping Verification (2026-01-02)
+
+**CRITICAL:** Verify API response fields match code expectations BEFORE claiming integration works.
+
+```bash
+# 1. Check Swagger docs for field names (snake_case vs camelCase)
+open https://dev.api.myaimatchmaker.ai/docs#/
+
+# 2. Verify MatchCandidate API schema (with auth token)
+TOKEN="<from_login>"
+curl -s https://dev.api.myaimatchmaker.ai/v1/matches/candidates \
+  -H "Authorization: Bearer $TOKEN" | jq '.candidates[0] | keys'
+# Expected: ["user_id", "display_name", "compatibility_score", "photos", ...]
+
+# 3. Verify code has transformer for snake_case → camelCase
+grep -A10 "transformCandidate" src/components/screens/MatchesScreen.tsx
+# Should show: id: raw.user_id, name: raw.display_name, etc.
+
+# 4. Check RawMatchCandidate interface matches API
+grep -A10 "interface RawMatchCandidate" src/components/screens/MatchesScreen.tsx
+# Fields should be: user_id, display_name, compatibility_score (snake_case)
+
+# 5. Check internal MatchCandidate interface
+grep -A10 "interface MatchCandidate" src/components/screens/MatchesScreen.tsx
+# Fields should be: id, name, compatibilityScore (camelCase)
+```
+
+**Static vs Runtime Verification:**
+| What to Check | Static (❌ Insufficient) | Runtime (✅ Correct) |
+|---------------|--------------------------|----------------------|
+| Interface exists | `grep "interface"` | curl API, compare fields |
+| Fetch present | `grep "secureFetch"` | Verify response parsing |
+| Types compile | `npx tsc --noEmit` | App displays real data |
+
+---
+
+### API Integration Verification (2026-01-02)
+
+**Run these to verify full API integration is working:**
+
+```bash
+# 1. Check API is reachable (should return JSON, not error)
+curl -s https://dev.api.myaimatchmaker.ai/
+# Expected: {"message":"Missing Authentication Token"}
+
+# 2. Check /v1 endpoints respond (401 = good, 500 = backend broken)
+curl -s https://dev.api.myaimatchmaker.ai/v1/me
+# Expected: {"message":"Unauthorized"} (needs auth)
+# BAD: {"message":"Internal server error"} (backend Lambda broken)
+
+# 3. Check voice availability
+curl -s https://dev.api.myaimatchmaker.ai/v1/abby/realtime/available
+# Expected: 401 or 200 with availability status
+
+# 4. Check TTS endpoint exists
+curl -s -X POST https://dev.api.myaimatchmaker.ai/v1/abby/tts
+# Expected: 401 (exists but needs auth)
+
+# 5. Check questions endpoint
+curl -s https://dev.api.myaimatchmaker.ai/v1/questions/categories
+# Expected: 401 (exists but needs auth)
+```
+
+**With Authentication (requires valid token):**
+```bash
+# Get token from app login or use test account
+TOKEN="<access_token_from_login>"
+
+# Test authenticated endpoint
+curl -s https://dev.api.myaimatchmaker.ai/v1/me \
+  -H "Authorization: Bearer $TOKEN"
+# Expected: User profile JSON
+# BAD: 500 = PostConfirmation Lambda failed, user not in DB
+```
+
+**If 500 errors with valid token:**
+The issue is NOT frontend. Backend team must:
+1. Check PostConfirmation Lambda CloudWatch logs
+2. Fix IAM permissions for database writes
+3. Verify user record exists in PostgreSQL
+
+---
+
+### Fragile Code Detection (2026-01-02)
+
+**Run these BEFORE any PR or major changes to catch regression-prone code:**
+
+```bash
+# 1. Find duplicated constants (potential fragility)
+grep -rn "0.35.*0.55.*0.75" src/ --include="*.ts" --include="*.tsx"
+# Expected: Only layout.ts and files that import from it
+
+# 2. Find magic numbers in modulo operations
+grep -rn "% [0-9]" src/ --include="*.ts" --include="*.tsx"
+# Expected: Should use named constants like TOTAL_SHADERS
+
+# 3. Find parseInt without radix (octal parsing bug)
+grep -rn "parseInt([^,)]*)" src/ --include="*.ts" --include="*.tsx" | grep -v ", 10)"
+# Expected: Empty (all parseInt should have radix 10)
+
+# 4. Find cross-store calls inside set() (circular update risk)
+grep -B5 -A5 "getState()" src/store/*.ts | grep -A5 "set("
+# Review for setTimeout wrapper around cross-store calls
+
+# 5. Type check all changes
+npx tsc --noEmit 2>&1 | head -30
+# Expected: No errors
+
+# 6. Run all tests
+npm test
+# Expected: 411+ tests passing
+```
+
+**Centralized Constants (SINGLE SOURCE OF TRUTH):**
+
+| Constant | Location | Used By |
+|----------|----------|---------|
+| SHEET_SNAP_POINTS | `src/constants/layout.ts` | CoachIntroScreen, CoachScreen, useDraggableSheet |
+| SHEET_DEFAULT_SNAP | `src/constants/layout.ts` | Same |
+| TOTAL_SHADERS | `src/constants/backgroundMap.ts` | InterviewScreen |
+
+**If you add new shared values:** Add to `src/constants/` and document here.
+
 ---
 
 ## Project Info
@@ -143,11 +323,11 @@ if (__DEV__) {
 | Service | Purpose | Status |
 |---------|---------|--------|
 | AWS Cognito | Authentication | ✅ Working (frontend) |
-| OpenAI Realtime | Voice conversation | 🟡 Service ready, needs auth |
-| Client API | Backend (dev.api.myaimatchmaker.ai) | ❌ 500 errors (backend Lambda issue) |
+| OpenAI Realtime | Voice conversation | 🟡 Demo mode (API needs testing) |
+| Client API | Backend (dev.api.myaimatchmaker.ai) | 🟡 401 on /v1/* (needs auth), /docs broken |
 | Sentry | Error tracking | To configure |
 
-### Current State (2026-01-01)
+### Current State (2026-01-02)
 
 **Branch:** `client-api-integration` in `/abby-client-api` worktree
 
@@ -163,25 +343,41 @@ if (__DEV__) {
 - ✅ **Login** - returns valid JWT tokens (Access + ID)
 - ✅ Metro bundle compiles (3277+ modules)
 - ✅ iOS build succeeds on simulator
+- ✅ **Security layer** - secureFetch with timeouts, input validation
+- ✅ **344 tests passing** (up from 246 on 2025-12-24)
+- ✅ Console logs gated with `__DEV__`
 
-**Backend Issues (Nathan to Fix):**
-- ❌ PostConfirmation Lambda: `AccessDeniedException`
-- ❌ API endpoints return 500 (user not created in DB)
-- ❌ /docs endpoint returns 500
+**API Status (2026-01-02):**
+| Endpoint | Status |
+|----------|--------|
+| `/docs` | 500 (still broken) |
+| `/` root | 200 (needs auth) |
+| `/v1/*` | 401 (working, needs auth) |
+
+**Voice (AbbyRealtimeService):**
+- ✅ Service implemented with demo fallback
+- 🟡 Runs in demo mode (API availability check fails)
+- Next: Test real session creation when API is responsive
 
 **Test Account:**
 ```
 Email:    rodericandrews+4@gmail.com
 Password: TestPass123!
-Username: rodericandrews4_1767262412580
-UserSub:  f4b854d8-30d1-7062-c933-ea7071a64b64
-Status:   Verified ✅, Login works ✅, API blocked ❌
+Status:   Verified ✅, Login works ✅
 ```
 
-**Next Steps (Blocked on Backend):**
-1. Nathan fixes PostConfirmation Lambda IAM permissions
-2. Once Lambda works, test full API integration
-3. Connect voice endpoints after auth works
+**Recent Work (2026-01-02):**
+- Autonomous improvement session: security, tests, code quality
+- Added `secureFetch.ts` with timeouts and error sanitization
+- Added input validation utilities
+- Test coverage: 246 → 344 tests
+- All console statements gated with `__DEV__`
+- Updated stale documentation (INDEX, specs)
+
+**Next Steps:**
+1. Test voice session creation with authenticated token
+2. Implement WebSocket/WebRTC for real-time audio
+3. Extract audio amplitude for orb animation
 
 ### Performance Targets
 
@@ -224,15 +420,15 @@ npm start
 
 ### Why Dev Build (not Expo Go)?
 
-ElevenLabs voice requires native modules (LiveKit WebRTC). NOT available in Expo Go.
+**Skia shaders require native compilation.** Expo Go doesn't include `@shopify/react-native-skia`.
 
-| Command | Mode | Voice | Metro |
-|---------|------|-------|-------|
-| `npx expo run:ios` | Dev Build | ✅ | Starts automatically |
+| Command | Mode | Skia | Use |
+|---------|------|------|-----|
+| `npx expo run:ios` | Dev Build | ✅ | **Always use this** |
 | `npm start` | Metro only | - | Must run app separately |
-| `expo start` | Expo Go | ❌ | Don't use for ABBY |
+| `expo start` | Expo Go | ❌ | Never for ABBY |
 
-**Error:** "VOICE REQUIRES A DEVELOPMENT BUILD" → You ran `expo start` instead of `expo run:ios`
+**Error:** White screen or Skia crash → You ran `expo start` instead of `expo run:ios`
 
 ---
 
@@ -284,78 +480,35 @@ npx expo start --clear --ios
 
 ---
 
-### 4. ElevenLabs Agent Disconnects Immediately
+### 4. Voice Demo Mode (OpenAI Realtime API)
 
-**Symptom:**
-- Abby connects (shows "Connected" briefly)
-- Then immediately shows "Disconnected"
-- Metro logs show: `Disconnected: {"reason": "agent"}`
+**Current Status:** Voice runs in demo mode - API availability check fails.
 
-**Root Causes (in order of likelihood):**
+**AbbyRealtimeService behavior:**
+1. Checks `/v1/abby/realtime/available`
+2. If unavailable → enters demo mode with simulated responses
+3. If available → creates session via `/v1/abby/realtime/session`
 
-1. **Audio session not started before SDK** - SDK expects audio infrastructure ready
-2. **stopAudioSession() called in onDisconnect** - Interrupts SDK cleanup
-3. **Microphone not capturing** - Track publishes but no audio data
-
-**Diagnostic Logs to Look For:**
-```
-[AbbyAgent] Pre-starting audio session...
-[AbbyAgent] Audio session ready
-[AbbyAgent] Starting session with agent: agent_32...
-[AbbyAgent] Connected: conv_...
-WARN could not find local track subscription  ← This is the smoking gun
-[AbbyAgent] Disconnected: {"reason": "agent"}
+**To test real API:**
+```bash
+# Get token first (login via app or use test account)
+curl -X GET https://dev.api.myaimatchmaker.ai/v1/abby/realtime/available \
+  -H "Authorization: Bearer <token>"
 ```
 
-**Fix Applied (2024-12-23):**
-- Removed `stopAudioSession()` from `onDisconnect` handler
-- Added explicit `startAudioSession()` BEFORE `conversation.startSession()`
-- Audio cleanup now happens in `endConversation()` instead
-
-**If Still Disconnecting:**
-1. Check iOS Simulator has microphone input device (Simulator > I/O > Microphone)
-2. Verify agent ID in `.env.local` matches ElevenLabs dashboard
-3. Check agent is "Published" not "Draft" in dashboard
-4. Try increasing agent "Max Duration" to 600s temporarily
+**Demo mode indicators:**
+- `[AbbyRealtime] 🎭 Starting demo mode` in logs
+- `isDemoMode: true` in useAbbyAgent hook
+- Simulated typing delays (1.5-3 seconds)
 
 ---
 
-### 4b. Voice Not Working on Simulator (Dec 2025 Investigation)
+### 4b. Legacy: ElevenLabs Issues (ONLY /abby worktree)
 
-**Symptom:**
-- Text messages appear in logs: `Message from ai: "Hey there..."`
-- Mode transitions work: `Mode: speaking` / `Mode: listening`
-- But user hears nothing and Abby can't hear user
+> **Note:** These issues only apply to the LEGACY `/abby` worktree (main branch).
+> The active `/abby-client-api` worktree uses OpenAI Realtime API, not ElevenLabs.
 
-**Diagnostic Logs:**
-```
-publishing track {"enabled": true, "trackID": undefined}
-[AudioToolbox] error -66680 finding/initializing
-Message from user: ...              ← No actual speech captured
-Disconnected: {"reason": "agent"}   ← Agent timeout, no input
-```
-
-**Root Cause:** iOS Simulator has no audio hardware. Error `-66680` means "cannot find audio device."
-
-**Key Insight:** The SDK connects successfully (text appears) but audio I/O fails silently because:
-- Simulator has no physical microphone
-- CoreAudio cannot initialize audio units
-- Track publishes with `trackID: undefined` (no actual device)
-
-**Solution:**
-1. **Test on physical iPhone** - voice works immediately on real device
-2. For simulator testing, configure: Simulator > I/O > Microphone > select input
-
-**Code Status (Dec 2025):**
-- Audio session lifecycle: ✅ Fixed (commit `ec95299`)
-- SDK API v0.5.7: ✅ Fixed (commit `62a52cf`)
-- `withTimeout` helper: ✅ Correct location
-- Silent error catching: ⚠️ Acceptable (SDK fallback works)
-
-**Files Verified Clean:**
-- `src/services/AbbyAgent.ts` - Audio lifecycle correct
-- `src/components/screens/CoachIntroScreen.tsx` - Uses hook correctly
-- `src/components/screens/CoachScreen.tsx` - Uses hook correctly
+**Historical reference only.** If you're seeing ElevenLabs errors, you're in the wrong worktree.
 
 ---
 
@@ -394,40 +547,31 @@ These versions are tested and work together:
 | Package | Version | Notes |
 |---------|---------|-------|
 | expo | ~54.0.30 | Must be 54.x |
-| @elevenlabs/react-native | ^0.5.7 | Voice agent |
-| @livekit/react-native | ^2.9.6 | WebRTC transport |
-| @livekit/react-native-webrtc | ^137.0.2 | Must match LiveKit |
-| react-native-worklets | 0.5.1 | NOT 0.7.x! |
-| @config-plugins/react-native-webrtc | ^13.0.0 | Expo 54 support |
-| event-target-shim | 6.0.2 | Direct dependency |
+| @shopify/react-native-skia | ^1.x | Shader rendering |
+| amazon-cognito-identity-js | ^6.x | Cognito auth |
+| react-native-reanimated | ^3.x | Animations |
+| zustand | ^4.x | State management |
 
 ---
 
-## Audio Session Lifecycle
+## Voice Session Lifecycle (OpenAI Realtime)
 
 ```
 ┌─────────────────────────────────────────────────────────┐
-│                    CORRECT FLOW                          │
+│              AbbyRealtimeService Flow                    │
 ├─────────────────────────────────────────────────────────┤
 │  1. startConversation() called                          │
-│  2. startAudioSession() ← BEFORE SDK                    │
-│  3. selectAudioOutput('force_speaker')                  │
-│  4. conversation.startSession({ agentId })              │
-│  5. SDK negotiates WebRTC, publishes tracks             │
-│  6. onConnect fires → agent starts talking              │
+│  2. checkAvailability() → GET /abby/realtime/available  │
+│  3. If unavailable → startDemoMode()                    │
+│  4. If available:                                       │
+│     - Get token from TokenManager                       │
+│     - POST /abby/realtime/session                       │
+│     - TODO: Establish WebSocket/WebRTC                  │
+│  5. onConnect fires → conversation active               │
 │  ...conversation happens...                             │
-│  7. endConversation() called                            │
-│  8. conversation.endSession()                           │
-│  9. stopAudioSession() ← AFTER SDK cleanup              │
-└─────────────────────────────────────────────────────────┘
-
-┌─────────────────────────────────────────────────────────┐
-│                    WRONG (Old Bug)                       │
-├─────────────────────────────────────────────────────────┤
-│  ✗ stopAudioSession() in onDisconnect                   │
-│    → Interrupts SDK's track management                  │
-│    → Causes "could not find local track subscription"   │
-│    → Agent disconnects immediately                      │
+│  6. endConversation() called                            │
+│  7. POST /abby/session/{id}/end                        │
+│  8. Cleanup state                                       │
 └─────────────────────────────────────────────────────────┘
 ```
 
@@ -435,23 +579,17 @@ These versions are tested and work together:
 
 ## Environment Setup
 
-### Required Environment Variables
+### Required Configuration
 
-Create `.env.local`:
-```bash
-# ElevenLabs Agent ID (from dashboard)
-EXPO_PUBLIC_ELEVENLABS_AGENT_ID=agent_xxxx...
+No `.env.local` needed for client-api-integration. All config is in:
+- `src/services/CognitoConfig.ts` - Cognito credentials
+- `src/services/AbbyRealtimeService.ts` - API base URL
 
-# Fal.ai API Key (for Orpheus TTS - optional)
-EXPO_PUBLIC_FAL_KEY=xxxx...
+### API Base URL
+
+```typescript
+const API_BASE_URL = 'https://dev.api.myaimatchmaker.ai/v1';
 ```
-
-### iOS Simulator Microphone
-
-The simulator needs a microphone input device:
-1. Open Simulator
-2. Go to I/O > Microphone
-3. Select an input device (not "None")
 
 ---
 
@@ -558,4 +696,42 @@ const STATE_ORDER = ['COACH_INTRO','INTERVIEW','SEARCHING','MATCH','PAYMENT','RE
 
 ---
 
-*Last Updated: 2025-12-23*
+## Menu Screens Demo Mode (2026-01-02)
+
+Menu screens accessible from hamburger menu now have demo mode fallbacks:
+
+| Screen | Demo Behavior | Data |
+|--------|---------------|------|
+| **ProfileScreen** | Uses local onboarding store | User's own data from onboarding |
+| **PhotosScreen** | Shows 3 Unsplash photos | DEMO_PHOTOS constant |
+| **MatchesScreen** | Shows 3 demo matches | DEMO_MATCHES constant (Sarah, Emma, Jessica) |
+| **SettingsScreen** | Works fully offline | Local AsyncStorage |
+
+**Trigger:** When `TokenManager.getToken()` returns null (no auth token).
+
+**Code Locations:**
+- `PhotosScreen.tsx:73-78` - Demo mode fallback
+- `MatchesScreen.tsx:78-83` - Demo mode fallback
+
+**Testing:** Navigate via hamburger menu when in demo mode (secret nav to skip auth).
+
+---
+
+## Screen Audit (2026-01-02)
+
+**Total Screens:** 29 files
+**Accessible:** 26 screens
+**Orphaned:** 3 screens (PhoneNumberScreen, VerificationCodeScreen, LoadingScreen)
+
+| Category | Screens | Count |
+|----------|---------|-------|
+| Auth Flow | Login, SignIn, Name, Email, Password, EmailVerification | 6 |
+| Onboarding | DOB, Permissions, BasicsGender, BasicsPreferences, Ethnicity, EthnicityPreference, BasicsRelationship, Smoking, BasicsLocation | 9 |
+| Demo Flow | CoachIntro, Interview, Searching, Match, Payment, Reveal, Coach | 7 |
+| **Menu** | **Profile, Photos, Matches, Settings** | **4** |
+
+**ProfileScreen wired up:** Added to hamburger menu via `onProfilePress` callback.
+
+---
+
+*Last Updated: 2026-01-02*

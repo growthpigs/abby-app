@@ -18,13 +18,15 @@ import {
   useClock,
 } from '@shopify/react-native-skia';
 import { useDerivedValue } from 'react-native-reanimated';
-import { useVibeStore } from '../../store/useVibeStore';
-import { COMPLEXITY_VALUES } from '../../constants/colors';
+import { useVibeController } from '../../store/useVibeController';
 import { VIBE_MATRIX_SHADER } from '../../shaders/vibeMatrix';
 
 export const VibeMatrix: React.FC = () => {
   const { width, height } = useWindowDimensions();
-  const { config, complexity } = useVibeStore();
+  // Use selectors to minimize re-renders
+  const colorA = useVibeController((state) => state.colorA);
+  const colorB = useVibeController((state) => state.colorB);
+  const complexityValue = useVibeController((state) => state.complexityValue);
 
   // useClock from Skia - returns milliseconds since first frame
   const clock = useClock();
@@ -34,15 +36,12 @@ export const VibeMatrix: React.FC = () => {
     if (__DEV__) console.log('[VibeMatrix] Compiling shader...');
     const effect = Skia.RuntimeEffect.Make(VIBE_MATRIX_SHADER);
     if (!effect) {
-      console.error('[VibeMatrix] SHADER COMPILE FAILED');
+      if (__DEV__) console.error('[VibeMatrix] SHADER COMPILE FAILED');
       return null;
     }
     if (__DEV__) console.log('[VibeMatrix] Shader compiled successfully');
     return effect;
   }, []);
-
-  // Get complexity value
-  const complexityValue = COMPLEXITY_VALUES[complexity];
 
   // Pink accent color (normalized RGB 0-1)
   // #E11D48 = [225, 29, 72] → [0.88, 0.11, 0.28]
@@ -55,8 +54,8 @@ export const VibeMatrix: React.FC = () => {
       u_time: clock.value, // Raw ms - shader expects this
       u_resolution: [width, height],
       u_complexity: complexityValue,
-      u_colorA: config.colorA,
-      u_colorB: config.colorB,
+      u_colorA: colorA,
+      u_colorB: colorB,
       u_colorC: pinkAccent, // Pink accent
     };
   }, [clock]);

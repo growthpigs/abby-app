@@ -38,6 +38,8 @@ try {
 }
 import { useSettingsStore } from './src/store/useSettingsStore';
 import { AuthService } from './src/services/AuthService';
+import { TokenManager } from './src/services/TokenManager';
+import { secureFetchJSON } from './src/utils/secureFetch';
 import { useDemoStore, useDemoState, DemoState } from './src/store/useDemoStore';
 import { DEMO_MATCH } from './src/data/demo-match';
 import { useOnboardingStore } from './src/store/useOnboardingStore';
@@ -74,6 +76,7 @@ import {
   CoachScreen,
   SignInScreen,
   SettingsScreen,
+  ProfileScreen,
   PhotosScreen,
   MatchesScreen,
 } from './src/components/screens';
@@ -190,7 +193,7 @@ function AppContent() {
   const [authError, setAuthError] = useState<string | null>(null);
 
   // Menu screen state (for hamburger menu navigation)
-  const [menuScreen, setMenuScreen] = useState<'none' | 'photos' | 'settings' | 'matches'>('none');
+  const [menuScreen, setMenuScreen] = useState<'none' | 'profile' | 'photos' | 'settings' | 'matches'>('none');
 
   // Demo state from store
   const demoState = useDemoState();
@@ -470,11 +473,21 @@ function AppContent() {
   const setSmokingPartner = useOnboardingStore((state) => state.setSmokingPartner);
   const setLocation = useOnboardingStore((state) => state.setLocation);
   const markOnboardingComplete = useOnboardingStore((state) => state.markComplete);
+  const loadOnboarding = useOnboardingStore((state) => state.loadFromStorage);
+  const saveOnboarding = useOnboardingStore((state) => state.saveToStorage);
+  const clearOnboarding = useOnboardingStore((state) => state.clearStorage);
+  const onboardingLoaded = useOnboardingStore((state) => state.isLoaded);
+
+  // Load onboarding persistence on mount (for crash recovery)
+  useEffect(() => {
+    loadOnboarding();
+  }, [loadOnboarding]);
 
   // Name screen (comes first in Nathan's API flow)
-  const handleNameComplete = (name: string) => {
+  const handleNameComplete = (name: string, nickname: string) => {
     setFullName(name);
-    setNickname(name); // Use same as full name for now
+    setNickname(nickname); // User-provided nickname or their first name
+    saveOnboarding(); // Persist for crash recovery
     setAuthState('EMAIL');  // Name → Email → Password → Verify
   };
 
@@ -485,6 +498,7 @@ function AppContent() {
   ) => {
     setDateOfBirth(new Date(dob.year, dob.month - 1, dob.day));
     setAgeRange(ageRange.min, ageRange.max);
+    saveOnboarding(); // Persist for crash recovery
     setAuthState('PERMISSIONS');
   };
 
@@ -495,30 +509,35 @@ function AppContent() {
   // Screen 6: Gender
   const handleGenderComplete = (gender: string) => {
     setGender(gender);
+    saveOnboarding(); // Persist for crash recovery
     setAuthState('BASICS_PREFERENCES');
   };
 
   // Screen 7: Preferences
   const handlePreferencesComplete = (preference: string) => {
     setDatingPreference(preference);
+    saveOnboarding(); // Persist for crash recovery
     setAuthState('ETHNICITY');
   };
 
   // Screen 8: Ethnicity
   const handleEthnicityComplete = (ethnicity: string) => {
     setEthnicity(ethnicity);
+    saveOnboarding(); // Persist for crash recovery
     setAuthState('ETHNICITY_PREFERENCE');
   };
 
   // Screen 9: Ethnicity Preference
   const handleEthnicityPreferenceComplete = (ethnicities: string[]) => {
     setEthnicityPreferences(ethnicities);
+    saveOnboarding(); // Persist for crash recovery
     setAuthState('BASICS_RELATIONSHIP');
   };
 
   // Screen 10: Relationship
   const handleRelationshipComplete = (relationshipType: string) => {
     setRelationshipType(relationshipType);
+    saveOnboarding(); // Persist for crash recovery
     setAuthState('SMOKING');
   };
 
@@ -526,12 +545,41 @@ function AppContent() {
   const handleSmokingComplete = (smokingMe: string, smokingPartner: string) => {
     setSmokingMe(smokingMe);
     setSmokingPartner(smokingPartner);
+    saveOnboarding(); // Persist for crash recovery
     setAuthState('BASICS_LOCATION');
   };
 
-  const handleLocationComplete = (location: { type: 'gps' | 'zip'; value: string | { lat: number; lng: number } }) => {
+  const handleLocationComplete = async (location: { type: 'gps' | 'zip'; value: string | { lat: number; lng: number } }) => {
     setLocation(location);
     markOnboardingComplete();
+    clearOnboarding(); // Clean up persisted data after completion
+
+    // Submit profile to backend (don't block auth on failure)
+    try {
+      const profilePayload = useOnboardingStore.getState().getProfilePayload();
+      const token = await TokenManager.getToken();
+
+      if (token && Object.keys(profilePayload).length > 0) {
+        const API_BASE = 'https://dev.api.myaimatchmaker.ai';
+        await secureFetchJSON(`${API_BASE}/v1/profile/public`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`,
+          },
+          body: JSON.stringify(profilePayload),
+        });
+        if (__DEV__) {
+          console.log('[App] Profile submitted successfully');
+        }
+      }
+    } catch (error) {
+      // Log but don't block - profile can be updated later
+      if (__DEV__) {
+        console.warn('[App] Profile submission failed (non-blocking):', error);
+      }
+    }
+
     // All onboarding complete - go to main app
     setAuthState('AUTHENTICATED');
     reset(); // Reset demo state
@@ -744,7 +792,7 @@ function AppContent() {
   };
 
   // Loading state
-  if (!fontsLoaded || !settingsLoaded || authState === 'LOADING') {
+  if (!fontsLoaded || !settingsLoaded || !onboardingLoaded || authState === 'LOADING') {
     return (
       <View style={styles.loadingContainer}>
         <ActivityIndicator size="large" color="#fff" />
@@ -776,6 +824,9 @@ function AppContent() {
       {/* Hamburger Menu (only when authenticated) */}
       {authState === 'AUTHENTICATED' && (
         <HamburgerMenu
+          onProfilePress={() => {
+            setMenuScreen('profile');
+          }}
           onPhotosPress={() => {
             setMenuScreen('photos');
           }}
@@ -800,6 +851,13 @@ function AppContent() {
         />
       )}
 
+      {/* Profile Screen Overlay (/v1/me) */}
+      {menuScreen === 'profile' && (
+        <ProfileScreen
+          onClose={() => setMenuScreen('none')}
+        />
+      )}
+
       {/* Matches Screen Overlay (/v1/matches/candidates) */}
       {menuScreen === 'matches' && (
         <MatchesScreen
@@ -810,16 +868,9 @@ function AppContent() {
       {/* Photos Screen Overlay */}
       {menuScreen === 'photos' && (
         <PhotosScreen
-          photos={[]} // TODO: Load from user profile
           onClose={() => setMenuScreen('none')}
           onAddPhoto={() => {
             if (__DEV__) console.log('[App] Add photo pressed');
-          }}
-          onDeletePhoto={(id) => {
-            if (__DEV__) console.log('[App] Delete photo:', id);
-          }}
-          onSetPrimary={(id) => {
-            if (__DEV__) console.log('[App] Set primary photo:', id);
           }}
         />
       )}

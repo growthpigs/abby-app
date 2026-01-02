@@ -111,6 +111,7 @@ export const PasswordScreen: React.FC<PasswordScreenProps> = ({
             onSubmitEditing={mode === 'signin' ? handleNext : undefined}
             placeholderTextColor="rgba(255, 255, 255, 0.3)"
             editable={!isLoading}
+            maxLength={128}
           />
           <Pressable
             onPress={() => setShowPassword(!showPassword)}
@@ -138,6 +139,7 @@ export const PasswordScreen: React.FC<PasswordScreenProps> = ({
               onSubmitEditing={handleNext}
               placeholderTextColor="rgba(255, 255, 255, 0.3)"
               editable={!isLoading}
+              maxLength={128}
             />
           </View>
         )}

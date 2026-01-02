@@ -99,6 +99,7 @@ export const PhoneNumberScreen: React.FC<PhoneNumberScreenProps> = ({
             returnKeyType="done"
             onSubmitEditing={handleNext}
             placeholderTextColor="rgba(255, 255, 255, 0.3)"
+            maxLength={15}
           />
         </View>
 

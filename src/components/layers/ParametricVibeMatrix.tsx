@@ -21,8 +21,7 @@ import {
   useClock,
 } from '@shopify/react-native-skia';
 import { useDerivedValue } from 'react-native-reanimated';
-import { useVibeStore } from '../../store/useVibeStore';
-import { COMPLEXITY_VALUES } from '../../constants/colors';
+import { useVibeController } from '../../store/useVibeController';
 import { getShaderById, getShaderByName, ShaderId } from '../../shaders/registry';
 
 export interface ParametricVibeMatrixProps {
@@ -37,7 +36,7 @@ export const ParametricVibeMatrix: React.FC<ParametricVibeMatrixProps> = ({
   shaderName,
 }) => {
   const { width, height } = useWindowDimensions();
-  const { complexity } = useVibeStore();
+  const complexityValue = useVibeController((state) => state.complexityValue);
   const clock = useClock();
 
   // Get shader from registry
@@ -56,14 +55,12 @@ export const ParametricVibeMatrix: React.FC<ParametricVibeMatrixProps> = ({
     if (__DEV__) console.log(`[ParametricVibeMatrix] Compiling shader: ${shaderEntry.name}`);
     const effect = Skia.RuntimeEffect.Make(shaderEntry.source);
     if (!effect) {
-      console.error(`[ParametricVibeMatrix] SHADER COMPILE FAILED: ${shaderEntry.name}`);
+      if (__DEV__) console.error(`[ParametricVibeMatrix] SHADER COMPILE FAILED: ${shaderEntry.name}`);
       return null;
     }
     if (__DEV__) console.log(`[ParametricVibeMatrix] Shader compiled: ${shaderEntry.name}`);
     return effect;
   }, [shaderEntry]);
-
-  const complexityValue = COMPLEXITY_VALUES[complexity];
 
   // Animated uniforms
   const uniforms = useDerivedValue(() => {
