@@ -211,11 +211,12 @@ describe('Demo Store', () => {
     expect(source).toContain('messages: []');
   });
 
-  test('Maps COACH_INTRO to COACH_INTRO app state', () => {
+  test('STATE_ORDER defines COACH_INTRO as starting state', () => {
     const source = readFile('src/store/useDemoStore.ts');
 
-    expect(source).toContain('const DEMO_TO_APP_STATE');
-    expect(source).toContain("COACH_INTRO: 'COACH_INTRO'");
+    expect(source).toContain('STATE_ORDER');
+    expect(source).toContain("'COACH_INTRO'");
+    expect(source).toContain("currentState: 'COACH_INTRO'");
   });
 });
 

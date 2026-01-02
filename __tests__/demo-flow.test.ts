@@ -80,19 +80,19 @@ describe('Demo Store State Machine', () => {
 });
 
 // ==============================================================================
-// TEST 2: App.demo.tsx Screen Routing
+// TEST 2: App.tsx Screen Routing
 // ==============================================================================
 
-describe('App.demo Screen Routing', () => {
-  test('App.demo.tsx exists', () => {
-    expect(fileExists('App.demo.tsx')).toBe(true);
+describe('App Screen Routing', () => {
+  test('App.tsx exists', () => {
+    expect(fileExists('App.tsx')).toBe(true);
   });
 
-  test('renderScreen() handles all states', () => {
-    const source = readFile('App.demo.tsx');
+  test('renderDemoScreen() handles all states', () => {
+    const source = readFile('App.tsx');
 
-    expect(source).toContain('const renderScreen = ()');
-    expect(source).toContain('switch (currentState)');
+    expect(source).toContain('const renderDemoScreen = ()');
+    expect(source).toContain('switch (demoState)');
 
     // Check all cases
     const states = [
@@ -111,7 +111,7 @@ describe('App.demo Screen Routing', () => {
   });
 
   test('Each state renders correct screen component', () => {
-    const source = readFile('App.demo.tsx');
+    const source = readFile('App.tsx');
 
     expect(source).toContain('<CoachIntroScreen');
     expect(source).toContain('<InterviewScreen');
@@ -123,7 +123,7 @@ describe('App.demo Screen Routing', () => {
   });
 
   test('Default case renders CoachIntroScreen', () => {
-    const source = readFile('App.demo.tsx');
+    const source = readFile('App.tsx');
 
     expect(source).toContain('default:');
     expect(source).toMatch(/default:[\s\S]*?<CoachIntroScreen/);
@@ -135,11 +135,11 @@ describe('App.demo Screen Routing', () => {
 // ==============================================================================
 
 describe('Background Shader Progression', () => {
-  test('App.demo tracks backgroundIndex state', () => {
-    const source = readFile('App.demo.tsx');
+  test('App.tsx has handleBackgroundChange callback', () => {
+    const source = readFile('App.tsx');
 
-    expect(source).toContain('useState(1)');
-    expect(source).toContain('setBackgroundIndex');
+    expect(source).toContain('handleBackgroundChange');
+    expect(source).toContain('useCallback');
   });
 
   test('InterviewScreen has background cycling function', () => {
@@ -166,12 +166,10 @@ describe('Background Shader Progression', () => {
     expect(introSource).toContain('onBackgroundChange(5)');
   });
 
-  test('App.demo sets background based on state', () => {
-    const source = readFile('App.demo.tsx');
+  test('App.tsx passes onBackgroundChange to screens', () => {
+    const source = readFile('App.tsx');
 
-    expect(source).toContain('useEffect');
-    expect(source).toContain('currentState');
-    expect(source).toContain('setBackgroundIndex');
+    expect(source).toContain('onBackgroundChange={handleBackgroundChange}');
   });
 });
 
@@ -338,8 +336,8 @@ describe('State Transitions', () => {
 // ==============================================================================
 
 describe('Font Loading', () => {
-  test('App.demo loads required fonts', () => {
-    const source = readFile('App.demo.tsx');
+  test('App.tsx loads required fonts', () => {
+    const source = readFile('App.tsx');
 
     expect(source).toContain('@expo-google-fonts/merriweather');
     expect(source).toContain('@expo-google-fonts/jetbrains-mono');
@@ -347,14 +345,14 @@ describe('Font Loading', () => {
   });
 
   test('Font loading shows ActivityIndicator', () => {
-    const source = readFile('App.demo.tsx');
+    const source = readFile('App.tsx');
 
     expect(source).toContain('fontsLoaded');
     expect(source).toContain('ActivityIndicator');
   });
 
   test('Both Merriweather and JetBrains Mono are loaded', () => {
-    const source = readFile('App.demo.tsx');
+    const source = readFile('App.tsx');
 
     expect(source).toContain('Merriweather_400Regular');
     expect(source).toContain('JetBrainsMono_400Regular');
@@ -378,7 +376,7 @@ describe('Settings Store', () => {
   });
 
   test('Settings are loaded on app start', () => {
-    const source = readFile('App.demo.tsx');
+    const source = readFile('App.tsx');
 
     expect(source).toContain('useSettingsStore');
     expect(source).toContain('loadSettings');
@@ -434,16 +432,19 @@ describe('Demo State Helper', () => {
     expect(source).toContain('export const useDemoState');
   });
 
-  test('DEMO_TO_APP_STATE mapping exists', () => {
+  test('STATE_ORDER defines demo flow sequence', () => {
     const source = readFile('src/store/useDemoStore.ts');
 
-    expect(source).toContain('DEMO_TO_APP_STATE');
+    // STATE_ORDER is the single source of truth for demo flow
+    expect(source).toContain('STATE_ORDER');
+    expect(source).toContain('COACH_INTRO');
+    expect(source).toContain('INTERVIEW');
   });
 
-  test('App.demo uses useDemoState', () => {
-    const source = readFile('App.demo.tsx');
+  test('App.tsx uses useDemoState', () => {
+    const source = readFile('App.tsx');
 
     expect(source).toContain('useDemoState');
-    expect(source).toContain('currentState');
+    expect(source).toContain('demoState');
   });
 });
