@@ -250,6 +250,48 @@ The issue is NOT frontend. Backend team must:
 
 ---
 
+### Fragile Code Detection (2026-01-02)
+
+**Run these BEFORE any PR or major changes to catch regression-prone code:**
+
+```bash
+# 1. Find duplicated constants (potential fragility)
+grep -rn "0.35.*0.55.*0.75" src/ --include="*.ts" --include="*.tsx"
+# Expected: Only layout.ts and files that import from it
+
+# 2. Find magic numbers in modulo operations
+grep -rn "% [0-9]" src/ --include="*.ts" --include="*.tsx"
+# Expected: Should use named constants like TOTAL_SHADERS
+
+# 3. Find parseInt without radix (octal parsing bug)
+grep -rn "parseInt([^,)]*)" src/ --include="*.ts" --include="*.tsx" | grep -v ", 10)"
+# Expected: Empty (all parseInt should have radix 10)
+
+# 4. Find cross-store calls inside set() (circular update risk)
+grep -B5 -A5 "getState()" src/store/*.ts | grep -A5 "set("
+# Review for setTimeout wrapper around cross-store calls
+
+# 5. Type check all changes
+npx tsc --noEmit 2>&1 | head -30
+# Expected: No errors
+
+# 6. Run all tests
+npm test
+# Expected: 411+ tests passing
+```
+
+**Centralized Constants (SINGLE SOURCE OF TRUTH):**
+
+| Constant | Location | Used By |
+|----------|----------|---------|
+| SHEET_SNAP_POINTS | `src/constants/layout.ts` | CoachIntroScreen, CoachScreen, useDraggableSheet |
+| SHEET_DEFAULT_SNAP | `src/constants/layout.ts` | Same |
+| TOTAL_SHADERS | `src/constants/backgroundMap.ts` | InterviewScreen |
+
+**If you add new shared values:** Add to `src/constants/` and document here.
+
+---
+
 ## Project Info
 
 ### Google Drive Folders

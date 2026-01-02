@@ -21,6 +21,7 @@
 
 import { useRef, useCallback } from 'react';
 import { Animated, PanResponder, Dimensions, GestureResponderHandlers } from 'react-native';
+import { SHEET_SNAP_POINTS, SHEET_DEFAULT_SNAP } from '../constants/layout';
 
 const { height: SCREEN_HEIGHT } = Dimensions.get('window');
 
@@ -71,8 +72,9 @@ interface DraggableSheetReturn {
   animateOut: () => void;
 }
 
-const DEFAULT_SNAP_POINTS = [0.35, 0.55, 0.75, 0.9];
-const DEFAULT_SNAP = 0.55;
+// Use centralized constants - SINGLE SOURCE OF TRUTH
+const DEFAULT_SNAP_POINTS = [...SHEET_SNAP_POINTS];
+const DEFAULT_SNAP = SHEET_DEFAULT_SNAP;
 const DEFAULT_SPRING_CONFIG = { damping: 50, stiffness: 400 };
 
 export function useDraggableSheet(config?: DraggableSheetConfig): DraggableSheetReturn {

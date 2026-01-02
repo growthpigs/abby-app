@@ -19,15 +19,20 @@ import { useVibeController } from '../../store/useVibeController';
 import { ALL_DATA_POINTS } from '../../data/questions-schema';
 import { isValidVibeTheme } from '../../types/vibe';
 import { abbyTTS } from '../../services/AbbyTTSService';
+import { TOTAL_SHADERS } from '../../constants/backgroundMap';
 
 // Use the full 150 questions for interview mode
 const INTERVIEW_QUESTIONS = ALL_DATA_POINTS;
 
-// Background shaders cycle 1-10 continuously through all 150 questions
-// Each question gets a background, cycling smoothly through all visuals
+/**
+ * Get background shader index for a question
+ * Cycles through all available shaders (1 to TOTAL_SHADERS)
+ * Uses TOTAL_SHADERS from constants to avoid hardcoded magic numbers
+ */
 const getBackgroundIndexForQuestion = (questionIndex: number): number => {
-  // Cycle through backgrounds 1-10 (10 total shaders)
-  return (questionIndex % 10) + 1;
+  // Cycle through all available backgrounds (1 to TOTAL_SHADERS)
+  // Ensures we never request an invalid shader index
+  return (questionIndex % TOTAL_SHADERS) + 1;
 };
 
 export interface InterviewScreenProps {

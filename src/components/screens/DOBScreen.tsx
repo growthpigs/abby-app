@@ -55,8 +55,8 @@ export const DOBScreen: React.FC<DOBScreenProps> = ({
     if (isValid) {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
       onNext?.(
-        { month: parseInt(month), day: parseInt(day), year: parseInt(year) },
-        { min: parseInt(ageMin), max: parseInt(ageMax) }
+        { month: parseInt(month, 10), day: parseInt(day, 10), year: parseInt(year, 10) },
+        { min: parseInt(ageMin, 10), max: parseInt(ageMax, 10) }
       );
     }
   };
@@ -106,12 +106,12 @@ export const DOBScreen: React.FC<DOBScreenProps> = ({
     setAgeMax(numeric);
   };
 
-  // Validation
-  const monthNum = parseInt(month);
-  const dayNum = parseInt(day);
-  const yearNum = parseInt(year);
-  const ageMinNum = parseInt(ageMin);
-  const ageMaxNum = parseInt(ageMax);
+  // Validation - always use radix 10 to avoid octal parsing issues (e.g., '08' → 8, not 0)
+  const monthNum = parseInt(month, 10);
+  const dayNum = parseInt(day, 10);
+  const yearNum = parseInt(year, 10);
+  const ageMinNum = parseInt(ageMin, 10);
+  const ageMaxNum = parseInt(ageMax, 10);
 
   // Check if date is valid for the given month/year (handles Feb 30, etc.)
   const isValidCalendarDate = (m: number, d: number, y: number): boolean => {

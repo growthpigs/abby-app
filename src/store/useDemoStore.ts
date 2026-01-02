@@ -103,8 +103,9 @@ const DEMO_TO_APP_STATE: Record<DemoState, AppState> = {
   COACH: 'COACH',
 };
 
-// State flow order
-const STATE_ORDER: DemoState[] = [
+// State flow order - SINGLE SOURCE OF TRUTH
+// When adding/removing states, update this array AND the DemoState type above
+const STATE_ORDER: readonly DemoState[] = [
   'COACH_INTRO',
   'INTERVIEW',
   'SEARCHING',
@@ -112,7 +113,38 @@ const STATE_ORDER: DemoState[] = [
   'PAYMENT',
   'REVEAL',
   'COACH',
-];
+] as const;
+
+// Validate STATE_ORDER matches DemoState type at runtime (dev only)
+if (__DEV__) {
+  const expectedStates: DemoState[] = ['COACH_INTRO', 'INTERVIEW', 'SEARCHING', 'MATCH', 'PAYMENT', 'REVEAL', 'COACH'];
+  const missingStates = expectedStates.filter(s => !STATE_ORDER.includes(s));
+  if (missingStates.length > 0) {
+    console.error('[DemoStore] STATE_ORDER missing states:', missingStates);
+  }
+}
+
+/**
+ * Get next state safely (returns null if at end or state not found)
+ */
+const getNextState = (currentState: DemoState): DemoState | null => {
+  const currentIndex = STATE_ORDER.indexOf(currentState);
+  if (currentIndex === -1) {
+    if (__DEV__) console.warn('[DemoStore] Unknown state:', currentState);
+    return null;
+  }
+  if (currentIndex >= STATE_ORDER.length - 1) {
+    return null; // Already at end
+  }
+  return STATE_ORDER[currentIndex + 1];
+};
+
+/**
+ * Check if state exists in valid state order
+ */
+const isValidState = (state: DemoState): boolean => {
+  return STATE_ORDER.includes(state);
+};
 
 export const useDemoStore = create<DemoStore>((set, get) => ({
   // Initial state
@@ -130,15 +162,20 @@ export const useDemoStore = create<DemoStore>((set, get) => ({
   // Navigation
   advance: () => {
     const { currentState, syncVibeState } = get();
-    const currentIndex = STATE_ORDER.indexOf(currentState);
-    if (currentIndex < STATE_ORDER.length - 1) {
-      const nextState = STATE_ORDER[currentIndex + 1];
+    const nextState = getNextState(currentState);
+    if (nextState) {
       set({ currentState: nextState });
       syncVibeState(nextState);
+    } else if (__DEV__) {
+      console.log('[DemoStore] Already at final state:', currentState);
     }
   },
 
   goToState: (state: DemoState) => {
+    if (!isValidState(state)) {
+      if (__DEV__) console.error('[DemoStore] Invalid state:', state);
+      return;
+    }
     const { syncVibeState } = get();
     set({ currentState: state });
     syncVibeState(state);
@@ -177,8 +214,11 @@ export const useDemoStore = create<DemoStore>((set, get) => ({
     });
 
     // Update vibe controller with coverage
-    const vibeController = useVibeController.getState();
-    vibeController.setCoveragePercent(newCoverage);
+    // Use setTimeout(0) to break synchronous execution chain and prevent potential circular updates
+    setTimeout(() => {
+      const vibeController = useVibeController.getState();
+      vibeController.setCoveragePercent(newCoverage);
+    }, 0);
   },
 
   nextQuestion: () => {
@@ -217,10 +257,13 @@ export const useDemoStore = create<DemoStore>((set, get) => ({
   },
 
   // Internal: Sync vibe state with demo state
+  // Use setTimeout(0) to break synchronous execution chain and prevent potential circular updates
   syncVibeState: (demoState: DemoState) => {
-    const vibeController = useVibeController.getState();
-    const appState = DEMO_TO_APP_STATE[demoState];
-    vibeController.setFromAppState(appState);
+    setTimeout(() => {
+      const vibeController = useVibeController.getState();
+      const appState = DEMO_TO_APP_STATE[demoState];
+      vibeController.setFromAppState(appState);
+    }, 0);
   },
 
   // Persistence: Save interview state to AsyncStorage

@@ -28,6 +28,7 @@ import { ChatInput } from '../ui/ChatInput';
 import { useDraggableSheet } from '../../hooks/useDraggableSheet';
 import { analyzeTextForVibe } from '../../services/EmotionVibeService';
 import { VibeColorTheme, VibeComplexity } from '../../types/vibe';
+import { SHEET_SNAP_POINTS, SHEET_DEFAULT_SNAP } from '../../constants/layout';
 
 const { height: SCREEN_HEIGHT } = Dimensions.get('window');
 
@@ -54,9 +55,10 @@ export const CoachScreen: React.FC<CoachScreenProps> = ({
   const [agentStatus, setAgentStatus] = useState<string>('Connecting...');
 
   // Use draggable sheet hook (replaces manual pan responder + snap logic)
+  // Uses centralized constants from layout.ts - SINGLE SOURCE OF TRUTH
   const { translateY, panHandlers, animateIn } = useDraggableSheet({
-    snapPoints: [0.35, 0.55, 0.75, 0.9],
-    defaultSnap: 0.55,
+    snapPoints: [...SHEET_SNAP_POINTS],
+    defaultSnap: SHEET_DEFAULT_SNAP,
   });
 
   // Safe scroll helper - clears previous timeout to prevent memory leaks

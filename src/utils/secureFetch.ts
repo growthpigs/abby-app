@@ -41,40 +41,30 @@ export interface SecureFetchOptions extends RequestInit {
   skipTokenRefresh?: boolean;
 }
 
-// Track if a token refresh is in progress to avoid race conditions
-let tokenRefreshPromise: Promise<string | null> | null = null;
-
 /**
  * Attempt to refresh the auth token
  * Returns new access token on success, null on failure
+ *
+ * IMPORTANT: AuthService.refreshToken() has its own mutex to prevent race conditions.
+ * We rely on that mutex (SINGLE SOURCE OF TRUTH) rather than maintaining a duplicate here.
+ * This ensures all token refresh logic is consolidated in AuthService.
  */
 async function refreshAuthToken(): Promise<string | null> {
-  // If a refresh is already in progress, wait for it
-  if (tokenRefreshPromise) {
-    return tokenRefreshPromise;
-  }
-
-  tokenRefreshPromise = (async () => {
-    try {
-      const storedRefreshToken = await TokenManager.getRefreshToken();
-      if (!storedRefreshToken) {
-        if (__DEV__) console.log('[secureFetch] No refresh token available');
-        return null;
-      }
-
-      // Use AuthService to refresh the token (it handles the mutex internally)
-      const response = await AuthService.refreshToken();
-      if (__DEV__) console.log('[secureFetch] Token refreshed successfully');
-      return response.accessToken;
-    } catch (error) {
-      if (__DEV__) console.log('[secureFetch] Token refresh failed:', error);
+  try {
+    const storedRefreshToken = await TokenManager.getRefreshToken();
+    if (!storedRefreshToken) {
+      if (__DEV__) console.log('[secureFetch] No refresh token available');
       return null;
-    } finally {
-      tokenRefreshPromise = null;
     }
-  })();
 
-  return tokenRefreshPromise;
+    // AuthService.refreshToken() has its own mutex - concurrent calls return the same promise
+    const response = await AuthService.refreshToken();
+    if (__DEV__) console.log('[secureFetch] Token refreshed successfully');
+    return response.accessToken;
+  } catch (error) {
+    if (__DEV__) console.log('[secureFetch] Token refresh failed:', error);
+    return null;
+  }
 }
 
 /**
