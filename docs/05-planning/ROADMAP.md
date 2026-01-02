@@ -11,8 +11,8 @@
 | Phase | Start | Status | Description |
 |-------|-------|--------|-------------|
 | Phase 0: Foundation | Dec 20, 2024 | ✅ COMPLETE | VibeMatrix, AbbyOrb, Glass UI, Auth |
-| Phase 1: Legal Blockers | Jan 2, 2026 | 🚧 IN PROGRESS | 18+ checkbox, GDPR delete |
-| Phase 2: Profile Submission | Jan 2, 2026 | ⏳ PENDING | Fix getProfilePayload() call |
+| Phase 1: Legal Blockers | Jan 2, 2026 | ✅ COMPLETE | 18+ checkbox, GDPR delete |
+| Phase 2: Profile Submission | Jan 2, 2026 | ✅ COMPLETE | Fix getProfilePayload() call |
 | Phase 3: State Persistence | - | ⏳ PENDING | Interview + Onboarding recovery |
 | Phase 4: UX Fixes | - | ⏳ PENDING | ProfileScreen, RevealScreen, ErrorModal |
 | Phase 5: Social Auth | - | ⏳ PENDING | Apple/Google/Facebook buttons |
@@ -44,33 +44,33 @@
 
 ---
 
-## Phase 1: Legal Blockers (IN PROGRESS)
+## Phase 1: Legal Blockers (COMPLETE)
 
 ### Tasks
 | Task | File | Status | Owner |
 |------|------|--------|-------|
-| 1.1 Add 18+ checkbox | DOBScreen.tsx | ⏳ | Chi |
-| 1.2 Add "Delete My Data" | SettingsScreen.tsx | ⏳ | Chi |
+| 1.1 Add 18+ checkbox | DOBScreen.tsx | ✅ DONE | Chi |
+| 1.2 Add "Delete My Data" | SettingsScreen.tsx | ✅ DONE | Chi |
 | 1.3 Wire phone screens (V2) | index.ts, App.tsx | ⏳ V2 | - |
 
 ### Acceptance Criteria
-- [ ] 18+ checkbox blocks navigation if unchecked
-- [ ] Delete data shows confirmation alert
-- [ ] Delete calls API and logs out user
+- [x] 18+ checkbox blocks navigation if unchecked
+- [x] Delete data shows confirmation alert
+- [x] Delete calls API and logs out user
 
 ---
 
-## Phase 2: Profile Submission Fix
+## Phase 2: Profile Submission Fix (COMPLETE)
 
 ### Tasks
 | Task | File | Status | Owner |
 |------|------|--------|-------|
-| 2.1 Call getProfilePayload() | App.tsx | ⏳ | Chi |
+| 2.1 Call getProfilePayload() | App.tsx | ✅ DONE | Chi |
 
 ### Acceptance Criteria
-- [ ] Profile data submitted to `/v1/profile/public` after onboarding
-- [ ] API errors don't block authentication
-- [ ] Success logged for debugging
+- [x] Profile data submitted to `/v1/profile/public` after onboarding
+- [x] API errors don't block authentication
+- [x] Success logged for debugging
 
 ---
 
