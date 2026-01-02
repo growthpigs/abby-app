@@ -28,7 +28,8 @@ interface MatchCandidate {
   name: string;
   age?: number;
   bio?: string;
-  matchScore?: number;
+  compatibilityScore?: number;  // API returns compatibilityScore
+  matchScore?: number;          // Legacy fallback
   photoUrl?: string;
 }
 
@@ -151,9 +152,9 @@ export const MatchesScreen: React.FC<MatchesScreenProps> = ({
                         {match.bio}
                       </Body>
                     )}
-                    {match.matchScore !== undefined && (
+                    {(match.compatibilityScore ?? match.matchScore) !== undefined && (
                       <Caption style={styles.matchScore}>
-                        {Math.round(match.matchScore * 100)}% match
+                        {Math.round((match.compatibilityScore ?? match.matchScore ?? 0) * 100)}% match
                       </Caption>
                     )}
                   </View>
