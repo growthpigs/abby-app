@@ -5,12 +5,21 @@
  * ONBOARDING → INTERVIEW → SEARCHING → MATCH → PAYMENT → REVEAL
  *
  * Integrates with VibeController to trigger visual state changes.
+ * Persists interview progress to AsyncStorage for crash recovery (7-day timeout).
  */
 
 import { create } from 'zustand';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { VibeColorTheme, AppState } from '../types/vibe';
 import { useVibeController } from './useVibeController';
 import { ConversationMessage } from '../components/ui/ConversationOverlay';
+
+// Storage key and version
+const INTERVIEW_KEY = '@abby/interview';
+const INTERVIEW_VERSION = 1;
+
+// Session timeout: 7 days
+const INTERVIEW_TIMEOUT_MS = 7 * 24 * 60 * 60 * 1000;
 
 // Demo flow states
 export type DemoState =
@@ -48,6 +57,8 @@ interface DemoStoreState {
   matchData: MatchProfile | null;
   userName: string;
   messages: ConversationMessage[];
+  savedAt: number | null;
+  isLoaded: boolean;
 }
 
 // Demo store actions
@@ -72,6 +83,11 @@ interface DemoStoreActions {
 
   // Internal
   syncVibeState: (demoState: DemoState) => void;
+
+  // Persistence
+  saveToStorage: () => Promise<void>;
+  loadFromStorage: () => Promise<boolean>; // Returns true if session recovered
+  clearStorage: () => Promise<void>;
 }
 
 type DemoStore = DemoStoreState & DemoStoreActions;
@@ -108,6 +124,8 @@ export const useDemoStore = create<DemoStore>((set, get) => ({
   matchData: null,
   userName: '',
   messages: [],
+  savedAt: null,
+  isLoaded: false,
 
   // Navigation
   advance: () => {
@@ -127,7 +145,7 @@ export const useDemoStore = create<DemoStore>((set, get) => ({
   },
 
   reset: () => {
-    const { syncVibeState } = get();
+    const { syncVibeState, clearStorage } = get();
     set({
       currentState: 'COACH_INTRO',
       currentQuestionIndex: 0,
@@ -136,8 +154,11 @@ export const useDemoStore = create<DemoStore>((set, get) => ({
       matchData: null,
       userName: '',
       messages: [],
+      savedAt: null,
     });
     syncVibeState('COACH_INTRO');
+    // Clear storage when explicitly reset
+    clearStorage();
   },
 
   // Interview
@@ -200,6 +221,122 @@ export const useDemoStore = create<DemoStore>((set, get) => ({
     const vibeController = useVibeController.getState();
     const appState = DEMO_TO_APP_STATE[demoState];
     vibeController.setFromAppState(appState);
+  },
+
+  // Persistence: Save interview state to AsyncStorage
+  saveToStorage: async () => {
+    try {
+      const state = get();
+      // Only save if in interview state
+      if (state.currentState !== 'INTERVIEW' && state.currentState !== 'COACH_INTRO') {
+        return;
+      }
+
+      const toSave = {
+        version: INTERVIEW_VERSION,
+        savedAt: Date.now(),
+        currentState: state.currentState,
+        currentQuestionIndex: state.currentQuestionIndex,
+        totalQuestions: state.totalQuestions,
+        answers: state.answers,
+        coveragePercent: state.coveragePercent,
+        userName: state.userName,
+        messages: state.messages,
+      };
+
+      await AsyncStorage.setItem(INTERVIEW_KEY, JSON.stringify(toSave));
+      set({ savedAt: toSave.savedAt });
+      if (__DEV__) {
+        console.log('[DemoStore] Saved interview, question:', state.currentQuestionIndex);
+      }
+    } catch (error) {
+      if (__DEV__) {
+        console.error('[DemoStore] Failed to save:', error);
+      }
+    }
+  },
+
+  // Persistence: Load interview state (returns true if session recovered)
+  loadFromStorage: async () => {
+    try {
+      const stored = await AsyncStorage.getItem(INTERVIEW_KEY);
+      if (!stored) {
+        set({ isLoaded: true });
+        return false;
+      }
+
+      const data = JSON.parse(stored);
+
+      // Check version
+      if (data.version !== INTERVIEW_VERSION) {
+        if (__DEV__) {
+          console.warn('[DemoStore] Version mismatch, clearing');
+        }
+        await AsyncStorage.removeItem(INTERVIEW_KEY);
+        set({ isLoaded: true });
+        return false;
+      }
+
+      // Check timeout (7 days)
+      if (data.savedAt && Date.now() - data.savedAt > INTERVIEW_TIMEOUT_MS) {
+        if (__DEV__) {
+          console.log('[DemoStore] Interview session expired, clearing');
+        }
+        await AsyncStorage.removeItem(INTERVIEW_KEY);
+        set({ isLoaded: true });
+        return false;
+      }
+
+      // Validate state is recoverable (still in interview)
+      if (data.currentState !== 'INTERVIEW' && data.currentState !== 'COACH_INTRO') {
+        if (__DEV__) {
+          console.log('[DemoStore] Session past interview, not recovering');
+        }
+        await AsyncStorage.removeItem(INTERVIEW_KEY);
+        set({ isLoaded: true });
+        return false;
+      }
+
+      // Restore state
+      const { syncVibeState } = get();
+      set({
+        isLoaded: true,
+        savedAt: data.savedAt,
+        currentState: data.currentState,
+        currentQuestionIndex: data.currentQuestionIndex || 0,
+        totalQuestions: data.totalQuestions || 10,
+        answers: data.answers || [],
+        coveragePercent: data.coveragePercent || 0,
+        userName: data.userName || '',
+        messages: data.messages || [],
+      });
+      syncVibeState(data.currentState);
+
+      if (__DEV__) {
+        console.log('[DemoStore] Recovered interview, question:', data.currentQuestionIndex);
+      }
+      return true; // Session recovered
+    } catch (error) {
+      if (__DEV__) {
+        console.error('[DemoStore] Failed to load:', error);
+      }
+      set({ isLoaded: true });
+      return false;
+    }
+  },
+
+  // Persistence: Clear storage on completion
+  clearStorage: async () => {
+    try {
+      await AsyncStorage.removeItem(INTERVIEW_KEY);
+      if (__DEV__) {
+        console.log('[DemoStore] Cleared interview storage');
+      }
+    } catch (error) {
+      if (__DEV__) {
+        console.error('[DemoStore] Failed to clear storage:', error);
+      }
+    }
   },
 }));
 

@@ -13,7 +13,7 @@
 | Phase 0: Foundation | Dec 20, 2024 | ✅ COMPLETE | VibeMatrix, AbbyOrb, Glass UI, Auth |
 | Phase 1: Legal Blockers | Jan 2, 2026 | ✅ COMPLETE | 18+ checkbox, GDPR delete |
 | Phase 2: Profile Submission | Jan 2, 2026 | ✅ COMPLETE | Fix getProfilePayload() call |
-| Phase 3: State Persistence | - | ⏳ PENDING | Interview + Onboarding recovery |
+| Phase 3: State Persistence | Jan 2, 2026 | ✅ COMPLETE | Interview + Onboarding recovery |
 | Phase 4: UX Fixes | - | ⏳ PENDING | ProfileScreen, RevealScreen, ErrorModal |
 | Phase 5: Social Auth | - | ⏳ PENDING | Apple/Google/Facebook buttons |
 | Phase 6: Design Alignment | - | ⏳ PENDING | Gender options, Nickname, Age slider |
@@ -74,18 +74,18 @@
 
 ---
 
-## Phase 3: State Persistence
+## Phase 3: State Persistence (COMPLETE)
 
 ### Tasks
 | Task | File | Status | Owner |
 |------|------|--------|-------|
-| 3.1 Interview persistence | useInterviewSessionStore.ts (new) | ⏳ | Chi |
-| 3.2 Onboarding recovery | useOnboardingStore.ts | ⏳ | Chi |
+| 3.1 Interview persistence | useDemoStore.ts | ✅ DONE | Chi |
+| 3.2 Onboarding recovery | useOnboardingStore.ts | ✅ DONE | Chi |
 
 ### Acceptance Criteria
-- [ ] App crash mid-interview shows "Resume?" dialog on restart
-- [ ] App crash mid-onboarding continues from last screen
-- [ ] Sessions expire after 7/30 days respectively
+- [x] App crash mid-interview shows "Resume?" dialog on restart
+- [x] App crash mid-onboarding continues from last screen
+- [x] Sessions expire after 7/30 days respectively
 
 ---
 

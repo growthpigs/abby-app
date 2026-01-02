@@ -88,6 +88,48 @@ function mapCognitoError(error: Error & { code?: string }): AuthError {
 }
 
 // ========================================
+// Token Utilities
+// ========================================
+
+/**
+ * Decode JWT payload without verification (for client-side expiry check only)
+ * Never use this for security decisions on server - only for UX optimization
+ */
+function decodeJwtPayload(token: string): { exp?: number } | null {
+  try {
+    const parts = token.split('.');
+    if (parts.length !== 3) return null;
+    const payload = parts[1];
+    // Base64URL decode
+    const base64 = payload.replace(/-/g, '+').replace(/_/g, '/');
+    const jsonPayload = atob(base64);
+    return JSON.parse(jsonPayload);
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Check if a JWT token is expired (with 60s buffer for clock skew)
+ */
+function isTokenExpired(token: string, bufferSeconds = 60): boolean {
+  const payload = decodeJwtPayload(token);
+  if (!payload?.exp) return true; // Treat missing exp as expired
+  const nowSeconds = Math.floor(Date.now() / 1000);
+  return payload.exp < nowSeconds + bufferSeconds;
+}
+
+// ========================================
+// Refresh Token Mutex
+// ========================================
+
+/**
+ * Singleton promise for token refresh to prevent race conditions.
+ * If multiple requests need a refresh, they all wait on the same promise.
+ */
+let refreshPromise: Promise<RefreshTokenResponse> | null = null;
+
+// ========================================
 // Service Implementation
 // ========================================
 
@@ -289,11 +331,33 @@ export const AuthService = {
   /**
    * Refresh access token using stored refresh token
    *
+   * Uses mutex pattern to prevent race conditions when multiple
+   * concurrent requests all detect an expired token simultaneously.
+   *
    * Called automatically when access token expires (1 hour).
    */
   async refreshToken(): Promise<RefreshTokenResponse> {
-    if (__DEV__) console.log('[AuthService] refreshToken()');
+    // If a refresh is already in progress, reuse that promise
+    if (refreshPromise) {
+      if (__DEV__) console.log('[AuthService] Reusing existing refresh promise');
+      return refreshPromise;
+    }
 
+    if (__DEV__) console.log('[AuthService] refreshToken() - starting new refresh');
+
+    // Create the refresh promise and store it
+    refreshPromise = this._doRefreshToken().finally(() => {
+      // Clear the promise when done (success or failure)
+      refreshPromise = null;
+    });
+
+    return refreshPromise;
+  },
+
+  /**
+   * Internal refresh implementation (called by refreshToken mutex)
+   */
+  async _doRefreshToken(): Promise<RefreshTokenResponse> {
     const storedRefreshToken = await TokenManager.getRefreshToken();
     if (!storedRefreshToken) {
       throw { code: 'NoRefreshToken', message: 'No refresh token available' };
@@ -357,11 +421,35 @@ export const AuthService = {
   },
 
   /**
-   * Check if user is currently authenticated
+   * Check if user is currently authenticated with a valid token
+   *
+   * Returns true only if:
+   * 1. A token exists in storage
+   * 2. The token is not expired (with 60s buffer)
+   *
+   * This is a client-side check for UX optimization.
+   * Server will still validate tokens on each request.
    */
   async isAuthenticated(): Promise<boolean> {
     const token = await TokenManager.getToken();
-    return token !== null;
+    if (!token) return false;
+
+    // Check if token is expired
+    if (isTokenExpired(token)) {
+      if (__DEV__) console.log('[AuthService] Token exists but is expired');
+      return false;
+    }
+
+    return true;
+  },
+
+  /**
+   * Check if current token is expired and needs refresh
+   */
+  async needsTokenRefresh(): Promise<boolean> {
+    const token = await TokenManager.getToken();
+    if (!token) return false;
+    return isTokenExpired(token);
   },
 
   /**
