@@ -10,12 +10,13 @@
  * - Secret navigation triggers (44x44 bottom corners)
  */
 
-import React from 'react';
+import React, { useCallback } from 'react';
 import {
   View,
   StyleSheet,
   Pressable,
   useWindowDimensions,
+  Alert,
 } from 'react-native';
 import { Typography } from '../ui/Typography';
 import { safeImpact, safeSelection } from '../../utils/haptics';
@@ -26,6 +27,9 @@ interface LoginScreenProps {
   onTrouble?: () => void;
   onSecretBack?: () => void;
   onSecretForward?: () => void;
+  onAppleSignIn?: () => void;
+  onGoogleSignIn?: () => void;
+  onFacebookSignIn?: () => void;
 }
 
 export const LoginScreen: React.FC<LoginScreenProps> = ({
@@ -34,8 +38,46 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
   onTrouble,
   onSecretBack,
   onSecretForward,
+  onAppleSignIn,
+  onGoogleSignIn,
+  onFacebookSignIn,
 }) => {
   const { height } = useWindowDimensions();
+
+  const showComingSoon = useCallback(() => {
+    Alert.alert(
+      'Coming Soon',
+      'Social sign-in will be available in a future update.',
+      [{ text: 'OK' }]
+    );
+  }, []);
+
+  const handleAppleSignIn = useCallback(() => {
+    safeImpact();
+    if (onAppleSignIn) {
+      onAppleSignIn();
+    } else {
+      showComingSoon();
+    }
+  }, [onAppleSignIn, showComingSoon]);
+
+  const handleGoogleSignIn = useCallback(() => {
+    safeImpact();
+    if (onGoogleSignIn) {
+      onGoogleSignIn();
+    } else {
+      showComingSoon();
+    }
+  }, [onGoogleSignIn, showComingSoon]);
+
+  const handleFacebookSignIn = useCallback(() => {
+    safeImpact();
+    if (onFacebookSignIn) {
+      onFacebookSignIn();
+    } else {
+      showComingSoon();
+    }
+  }, [onFacebookSignIn, showComingSoon]);
 
   const handleCreateAccount = () => {
     safeImpact();
@@ -105,6 +147,53 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
           </Typography>
           .
         </Typography>
+
+        {/* Social Auth Buttons */}
+        <Pressable
+          onPress={handleAppleSignIn}
+          style={({ pressed }) => [
+            styles.socialButton,
+            styles.appleButton,
+            pressed && styles.buttonPressed,
+          ]}
+        >
+          <Typography variant="body" style={styles.appleButtonText}>
+             Continue with Apple
+          </Typography>
+        </Pressable>
+
+        <Pressable
+          onPress={handleGoogleSignIn}
+          style={({ pressed }) => [
+            styles.socialButton,
+            styles.googleButton,
+            pressed && styles.buttonPressed,
+          ]}
+        >
+          <Typography variant="body" style={styles.googleButtonText}>
+            G  Continue with Google
+          </Typography>
+        </Pressable>
+
+        <Pressable
+          onPress={handleFacebookSignIn}
+          style={({ pressed }) => [
+            styles.socialButton,
+            styles.facebookButton,
+            pressed && styles.buttonPressed,
+          ]}
+        >
+          <Typography variant="body" style={styles.facebookButtonText}>
+            f  Continue with Facebook
+          </Typography>
+        </Pressable>
+
+        {/* Divider */}
+        <View style={styles.divider}>
+          <View style={styles.dividerLine} />
+          <Typography variant="caption" style={styles.dividerText}>or</Typography>
+          <View style={styles.dividerLine} />
+        </View>
 
         {/* Create account button */}
         <Pressable
@@ -231,6 +320,59 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: 'rgba(255, 255, 255, 0.8)',
     textDecorationLine: 'underline',
+  },
+  // Social auth buttons
+  socialButton: {
+    width: '100%',
+    height: 52,
+    borderRadius: 26,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 12,
+    borderWidth: 1,
+  },
+  appleButton: {
+    backgroundColor: '#000000',
+    borderColor: '#000000',
+  },
+  appleButtonText: {
+    color: '#FFFFFF',
+    fontWeight: '600',
+    fontSize: 15,
+  },
+  googleButton: {
+    backgroundColor: '#FFFFFF',
+    borderColor: 'rgba(0, 0, 0, 0.1)',
+  },
+  googleButtonText: {
+    color: '#1a1a1a',
+    fontWeight: '600',
+    fontSize: 15,
+  },
+  facebookButton: {
+    backgroundColor: '#1877F2',
+    borderColor: '#1877F2',
+  },
+  facebookButtonText: {
+    color: '#FFFFFF',
+    fontWeight: '600',
+    fontSize: 15,
+  },
+  divider: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    width: '100%',
+    marginVertical: 16,
+  },
+  dividerLine: {
+    flex: 1,
+    height: 1,
+    backgroundColor: 'rgba(255, 255, 255, 0.3)',
+  },
+  dividerText: {
+    marginHorizontal: 16,
+    color: 'rgba(255, 255, 255, 0.6)',
+    fontSize: 12,
   },
   // Secret navigation triggers (70x70 transparent touchable areas at TOP corners - avoids keyboard)
   secretBackTrigger: {
