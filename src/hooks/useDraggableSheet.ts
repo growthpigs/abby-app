@@ -22,6 +22,7 @@
 import { useRef, useCallback } from 'react';
 import { Animated, PanResponder, Dimensions, GestureResponderHandlers } from 'react-native';
 import { SHEET_SNAP_POINTS, SHEET_DEFAULT_SNAP } from '../constants/layout';
+import { getAnimatedValue, getAnimatedOffset } from '../utils/animatedHelpers';
 
 const { height: SCREEN_HEIGHT } = Dimensions.get('window');
 
@@ -121,12 +122,12 @@ export function useDraggableSheet(config?: DraggableSheetConfig): DraggableSheet
       },
       onPanResponderGrant: () => {
         // Store current position as offset
-        translateY.setOffset((translateY as unknown as { _value: number })._value);
+        translateY.setOffset(getAnimatedValue(translateY));
         translateY.setValue(0);
       },
       onPanResponderMove: (_, gestureState) => {
         const newY = gestureState.dy;
-        const offset = (translateY as unknown as { _offset: number })._offset;
+        const offset = getAnimatedOffset(translateY);
         const minY = SCREEN_HEIGHT * 0.1 - offset; // Don't go above 10% from top
         const maxY = SCREEN_HEIGHT - offset; // Don't go below screen
 
@@ -135,7 +136,7 @@ export function useDraggableSheet(config?: DraggableSheetConfig): DraggableSheet
       },
       onPanResponderRelease: (_, gestureState) => {
         translateY.flattenOffset();
-        const currentY = (translateY as unknown as { _value: number })._value;
+        const currentY = getAnimatedValue(translateY);
         const velocity = gestureState.vy;
 
         // Account for velocity when finding snap point

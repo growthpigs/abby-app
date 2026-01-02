@@ -28,7 +28,7 @@ const DEMO_TO_APP_STATE: Record<DemoState, AppState> = {
 };
 
 // Use global to survive hot reloads - Metro bundler preserves globalThis
-const SYNC_KEY = '__ABBY_STORE_SYNC__';
+const SYNC_KEY = '__ABBY_STORE_SYNC__' as const;
 
 interface StoreSyncState {
   isInitialized: boolean;
@@ -36,16 +36,22 @@ interface StoreSyncState {
   unsubscribeCoverage: (() => void) | null;
 }
 
+// Extend globalThis type for our sync state
+declare global {
+  // eslint-disable-next-line no-var
+  var __ABBY_STORE_SYNC__: StoreSyncState | undefined;
+}
+
 // Get or create global state (survives hot reload)
 function getGlobalSyncState(): StoreSyncState {
-  if (!(globalThis as any)[SYNC_KEY]) {
-    (globalThis as any)[SYNC_KEY] = {
+  if (!globalThis.__ABBY_STORE_SYNC__) {
+    globalThis.__ABBY_STORE_SYNC__ = {
       isInitialized: false,
       unsubscribeState: null,
       unsubscribeCoverage: null,
     };
   }
-  return (globalThis as any)[SYNC_KEY];
+  return globalThis.__ABBY_STORE_SYNC__;
 }
 
 /**

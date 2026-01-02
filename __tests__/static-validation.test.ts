@@ -84,9 +84,10 @@ describe('COACH_INTRO Feature', () => {
   test('CoachIntroScreen uses draggable bottom sheet pattern', () => {
     const source = readFile('src/components/screens/CoachIntroScreen.tsx');
 
-    expect(source).toContain('PanResponder');
-    expect(source).toContain('SNAP_POINTS');
-    expect(source).toContain('Animated.spring');
+    // Draggable sheet logic is now encapsulated in useDraggableSheet hook
+    expect(source).toContain('useDraggableSheet');
+    expect(source).toContain('panHandlers');
+    expect(source).toContain('animateIn');
   });
 
   test('CoachIntroScreen handles messages from agent', () => {
@@ -244,6 +245,7 @@ describe('UI Dependencies', () => {
   test('CoachIntroScreen imports required components', () => {
     const source = readFile('src/components/screens/CoachIntroScreen.tsx');
 
+    // PanResponder is now encapsulated in useDraggableSheet hook
     const requiredImports = [
       'BlurView',
       'Haptics',
@@ -251,7 +253,7 @@ describe('UI Dependencies', () => {
       'useAbbyAgent',
       'ScrollView',
       'Animated',
-      'PanResponder',
+      'useDraggableSheet',
     ];
 
     requiredImports.forEach(imp => {

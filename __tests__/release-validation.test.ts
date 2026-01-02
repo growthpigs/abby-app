@@ -188,11 +188,12 @@ describe('Dependencies', () => {
   test('CoachIntroScreen uses all required imports', () => {
     const source = readFile('src/components/screens/CoachIntroScreen.tsx');
 
+    // PanResponder is now encapsulated in useDraggableSheet hook
     const requiredImports = [
       'BlurView',
       'Haptics',
       'useDemoStore',
-      'PanResponder',
+      'useDraggableSheet',
       'Animated',
       'ScrollView',
     ];
