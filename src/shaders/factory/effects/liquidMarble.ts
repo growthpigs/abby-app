@@ -9,29 +9,9 @@ import type { EffectDefinition } from './index';
 export const LIQUID_MARBLE_EFFECT: EffectDefinition = {
   helpers: `
 // ============================================
-// TURBULENCE (Sharp fBM variant)
-// ============================================
-
-float turbulence(float2 p, float octaves) {
-  float value = 0.0;
-  float amplitude = 1.0;
-  float frequency = 1.0;
-  float maxValue = 0.0;
-
-  for (float i = 0.0; i < 6.0; i += 1.0) {
-    if (i >= octaves) break;
-    value += amplitude * abs(snoise(p * frequency));
-    maxValue += amplitude;
-    amplitude *= 0.5;
-    frequency *= 2.0;
-  }
-
-  return value / maxValue;
-}
-
-// ============================================
 // MARBLE VEIN FUNCTION
 // ============================================
+// Note: Uses shared turbulence() from noise.ts (injected by factory)
 
 float marbleVein(float2 uv, float time, float octaves) {
   float angle = time * 0.1;
