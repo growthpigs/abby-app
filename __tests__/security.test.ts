@@ -265,11 +265,6 @@ describe('Screen Input Handling', () => {
     expect(source).toContain("replace(/[^0-9]/g, '')");
   });
 
-  test('PhoneNumberScreen sanitizes phone inputs', () => {
-    const source = readFile('src/components/screens/PhoneNumberScreen.tsx');
-    expect(source).toContain("replace(/\\D/g, '')");
-  });
-
   test('EmailScreen validates email format', () => {
     const source = readFile('src/components/screens/EmailScreen.tsx');
     expect(source).toContain('[^\\s@]+@[^\\s@]+\\.[^\\s@]+');

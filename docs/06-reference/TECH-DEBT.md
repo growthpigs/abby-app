@@ -59,3 +59,69 @@
 - Client approves MVP
 - V2 scope is defined
 - Payment/matching features need stable foundation
+
+---
+
+## Code Review Findings (2026-01-02)
+
+> **Source:** Competitive code review by two autonomous agents
+> **Fixed:** 1 Critical (cross-store race condition)
+> **Remaining:** 22 issues logged below
+
+### ✅ FIXED
+
+| ID | Severity | Issue | Resolution |
+|----|----------|-------|------------|
+| CR-001 | Critical | Cross-store race condition (`setTimeout(0)` in useDemoStore) | Fixed via `storeSync.ts` subscription pattern |
+
+### 🔴 Critical (Fix Before Production)
+
+| ID | Severity | File | Issue | Risk |
+|----|----------|------|-------|------|
+| ~~CR-002~~ | ~~Critical~~ | `AuthService.ts:98-110` | ~~JWT parsing with `atob()` has no try/catch~~ | **FALSE POSITIVE** - already wrapped in try/catch (lines 99-109) |
+| CR-003 | Critical | `AuthService.ts:349-354` | Token refresh mutex race condition | Concurrent requests may fail auth |
+
+### 🟠 High (Fix Before V2)
+
+| ID | Severity | File | Issue | Risk |
+|----|----------|------|-------|------|
+| CR-004 | High | `VibeMatrixAnimated.tsx:112` | Missing `width`, `height` in useDerivedValue deps | Screen rotation breaks shader resolution |
+| CR-005 | High | `useDraggableSheet.ts:115-154` | PanResponder captures stale closures | Incorrect snap behavior after config change |
+| CR-006 | High | `CoachScreen.tsx:146` | Empty useEffect dependency array | May use stale callbacks |
+| CR-007 | High | `AbbyRealtimeService.ts:277-289` | Demo mode timer accumulation | Rapid typing causes message ordering issues |
+| CR-008 | High | `InterviewScreen.tsx:68-69` | Early return renders blank screen | No error feedback for users |
+| CR-009 | High | `TokenManager.ts:18` | Insecure fallback to AsyncStorage on web | Tokens exposed if deployed to web |
+
+### 🟡 Medium (V2 Backlog)
+
+| ID | Severity | File | Issue | Risk |
+|----|----------|------|-------|------|
+| CR-010 | Medium | `AuthService.ts:162-175` | Duplicate `if (__DEV__)` checks | Code clutter |
+| CR-011 | Medium | `CoachIntroScreen.tsx:316` | Array reversed on every render | Unnecessary GC pressure |
+| CR-012 | Medium | `AbbyTTSService.ts:43-49` | Singleton prevents testing/cleanup | Testing difficulty |
+| CR-013 | Medium | `morphWrapper.ts:106-112` | Fragile regex for shader injection | Silent failures if format changes |
+| CR-014 | Medium | `useOnboardingStore.ts:314-348` | Async save without await | Potential data loss on crash |
+| CR-015 | Medium | `config.ts:43-55` | Cognito credentials hardcoded | Rotation requires code deploy |
+| CR-016 | Medium | `InterviewScreen.tsx:125-149` | TTS not cancelled on rapid navigation | Audio overlap |
+| CR-017 | Medium | Multiple files | 183 console.log calls | Bundle bloat |
+| CR-018 | Medium | `secureFetch.ts:86-99` | Retries on offline without fast-fail | Poor UX on no connectivity |
+
+### ⚪ Low (Nice to Have)
+
+| ID | Severity | File | Issue | Risk |
+|----|----------|------|-------|------|
+| CR-019 | Low | `CoachIntroScreen.tsx:140-175` | Accessing `_value` internal property | May break on RN update |
+| CR-020 | Low | `AbbyRealtimeService.ts:74-90` | Mixed class/hook paradigm | Unclear API boundaries |
+| CR-021 | Low | `InterviewScreen.tsx:252` | Constant defined after component | Unconventional ordering |
+| CR-022 | Low | `InterviewScreen.tsx:267-268` | Hardcoded `-34` for safe area | Device-specific |
+| CR-023 | Low | `AbbyTTSService.ts:169-172` | `playAudioFromBase64` throws not implemented | Unexpected crash if API returns base64 |
+
+### 📊 Summary
+
+| Severity | Count | Status |
+|----------|-------|--------|
+| Critical | 3 | 1 fixed, 1 false positive, 1 remaining |
+| High | 6 | All deferred |
+| Medium | 9 | All deferred |
+| Low | 5 | All deferred |
+| **Total** | **23** | **21 remaining (1 false positive)** |

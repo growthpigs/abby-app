@@ -18,7 +18,6 @@ export { NameScreen } from './NameScreen';
 export { EmailScreen } from './EmailScreen';
 export { PasswordScreen } from './PasswordScreen';
 export { EmailVerificationScreen } from './EmailVerificationScreen';
-export { LoadingScreen } from './LoadingScreen';
 
 // Onboarding screens
 export { DOBScreen } from './DOBScreen';
