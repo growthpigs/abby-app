@@ -216,38 +216,7 @@ describe('Color System', () => {
 });
 
 // ==============================================================================
-// TEST 6: Vibe Store Integration
-// ==============================================================================
-
-describe('Vibe Store', () => {
-  test('useVibeStore exists', () => {
-    expect(fileExists('src/store/useVibeStore.ts')).toBe(true);
-  });
-
-  test('useVibeStore has colorTheme state', () => {
-    const source = readFile('src/store/useVibeStore.ts');
-
-    expect(source).toContain('colorTheme');
-    expect(source).toContain('setColorTheme');
-  });
-
-  test('useVibeStore has complexity state', () => {
-    const source = readFile('src/store/useVibeStore.ts');
-
-    expect(source).toContain('complexity');
-    expect(source).toContain('setComplexity');
-  });
-
-  test('useVibeStore uses zustand', () => {
-    const source = readFile('src/store/useVibeStore.ts');
-
-    expect(source).toContain("from 'zustand'");
-    expect(source).toContain('create');
-  });
-});
-
-// ==============================================================================
-// TEST 7: Vibe Controller
+// TEST 6: Vibe Controller (useVibeStore removed - was duplicate of useVibeController)
 // ==============================================================================
 
 describe('Vibe Controller', () => {

@@ -79,7 +79,7 @@
 | ID | Severity | File | Issue | Risk |
 |----|----------|------|-------|------|
 | ~~CR-002~~ | ~~Critical~~ | `AuthService.ts:98-110` | ~~JWT parsing with `atob()` has no try/catch~~ | **FALSE POSITIVE** - already wrapped in try/catch (lines 99-109) |
-| CR-003 | Critical | `AuthService.ts:349-354` | Token refresh mutex race condition | Concurrent requests may fail auth |
+| ~~CR-003~~ | ~~Critical~~ | `AuthService.ts:349-354` | ~~Token refresh mutex race condition~~ | **FALSE POSITIVE** - mutex pattern correct (tested with concurrent calls + failures) |
 
 ### 🟠 High (Fix Before V2)
 
@@ -120,8 +120,8 @@
 
 | Severity | Count | Status |
 |----------|-------|--------|
-| Critical | 3 | 1 fixed, 1 false positive, 1 remaining |
+| Critical | 3 | 1 fixed, **2 false positives** |
 | High | 6 | All deferred |
 | Medium | 9 | All deferred |
 | Low | 5 | All deferred |
-| **Total** | **23** | **21 remaining (1 false positive)** |
+| **Total** | **23** | **20 real issues (3 false positives)** |
