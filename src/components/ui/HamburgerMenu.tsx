@@ -22,13 +22,14 @@ import {
 } from 'react-native';
 import { BlurView } from 'expo-blur';
 import * as Haptics from 'expo-haptics';
-import { Menu, X, Camera, Heart, Settings, LogOut } from 'lucide-react-native';
+import { Menu, X, Camera, Heart, Settings, LogOut, User } from 'lucide-react-native';
 import { Body, Caption } from './Typography';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const MENU_WIDTH = SCREEN_WIDTH * 0.75;
 
 export interface HamburgerMenuProps {
+  onProfilePress?: () => void;
   onPhotosPress?: () => void;
   onMatchesPress?: () => void;
   onSettingsPress?: () => void;
@@ -36,6 +37,7 @@ export interface HamburgerMenuProps {
 }
 
 export const HamburgerMenu: React.FC<HamburgerMenuProps> = ({
+  onProfilePress,
   onPhotosPress,
   onMatchesPress,
   onSettingsPress,
@@ -121,6 +123,18 @@ export const HamburgerMenu: React.FC<HamburgerMenuProps> = ({
 
             {/* Menu Items */}
             <View style={styles.menuItems}>
+              {/* My Profile - /v1/me */}
+              <Pressable
+                onPress={() => handleMenuItemPress(onProfilePress)}
+                style={({ pressed }) => [
+                  styles.menuItem,
+                  pressed && styles.menuItemPressed,
+                ]}
+              >
+                <User size={22} stroke="rgba(0, 0, 0, 0.7)" />
+                <Body style={styles.menuItemText}>My Profile</Body>
+              </Pressable>
+
               {/* My Photos - /v1/photos/* */}
               <Pressable
                 onPress={() => handleMenuItemPress(onPhotosPress)}

@@ -110,6 +110,39 @@ if (__DEV__) {
 
 **Conclusion:** When all variations fail with same generic error, stop testing parameters and verify the Pool ID / Client ID are correct with the backend owner.
 
+### Security Hardening Verification (2026-01-02)
+
+**After any security-related code changes, run these to verify fixes:**
+
+```bash
+# 1. TypeScript compiles clean (catches type errors from changes)
+npx tsc --noEmit 2>&1 | head -20
+# Expected: No output (clean)
+
+# 2. All tests pass (catches regressions)
+npm test
+# Expected: 344+ tests passing
+
+# 3. Search for security fixes applied
+grep -l "maxLength" src/components/screens/*.tsx | wc -l
+# Expected: 6+ files (EmailScreen, NameScreen, PasswordScreen, etc.)
+
+# 4. Verify console logs are gated
+grep -rn "console\." src/ | grep -v "__DEV__" | grep -v "node_modules" | head -20
+# Expected: No ungated console statements
+
+# 5. Verify onboarding persistence integrated
+grep "loadOnboarding\|saveOnboarding" App.tsx
+# Expected: Multiple matches for load/save calls
+```
+
+**Security Fixes Applied (2026-01-02):**
+| Fix | Files | Purpose |
+|-----|-------|---------|
+| maxLength on TextInputs | 6 screens | Prevent buffer overflow |
+| `__DEV__` guards | 5 files | No logs in production |
+| Onboarding persistence | App.tsx, useOnboardingStore.ts | Crash recovery |
+
 ### API Integration Verification (2026-01-02)
 
 **Run these to verify full API integration is working:**
@@ -558,6 +591,44 @@ const BACKGROUND_SEQUENCE = [1,2,3,4,5,6,7,8,9,10];
 // State order
 const STATE_ORDER = ['COACH_INTRO','INTERVIEW','SEARCHING','MATCH','PAYMENT','REVEAL','COACH'];
 ```
+
+---
+
+## Menu Screens Demo Mode (2026-01-02)
+
+Menu screens accessible from hamburger menu now have demo mode fallbacks:
+
+| Screen | Demo Behavior | Data |
+|--------|---------------|------|
+| **ProfileScreen** | Uses local onboarding store | User's own data from onboarding |
+| **PhotosScreen** | Shows 3 Unsplash photos | DEMO_PHOTOS constant |
+| **MatchesScreen** | Shows 3 demo matches | DEMO_MATCHES constant (Sarah, Emma, Jessica) |
+| **SettingsScreen** | Works fully offline | Local AsyncStorage |
+
+**Trigger:** When `TokenManager.getToken()` returns null (no auth token).
+
+**Code Locations:**
+- `PhotosScreen.tsx:73-78` - Demo mode fallback
+- `MatchesScreen.tsx:78-83` - Demo mode fallback
+
+**Testing:** Navigate via hamburger menu when in demo mode (secret nav to skip auth).
+
+---
+
+## Screen Audit (2026-01-02)
+
+**Total Screens:** 29 files
+**Accessible:** 26 screens
+**Orphaned:** 3 screens (PhoneNumberScreen, VerificationCodeScreen, LoadingScreen)
+
+| Category | Screens | Count |
+|----------|---------|-------|
+| Auth Flow | Login, SignIn, Name, Email, Password, EmailVerification | 6 |
+| Onboarding | DOB, Permissions, BasicsGender, BasicsPreferences, Ethnicity, EthnicityPreference, BasicsRelationship, Smoking, BasicsLocation | 9 |
+| Demo Flow | CoachIntro, Interview, Searching, Match, Payment, Reveal, Coach | 7 |
+| **Menu** | **Profile, Photos, Matches, Settings** | **4** |
+
+**ProfileScreen wired up:** Added to hamburger menu via `onProfilePress` callback.
 
 ---
 

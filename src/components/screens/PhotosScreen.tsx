@@ -26,6 +26,23 @@ import { secureFetchJSON } from '../../utils/secureFetch';
 
 const API_BASE = 'https://dev.api.myaimatchmaker.ai';
 
+// Demo photos for when no auth token (demo mode)
+const DEMO_PHOTOS: PhotoItem[] = [
+  {
+    id: 'demo-1',
+    uri: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&h=400&fit=crop',
+    isPrimary: true,
+  },
+  {
+    id: 'demo-2',
+    uri: 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=400&h=400&fit=crop',
+  },
+  {
+    id: 'demo-3',
+    uri: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=400&h=400&fit=crop',
+  },
+];
+
 export interface PhotoItem {
   id: string;
   uri: string;
@@ -54,7 +71,10 @@ export const PhotosScreen: React.FC<PhotosScreenProps> = ({
       const token = await TokenManager.getToken();
 
       if (!token) {
-        setError('Please sign in to manage photos');
+        // Demo mode - show mock photos
+        if (__DEV__) console.log('[PhotosScreen] No token - using demo data');
+        setPhotos(DEMO_PHOTOS);
+        setIsLoading(false);
         return;
       }
 

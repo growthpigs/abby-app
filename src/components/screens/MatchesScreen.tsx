@@ -23,6 +23,31 @@ import { secureFetchJSON } from '../../utils/secureFetch';
 
 const API_BASE = 'https://dev.api.myaimatchmaker.ai';
 
+// Demo data for when no auth token (demo mode)
+const DEMO_MATCHES: MatchCandidate[] = [
+  {
+    id: 'demo-1',
+    name: 'Sarah',
+    age: 28,
+    bio: 'Coffee enthusiast, book lover, and weekend hiker. Looking for someone who appreciates deep conversations and spontaneous adventures.',
+    compatibilityScore: 94,
+  },
+  {
+    id: 'demo-2',
+    name: 'Emma',
+    age: 31,
+    bio: 'Creative director by day, amateur chef by night. I believe the best relationships start with great food and honest conversation.',
+    compatibilityScore: 89,
+  },
+  {
+    id: 'demo-3',
+    name: 'Jessica',
+    age: 26,
+    bio: 'Yoga instructor with a passion for travel. Currently planning my next adventure and hoping to find someone to share it with.',
+    compatibilityScore: 85,
+  },
+];
+
 interface MatchCandidate {
   id: string;
   name: string;
@@ -51,7 +76,10 @@ export const MatchesScreen: React.FC<MatchesScreenProps> = ({
       const token = await TokenManager.getToken();
 
       if (!token) {
-        setError('Please sign in to view matches');
+        // Demo mode - show mock data
+        if (__DEV__) console.log('[MatchesScreen] No token - using demo data');
+        setMatches(DEMO_MATCHES);
+        setIsLoading(false);
         return;
       }
 

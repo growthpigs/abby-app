@@ -137,7 +137,37 @@ All core MVP features are implemented. Remaining work is connecting demo mode to
 
 ---
 
-## 2026-01-02 Update
+## 2026-01-02 Update (Session 2: Code Hardening)
+
+**What was done:**
+- Completed P0/P1 codebase hardening: TypeScript errors → console gating → error handling
+- Fixed TypeScript compilation (6 errors → 0 errors): removed legacy files, fixed props, added missing methods
+- Gated 84 console statements with `__DEV__` using perl batch processing
+- Fixed 3 empty catch blocks with proper DEV logging (cleanup errors)
+- Timer leak fixes verified with runtime tests (398 tests pass)
+
+**Files changed:**
+- `App.tsx` - fixed PhotosScreen props, deleted App.abby.tsx (legacy ElevenLabs)
+- `src/components/ui/Typography.tsx` - added numberOfLines prop
+- `src/components/screens/RevealScreen.tsx` - added handleMeetCoach method
+- `src/services/AbbyRealtimeService.ts` - timer tracking + cleanup logging
+- `src/components/screens/CoachScreen.tsx` - cleanup error logging
+- `src/components/screens/CoachIntroScreen.tsx` - cleanup error logging
+- 30+ files - console statements gated with `__DEV__` check
+
+**Quality metrics:**
+- TypeScript: 6 errors → 0 errors ✅
+- Console noise: 84 statements → 0 in production ✅
+- Silent failures: 3 empty catches → 0 ✅
+- Test coverage: 398 tests passing ✅
+
+**Commits:**
+- `e8031e8` - docs: align documentation with reality, fix TTS demo mode
+- `eb65fc1` - chore: gate all console statements with __DEV__
+
+---
+
+## 2026-01-02 Update (Session 1: Autonomous Security)
 
 **What was done:**
 - Autonomous improvement session: security, tests, code quality

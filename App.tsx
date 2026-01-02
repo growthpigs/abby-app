@@ -76,6 +76,7 @@ import {
   CoachScreen,
   SignInScreen,
   SettingsScreen,
+  ProfileScreen,
   PhotosScreen,
   MatchesScreen,
 } from './src/components/screens';
@@ -192,7 +193,7 @@ function AppContent() {
   const [authError, setAuthError] = useState<string | null>(null);
 
   // Menu screen state (for hamburger menu navigation)
-  const [menuScreen, setMenuScreen] = useState<'none' | 'photos' | 'settings' | 'matches'>('none');
+  const [menuScreen, setMenuScreen] = useState<'none' | 'profile' | 'photos' | 'settings' | 'matches'>('none');
 
   // Demo state from store
   const demoState = useDemoState();
@@ -823,6 +824,9 @@ function AppContent() {
       {/* Hamburger Menu (only when authenticated) */}
       {authState === 'AUTHENTICATED' && (
         <HamburgerMenu
+          onProfilePress={() => {
+            setMenuScreen('profile');
+          }}
           onPhotosPress={() => {
             setMenuScreen('photos');
           }}
@@ -843,6 +847,13 @@ function AppContent() {
       {/* Settings Screen Overlay (Input Mode only per settings-spec.md) */}
       {menuScreen === 'settings' && (
         <SettingsScreen
+          onClose={() => setMenuScreen('none')}
+        />
+      )}
+
+      {/* Profile Screen Overlay (/v1/me) */}
+      {menuScreen === 'profile' && (
+        <ProfileScreen
           onClose={() => setMenuScreen('none')}
         />
       )}
