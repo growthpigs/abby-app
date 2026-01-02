@@ -2,301 +2,254 @@
 
 **Product Name:** ABBY - The Anti-Dating App
 **Version:** 1.0 MVP
-**Last Updated:** December 20, 2024
+**Last Updated:** January 2, 2026
 **References:** PRD.md, DATA-MODEL.md
 
 ---
 
 ## Overview
 
-This document defines the API contracts for ABBY. For MVP, these endpoints are **mocked locally**. V2 will integrate with Nathan's AWS backend using these same contracts.
+This document defines the API contracts for ABBY MVP.
 
-**Base URL (V2):** `https://api.abby.app/v1`
+> **Implementation Note (2026-01-02):** Original spec documented Nathan's planned backend. MVP uses client's backend (dev.api.myaimatchmaker.ai) with AWS Cognito for auth. See API docs: https://dev.api.myaimatchmaker.ai/docs#/
+
+**Base URL:** `https://dev.api.myaimatchmaker.ai/v1`
 
 ---
 
-## Authentication
+## Authentication (AWS Cognito)
 
-All authenticated endpoints require Bearer token in Authorization header:
+### Current Implementation
+
+Auth is handled via AWS Cognito SDK (`amazon-cognito-identity-js`), NOT REST API endpoints.
+
+**Configuration:**
+```typescript
+const poolData = {
+  UserPoolId: 'us-east-1_l3JxaWpl5',
+  ClientId: '2ljj7mif1k7jjc2ajiq676fhm1',
+};
 ```
-Authorization: Bearer <access_token>
+
+### AuthService Methods
+
+| Method | Purpose | Status |
+|--------|---------|--------|
+| `signup(email, password, name)` | Create new account | ✅ Implemented |
+| `verify(username, code)` | Verify email with 6-digit code | ✅ Implemented |
+| `resendVerificationCode(username)` | Resend verification code | ✅ Implemented |
+| `login(email, password)` | Authenticate user | ✅ Implemented |
+| `refreshToken()` | Refresh access token | ✅ Implemented (not called) |
+| `logout()` | Clear tokens | ✅ Implemented |
+| `isAuthenticated()` | Check auth status | ✅ Implemented |
+| `getAccessToken()` | Get current token | ✅ Implemented |
+
+### Token Response
+
+```typescript
+{
+  accessToken: string;   // 1 hour expiration
+  idToken: string;       // User claims
+  refreshToken: string;  // 30 days expiration
+  expiresIn: number;     // Seconds
+  tokenType: 'Bearer';
+}
 ```
 
-### POST /auth/phone/send
+---
 
-Send verification code to phone number.
+## ~~Phone/Social Auth~~ (V2 - Not Implemented)
+
+These endpoints were in the original spec but are NOT implemented in MVP:
+
+```
+❌ POST /auth/phone/send     - Send phone verification code
+❌ POST /auth/phone/verify   - Verify phone code
+❌ POST /auth/social         - Apple/Google/Facebook login
+```
+
+---
+
+## API Headers
+
+All authenticated endpoints require:
+
+```
+Authorization: Bearer <cognito_access_token>
+Content-Type: application/json
+```
+
+---
+
+## Voice Integration (OpenAI Realtime API)
+
+### GET /abby/realtime/available
+
+Check if voice API is available.
+
+**Response (200):**
+```typescript
+{
+  available: boolean;
+}
+```
+
+**Implementation:** `AbbyRealtimeService.checkAvailability()`
+
+---
+
+### POST /abby/realtime/session
+
+Create a new voice session.
 
 **Request:**
 ```typescript
 {
-  phoneNumber: string;  // E.164 format: +1234567890
+  screenType?: 'intro' | 'coach';
 }
 ```
+
+**Response (200):**
+```typescript
+{
+  sessionId: string;
+  wsUrl?: string;           // WebSocket URL (V2)
+  rtcConfig?: RTCConfiguration;  // WebRTC config (V2)
+  expiresAt: string;
+}
+```
+
+**Implementation:** `AbbyRealtimeService.startConversation()`
+
+---
+
+### POST /abby/session/{sessionId}/end
+
+End a voice session.
 
 **Response (200):**
 ```typescript
 {
   success: true;
-  expiresIn: number;    // Seconds until code expires (300)
-  retryAfter: number;   // Seconds before can resend (60)
 }
 ```
 
-**Errors:**
-- 400: Invalid phone number format
-- 429: Too many requests (rate limited)
+**Implementation:** `AbbyRealtimeService.endConversation()`
 
 ---
 
-### POST /auth/phone/verify
+### POST /abby/realtime/{sessionId}/message
 
-Verify phone code and authenticate.
+Send text message to Abby during voice session.
 
 **Request:**
 ```typescript
 {
-  phoneNumber: string;
-  code: string;  // 6-digit code
+  message: string;
+  userId?: string;
 }
 ```
 
 **Response (200):**
 ```typescript
 {
-  success: true;
-  accessToken: string;
-  refreshToken: string;
-  user: {
-    id: string;
-    phoneNumber: string;
-    isNewUser: boolean;
-    interviewStatus: "not_started" | "in_progress" | "completed";
-  }
+  response: string;
+  sessionId: string;
 }
 ```
 
-**Errors:**
-- 400: Invalid code
-- 401: Code expired
-- 429: Too many attempts
+**Implementation:** `AbbyRealtimeService.sendTextMessage()`
 
 ---
 
-### POST /auth/social
+### GET /abby/memory/context
 
-Authenticate via Apple, Google, or Facebook.
-
-**Request:**
-```typescript
-{
-  provider: "apple" | "google" | "facebook";
-  idToken: string;  // Provider's ID token
-}
-```
+Get conversation context/memory for user.
 
 **Response (200):**
 ```typescript
 {
-  success: true;
-  accessToken: string;
-  refreshToken: string;
-  user: {
-    id: string;
-    email: string;
-    isNewUser: boolean;
-    interviewStatus: "not_started" | "in_progress" | "completed";
-  }
+  context: string;
+  lastInteraction?: string;
 }
 ```
-
-**Errors:**
-- 400: Invalid provider
-- 401: Invalid or expired token
-- 500: Provider error
-
----
-
-### POST /auth/refresh
-
-Refresh access token.
-
-**Request:**
-```typescript
-{
-  refreshToken: string;
-}
-```
-
-**Response (200):**
-```typescript
-{
-  accessToken: string;
-  refreshToken: string;
-}
-```
-
-**Errors:**
-- 401: Invalid or expired refresh token
 
 ---
 
 ## User Profile
 
-### GET /user/profile
+### GET /me
 
-Get current user's profile.
+Get current authenticated user info.
 
 **Response (200):**
 ```typescript
 {
   id: string;
-  displayName: string;
-  dateOfBirth: string;  // ISO 8601
-  age: number;
-  gender: string;
+  email: string;
+  // Additional fields TBD
+}
+```
+
+---
+
+### POST /profile/public
+
+Update public profile information.
+
+**Request:**
+```typescript
+{
+  name: string;
+  dateOfBirth: string;      // ISO 8601
+  gender: 'man' | 'woman';
   seekingGenders: string[];
   ethnicity: string;
   ethnicityPrefs: string[];
   relationshipType: string;
   smokingPref: string;
-  interviewStatus: "not_started" | "in_progress" | "completed";
-  createdAt: string;
+  location: {
+    latitude: number;
+    longitude: number;
+  };
 }
 ```
+
+> **Gap Identified:** This endpoint exists but `getProfilePayload()` in `useOnboardingStore` is never called. Profile data collected during onboarding is NOT submitted to backend.
 
 ---
 
-### PUT /user/profile
+## Questions
 
-Update user profile (onboarding or later edits).
+### GET /questions
 
-**Request:**
-```typescript
-{
-  fullName?: string;
-  displayName?: string;
-  dateOfBirth?: string;
-  preferredAgeMin?: number;
-  preferredAgeMax?: number;
-  gender?: string;
-  seekingGenders?: string[];
-  ethnicity?: string;
-  ethnicityPrefs?: string[];
-  relationshipType?: string;
-  smokingPref?: string;
-}
-```
+Get all questions for interview flow.
 
 **Response (200):**
 ```typescript
 {
-  success: true;
-  user: { /* Updated user profile */ }
-}
-```
-
-**Errors:**
-- 400: Validation error (with field-level details)
-- 401: Unauthorized
-
----
-
-## Interview
-
-### POST /interview/start
-
-Start a new interview session.
-
-**Request:**
-```typescript
-{
-  // No body required
-}
-```
-
-**Response (200):**
-```typescript
-{
-  sessionId: string;
-  firstQuestion: {
+  questions: Array<{
     id: string;
     category: string;
-    vibeState: "TRUST" | "DEEP" | "CAUTION" | "PASSION" | "GROWTH";
-    type: "choice" | "multi_choice" | "scale" | "text" | "picturegram";
     text: string;
-    voiceText: string;
-    options?: Array<{
-      id: string;
-      text: string;
-      voiceText?: string;
-    }>;
-    scaleMin?: number;
-    scaleMax?: number;
-    scaleLabels?: string[];
+    type: 'choice' | 'multi_choice' | 'scale' | 'text';
+    options?: Array<{ id: string; text: string }>;
     required: boolean;
-  };
-  progress: {
-    current: number;
-    total: number;
-    percentComplete: number;
-  };
+  }>;
 }
 ```
 
 ---
 
-### GET /interview/resume
+### POST /answers
 
-Resume an existing interview session.
-
-**Response (200):**
-```typescript
-{
-  sessionId: string;
-  currentQuestion: { /* Same as firstQuestion above */ };
-  progress: {
-    current: number;
-    total: number;
-    percentComplete: number;
-  };
-  lastUpdatedAt: string;
-}
-```
-
-**Response (404):**
-```typescript
-{
-  error: "no_active_session";
-  message: "No interview session to resume";
-}
-```
-
----
-
-### POST /interview/answer
-
-Submit an answer to the current question.
+Submit answer to a question.
 
 **Request:**
 ```typescript
 {
-  sessionId: string;
   questionId: string;
-  answer: {
-    // For choice
-    selected?: string;
-    // For multi_choice
-    selected?: string[];
-    // For scale
-    value?: number;
-    // For text
-    text?: string;
-    // For picturegram
-    categories?: string[];
-    weights?: number[];
-  };
-  answerMethod: "touch" | "voice";
-  voiceTranscript?: string;
+  answer: any;  // Type depends on question type
 }
 ```
 
@@ -304,237 +257,144 @@ Submit an answer to the current question.
 ```typescript
 {
   success: true;
-  nextQuestion: { /* Question object or null if complete */ };
-  progress: {
-    current: number;
-    total: number;
-    percentComplete: number;
-    sectionComplete: boolean;
-  };
-  abbyResponse?: {
-    text: string;      // What Abby says in response
-    emotion: string;   // For orb animation
-  };
 }
 ```
-
-**Errors:**
-- 400: Invalid answer format
-- 404: Session or question not found
-- 409: Question already answered
 
 ---
 
-### POST /interview/skip
+## Matches
 
-Skip the current question (if allowed).
+### GET /matches/candidates
 
-**Request:**
-```typescript
-{
-  sessionId: string;
-  questionId: string;
-  reason?: string;  // Optional: "not_sure" | "prefer_not_to_say" | "ask_later"
-}
-```
+Get list of potential matches (users interested in you).
 
 **Response (200):**
 ```typescript
 {
-  success: true;
-  nextQuestion: { /* Question object */ };
-  progress: { /* Progress object */ };
+  candidates: Array<{
+    id: string;
+    name: string;
+    bio: string;
+    compatibilityScore: number;
+  }>;
 }
 ```
 
-**Errors:**
-- 400: Question cannot be skipped (required: true)
-- 404: Session or question not found
+> **Gap Identified:** `MatchesScreen.tsx` has TODO: "Integrate with /v1/matches/candidates API"
 
 ---
 
-### GET /interview/progress
+### GET /matches/{matchId}
 
-Get current interview progress.
+Get details of a specific match.
 
 **Response (200):**
 ```typescript
 {
-  sessionId: string;
-  status: "active" | "paused" | "completed";
-  progress: {
-    current: number;
-    total: number;
-    percentComplete: number;
-    byCategory: {
-      [category: string]: {
-        completed: number;
-        total: number;
-      };
-    };
-  };
-  startedAt: string;
-  estimatedTimeRemaining: number;  // Minutes
+  id: string;
+  name: string;
+  bio: string;
+  photos?: string[];  // Only after payment/reveal
+  compatibilityScore: number;
 }
 ```
 
 ---
 
-## Voice
+## Photos
 
-### POST /voice/transcribe
+### POST /photos/upload
 
-Transcribe voice input and extract intent.
+Upload user photo.
 
 **Request:**
 ```
 Content-Type: multipart/form-data
 
-audio: File (audio/wav or audio/m4a)
-context: string  // Current question ID for better transcription
+photo: File
+position: number (0-5)
 ```
 
 **Response (200):**
 ```typescript
 {
-  transcription: string;
-  intent: "answer" | "command" | "clarification" | "unclear";
-  confidence: number;  // 0-1
-  // If intent is "answer"
-  extractedAnswer?: {
-    type: "choice" | "scale" | "text";
-    value: any;
-  };
-  // If intent is "command"
-  command?: "go_back" | "skip" | "repeat" | "help";
-}
-```
-
-**Errors:**
-- 400: Invalid audio format
-- 413: Audio too long (max 60 seconds)
-- 500: Transcription service error
-
----
-
-### POST /voice/conversation
-
-Send message to ElevenLabs conversational agent.
-
-**Request:**
-```typescript
-{
-  sessionId: string;
-  message: string;  // User's transcribed message
-  context: {
-    currentQuestion: string;
-    vibeState: string;
-    recentAnswers: string[];  // Last 3 for context
-  };
-}
-```
-
-**Response (200):**
-```typescript
-{
-  response: {
-    text: string;       // Abby's response text
-    audioUrl?: string;  // Pre-generated audio URL (optional)
-    emotion: "neutral" | "curious" | "empathetic" | "excited" | "thoughtful";
-  };
-  nextAction: "continue" | "wait_for_answer" | "transition";
-  suggestedVibeState?: string;
+  photoId: string;
+  url: string;
 }
 ```
 
 ---
 
-## App State
+### DELETE /photos/{photoId}
 
-### GET /app/config
-
-Get app configuration (feature flags, etc.).
+Delete a photo.
 
 **Response (200):**
 ```typescript
 {
-  featureFlags: {
-    voiceEnabled: boolean;
-    lowPowerModeThreshold: number;  // Battery percentage
-    maxVoiceDuration: number;       // Seconds
-  };
-  questionCount: number;
-  appVersion: {
-    minimum: string;
-    current: string;
-    updateUrl: string;
-  };
+  success: true;
 }
 ```
+
+---
+
+## Implementation Status
+
+| Endpoint | Service | Status |
+|----------|---------|--------|
+| Cognito SDK | `AuthService.ts` | ✅ Full implementation |
+| `/abby/realtime/*` | `AbbyRealtimeService.ts` | ✅ With demo fallback |
+| `/profile/public` | `useOnboardingStore.ts` | ⚠️ Payload built, never called |
+| `/questions/*` | `QuestionsService.ts` | ⚠️ Using local JSON |
+| `/answers` | - | ❌ Not integrated |
+| `/matches/*` | `MatchesScreen.tsx` | ❌ TODO |
+| `/photos/*` | `PhotosScreen.tsx` | ❌ Not integrated |
 
 ---
 
 ## Error Response Format
 
-All errors follow this structure:
+All API errors follow this structure:
 
 ```typescript
 {
-  error: string;           // Error code (snake_case)
+  error: string;           // Error code
   message: string;         // Human-readable message
-  details?: {              // Field-level errors for validation
-    [field: string]: string;
-  };
-  retryAfter?: number;     // For rate limiting (seconds)
+  details?: object;        // Additional context
 }
 ```
 
-**Common Error Codes:**
-| Code | HTTP Status | Description |
-|------|-------------|-------------|
-| invalid_request | 400 | Malformed request body |
-| validation_error | 400 | Field validation failed |
-| unauthorized | 401 | Missing or invalid auth |
-| forbidden | 403 | Insufficient permissions |
-| not_found | 404 | Resource doesn't exist |
-| conflict | 409 | Resource state conflict |
-| rate_limited | 429 | Too many requests |
-| server_error | 500 | Internal server error |
-| service_unavailable | 503 | External service down |
+---
+
+## Security
+
+All API calls use `secureFetch.ts`:
+- 20 second timeout for voice operations
+- 5 second timeout for availability checks
+- Error messages sanitized (no internal details)
+- Tokens stored in expo-secure-store
 
 ---
 
-## Rate Limits
+## ~~Original Spec (Deprecated)~~
 
-| Endpoint | Limit | Window |
-|----------|-------|--------|
-| /auth/phone/send | 3 | 5 minutes |
-| /auth/phone/verify | 5 | 5 minutes |
-| /interview/answer | 60 | 1 minute |
-| /voice/* | 30 | 1 minute |
-| All others | 100 | 1 minute |
+The following endpoints were in the original spec (Nathan's backend) but are NOT implemented:
 
----
-
-## Mock Implementation (MVP)
-
-For MVP, all endpoints are mocked locally:
-
-```typescript
-// src/services/api.ts
-const USE_MOCK = true;
-
-export const api = {
-  interview: {
-    start: () => USE_MOCK ? mockInterviewStart() : fetch('/interview/start'),
-    answer: (data) => USE_MOCK ? mockAnswer(data) : fetch('/interview/answer', { body: data }),
-    // ...
-  }
-};
 ```
-
-Questions loaded from `src/data/questions.json` - no network calls.
+❌ POST /auth/phone/send
+❌ POST /auth/phone/verify
+❌ POST /auth/social
+❌ POST /voice/transcribe
+❌ POST /voice/conversation (ElevenLabs - replaced by OpenAI)
+❌ POST /interview/start
+❌ POST /interview/answer
+❌ POST /interview/skip
+❌ GET /interview/resume
+❌ GET /interview/progress
+❌ GET /app/config
+```
 
 ---
 
 *Document created: December 20, 2024*
+*Last updated: January 2, 2026*

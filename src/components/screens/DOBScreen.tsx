@@ -20,6 +20,7 @@ import {
 import * as Haptics from 'expo-haptics';
 import { Typography } from '../ui/Typography';
 import { GlassButton } from '../ui/GlassButton';
+import { Checkbox } from '../ui/Checkbox';
 
 interface DOBScreenProps {
   onNext?: (dob: { month: number; day: number; year: number }, ageRange: { min: number; max: number }) => void;
@@ -40,6 +41,9 @@ export const DOBScreen: React.FC<DOBScreenProps> = ({
   // Age range fields
   const [ageMin, setAgeMin] = useState('18');
   const [ageMax, setAgeMax] = useState('65');
+
+  // 18+ confirmation (legal requirement)
+  const [confirmed18, setConfirmed18] = useState(false);
 
   // Refs for focus management
   const dayRef = useRef<TextInput>(null);
@@ -132,7 +136,8 @@ export const DOBScreen: React.FC<DOBScreenProps> = ({
     ageMaxNum <= 99
   );
 
-  const isValid = isValidDOB && isValidAgeRange;
+  // All validations must pass including 18+ confirmation
+  const isValid = isValidDOB && isValidAgeRange && confirmed18;
 
   // Calculate age for display
   const calculateAge = () => {
@@ -262,6 +267,18 @@ export const DOBScreen: React.FC<DOBScreenProps> = ({
           </View>
         </View>
 
+        {/* 18+ Age Confirmation (Legal Requirement) */}
+        <View style={styles.confirmationGroup}>
+          <Checkbox
+            checked={confirmed18}
+            onChange={setConfirmed18}
+            label="I confirm I am at least 18 years old"
+            description="Required to use this app"
+            testID="age-confirmation-checkbox"
+            accessibilityLabel="Confirm you are at least 18 years old"
+          />
+        </View>
+
       </View>
 
       {/* Fixed footer with Continue button */}
@@ -389,6 +406,12 @@ const styles = StyleSheet.create({
     fontSize: 20,
     color: 'rgba(255, 255, 255, 0.5)',
     marginHorizontal: 16,
+  },
+  confirmationGroup: {
+    marginTop: 24,
+    paddingTop: 16,
+    borderTopWidth: 1,
+    borderTopColor: 'rgba(255, 255, 255, 0.1)',
   },
   footer: {
     position: 'absolute',

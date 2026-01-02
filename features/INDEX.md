@@ -215,5 +215,25 @@ All core MVP features are implemented. Remaining work is connecting demo mode to
 
 ---
 
+## Legacy/Deprecated Files (Do Not Use)
+
+The following files are legacy documentation and should NOT be referenced. Use the `-spec.md` versions instead.
+
+| File | Replaced By | Notes |
+|------|-------------|-------|
+| `abbyorb.md` | `abbyorb-spec.md` | Old Dec 2024, mentions Fal.ai TTS |
+| `vibematrix.md` | `vibematrix-spec.md` | Old Dec 2024, outdated shader count |
+| `abbyagent.md` | `voice-integration-spec.md` | Old Dec 2024, mentions ElevenLabs |
+| `abby-agent.md` | `voice-integration-spec.md` | Design doc, now superseded |
+| `cognito-auth.md` | `onboarding-auth-spec.md` | Old implementation notes |
+
+**Files to Keep:**
+- All `*-spec.md` files (current specifications)
+- `INDEX.md` (this file)
+- `chatinput.md` (unique component feature)
+- `test-configuration.md` (test setup docs)
+
+---
+
 *Index created: December 20, 2024*
 *Last updated: January 2, 2026*
