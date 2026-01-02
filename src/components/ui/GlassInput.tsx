@@ -40,6 +40,8 @@ interface GlassInputProps {
   inputStyle?: TextStyle;
   testID?: string;
   accessibilityLabel?: string;
+  /** Accessibility hint for screen readers */
+  accessibilityHint?: string;
   onFocus?: () => void;
   onBlur?: () => void;
 }
@@ -63,6 +65,7 @@ export function GlassInput({
   inputStyle,
   testID,
   accessibilityLabel,
+  accessibilityHint,
   onFocus,
   onBlur,
 }: GlassInputProps) {
@@ -119,6 +122,7 @@ export function GlassInput({
         onBlur={handleBlur}
         testID={testID}
         accessibilityLabel={accessibilityLabel || placeholder}
+        accessibilityHint={accessibilityHint}
         style={[
           styles.input,
           multiline && styles.multilineInput,
