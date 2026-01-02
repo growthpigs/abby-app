@@ -5,7 +5,7 @@
  * Full-screen glass overlay on VibeMatrix
  */
 
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import {
   View,
   StyleSheet,
@@ -17,6 +17,7 @@ import {
 } from 'react-native';
 import * as Haptics from 'expo-haptics';
 import { Typography } from '../ui/Typography';
+import { validateEmail, sanitizeEmail } from '../../utils/validation';
 
 interface SignInScreenProps {
   onSignIn?: (email: string, password: string) => void;
@@ -40,7 +41,8 @@ export const SignInScreen: React.FC<SignInScreenProps> = ({
   const handleSignIn = () => {
     if (isValid && !isLoading) {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-      onSignIn?.(email.trim(), password);
+      // Use sanitizeEmail for consistent lowercase + trimmed email
+      onSignIn?.(sanitizeEmail(email), password);
     }
   };
 
@@ -54,10 +56,14 @@ export const SignInScreen: React.FC<SignInScreenProps> = ({
     onForgotPassword?.();
   };
 
-  // Basic validation
-  const emailValid = email.includes('@') && email.includes('.');
-  const passwordValid = password.length >= 8;
-  const isValid = emailValid && passwordValid;
+  // Validation using shared utilities
+  // For sign-in: validate email format, password just needs to exist (full validation on signup)
+  const emailValidation = useMemo(() => validateEmail(email), [email]);
+  const passwordValid = password.length > 0; // For sign-in, any password length is allowed
+  const isValid = emailValidation.valid && passwordValid;
+
+  // Show validation hint for email
+  const emailError = email.length > 0 && !emailValidation.valid ? emailValidation.error : null;
 
   return (
     <KeyboardAvoidingView
@@ -85,7 +91,7 @@ export const SignInScreen: React.FC<SignInScreenProps> = ({
         {/* Email input */}
         <View style={styles.inputContainer}>
           <TextInput
-            style={styles.input}
+            style={[styles.input, emailError && styles.inputError]}
             value={email}
             onChangeText={setEmail}
             placeholder="Email"
@@ -98,6 +104,11 @@ export const SignInScreen: React.FC<SignInScreenProps> = ({
             editable={!isLoading}
           />
         </View>
+        {emailError && (
+          <Typography variant="caption" style={styles.fieldError}>
+            {emailError}
+          </Typography>
+        )}
 
         {/* Password input */}
         <View style={styles.inputContainer}>
@@ -197,7 +208,7 @@ const styles = StyleSheet.create({
   inputContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 24,
+    marginBottom: 8,
   },
   input: {
     flex: 1,
@@ -208,6 +219,15 @@ const styles = StyleSheet.create({
     fontSize: 18,
     color: 'rgba(255, 255, 255, 0.95)',
     fontWeight: '400',
+  },
+  inputError: {
+    borderBottomColor: 'rgba(255, 100, 100, 0.7)',
+  },
+  fieldError: {
+    fontSize: 12,
+    color: 'rgba(255, 150, 150, 0.95)',
+    marginBottom: 16,
+    marginLeft: 8,
   },
   eyeButton: {
     padding: 12,

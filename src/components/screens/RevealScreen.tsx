@@ -21,11 +21,17 @@ import { useVibeController } from '../../store/useVibeController';
 export interface RevealScreenProps {
   onSecretBack?: () => void;
   onSecretForward?: () => void;
+  onMessage?: (matchName: string) => void;
+  onFindMoreMatches?: () => void;
+  onViewAllMatches?: () => void;
 }
 
 export const RevealScreen: React.FC<RevealScreenProps> = ({
   onSecretBack,
   onSecretForward,
+  onMessage,
+  onFindMoreMatches,
+  onViewAllMatches,
 }) => {
   const reset = useDemoStore((state) => state.reset);
   const advance = useDemoStore((state) => state.advance);
@@ -74,13 +80,31 @@ export const RevealScreen: React.FC<RevealScreenProps> = ({
     opacity: contentOpacity.value,
   }));
 
-  const handleStartOver = () => {
-    reset();
-  };
+  const handleMessage = useCallback(() => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    if (matchData?.name) {
+      onMessage?.(matchData.name);
+    }
+    // Fallback: advance to Coach for now
+    if (!onMessage) {
+      advance();
+    }
+  }, [matchData?.name, onMessage, advance]);
 
-  const handleMeetCoach = () => {
-    advance();
-  };
+  const handleFindMoreMatches = useCallback(() => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    if (onFindMoreMatches) {
+      onFindMoreMatches();
+    } else {
+      // Fallback: reset to start new interview
+      reset();
+    }
+  }, [onFindMoreMatches, reset]);
+
+  const handleViewAllMatches = useCallback(() => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    onViewAllMatches?.();
+  }, [onViewAllMatches]);
 
   // Guard against missing or incomplete matchData
   if (!matchData || !matchData.name || typeof matchData.age !== 'number') {
@@ -119,12 +143,17 @@ export const RevealScreen: React.FC<RevealScreenProps> = ({
 
         {/* Action buttons */}
         <Animated.View style={[styles.buttonContainer, contentAnimatedStyle]}>
-          <GlassButton onPress={handleMeetCoach} variant="primary">
-            Meet Your Coach
+          <GlassButton onPress={handleMessage} variant="primary">
+            Message {matchData.name}
           </GlassButton>
-          <GlassButton onPress={handleStartOver} variant="secondary">
-            Start Over (Demo)
+          <GlassButton onPress={handleFindMoreMatches} variant="secondary">
+            Find More Matches
           </GlassButton>
+          {onViewAllMatches && (
+            <Pressable onPress={handleViewAllMatches} style={styles.viewAllLink}>
+              <Caption style={styles.viewAllText}>View All Matches →</Caption>
+            </Pressable>
+          )}
         </Animated.View>
       </GlassSheet>
 
@@ -223,6 +252,15 @@ const styles = StyleSheet.create({
     gap: 12,
     marginTop: 'auto',
     paddingBottom: 32,
+  },
+  viewAllLink: {
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+  },
+  viewAllText: {
+    color: '#3B82F6',
+    fontSize: 14,
+    fontWeight: '500',
   },
 
   // Secret navigation triggers

@@ -14,7 +14,7 @@
 | Phase 1: Legal Blockers | Jan 2, 2026 | ✅ COMPLETE | 18+ checkbox, GDPR delete |
 | Phase 2: Profile Submission | Jan 2, 2026 | ✅ COMPLETE | Fix getProfilePayload() call |
 | Phase 3: State Persistence | Jan 2, 2026 | ✅ COMPLETE | Interview + Onboarding recovery |
-| Phase 4: UX Fixes | - | ⏳ PENDING | ProfileScreen, RevealScreen, ErrorModal |
+| Phase 4: UX Fixes | Jan 2, 2026 | 🚧 IN PROGRESS | ProfileScreen, RevealScreen, ErrorModal |
 | Phase 5: Social Auth | - | ⏳ PENDING | Apple/Google/Facebook buttons |
 | Phase 6: Design Alignment | - | ⏳ PENDING | Gender options, Nickname, Age slider |
 | Phase 7: API Integration | - | ⏳ PENDING | Matches, Photos, Token refresh |
@@ -89,18 +89,18 @@
 
 ---
 
-## Phase 4: UX Fixes
+## Phase 4: UX Fixes (IN PROGRESS)
 
 ### Tasks
 | Task | File | Status | Owner |
 |------|------|--------|-------|
 | 4.1 Create ProfileScreen | ProfileScreen.tsx (new) | ⏳ | Chi |
-| 4.2 Fix post-reveal dead end | RevealScreen.tsx | ⏳ | Chi |
+| 4.2 Fix post-reveal dead end | RevealScreen.tsx | ✅ DONE | Chi |
 | 4.3 Add network error UI | ErrorModal.tsx (new) | ⏳ | Chi |
 
 ### Acceptance Criteria
 - [ ] Users can edit profile after onboarding
-- [ ] RevealScreen has "Message", "More Matches", "View All" buttons
+- [x] RevealScreen has "Message", "More Matches", "View All" buttons
 - [ ] Network errors show retry/dismiss modal
 
 ---

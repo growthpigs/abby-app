@@ -79,13 +79,36 @@ export class AbbyRealtimeService {
   private isSpeakingState: boolean = false;
   private isDemoModeState: boolean = false;
   private demoMessageIndex: number = 0;
-  private demoMessageTimer: NodeJS.Timeout | null = null;
+  // Timer tracking: Use Set to track ALL timers for proper cleanup
+  private activeTimers: Set<NodeJS.Timeout> = new Set();
   private callbacks: ConversationCallbacks = {};
   private screenType: 'intro' | 'coach' = 'intro';
 
   constructor(callbacks?: ConversationCallbacks, screenType: 'intro' | 'coach' = 'intro') {
     this.callbacks = callbacks || {};
     this.screenType = screenType;
+  }
+
+  /**
+   * Schedule a timer that is automatically tracked for cleanup.
+   * When the timer fires, it removes itself from the Set.
+   * When endConversation() is called, all remaining timers are cleared.
+   */
+  private scheduleTimer(callback: () => void, delay: number): NodeJS.Timeout {
+    const timer = setTimeout(() => {
+      this.activeTimers.delete(timer);
+      callback();
+    }, delay);
+    this.activeTimers.add(timer);
+    return timer;
+  }
+
+  /**
+   * Clear all tracked timers (called during cleanup)
+   */
+  private clearAllTimers(): void {
+    this.activeTimers.forEach((timer) => clearTimeout(timer));
+    this.activeTimers.clear();
   }
 
   /**
@@ -163,6 +186,7 @@ export class AbbyRealtimeService {
 
   /**
    * Send next demo message with natural typing delay
+   * Uses scheduleTimer for proper cleanup tracking
    */
   private sendNextDemoMessage(): void {
     const messages = this.screenType === 'intro' ? DEMO_INTRO_MESSAGES : DEMO_COACH_MESSAGES;
@@ -174,7 +198,7 @@ export class AbbyRealtimeService {
     // Simulate typing delay (1.5-3 seconds)
     const delay = 1500 + Math.random() * 1500;
 
-    this.demoMessageTimer = setTimeout(() => {
+    this.scheduleTimer(() => {
       if (!this.isConnectedState) return; // Session ended
 
       const message = messages[this.demoMessageIndex];
@@ -184,7 +208,7 @@ export class AbbyRealtimeService {
       // Continue with next message after a pause
       if (this.demoMessageIndex < messages.length) {
         const nextDelay = 2000 + Math.random() * 2000;
-        this.demoMessageTimer = setTimeout(() => {
+        this.scheduleTimer(() => {
           this.sendNextDemoMessage();
         }, nextDelay);
       }
@@ -195,11 +219,8 @@ export class AbbyRealtimeService {
    * End the conversation session
    */
   async endConversation(): Promise<void> {
-    // Clean up demo mode timers
-    if (this.demoMessageTimer) {
-      clearTimeout(this.demoMessageTimer);
-      this.demoMessageTimer = null;
-    }
+    // Clear ALL tracked timers (demo messages, text message responses, etc.)
+    this.clearAllTimers();
 
     // If in demo mode, just cleanup state
     if (this.isDemoModeState) {
@@ -258,8 +279,8 @@ export class AbbyRealtimeService {
     if (this.isDemoModeState) {
       if (__DEV__) console.log('[AbbyRealtime] Demo mode - simulating response to:', message);
 
-      // Simulate typing delay
-      setTimeout(() => {
+      // Simulate typing delay - uses tracked timer for cleanup
+      this.scheduleTimer(() => {
         const demoResponse = this.generateDemoResponse(message);
         this.callbacks.onAbbyResponse?.(demoResponse);
       }, 1000 + Math.random() * 1500);
@@ -455,24 +476,45 @@ export function useAbbyAgent(config: UseAbbyAgentConfig = {}) {
 
   const serviceRef = useRef<AbbyRealtimeService | null>(null);
 
-  // Initialize service with callbacks
+  // Store callbacks in refs to avoid stale closures and unnecessary re-initialization
+  // This pattern ensures callbacks are always fresh without triggering effect re-runs
+  const callbacksRef = useRef({
+    onAbbyResponse: config.onAbbyResponse,
+    onUserTranscript: config.onUserTranscript,
+    onConnect: config.onConnect,
+    onDisconnect: config.onDisconnect,
+    onError: config.onError,
+  });
+
+  // Keep refs updated with latest callbacks
+  useEffect(() => {
+    callbacksRef.current = {
+      onAbbyResponse: config.onAbbyResponse,
+      onUserTranscript: config.onUserTranscript,
+      onConnect: config.onConnect,
+      onDisconnect: config.onDisconnect,
+      onError: config.onError,
+    };
+  });
+
+  // Initialize service with callbacks (uses refs to avoid stale closures)
   useEffect(() => {
     if (config.enabled !== false) {
       serviceRef.current = new AbbyRealtimeService(
         {
-          onAbbyResponse: config.onAbbyResponse,
-          onUserTranscript: config.onUserTranscript,
+          onAbbyResponse: (text) => callbacksRef.current.onAbbyResponse?.(text),
+          onUserTranscript: (text) => callbacksRef.current.onUserTranscript?.(text),
           onConnect: () => {
             setIsConnected(true);
             setIsDemoMode(serviceRef.current?.isDemoMode ?? false);
-            config.onConnect?.();
+            callbacksRef.current.onConnect?.();
           },
           onDisconnect: () => {
             setIsConnected(false);
             setIsDemoMode(false);
-            config.onDisconnect?.();
+            callbacksRef.current.onDisconnect?.();
           },
-          onError: config.onError,
+          onError: (error) => callbacksRef.current.onError?.(error),
         },
         config.screenType ?? 'intro'
       );
