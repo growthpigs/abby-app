@@ -292,6 +292,52 @@ npm test
 
 ---
 
+### Major Cleanup Verification (2026-01-02)
+
+**Run these AFTER removing redundant files to verify nothing broke:**
+
+```bash
+# 1. TypeScript compiles (catches broken imports)
+npx tsc --noEmit 2>&1 | head -20
+# Expected: No errors (0 output lines)
+
+# 2. All tests pass (404 tests at time of cleanup)
+npm test
+# Expected: Test Suites: X passed, Tests: 404 passed
+
+# 3. iOS build succeeds
+npx expo run:ios
+# Expected: "Build Succeeded" + app launches on simulator
+
+# 4. Verify removed files are actually gone
+ls App.agent.tsx App.demo.tsx 2>/dev/null && echo "❌ Still exists!" || echo "✅ Cleaned"
+ls src/components/layers/LiquidGlass.tsx 2>/dev/null && echo "❌ Still exists!" || echo "✅ Cleaned"
+ls src/components/layers/VibeMatrix.tsx 2>/dev/null && echo "❌ Still exists!" || echo "✅ Cleaned"
+```
+
+**Cleanup Session (2026-01-02) - Files Removed (20 total):**
+
+| Category | Files Removed | Files Kept |
+|----------|---------------|------------|
+| App Variants | 8 (agent, demo, dev, liquid, orb, simple, transition-test, vibe-test) | App.tsx |
+| LiquidGlass | 9 (LiquidGlass.tsx, 2-3, 5-10) | LiquidGlass4.tsx (used by AbbyOrb) |
+| VibeMatrix | 4 (VibeMatrix, Simple, Animated layer, Parametric) | VibeMatrixAnimated.tsx |
+
+**Critical Fix Applied:**
+```typescript
+// VibeMatrixAnimated.tsx - Fixed broken import
+// BEFORE: import { VIBE_MATRIX_SHADER } from '../../shaders/vibeMatrix';
+// AFTER:
+import { getShaderById } from '../../shaders/factory/registryV2';
+const VIBE_MATRIX_SHADER = getShaderById(0).source;
+```
+
+**ElevenLabsProvider Removal:**
+- App.tsx no longer has conditional ElevenLabsProvider import/wrapper
+- Voice handled by AbbyRealtimeService (client's OpenAI Realtime API)
+
+---
+
 ## Project Info
 
 ### Google Drive Folders
@@ -344,7 +390,7 @@ npm test
 - ✅ Metro bundle compiles (3277+ modules)
 - ✅ iOS build succeeds on simulator
 - ✅ **Security layer** - secureFetch with timeouts, input validation
-- ✅ **344 tests passing** (up from 246 on 2025-12-24)
+- ✅ **404 tests passing** (up from 344 after cleanup on 2026-01-02)
 - ✅ Console logs gated with `__DEV__`
 
 **API Status (2026-01-02):**
@@ -367,10 +413,13 @@ Status:   Verified ✅, Login works ✅
 ```
 
 **Recent Work (2026-01-02):**
+- **Major cleanup**: Removed 20 redundant files (App variants, LiquidGlass, VibeMatrix)
+- Fixed shader import in VibeMatrixAnimated.tsx (getShaderById from registryV2)
+- Removed ElevenLabsProvider (voice now uses client's OpenAI Realtime API)
 - Autonomous improvement session: security, tests, code quality
 - Added `secureFetch.ts` with timeouts and error sanitization
 - Added input validation utilities
-- Test coverage: 246 → 344 tests
+- Test coverage: 246 → 404 tests
 - All console statements gated with `__DEV__`
 - Updated stale documentation (INDEX, specs)
 

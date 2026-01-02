@@ -4,27 +4,35 @@
 
 ## Completed
 
-- ✅ Created Product Vision doc for Brent → Manny (client-safe, no implementation details)
-- ✅ Exported to Google Docs: `16CyBNtcxJcy2jN1pigpS_OeTossj3q7BYDvZ3KwDdCU`
-- ✅ Created MVP Scope Defense doc with hard metrics
-- ✅ Verified Nathan's backend blocker still NOT fixed (API returns 404 "user not found")
-- ✅ Screen audit: 29 total, 26 accessible, 3 orphaned
-- ✅ Wired up ProfileScreen to hamburger menu (was orphaned)
-- ✅ Added demo mode fallbacks to PhotosScreen and MatchesScreen
-- ✅ Updated RUNBOOK with demo mode documentation
-- ✅ All 398 tests pass, TypeScript clean
+- ✅ **Major Cleanup**: Removed 20 redundant files to prevent future debugging confusion:
+  - 8 App variants (agent, demo, dev, liquid, orb, simple, transition-test, vibe-test)
+  - 9 LiquidGlass variants (kept only LiquidGlass4.tsx used by AbbyOrb)
+  - 4 VibeMatrix variants (kept only VibeMatrixAnimated.tsx)
+- ✅ Fixed VibeMatrixAnimated.tsx shader import (getShaderById from registryV2)
+- ✅ Removed ElevenLabsProvider wrapper (voice uses client's OpenAI Realtime API)
+- ✅ Updated tests for new file structure (404 tests pass)
+- ✅ iOS build succeeds
+- ✅ Documentation Phase complete:
+  - Project RUNBOOK updated with cleanup verification commands
+  - Global active-tasks.md updated
+  - Lesson stored in mem0
 
-## Files Changed
+## Files Removed (20 total)
+
+| Category | Files | Reason |
+|----------|-------|--------|
+| App.*.tsx | 8 files | Unused test variants |
+| LiquidGlass*.tsx | 9 files | Only LiquidGlass4 used |
+| VibeMatrix*.tsx | 4 files | Only VibeMatrixAnimated used |
+
+## Files Modified
 
 | File | Change |
 |------|--------|
-| `HamburgerMenu.tsx` | Added Profile menu item + onProfilePress |
-| `App.tsx` | Added ProfileScreen import, handler, render |
-| `PhotosScreen.tsx` | Added DEMO_PHOTOS fallback |
-| `MatchesScreen.tsx` | Added DEMO_MATCHES fallback |
-| `index.ts` | Fixed misleading comment |
-| `RUNBOOK.md` | Added demo mode + screen audit sections |
-| `MVP-SCOPE-DEFENSE.md` | Updated screen counts |
+| `App.tsx` | Removed ElevenLabsProvider import/wrapper |
+| `VibeMatrixAnimated.tsx` | Fixed shader import to use registryV2 |
+| `docs/06-reference/RUNBOOK.md` | Added cleanup verification section |
+| `__tests__/*.ts` | Updated for removed files |
 
 ## Blockers
 
@@ -33,12 +41,12 @@
 
 ## Next Steps
 
-- Test ProfileScreen in simulator (demo mode should work now)
-- Wait for Nathan to fix backend
+- Test voice session with authenticated token (when backend fixed)
 - TestFlight build when backend ready
+- Consider removing orphan screens (PhoneNumberScreen, VerificationCodeScreen, LoadingScreen)
 
 ## Context
 
-- Brent managing scope creep with Manny (client)
-- PRD/FSD NOT in SOW deliverables - just Design System, App Flow, Backend Integration
-- Product Vision doc created as alternative to sharing internal PRD
+- **404 tests passing** (up from 344)
+- Codebase is now cleaner - only one version of each component
+- Voice: AbbyRealtimeService handles OpenAI Realtime API (not ElevenLabs)
