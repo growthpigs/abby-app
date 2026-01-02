@@ -13,10 +13,48 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 
 // Storage key and version
 const ONBOARDING_KEY = '@abby/onboarding';
-const ONBOARDING_VERSION = 1;
+const ONBOARDING_VERSION = 2; // Bumped for screen identifier migration
 
 // Session timeout: 30 days
 const ONBOARDING_TIMEOUT_MS = 30 * 24 * 60 * 60 * 1000;
+
+/**
+ * Screen identifiers - resilient to screen reordering
+ * Using string identifiers instead of indices prevents recovery bugs
+ * if screens are added/removed/reordered in future updates.
+ */
+export const ONBOARDING_SCREENS = [
+  'name',           // Screen 4: Name
+  'dob',            // Screen 5: DOB
+  'gender',         // Screen 6: Gender Identity
+  'preference',     // Screen 7: Sexual Preference
+  'ethnicity',      // Screen 8: Ethnicity
+  'ethnicity_pref', // Screen 9: Ethnicity Preference
+  'relationship',   // Screen 10: Relationship Type
+  'smoking',        // Screen 11: Smoking
+] as const;
+
+export type OnboardingScreenId = typeof ONBOARDING_SCREENS[number];
+
+/**
+ * Get screen index from identifier (resilient to reordering)
+ * Returns 0 if identifier not found (safe fallback)
+ */
+export const getScreenIndex = (screenId: OnboardingScreenId | null): number => {
+  if (!screenId) return 0;
+  const index = ONBOARDING_SCREENS.indexOf(screenId);
+  return index >= 0 ? index : 0;
+};
+
+/**
+ * Get screen identifier from index (for backwards compatibility)
+ */
+export const getScreenId = (index: number): OnboardingScreenId => {
+  if (index < 0 || index >= ONBOARDING_SCREENS.length) {
+    return ONBOARDING_SCREENS[0];
+  }
+  return ONBOARDING_SCREENS[index];
+};
 
 // Location types
 export interface GPSLocation {
@@ -64,7 +102,7 @@ interface OnboardingStoreState {
 
   // Progress tracking
   isComplete: boolean;
-  currentScreen: number; // For recovery (0-based index)
+  currentScreenId: OnboardingScreenId | null; // Screen identifier for recovery (resilient to reordering)
   savedAt: number | null; // Timestamp for timeout check
   isLoaded: boolean; // Whether persistence has been loaded
 }
@@ -107,7 +145,8 @@ interface OnboardingStoreActions {
   getProfilePayload: () => Record<string, unknown>;
 
   // Persistence
-  setCurrentScreen: (screen: number) => void;
+  setCurrentScreen: (screenId: OnboardingScreenId) => void;
+  getCurrentScreenIndex: () => number; // Get index from current identifier
   saveToStorage: () => Promise<void>;
   loadFromStorage: () => Promise<boolean>; // Returns true if recovered session
   clearStorage: () => Promise<void>;
@@ -150,7 +189,7 @@ const initialState: OnboardingStoreState = {
 
   // Progress
   isComplete: false,
-  currentScreen: 0,
+  currentScreenId: null,
   savedAt: null,
   isLoaded: false,
 };
@@ -304,9 +343,15 @@ export const useOnboardingStore = create<OnboardingStore>((set, get) => ({
     return payload;
   },
 
-  // Persistence: Set current screen index
-  setCurrentScreen: (screen: number) => {
-    set({ currentScreen: screen });
+  // Persistence: Set current screen by identifier (resilient to reordering)
+  setCurrentScreen: (screenId: OnboardingScreenId) => {
+    set({ currentScreenId: screenId });
+  },
+
+  // Get current screen index from identifier
+  getCurrentScreenIndex: () => {
+    const { currentScreenId } = get();
+    return getScreenIndex(currentScreenId);
   },
 
   // Persistence: Save to AsyncStorage
@@ -319,7 +364,7 @@ export const useOnboardingStore = create<OnboardingStore>((set, get) => ({
       const toSave = {
         version: ONBOARDING_VERSION,
         savedAt: Date.now(),
-        currentScreen: state.currentScreen,
+        currentScreenId: state.currentScreenId, // Use identifier, not index
         fullName: state.fullName,
         nickname: state.nickname,
         dateOfBirth: state.dateOfBirth?.toISOString() || null,
@@ -338,11 +383,11 @@ export const useOnboardingStore = create<OnboardingStore>((set, get) => ({
       await AsyncStorage.setItem(ONBOARDING_KEY, JSON.stringify(toSave));
       set({ savedAt: toSave.savedAt });
       if (__DEV__) {
-        if (__DEV__) console.log('[OnboardingStore] Saved to storage, screen:', state.currentScreen);
+        console.log('[OnboardingStore] Saved to storage, screen:', state.currentScreenId);
       }
     } catch (error) {
       if (__DEV__) {
-        if (__DEV__) console.error('[OnboardingStore] Failed to save:', error);
+        console.error('[OnboardingStore] Failed to save:', error);
       }
     }
   },
@@ -358,31 +403,49 @@ export const useOnboardingStore = create<OnboardingStore>((set, get) => ({
 
       const data = JSON.parse(stored);
 
-      // Check version
+      // Version check with migration support
+      // Version 1: used currentScreen (index)
+      // Version 2: uses currentScreenId (identifier)
       if (data.version !== ONBOARDING_VERSION) {
-        if (__DEV__) {
-          if (__DEV__) console.warn('[OnboardingStore] Version mismatch, clearing');
+        // Try to migrate from v1 to v2
+        if (data.version === 1 && typeof data.currentScreen === 'number') {
+          // Migrate index to identifier
+          data.currentScreenId = getScreenId(data.currentScreen);
+          data.version = ONBOARDING_VERSION;
+          if (__DEV__) {
+            console.log('[OnboardingStore] Migrated from v1 to v2, screen index', data.currentScreen, '→', data.currentScreenId);
+          }
+        } else {
+          if (__DEV__) {
+            console.warn('[OnboardingStore] Version mismatch, clearing');
+          }
+          await AsyncStorage.removeItem(ONBOARDING_KEY);
+          set({ isLoaded: true });
+          return false;
         }
-        await AsyncStorage.removeItem(ONBOARDING_KEY);
-        set({ isLoaded: true });
-        return false;
       }
 
       // Check timeout (30 days)
       if (data.savedAt && Date.now() - data.savedAt > ONBOARDING_TIMEOUT_MS) {
         if (__DEV__) {
-          if (__DEV__) console.log('[OnboardingStore] Session expired, clearing');
+          console.log('[OnboardingStore] Session expired, clearing');
         }
         await AsyncStorage.removeItem(ONBOARDING_KEY);
         set({ isLoaded: true });
         return false;
       }
 
+      // Validate screen identifier exists in current screen list
+      const screenId = data.currentScreenId;
+      const validScreenId = screenId && ONBOARDING_SCREENS.includes(screenId)
+        ? screenId
+        : null;
+
       // Restore state
       set({
         isLoaded: true,
         savedAt: data.savedAt,
-        currentScreen: data.currentScreen || 0,
+        currentScreenId: validScreenId,
         fullName: data.fullName || null,
         nickname: data.nickname || null,
         dateOfBirth: data.dateOfBirth ? new Date(data.dateOfBirth) : null,
@@ -399,12 +462,12 @@ export const useOnboardingStore = create<OnboardingStore>((set, get) => ({
       });
 
       if (__DEV__) {
-        if (__DEV__) console.log('[OnboardingStore] Recovered session, screen:', data.currentScreen);
+        console.log('[OnboardingStore] Recovered session, screen:', validScreenId);
       }
       return true; // Session recovered
     } catch (error) {
       if (__DEV__) {
-        if (__DEV__) console.error('[OnboardingStore] Failed to load:', error);
+        console.error('[OnboardingStore] Failed to load:', error);
       }
       set({ isLoaded: true });
       return false;
@@ -416,11 +479,11 @@ export const useOnboardingStore = create<OnboardingStore>((set, get) => ({
     try {
       await AsyncStorage.removeItem(ONBOARDING_KEY);
       if (__DEV__) {
-        if (__DEV__) console.log('[OnboardingStore] Cleared storage');
+        console.log('[OnboardingStore] Cleared storage');
       }
     } catch (error) {
       if (__DEV__) {
-        if (__DEV__) console.error('[OnboardingStore] Failed to clear storage:', error);
+        console.error('[OnboardingStore] Failed to clear storage:', error);
       }
     }
   },

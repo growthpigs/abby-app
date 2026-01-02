@@ -413,12 +413,13 @@ describe('Error Handling', () => {
     expect(source).toContain('voiceError');
   });
 
-  test('VibeMatrix handles shader compile failure', () => {
-    const source = readFile('src/components/layers/VibeMatrix.tsx');
+  test('VibeMatrixAnimated handles shader compile failure with fallback', () => {
+    const source = readFile('src/components/layers/VibeMatrixAnimated.tsx');
 
     expect(source).toContain('if (!effect)');
     expect(source).toContain('SHADER COMPILE FAILED');
     expect(source).toContain('if (!shader)');
+    expect(source).toContain('FALLBACK_COLORS'); // Fallback gradient for visual continuity
   });
 });
 

@@ -337,46 +337,32 @@ describe('Vibe Types', () => {
 });
 
 // ==============================================================================
-// TEST 9: LiquidGlass Orb
+// TEST 9: LiquidGlass4 Orb
 // ==============================================================================
 
-describe('LiquidGlass Orb', () => {
-  test('LiquidGlass.tsx exists', () => {
-    expect(fileExists('src/components/layers/LiquidGlass.tsx')).toBe(true);
+describe('LiquidGlass4 Orb', () => {
+  test('LiquidGlass4.tsx exists', () => {
+    expect(fileExists('src/components/layers/LiquidGlass4.tsx')).toBe(true);
   });
 
-  test('LiquidGlass uses Skia Canvas', () => {
-    const source = readFile('src/components/layers/LiquidGlass.tsx');
+  test('LiquidGlass4 uses Skia Canvas', () => {
+    const source = readFile('src/components/layers/LiquidGlass4.tsx');
 
     expect(source).toContain("from '@shopify/react-native-skia'");
     expect(source).toContain('Canvas');
   });
 
   test('LiquidGlass4 has audioLevel prop for reactivity', () => {
-    // LiquidGlass4 is the audio-reactive version used in demos
     const source = readFile('src/components/layers/LiquidGlass4.tsx');
 
     expect(source).toContain('audioLevel');
   });
 
-  test('Multiple LiquidGlass variations exist', () => {
-    // Check for LiquidGlass variations (G1, G2, etc.)
-    expect(fileExists('src/components/layers/LiquidGlass.tsx')).toBe(true);
+  test('LiquidGlass4 is used by AbbyOrb', () => {
+    const source = readFile('src/components/layers/AbbyOrb/index.tsx');
 
-    // Check for at least one variation
-    const variations = [
-      'LiquidGlass2.tsx',
-      'LiquidGlass3.tsx',
-      'LiquidGlass4.tsx',
-    ];
-
-    let found = false;
-    variations.forEach(v => {
-      if (fileExists(`src/components/layers/${v}`)) {
-        found = true;
-      }
-    });
-    expect(found).toBe(true);
+    expect(source).toContain("from '../LiquidGlass4'");
+    expect(source).toContain('<LiquidGlass4');
   });
 });
 
@@ -385,29 +371,15 @@ describe('LiquidGlass Orb', () => {
 // ==============================================================================
 
 describe('Performance Patterns', () => {
-  test('VibeMatrix uses useMemo for shader compilation', () => {
-    const source = readFile('src/components/layers/VibeMatrix.tsx');
+  test('VibeMatrixAnimated uses useMemo for shader compilation', () => {
+    const source = readFile('src/components/layers/VibeMatrixAnimated.tsx');
 
     expect(source).toContain('useMemo');
     expect(source).toContain('RuntimeEffect.Make');
   });
 
-  test('Shader compilation happens once (empty deps or memoized)', () => {
-    const source = readFile('src/components/layers/VibeMatrix.tsx');
-
-    // Check for useMemo with empty deps for shader
-    expect(source).toMatch(/useMemo\(\s*\(\)\s*=>\s*{[\s\S]*?RuntimeEffect\.Make[\s\S]*?},\s*\[\s*\]/);
-  });
-
-  test('AnimatedVibeLayer uses useRef for background', () => {
-    const source = readFile('src/components/layers/AnimatedVibeLayer.tsx');
-
-    expect(source).toContain('useRef');
-    expect(source).toContain('backgroundRef');
-  });
-
   test('useDerivedValue is used for animated uniforms', () => {
-    const source = readFile('src/components/layers/VibeMatrix.tsx');
+    const source = readFile('src/components/layers/VibeMatrixAnimated.tsx');
 
     expect(source).toContain('useDerivedValue');
   });

@@ -161,6 +161,14 @@ describe('VibeMatrixAnimated Shader System', () => {
     const source = readFile('src/components/layers/VibeMatrixAnimated.tsx');
     expect(source).toContain('setVibeAndComplexity');
   });
+
+  test('VibeMatrixAnimated has fallback gradient when shader fails', () => {
+    const source = readFile('src/components/layers/VibeMatrixAnimated.tsx');
+    // Fallback uses LinearGradient with FALLBACK_COLORS when shader compile fails
+    expect(source).toContain('FALLBACK_COLORS');
+    expect(source).toContain('LinearGradient');
+    expect(source).toContain('if (!shader)');
+  });
 });
 
 // ==============================================================================
@@ -255,8 +263,8 @@ describe('Animation Safety', () => {
     expect(source).toContain('PanResponder.create');
   });
 
-  test('VibeMatrix uses reanimated for derived values', () => {
-    const source = readFile('src/components/layers/VibeMatrix.tsx');
+  test('VibeMatrixAnimated uses reanimated for derived values', () => {
+    const source = readFile('src/components/layers/VibeMatrixAnimated.tsx');
 
     expect(source).toContain("from 'react-native-reanimated'");
     expect(source).toContain('useDerivedValue');

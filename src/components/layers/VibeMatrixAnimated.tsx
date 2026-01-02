@@ -21,6 +21,8 @@ import {
   Shader,
   Skia,
   useClock,
+  LinearGradient,
+  vec,
 } from '@shopify/react-native-skia';
 import {
   useDerivedValue,
@@ -29,10 +31,19 @@ import {
   runOnJS,
   SharedValue,
 } from 'react-native-reanimated';
-import { VIBE_MATRIX_SHADER } from '../../shaders/vibeMatrix';
+import { getShaderById } from '../../shaders/factory/registryV2';
 import { VIBE_COLORS, COMPLEXITY_VALUES } from '../../constants/colors';
 import { VibeColorTheme, VibeComplexity } from '../../types/vibe';
 import { wrapWithMorph } from '../../shaders/morphWrapper';
+
+// Default shader source from registry (shader ID 0 - Domain Warp)
+const VIBE_MATRIX_SHADER = getShaderById(0).source;
+
+// Fallback gradient for shader compile failures (matches TRUST theme)
+const FALLBACK_COLORS = {
+  primary: 'rgb(59, 130, 246)',   // Blue
+  secondary: 'rgb(96, 165, 250)', // Lighter blue
+};
 
 // Ref interface for external control
 export interface VibeMatrixAnimatedRef {
@@ -100,8 +111,21 @@ const ShaderLayer = React.memo(({
     };
   }, [clock, morphProgress, morphDirection]);
 
+  // Fallback gradient when shader fails to compile (never show blank screen)
   if (!shader) {
-    return null;
+    return (
+      <View style={styles.canvas}>
+        <Canvas style={styles.canvas}>
+          <Fill>
+            <LinearGradient
+              start={vec(0, 0)}
+              end={vec(width, height)}
+              colors={[FALLBACK_COLORS.primary, FALLBACK_COLORS.secondary]}
+            />
+          </Fill>
+        </Canvas>
+      </View>
+    );
   }
 
   return (
