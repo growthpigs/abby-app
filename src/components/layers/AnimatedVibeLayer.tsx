@@ -74,7 +74,7 @@ export const AnimatedVibeLayer: React.FC<AnimatedVibeLayerProps> = ({
   // Log state changes for debugging (dev only)
   useEffect(() => {
     if (__DEV__) {
-      console.log(`[AnimatedVibeLayer] Background: ${backgroundIndex}/${TOTAL_SHADERS} theme=${colorTheme} complexity=${complexity}`);
+      if (__DEV__) console.log(`[AnimatedVibeLayer] Background: ${backgroundIndex}/${TOTAL_SHADERS} theme=${colorTheme} complexity=${complexity}`);
     }
   }, [backgroundIndex, colorTheme, complexity]);
 

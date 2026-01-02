@@ -98,7 +98,7 @@ export const PermissionsScreen: React.FC<PermissionsScreenProps> = ({
       updatePermissionStatus('location', locationStatus.granted ? 'granted' : 'pending');
     } catch (error) {
       if (__DEV__) {
-        console.warn('[PermissionsScreen] Error checking permissions:', error);
+        if (__DEV__) console.warn('[PermissionsScreen] Error checking permissions:', error);
       }
     }
   };
@@ -116,7 +116,7 @@ export const PermissionsScreen: React.FC<PermissionsScreenProps> = ({
       return granted;
     } catch (error) {
       if (__DEV__) {
-        console.error('[PermissionsScreen] Microphone permission error:', error);
+        if (__DEV__) console.error('[PermissionsScreen] Microphone permission error:', error);
       }
       updatePermissionStatus('microphone', 'denied');
       return false;
@@ -130,7 +130,7 @@ export const PermissionsScreen: React.FC<PermissionsScreenProps> = ({
       return granted;
     } catch (error) {
       if (__DEV__) {
-        console.error('[PermissionsScreen] Location permission error:', error);
+        if (__DEV__) console.error('[PermissionsScreen] Location permission error:', error);
       }
       updatePermissionStatus('location', 'denied');
       return false;
@@ -168,7 +168,7 @@ export const PermissionsScreen: React.FC<PermissionsScreenProps> = ({
       onNext?.();
     } catch (error) {
       if (__DEV__) {
-        console.error('[PermissionsScreen] Permission request error:', error);
+        if (__DEV__) console.error('[PermissionsScreen] Permission request error:', error);
       }
       Alert.alert('Error', 'Something went wrong. Please try again.');
     } finally {

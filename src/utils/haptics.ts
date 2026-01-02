@@ -20,7 +20,7 @@ export async function safeImpact(
   } catch (error) {
     // Haptics not supported or failed
     if (typeof __DEV__ !== 'undefined' && __DEV__) {
-      console.warn('[Haptics] Impact feedback failed:', error);
+      if (__DEV__) console.warn('[Haptics] Impact feedback failed:', error);
     }
     // Silently fail in production
   }
@@ -36,7 +36,7 @@ export async function safeSelection(): Promise<void> {
   } catch (error) {
     // Haptics not supported or failed
     if (typeof __DEV__ !== 'undefined' && __DEV__) {
-      console.warn('[Haptics] Selection feedback failed:', error);
+      if (__DEV__) console.warn('[Haptics] Selection feedback failed:', error);
     }
     // Silently fail in production
   }
@@ -55,7 +55,7 @@ export async function safeNotification(
   } catch (error) {
     // Haptics not supported or failed
     if (typeof __DEV__ !== 'undefined' && __DEV__) {
-      console.warn('[Haptics] Notification feedback failed:', error);
+      if (__DEV__) console.warn('[Haptics] Notification feedback failed:', error);
     }
     // Silently fail in production
   }

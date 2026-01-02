@@ -133,7 +133,7 @@ export const InterviewScreen: React.FC<InterviewScreenProps> = ({
       abbyTTS.speak(question.question, (level) => {
         audioLevelRef.current?.(level);
       }).catch((err) => {
-        console.warn('[Interview] TTS error:', err);
+        if (__DEV__) console.warn('[Interview] TTS error:', err);
         setVoiceError(true);
       });
     }

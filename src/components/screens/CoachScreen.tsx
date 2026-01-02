@@ -128,7 +128,7 @@ export const CoachScreen: React.FC<CoachScreenProps> = ({
       try {
         await startConversation();
       } catch (err) {
-        console.warn('[Coach] Failed to start conversation:', err);
+        if (__DEV__) console.warn('[Coach] Failed to start conversation:', err);
         setAgentStatus('Failed to connect');
       }
     };
@@ -136,8 +136,9 @@ export const CoachScreen: React.FC<CoachScreenProps> = ({
 
     // Cleanup on unmount - must handle async gracefully
     return () => {
-      endConversation().catch(() => {
-        // Ignore cleanup errors - session may already be ended
+      endConversation().catch((err) => {
+        // Cleanup errors are expected if session already ended
+        if (typeof __DEV__ !== 'undefined' && __DEV__) console.debug('[Coach] Cleanup:', err?.message || 'session ended');
       });
     };
   }, []);

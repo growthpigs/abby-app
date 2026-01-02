@@ -196,7 +196,7 @@ export const CoachIntroScreen: React.FC<CoachIntroScreenProps> = ({
       try {
         await startConversation();
       } catch (err) {
-        console.warn('[CoachIntro] Failed to start conversation:', err);
+        if (__DEV__) console.warn('[CoachIntro] Failed to start conversation:', err);
         setAgentStatus('Failed to connect');
       }
     };
@@ -204,8 +204,9 @@ export const CoachIntroScreen: React.FC<CoachIntroScreenProps> = ({
 
     // Cleanup on unmount - must handle async gracefully
     return () => {
-      endConversation().catch(() => {
-        // Ignore cleanup errors - session may already be ended
+      endConversation().catch((err) => {
+        // Cleanup errors are expected if session already ended
+        if (typeof __DEV__ !== 'undefined' && __DEV__) console.debug('[CoachIntro] Cleanup:', err?.message || 'session ended');
       });
     };
   }, []);
@@ -221,7 +222,7 @@ export const CoachIntroScreen: React.FC<CoachIntroScreenProps> = ({
       await Promise.race([endConversation(), timeout]);
     } catch (err) {
       // Ignore errors - we're navigating away anyway
-      console.warn('[CoachIntro] endConversation error (continuing):', err);
+      if (__DEV__) console.warn('[CoachIntro] endConversation error (continuing):', err);
     }
 
     advance(); // Go to INTERVIEW

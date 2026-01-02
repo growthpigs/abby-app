@@ -91,7 +91,7 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
         });
 
         if (__DEV__) {
-          console.log('[ProfileScreen] Profile saved successfully');
+          if (__DEV__) console.log('[ProfileScreen] Profile saved successfully');
         }
 
         Alert.alert('Success', 'Your profile has been updated.');
@@ -99,7 +99,7 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
       }
     } catch (error) {
       if (__DEV__) {
-        console.error('[ProfileScreen] Save failed:', error);
+        if (__DEV__) console.error('[ProfileScreen] Save failed:', error);
       }
       Alert.alert('Error', 'Failed to save profile. Please try again.');
     } finally {

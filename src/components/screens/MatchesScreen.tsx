@@ -69,7 +69,7 @@ export const MatchesScreen: React.FC<MatchesScreenProps> = ({
       setMatches(response.candidates || []);
     } catch (err) {
       if (__DEV__) {
-        console.log('[MatchesScreen] Fetch error:', err);
+        if (__DEV__) console.log('[MatchesScreen] Fetch error:', err);
       }
       // Gracefully handle - API might not be ready yet
       setError('Unable to load matches. Please try again later.');

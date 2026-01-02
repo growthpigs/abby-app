@@ -100,13 +100,13 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
               // TODO: Call DELETE /v1/profile when API endpoint is available
               // For now, just logout to clear local data
               if (__DEV__) {
-                console.log('[Settings] User requested data deletion');
+                if (__DEV__) console.log('[Settings] User requested data deletion');
               }
               await AuthService.logout();
               onClose?.();
             } catch (error) {
               if (__DEV__) {
-                console.error('[Settings] Error during data deletion:', error);
+                if (__DEV__) console.error('[Settings] Error during data deletion:', error);
               }
               Alert.alert(
                 'Error',

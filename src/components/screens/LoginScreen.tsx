@@ -99,8 +99,8 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
     if (onSecretBack) {
       onSecretBack();
     } else {
-      // Default: show alert if no handler
-      console.log('[LoginScreen] Secret BACK trigger');
+      // Default: log if no handler (dev only)
+      if (__DEV__) console.log('[LoginScreen] Secret BACK trigger');
     }
   };
 
@@ -109,8 +109,8 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
     if (onSecretForward) {
       onSecretForward();
     } else {
-      // Default: show alert if no handler
-      console.log('[LoginScreen] Secret FORWARD trigger');
+      // Default: log if no handler (dev only)
+      if (__DEV__) console.log('[LoginScreen] Secret FORWARD trigger');
     }
   };
 

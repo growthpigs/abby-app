@@ -522,8 +522,9 @@ export function useAbbyAgent(config: UseAbbyAgentConfig = {}) {
 
     return () => {
       // Cleanup on unmount
-      serviceRef.current?.endConversation().catch(() => {
-        // Ignore cleanup errors
+      serviceRef.current?.endConversation().catch((err) => {
+        // Cleanup errors are expected if session already ended
+        if (typeof __DEV__ !== 'undefined' && __DEV__) console.debug('[useAbbyAgent] Cleanup:', err?.message || 'session ended');
       });
     };
   }, [config.enabled, config.screenType]);

@@ -55,7 +55,7 @@ export const ParametricVibeMatrix: React.FC<ParametricVibeMatrixProps> = ({
     if (__DEV__) console.log(`[ParametricVibeMatrix] Compiling shader: ${shaderEntry.name}`);
     const effect = Skia.RuntimeEffect.Make(shaderEntry.source);
     if (!effect) {
-      console.error(`[ParametricVibeMatrix] SHADER COMPILE FAILED: ${shaderEntry.name}`);
+      if (__DEV__) console.error(`[ParametricVibeMatrix] SHADER COMPILE FAILED: ${shaderEntry.name}`);
       return null;
     }
     if (__DEV__) console.log(`[ParametricVibeMatrix] Shader compiled: ${shaderEntry.name}`);

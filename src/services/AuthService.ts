@@ -160,18 +160,18 @@ export const AuthService = {
 
     // DETAILED DEBUG LOGGING - see exactly what we're sending
     if (__DEV__) {
-      console.log('=== COGNITO SIGNUP DEBUG ===');
-      console.log('Input email:', JSON.stringify(email));
-      console.log('Input name:', JSON.stringify(name));
-      console.log('Parsed firstName:', JSON.stringify(firstName));
-      console.log('Parsed lastName:', JSON.stringify(lastName));
-      console.log('Generated username:', username);
-      console.log('Password length:', password?.length);
-      console.log('Attributes count:', attributes.length);
+      if (__DEV__) console.log('=== COGNITO SIGNUP DEBUG ===');
+      if (__DEV__) console.log('Input email:', JSON.stringify(email));
+      if (__DEV__) console.log('Input name:', JSON.stringify(name));
+      if (__DEV__) console.log('Parsed firstName:', JSON.stringify(firstName));
+      if (__DEV__) console.log('Parsed lastName:', JSON.stringify(lastName));
+      if (__DEV__) console.log('Generated username:', username);
+      if (__DEV__) console.log('Password length:', password?.length);
+      if (__DEV__) console.log('Attributes count:', attributes.length);
       attributes.forEach((attr, i) => {
-        console.log(`  Attr[${i}]: ${attr.getName()} = "${attr.getValue()}"`);
+        if (__DEV__) console.log(`  Attr[${i}]: ${attr.getName()} = "${attr.getValue()}"`);
       });
-      console.log('=== END DEBUG ===');
+      if (__DEV__) console.log('=== END DEBUG ===');
     }
 
     return new Promise((resolve, reject) => {
@@ -179,9 +179,9 @@ export const AuthService = {
         if (err) {
           const cognitoErr = err as Error & { code?: string; message?: string };
           if (__DEV__) {
-            console.log('[AuthService] Signup FAILED');
-            console.log('Error code:', cognitoErr.code);
-            console.log('Error message:', cognitoErr.message);
+            if (__DEV__) console.log('[AuthService] Signup FAILED');
+            if (__DEV__) console.log('Error code:', cognitoErr.code);
+            if (__DEV__) console.log('Error message:', cognitoErr.message);
           }
           reject(mapCognitoError(cognitoErr));
           return;
@@ -193,8 +193,8 @@ export const AuthService = {
         }
 
         if (__DEV__) {
-          console.log('[AuthService] Signup successful');
-          console.log('[AuthService] UserSub:', result.userSub);
+          if (__DEV__) console.log('[AuthService] Signup successful');
+          if (__DEV__) console.log('[AuthService] UserSub:', result.userSub);
         }
 
         resolve({
@@ -220,8 +220,8 @@ export const AuthService = {
    */
   async verify(username: string, code: string): Promise<VerifyResponse> {
     if (__DEV__) {
-      console.log('[AuthService] verify() - Confirming registration');
-      console.log('[AuthService] Username:', username);
+      if (__DEV__) console.log('[AuthService] verify() - Confirming registration');
+      if (__DEV__) console.log('[AuthService] Username:', username);
     }
 
     const cognitoUser = getCognitoUser(username);
@@ -231,9 +231,9 @@ export const AuthService = {
         if (err) {
           const cognitoErr = err as Error & { code?: string; message?: string };
           if (__DEV__) {
-            console.log('[AuthService] Verify error code:', cognitoErr.code);
-            console.log('[AuthService] Verify error message:', cognitoErr.message);
-            console.log('[AuthService] Full error:', JSON.stringify(err, null, 2));
+            if (__DEV__) console.log('[AuthService] Verify error code:', cognitoErr.code);
+            if (__DEV__) console.log('[AuthService] Verify error message:', cognitoErr.message);
+            if (__DEV__) console.log('[AuthService] Full error:', JSON.stringify(err, null, 2));
           }
           reject(mapCognitoError(cognitoErr));
           return;
@@ -255,7 +255,7 @@ export const AuthService = {
    */
   async resendVerificationCode(username: string): Promise<void> {
     if (__DEV__) {
-      console.log('[AuthService] resendVerificationCode()');
+      if (__DEV__) console.log('[AuthService] resendVerificationCode()');
     }
 
     const cognitoUser = getCognitoUser(username);
@@ -284,8 +284,8 @@ export const AuthService = {
    */
   async login(username: string, password: string): Promise<LoginResponse> {
     if (__DEV__) {
-      console.log('[AuthService] login() - Authenticating');
-      console.log('[AuthService] Username:', username);
+      if (__DEV__) console.log('[AuthService] login() - Authenticating');
+      if (__DEV__) console.log('[AuthService] Username:', username);
     }
 
     const cognitoUser = getCognitoUser(username);

@@ -338,11 +338,11 @@ export const useOnboardingStore = create<OnboardingStore>((set, get) => ({
       await AsyncStorage.setItem(ONBOARDING_KEY, JSON.stringify(toSave));
       set({ savedAt: toSave.savedAt });
       if (__DEV__) {
-        console.log('[OnboardingStore] Saved to storage, screen:', state.currentScreen);
+        if (__DEV__) console.log('[OnboardingStore] Saved to storage, screen:', state.currentScreen);
       }
     } catch (error) {
       if (__DEV__) {
-        console.error('[OnboardingStore] Failed to save:', error);
+        if (__DEV__) console.error('[OnboardingStore] Failed to save:', error);
       }
     }
   },
@@ -361,7 +361,7 @@ export const useOnboardingStore = create<OnboardingStore>((set, get) => ({
       // Check version
       if (data.version !== ONBOARDING_VERSION) {
         if (__DEV__) {
-          console.warn('[OnboardingStore] Version mismatch, clearing');
+          if (__DEV__) console.warn('[OnboardingStore] Version mismatch, clearing');
         }
         await AsyncStorage.removeItem(ONBOARDING_KEY);
         set({ isLoaded: true });
@@ -371,7 +371,7 @@ export const useOnboardingStore = create<OnboardingStore>((set, get) => ({
       // Check timeout (30 days)
       if (data.savedAt && Date.now() - data.savedAt > ONBOARDING_TIMEOUT_MS) {
         if (__DEV__) {
-          console.log('[OnboardingStore] Session expired, clearing');
+          if (__DEV__) console.log('[OnboardingStore] Session expired, clearing');
         }
         await AsyncStorage.removeItem(ONBOARDING_KEY);
         set({ isLoaded: true });
@@ -399,12 +399,12 @@ export const useOnboardingStore = create<OnboardingStore>((set, get) => ({
       });
 
       if (__DEV__) {
-        console.log('[OnboardingStore] Recovered session, screen:', data.currentScreen);
+        if (__DEV__) console.log('[OnboardingStore] Recovered session, screen:', data.currentScreen);
       }
       return true; // Session recovered
     } catch (error) {
       if (__DEV__) {
-        console.error('[OnboardingStore] Failed to load:', error);
+        if (__DEV__) console.error('[OnboardingStore] Failed to load:', error);
       }
       set({ isLoaded: true });
       return false;
@@ -416,11 +416,11 @@ export const useOnboardingStore = create<OnboardingStore>((set, get) => ({
     try {
       await AsyncStorage.removeItem(ONBOARDING_KEY);
       if (__DEV__) {
-        console.log('[OnboardingStore] Cleared storage');
+        if (__DEV__) console.log('[OnboardingStore] Cleared storage');
       }
     } catch (error) {
       if (__DEV__) {
-        console.error('[OnboardingStore] Failed to clear storage:', error);
+        if (__DEV__) console.error('[OnboardingStore] Failed to clear storage:', error);
       }
     }
   },

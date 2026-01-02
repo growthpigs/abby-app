@@ -247,11 +247,11 @@ export const useDemoStore = create<DemoStore>((set, get) => ({
       await AsyncStorage.setItem(INTERVIEW_KEY, JSON.stringify(toSave));
       set({ savedAt: toSave.savedAt });
       if (__DEV__) {
-        console.log('[DemoStore] Saved interview, question:', state.currentQuestionIndex);
+        if (__DEV__) console.log('[DemoStore] Saved interview, question:', state.currentQuestionIndex);
       }
     } catch (error) {
       if (__DEV__) {
-        console.error('[DemoStore] Failed to save:', error);
+        if (__DEV__) console.error('[DemoStore] Failed to save:', error);
       }
     }
   },
@@ -270,7 +270,7 @@ export const useDemoStore = create<DemoStore>((set, get) => ({
       // Check version
       if (data.version !== INTERVIEW_VERSION) {
         if (__DEV__) {
-          console.warn('[DemoStore] Version mismatch, clearing');
+          if (__DEV__) console.warn('[DemoStore] Version mismatch, clearing');
         }
         await AsyncStorage.removeItem(INTERVIEW_KEY);
         set({ isLoaded: true });
@@ -280,7 +280,7 @@ export const useDemoStore = create<DemoStore>((set, get) => ({
       // Check timeout (7 days)
       if (data.savedAt && Date.now() - data.savedAt > INTERVIEW_TIMEOUT_MS) {
         if (__DEV__) {
-          console.log('[DemoStore] Interview session expired, clearing');
+          if (__DEV__) console.log('[DemoStore] Interview session expired, clearing');
         }
         await AsyncStorage.removeItem(INTERVIEW_KEY);
         set({ isLoaded: true });
@@ -290,7 +290,7 @@ export const useDemoStore = create<DemoStore>((set, get) => ({
       // Validate state is recoverable (still in interview)
       if (data.currentState !== 'INTERVIEW' && data.currentState !== 'COACH_INTRO') {
         if (__DEV__) {
-          console.log('[DemoStore] Session past interview, not recovering');
+          if (__DEV__) console.log('[DemoStore] Session past interview, not recovering');
         }
         await AsyncStorage.removeItem(INTERVIEW_KEY);
         set({ isLoaded: true });
@@ -313,12 +313,12 @@ export const useDemoStore = create<DemoStore>((set, get) => ({
       syncVibeState(data.currentState);
 
       if (__DEV__) {
-        console.log('[DemoStore] Recovered interview, question:', data.currentQuestionIndex);
+        if (__DEV__) console.log('[DemoStore] Recovered interview, question:', data.currentQuestionIndex);
       }
       return true; // Session recovered
     } catch (error) {
       if (__DEV__) {
-        console.error('[DemoStore] Failed to load:', error);
+        if (__DEV__) console.error('[DemoStore] Failed to load:', error);
       }
       set({ isLoaded: true });
       return false;
@@ -330,11 +330,11 @@ export const useDemoStore = create<DemoStore>((set, get) => ({
     try {
       await AsyncStorage.removeItem(INTERVIEW_KEY);
       if (__DEV__) {
-        console.log('[DemoStore] Cleared interview storage');
+        if (__DEV__) console.log('[DemoStore] Cleared interview storage');
       }
     } catch (error) {
       if (__DEV__) {
-        console.error('[DemoStore] Failed to clear storage:', error);
+        if (__DEV__) console.error('[DemoStore] Failed to clear storage:', error);
       }
     }
   },

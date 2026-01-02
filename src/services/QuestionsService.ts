@@ -131,8 +131,8 @@ export class QuestionsService {
       const data: NextQuestionResponse = await response.json();
 
       if (__DEV__) {
-        console.log('[Questions] Next question:', data.question.text);
-        console.log('[Questions] Progress:', `${data.progress.current}/${data.progress.total}`);
+        if (__DEV__) console.log('[Questions] Next question:', data.question.text);
+        if (__DEV__) console.log('[Questions] Progress:', `${data.progress.current}/${data.progress.total}`);
       }
 
       return data;
@@ -240,8 +240,8 @@ export class QuestionsService {
       const data: ParseAnswerResponse = await response.json();
 
       if (__DEV__) {
-        console.log('[Questions] Parsed value:', data.parsedValue);
-        console.log('[Questions] Confidence:', data.confidence);
+        if (__DEV__) console.log('[Questions] Parsed value:', data.parsedValue);
+        if (__DEV__) console.log('[Questions] Confidence:', data.confidence);
       }
 
       return data;

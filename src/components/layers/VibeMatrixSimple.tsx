@@ -58,7 +58,7 @@ export const VibeMatrixSimple: React.FC = () => {
   }, [clock]);
 
   if (!SIMPLE_SHADER) {
-    console.error('[VibeMatrixSimple] Shader failed to compile');
+    if (__DEV__) console.error('[VibeMatrixSimple] Shader failed to compile');
     return null;
   }
 

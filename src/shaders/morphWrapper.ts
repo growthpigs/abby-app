@@ -107,7 +107,7 @@ export function wrapWithMorph(shaderSource: string): string {
   const match = shaderSource.match(functionRegex);
 
   if (!match || match.index === undefined) {
-    console.error('[morphWrapper] Could not find function start in shader');
+    if (typeof __DEV__ !== "undefined" && __DEV__) console.error('[morphWrapper] Could not find function start in shader');
     return shaderSource;
   }
 

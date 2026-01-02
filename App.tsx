@@ -243,6 +243,11 @@ function AppContent() {
     loadSettings();
   }, [loadSettings]);
 
+  // Load onboarding persistence on mount (for crash recovery)
+  useEffect(() => {
+    loadOnboarding();
+  }, [loadOnboarding]);
+
   // Initialize: go to login after loading
   useEffect(() => {
     if (fontsLoaded && settingsLoaded && authState === 'LOADING') {
@@ -472,11 +477,15 @@ function AppContent() {
   const setSmokingPartner = useOnboardingStore((state) => state.setSmokingPartner);
   const setLocation = useOnboardingStore((state) => state.setLocation);
   const markOnboardingComplete = useOnboardingStore((state) => state.markComplete);
+  const loadOnboarding = useOnboardingStore((state) => state.loadFromStorage);
+  const saveOnboarding = useOnboardingStore((state) => state.saveToStorage);
+  const onboardingLoaded = useOnboardingStore((state) => state.isLoaded);
 
   // Name screen (comes first in Nathan's API flow)
   const handleNameComplete = (name: string, nickname: string) => {
     setFullName(name);
     setNickname(nickname); // User-provided nickname or their first name
+    saveOnboarding(); // Persist for crash recovery
     setAuthState('EMAIL');  // Name → Email → Password → Verify
   };
 
@@ -487,6 +496,7 @@ function AppContent() {
   ) => {
     setDateOfBirth(new Date(dob.year, dob.month - 1, dob.day));
     setAgeRange(ageRange.min, ageRange.max);
+    saveOnboarding(); // Persist for crash recovery
     setAuthState('PERMISSIONS');
   };
 
@@ -773,7 +783,7 @@ function AppContent() {
   };
 
   // Loading state
-  if (!fontsLoaded || !settingsLoaded || authState === 'LOADING') {
+  if (!fontsLoaded || !settingsLoaded || !onboardingLoaded || authState === 'LOADING') {
     return (
       <View style={styles.loadingContainer}>
         <ActivityIndicator size="large" color="#fff" />
