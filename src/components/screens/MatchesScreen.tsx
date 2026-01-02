@@ -15,7 +15,7 @@ import {
   RefreshControl,
 } from 'react-native';
 import { BlurView } from 'expo-blur';
-import { Heart, AlertCircle, RefreshCw } from 'lucide-react-native';
+import { Heart, AlertCircle, RefreshCw, ChevronLeft, MessageCircle, User } from 'lucide-react-native';
 import { Headline, Body, Caption } from '../ui/Typography';
 import { GlassButton } from '../ui/GlassButton';
 import { TokenManager } from '../../services/TokenManager';
@@ -70,6 +70,7 @@ export const MatchesScreen: React.FC<MatchesScreenProps> = ({
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [refreshing, setRefreshing] = useState(false);
+  const [selectedMatch, setSelectedMatch] = useState<MatchCandidate | null>(null);
 
   const fetchMatches = useCallback(async () => {
     try {
@@ -117,8 +118,92 @@ export const MatchesScreen: React.FC<MatchesScreenProps> = ({
     fetchMatches();
   }, [fetchMatches]);
 
+  const handleSelectMatch = useCallback((match: MatchCandidate) => {
+    setSelectedMatch(match);
+  }, []);
+
+  const handleBackToList = useCallback(() => {
+    setSelectedMatch(null);
+  }, []);
+
   const hasMatches = matches.length > 0;
 
+  // Detail View
+  if (selectedMatch) {
+    return (
+      <View style={styles.container}>
+        <BlurView intensity={90} tint="light" style={styles.blurContainer}>
+          {/* Detail Header */}
+          <View style={styles.header}>
+            <Pressable onPress={handleBackToList} style={styles.backButton}>
+              <ChevronLeft size={24} stroke="rgba(0, 0, 0, 0.7)" />
+              <Body style={styles.backText}>Back</Body>
+            </Pressable>
+            <Pressable onPress={onClose} style={styles.closeButton}>
+              <Body style={styles.closeText}>Done</Body>
+            </Pressable>
+          </View>
+
+          {/* Detail Content */}
+          <ScrollView style={styles.content} contentContainerStyle={styles.detailContainer}>
+            {/* Profile Photo/Avatar */}
+            <View style={styles.detailAvatar}>
+              {selectedMatch.photoUrl ? (
+                <View style={styles.detailPhoto}>
+                  {/* Photo would go here */}
+                  <User size={64} stroke="rgba(255, 255, 255, 0.8)" />
+                </View>
+              ) : (
+                <Heart size={64} stroke="#E11D48" fill="#E11D48" />
+              )}
+            </View>
+
+            {/* Name and Age */}
+            <Headline style={styles.detailName}>
+              {selectedMatch.name}{selectedMatch.age ? `, ${selectedMatch.age}` : ''}
+            </Headline>
+
+            {/* Match Score */}
+            {(selectedMatch.compatibilityScore ?? selectedMatch.matchScore) !== undefined && (
+              <View style={styles.detailScoreBadge}>
+                <Heart size={16} stroke="#E11D48" fill="#E11D48" />
+                <Body style={styles.detailScoreText}>
+                  {Math.round((selectedMatch.compatibilityScore ?? selectedMatch.matchScore ?? 0) * 100)}% compatibility
+                </Body>
+              </View>
+            )}
+
+            {/* Full Bio */}
+            {selectedMatch.bio && (
+              <View style={styles.detailSection}>
+                <Caption style={styles.detailSectionTitle}>ABOUT</Caption>
+                <Body style={styles.detailBio}>{selectedMatch.bio}</Body>
+              </View>
+            )}
+
+            {/* Action Buttons */}
+            <View style={styles.detailActions}>
+              <GlassButton
+                onPress={() => {
+                  // TODO: Implement messaging
+                  if (__DEV__) console.log('[MatchesScreen] Message pressed for:', selectedMatch.id);
+                }}
+                variant="primary"
+                style={styles.messageButton}
+              >
+                <View style={styles.buttonContent}>
+                  <MessageCircle size={20} stroke="#fff" />
+                  <Body style={styles.messageButtonText}>Send Message</Body>
+                </View>
+              </GlassButton>
+            </View>
+          </ScrollView>
+        </BlurView>
+      </View>
+    );
+  }
+
+  // List View
   return (
     <View style={styles.container}>
       <BlurView intensity={90} tint="light" style={styles.blurContainer}>
@@ -168,7 +253,14 @@ export const MatchesScreen: React.FC<MatchesScreenProps> = ({
           ) : hasMatches ? (
             <View style={styles.matchesList}>
               {matches.map((match) => (
-                <View key={match.id} style={styles.matchCard}>
+                <Pressable
+                  key={match.id}
+                  onPress={() => handleSelectMatch(match)}
+                  style={({ pressed }) => [
+                    styles.matchCard,
+                    pressed && styles.matchCardPressed,
+                  ]}
+                >
                   <View style={styles.matchAvatar}>
                     <Heart size={24} stroke="#E11D48" fill="#E11D48" />
                   </View>
@@ -187,7 +279,8 @@ export const MatchesScreen: React.FC<MatchesScreenProps> = ({
                       </Caption>
                     )}
                   </View>
-                </View>
+                  <ChevronLeft size={20} stroke="rgba(0, 0, 0, 0.3)" style={styles.chevron} />
+                </Pressable>
               ))}
             </View>
           ) : (
@@ -367,6 +460,104 @@ const styles = StyleSheet.create({
     color: '#E11D48',
     fontWeight: '600',
     marginTop: 4,
+  },
+  matchCardPressed: {
+    backgroundColor: 'rgba(255, 255, 255, 0.7)',
+    transform: [{ scale: 0.98 }],
+  },
+  chevron: {
+    transform: [{ rotate: '180deg' }],
+    marginLeft: 8,
+  },
+  // Detail View styles
+  backButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 8,
+    paddingHorizontal: 4,
+  },
+  backText: {
+    color: 'rgba(0, 0, 0, 0.7)',
+    fontWeight: '500',
+    marginLeft: 4,
+  },
+  detailContainer: {
+    flexGrow: 1,
+    alignItems: 'center',
+    paddingVertical: 32,
+    paddingHorizontal: 24,
+  },
+  detailAvatar: {
+    width: 140,
+    height: 140,
+    borderRadius: 70,
+    backgroundColor: 'rgba(225, 29, 72, 0.1)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 24,
+  },
+  detailPhoto: {
+    width: '100%',
+    height: '100%',
+    borderRadius: 70,
+    backgroundColor: 'rgba(0, 0, 0, 0.2)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  detailName: {
+    fontSize: 28,
+    color: 'rgba(0, 0, 0, 0.85)',
+    textAlign: 'center',
+    marginBottom: 12,
+  },
+  detailScoreBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(225, 29, 72, 0.1)',
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    borderRadius: 20,
+    gap: 8,
+    marginBottom: 32,
+  },
+  detailScoreText: {
+    color: '#E11D48',
+    fontWeight: '600',
+    fontSize: 15,
+  },
+  detailSection: {
+    width: '100%',
+    marginBottom: 24,
+  },
+  detailSectionTitle: {
+    fontSize: 11,
+    letterSpacing: 2,
+    color: 'rgba(0, 0, 0, 0.4)',
+    marginBottom: 12,
+  },
+  detailBio: {
+    fontSize: 16,
+    color: 'rgba(0, 0, 0, 0.7)',
+    lineHeight: 24,
+  },
+  detailActions: {
+    width: '100%',
+    marginTop: 16,
+  },
+  messageButton: {
+    width: '100%',
+    backgroundColor: '#E11D48',
+  },
+  buttonContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 10,
+  },
+  messageButtonText: {
+    color: '#fff',
+    fontWeight: '600',
+    fontSize: 16,
   },
 });
 
