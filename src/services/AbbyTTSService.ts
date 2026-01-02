@@ -44,6 +44,8 @@ class AbbyTTSService {
   private sound: Audio.Sound | null = null;
   private audioLevelCallback: AudioLevelCallback | null = null;
   private audioLevelInterval: NodeJS.Timeout | null = null;
+  // Track speech duration timer for cleanup (prevents leak in simulateSpeechDuration)
+  private speechDurationTimer: NodeJS.Timeout | null = null;
 
   /**
    * Speak text using Abby's voice
@@ -118,6 +120,12 @@ class AbbyTTSService {
       if (this.audioLevelInterval) {
         clearInterval(this.audioLevelInterval);
         this.audioLevelInterval = null;
+      }
+
+      // Clear speech duration timer (from simulateSpeechDuration)
+      if (this.speechDurationTimer) {
+        clearTimeout(this.speechDurationTimer);
+        this.speechDurationTimer = null;
       }
 
       if (__DEV__) console.log('[AbbyTTS] Stopped');
@@ -212,8 +220,8 @@ class AbbyTTSService {
     this.audioLevelCallback = onAudioLevel;
     this.startAudioLevelSimulation();
 
-    // Stop simulation after estimated duration
-    setTimeout(() => {
+    // Stop simulation after estimated duration (tracked for cleanup)
+    this.speechDurationTimer = setTimeout(() => {
       this.stop();
     }, duration);
   }
