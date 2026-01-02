@@ -16,11 +16,12 @@ import {
   Image,
 } from 'react-native';
 import { BlurView } from 'expo-blur';
-import { Heart, AlertCircle, RefreshCw, ChevronLeft, MessageCircle, User } from 'lucide-react-native';
+import { Heart, AlertCircle, RefreshCw, ChevronLeft, ChevronRight, MessageCircle } from 'lucide-react-native';
 import { Headline, Body, Caption } from '../ui/Typography';
 import { GlassButton } from '../ui/GlassButton';
-import { TokenManager } from '../../services/TokenManager';
+import { checkIsDemoMode } from '../../hooks/useIsDemoMode';
 import { secureFetchJSON } from '../../utils/secureFetch';
+import { TokenManager } from '../../services/TokenManager';
 
 const API_BASE = 'https://dev.api.myaimatchmaker.ai';
 
@@ -102,27 +103,29 @@ export const MatchesScreen: React.FC<MatchesScreenProps> = ({
   const [error, setError] = useState<string | null>(null);
   const [refreshing, setRefreshing] = useState(false);
   const [selectedMatch, setSelectedMatch] = useState<MatchCandidate | null>(null);
+  const [photoLoadFailed, setPhotoLoadFailed] = useState(false);
 
   const fetchMatches = useCallback(async () => {
     try {
       setError(null);
-      const token = await TokenManager.getToken();
 
-      if (!token) {
-        // Demo mode - show mock data
-        if (__DEV__) console.log('[MatchesScreen] No token - using demo data');
+      // Use centralized demo mode detection (single source of truth)
+      const isDemoMode = await checkIsDemoMode();
+      if (isDemoMode) {
+        if (__DEV__) console.log('[MatchesScreen] Demo mode - using mock data');
         setMatches(DEMO_MATCHES);
         setIsLoading(false);
-        setRefreshing(false);  // Must reset here since we bypass finally block
+        setRefreshing(false);
         return;
       }
 
+      // Authenticated mode - fetch from API
+      // secureFetchJSON handles token injection automatically
       const response = await secureFetchJSON<{ candidates: RawMatchCandidate[] }>(
         `${API_BASE}/v1/matches/candidates`,
         {
           method: 'GET',
           headers: {
-            'Authorization': `Bearer ${token}`,
             'Content-Type': 'application/json',
           },
         }
@@ -132,9 +135,7 @@ export const MatchesScreen: React.FC<MatchesScreenProps> = ({
       const transformedCandidates = (response.candidates || []).map(transformCandidate);
       setMatches(transformedCandidates);
     } catch (err) {
-      if (__DEV__) {
-        if (__DEV__) console.log('[MatchesScreen] Fetch error:', err);
-      }
+      if (__DEV__) console.log('[MatchesScreen] Fetch error:', err);
       // Gracefully handle - API might not be ready yet
       setError('Unable to load matches. Please try again later.');
     } finally {
@@ -153,6 +154,7 @@ export const MatchesScreen: React.FC<MatchesScreenProps> = ({
   }, [fetchMatches]);
 
   const handleSelectMatch = useCallback((match: MatchCandidate) => {
+    setPhotoLoadFailed(false);  // Reset on new selection
     setSelectedMatch(match);
   }, []);
 
@@ -182,11 +184,12 @@ export const MatchesScreen: React.FC<MatchesScreenProps> = ({
           <ScrollView style={styles.content} contentContainerStyle={styles.detailContainer}>
             {/* Profile Photo/Avatar */}
             <View style={styles.detailAvatar}>
-              {selectedMatch.photoUrl ? (
+              {selectedMatch.photoUrl && !photoLoadFailed ? (
                 <Image
                   source={{ uri: selectedMatch.photoUrl }}
                   style={styles.detailPhotoImage}
                   resizeMode="cover"
+                  onError={() => setPhotoLoadFailed(true)}
                 />
               ) : (
                 <Heart size={64} stroke="#E11D48" fill="#E11D48" />
@@ -315,7 +318,7 @@ export const MatchesScreen: React.FC<MatchesScreenProps> = ({
                       </Caption>
                     )}
                   </View>
-                  <ChevronLeft size={20} stroke="rgba(0, 0, 0, 0.3)" style={styles.chevron} />
+                  <ChevronRight size={20} stroke="rgba(0, 0, 0, 0.3)" style={styles.chevron} />
                 </Pressable>
               ))}
             </View>
@@ -502,8 +505,8 @@ const styles = StyleSheet.create({
     transform: [{ scale: 0.98 }],
   },
   chevron: {
-    transform: [{ rotate: '180deg' }],
     marginLeft: 8,
+    alignSelf: 'center',
   },
   // Detail View styles
   backButton: {
