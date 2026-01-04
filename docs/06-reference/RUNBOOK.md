@@ -110,6 +110,54 @@ if (__DEV__) {
 
 **Conclusion:** When all variations fail with same generic error, stop testing parameters and verify the Pool ID / Client ID are correct with the backend owner.
 
+### Cognito Pool Configuration (2026-01-04 Discovery)
+
+**CRITICAL:** Nathan's Cognito pool has specific requirements that differ from our current code.
+
+| Setting | Pool Requires | Our Code (WRONG) |
+|---------|---------------|------------------|
+| Username format | Non-email (email alias mode) | Email as username |
+| Attributes | `given_name`, `family_name` | `name` |
+
+**Correct Signup Configuration:**
+```typescript
+// Username: Must be NON-EMAIL format
+const username = `abbyuser${Date.now()}`; // NOT email!
+
+// Attributes: Use standard Cognito names
+const attributes = [
+  new CognitoUserAttribute({ Name: 'email', Value: email }),
+  new CognitoUserAttribute({ Name: 'given_name', Value: firstName }),
+  new CognitoUserAttribute({ Name: 'family_name', Value: lastName }),
+];
+
+// WRONG - these fail:
+// - Username = email (InvalidParameterException)
+// - { Name: 'name', Value: fullName } (NotAuthorizedException)
+// - { Name: 'name.givenName' } (NotAuthorizedException)
+```
+
+**Test Script:** `scripts/test-auth-flow.js`
+```bash
+# Test signup (creates user, sends verification email)
+node scripts/test-auth-flow.js signup
+
+# Verify and test API (after receiving code)
+node scripts/test-auth-flow.js verify <CODE>
+
+# Test existing user login
+node scripts/test-auth-flow.js login <email> <password>
+```
+
+**Files to Update (when Nathan confirms DB creation works):**
+- `src/services/CognitoConfig.ts` - Change `name` to `given_name`/`family_name`
+- `src/services/AuthService.ts` - Generate non-email username
+
+**Current Blocker (2026-01-04):**
+- Signup/verify/login all work
+- API `/v1/me` returns 401 Unauthorized
+- PostConfirmation Lambda still not creating user in DB (or token mismatch)
+
 ### Security Hardening Verification (2026-01-02)
 
 **After any security-related code changes, run these to verify fixes:**
@@ -373,7 +421,7 @@ const VIBE_MATRIX_SHADER = getShaderById(0).source;
 | Client API | Backend (dev.api.myaimatchmaker.ai) | 🟡 401 on /v1/* (needs auth), /docs broken |
 | Sentry | Error tracking | To configure |
 
-### Current State (2026-01-02)
+### Current State (2026-01-04)
 
 **Branch:** `client-api-integration` in `/abby-client-api` worktree
 
@@ -392,6 +440,11 @@ const VIBE_MATRIX_SHADER = getShaderById(0).source;
 - ✅ **Security layer** - secureFetch with timeouts, input validation
 - ✅ **399 tests passing** (11 test suites)
 - ✅ Console logs gated with `__DEV__`
+
+**What's Blocked (2026-01-04):**
+- ❌ API `/v1/me` returns 401 after valid login
+- ❌ PostConfirmation Lambda not creating users in DB (or token mismatch)
+- ⏳ Waiting on Nathan to check Lambda logs + DB
 
 **API Status (2026-01-02):**
 | Endpoint | Status |
@@ -783,4 +836,4 @@ Menu screens accessible from hamburger menu now have demo mode fallbacks:
 
 ---
 
-*Last Updated: 2026-01-04*
+*Last Updated: 2026-01-04 (Cognito pool config discovery)*
