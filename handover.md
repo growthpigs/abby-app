@@ -1,54 +1,37 @@
 # Session Handover
 
-**Last Session:** 2026-01-02
+---
+## Session 2026-01-04 14:00
 
-## Completed This Session
+### Completed
+- **Auth Flow Test** (Nathan's fix verification)
+  - Created `scripts/test-auth-flow.js` for full Cognito flow testing
+  - Signup/verify/login all WORK
+  - API `/v1/me` returns 401 Unauthorized (blocker remains)
+  - Sent findings to Brent via WhatsApp for Nathan
 
-### Code Quality (Antipattern Fixes)
-- ✅ Fixed nested `__DEV__` guards in PhotosScreen, SettingsScreen
-- ✅ Fixed unsafe type assertions in storeSync, useDraggableSheet, CoachIntroScreen
-- ✅ Created `src/utils/animatedHelpers.ts` for type-safe Animated API access
-- ✅ Refactored CoachIntroScreen to use `useDraggableSheet` hook (~55 lines removed)
-- ✅ All 404 tests pass
+- **Cognito Pool Config Discovery**
+  - Username: Must be non-email format (email alias mode)
+  - Attributes: `given_name`, `family_name` (NOT `name`)
+  - Documented in RUNBOOK.md with code examples
 
-### Demo Readiness
-- ✅ Created `docs/DEMO-SCRIPT.md` - comprehensive presentation guide
-- ✅ Verified demo mode fallbacks work (scripted Abby responses)
-- ✅ Confirmed secret navigation bypasses auth blocker
-- ✅ App builds and runs on iOS simulator
+- **Documentation Updates**
+  - RUNBOOK.md: Added "Cognito Pool Configuration (2026-01-04 Discovery)" section
+  - active-tasks.md: Updated blocker with detailed test results
+  - Commit `1df4000` pushed
 
-## Commits
+### Blocked
+- API returns 401 after valid Cognito login
+- Waiting on Nathan to check:
+  1. PostConfirmation Lambda logs (is it triggering?)
+  2. Query DB directly (does user exist?)
+  3. API JWT validation config
 
-| Hash | Message |
-|------|---------|
-| `d074d8b` | docs: add demo presentation script |
-| `bb3eee3` | refactor: fix antipatterns and consolidate draggable sheet logic |
+### Files to Update (when Nathan confirms fix)
+- `src/services/CognitoConfig.ts` - Change `name` to `given_name`/`family_name`
+- `src/services/AuthService.ts` - Generate non-email username
 
-## Demo Status: READY ✅
-
-**Secret Navigation:** Tap top corners (70x70 invisible zones) to skip screens
-- Top-Left = Back one screen
-- Top-Right = Forward one screen
-- 14 taps from LOGIN reaches COACH_INTRO (main demo)
-
-**Demo Flow:** COACH_INTRO → INTERVIEW → SEARCHING → MATCH → PAYMENT → REVEAL → COACH
-
-**Demo Mode:** When voice API unavailable, Abby uses scripted responses (works great for demos)
-
-## Blockers (Non-Critical for Demo)
-
-- Nathan's PostConfirmation Lambda IAM issue (bypass with secret nav)
-- Voice API requires backend connection (demo mode works fine)
-
-## Next Steps
-
-1. **Run the demo** - Use `docs/DEMO-SCRIPT.md` for presentation
-2. Wait for Nathan to fix backend Lambda
-3. TestFlight build when backend ready
-
-## Context
-
-- Shader factory complete (18 shaders, ~1300 lines of duplicate code eliminated)
-- All antipatterns from audit fixed
-- 404 tests passing
-- Demo mode is robust - app works fully offline
+### Test User Created
+- Username: `abbytest1767529691740`
+- Email: `rodericandrews+abbytest1767529691740@gmail.com`
+- Status: Verified, login works, API 401
