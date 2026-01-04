@@ -2,7 +2,7 @@
 
 **Product Name:** ABBY - The Anti-Dating App
 **Version:** 1.0 MVP
-**Last Updated:** December 20, 2024
+**Last Updated:** January 4, 2026
 **References:** PRD.md
 
 ---
@@ -50,23 +50,25 @@ Technology decisions for ABBY prioritize:
 
 ## Voice & Conversation
 
-| Layer | Technology | Version | Why |
-|-------|------------|---------|-----|
-| Voice SDK | @elevenlabs/react-native | 0.2.1 | Pre-built Abby agent, low latency |
-| WebRTC | @livekit/react-native | 2.7.1 | Real-time audio streaming |
-| WebRTC Core | @livekit/react-native-webrtc | 125.0.7 | Native WebRTC implementation |
-| Audio Client | livekit-client | 2.9.5 | Audio session management |
+| Layer | Technology | Notes |
+|-------|------------|-------|
+| Voice API | OpenAI Realtime API | Via client backend (dev.api.myaimatchmaker.ai) |
+| Service | AbbyRealtimeService.ts | Handles sessions, demo fallback |
+| TTS Fallback | AbbyTTSService.ts | Text-to-speech when realtime unavailable |
+| Auth | AWS Cognito | JWT tokens for API authentication |
 
 ### Voice Architecture
 
 ```
-User speaks → LiveKit captures → ElevenLabs processes → Abby responds
-     ↓              ↓                    ↓                   ↓
-  Orb pulses    Stream audio      Agent generates       Play audio
-  "Listening"   to ElevenLabs     contextual reply      + animate orb
+User speaks → App captures → Client Backend → OpenAI Realtime → Response
+     ↓              ↓              ↓                 ↓              ↓
+  Orb pulses    POST /session   Proxies to      Generates      Stream audio
+  "Listening"   with token      OpenAI API      response       + animate orb
 ```
 
-ElevenLabs agent is **pre-configured** with Abby's personality and question flow.
+**Demo Mode:** When API unavailable, AbbyRealtimeService provides scripted responses.
+
+**Note:** ElevenLabs was the original plan but client switched to OpenAI Realtime API in Dec 2025.
 
 ---
 
@@ -169,9 +171,10 @@ export const mockApi = {
 
 | Service | Purpose | Integration |
 |---------|---------|-------------|
-| ElevenLabs | Conversational AI agent | SDK + pre-built agent |
-| Apple Sign-In | Social auth | Expo AuthSession |
-| Google Sign-In | Social auth | Expo AuthSession |
+| OpenAI Realtime API | Conversational AI | Via client backend |
+| AWS Cognito | Authentication | amazon-cognito-identity-js SDK |
+| Apple Sign-In | Social auth (V2) | Expo AuthSession |
+| Google Sign-In | Social auth (V2) | Expo AuthSession |
 | Sentry | Error tracking | @sentry/react-native (V2) |
 
 ---
@@ -214,7 +217,7 @@ export const mockApi = {
 | Animation | Reanimated | Animated API | Worklet performance |
 | Shaders | Skia | React Native GL | Better RN integration |
 | State | Zustand | Redux | Simplicity, timeline |
-| Voice | ElevenLabs | Whisper + custom | Pre-built agent |
+| Voice | OpenAI Realtime | ElevenLabs | Client decision - backend owns integration |
 | Blur | expo-blur | react-native-blur | Expo managed |
 
 ---
@@ -230,9 +233,13 @@ src/
 ├── store/
 │   └── useAppStore.ts    # Zustand store
 ├── services/
-│   ├── api.ts            # API client
-│   ├── mockApi.ts        # MVP mocks
-│   └── voice.ts          # ElevenLabs integration
+│   ├── AuthService.ts          # Cognito auth
+│   ├── TokenManager.ts         # JWT handling
+│   ├── AbbyRealtimeService.ts  # OpenAI voice integration
+│   ├── AbbyTTSService.ts       # TTS fallback
+│   ├── QuestionsService.ts     # Interview flow
+│   ├── EmotionVibeService.ts   # Shader mood mapping
+│   └── CognitoConfig.ts        # AWS config
 ├── shaders/
 │   └── vibeMatrix.glsl   # GLSL shader code
 ├── constants/
@@ -248,3 +255,4 @@ src/
 ---
 
 *Document created: December 20, 2024*
+*Major update: January 4, 2026 - Voice stack changed from ElevenLabs to OpenAI Realtime API*
