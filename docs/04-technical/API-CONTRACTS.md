@@ -33,16 +33,17 @@ const poolData = {
 
 ### AuthService Methods
 
-| Method | Purpose | Status |
-|--------|---------|--------|
-| `signup(email, password, name)` | Create new account | ✅ Implemented |
-| `verify(username, code)` | Verify email with 6-digit code | ✅ Implemented |
-| `resendVerificationCode(username)` | Resend verification code | ✅ Implemented |
-| `login(email, password)` | Authenticate user | ✅ Implemented |
-| `refreshToken()` | Refresh access token | ✅ Implemented (not called) |
-| `logout()` | Clear tokens | ✅ Implemented |
-| `isAuthenticated()` | Check auth status | ✅ Implemented |
-| `getAccessToken()` | Get current token | ✅ Implemented |
+| Method | Purpose | Status | For API |
+|--------|---------|--------|---------|
+| `signup(email, password, name)` | Create new account | ✅ Implemented | No |
+| `verify(username, code)` | Verify email with 6-digit code | ✅ Implemented | No |
+| `resendVerificationCode(username)` | Resend verification code | ✅ Implemented | No |
+| `login(email, password)` | Authenticate user | ✅ Implemented | No |
+| `refreshToken()` | Refresh ID + access tokens | ✅ Implemented | When 401 |
+| `logout()` | Clear tokens | ✅ Implemented | No |
+| `isAuthenticated()` | Check auth status | ✅ Implemented | No |
+| **`getIdToken()`** | **Get ID token for API calls** | ✅ Implemented | **YES - USE THIS** |
+| `getAccessToken()` | Get access token (not used) | ✅ Implemented | No |
 
 ### Token Response
 
@@ -75,8 +76,19 @@ These endpoints were in the original spec but are NOT implemented in MVP:
 All authenticated endpoints require:
 
 ```
-Authorization: Bearer <cognito_access_token>
+Authorization: Bearer <cognito_id_token>
 Content-Type: application/json
+```
+
+**CRITICAL (2026-01-07):** Use ID token, NOT access token. See ADR-001-COGNITO-TOKEN-STRATEGY.md for rationale.
+
+```typescript
+// Correct: Extract ID token
+const idToken = session.getIdToken().getJwtToken();
+headers.Authorization = `Bearer ${idToken}`;
+
+// Wrong: Do NOT use access token
+// const accessToken = session.getAccessToken().getJwtToken(); // ❌
 ```
 
 ---
