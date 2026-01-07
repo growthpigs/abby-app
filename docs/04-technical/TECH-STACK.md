@@ -48,6 +48,42 @@ Technology decisions for ABBY prioritize:
 
 ---
 
+## Authentication & API Strategy
+
+| Layer | Technology | Pattern |
+|-------|------------|---------|
+| Auth | AWS Cognito | Email/password signup, JWT tokens |
+| Token Strategy | **ID Token (Pragmatic)** | See ADR-001-COGNITO-TOKEN-STRATEGY.md |
+| SDK | amazon-cognito-identity-js | v6.x (Cognito client library) |
+| Storage | Expo SecureStore | Secure token persistence |
+
+### Token Strategy: ID vs Access
+
+**Decision (2026-01-07):** Rod's iOS app uses **ID tokens** instead of access tokens.
+
+```
+Login Flow:
+  1. User signup/login via Cognito
+  2. Cognito returns: idToken, accessToken, refreshToken
+  3. Extract: const idToken = session.getIdToken().getJwtToken()
+  4. Store: Both idToken and refreshToken in SecureStore
+  5. API calls: Authorization: Bearer <idToken>
+  6. Refresh: When expired, call cognitoUser.refreshSession()
+```
+
+**Rationale:** Nathan's backend explicitly expects ID tokens. This pragmatic decision avoids backend changes and enables rapid MVP delivery. See ADR-001 for full risk analysis.
+
+**Token Validation:**
+```bash
+# To verify token type:
+PAYLOAD=$(echo $TOKEN | cut -d'.' -f2)
+echo $PAYLOAD | base64 -d | jq .token_use
+# ID token returns: "id"
+# Access token returns: "access"
+```
+
+---
+
 ## Voice & Conversation
 
 | Layer | Technology | Notes |
@@ -55,7 +91,7 @@ Technology decisions for ABBY prioritize:
 | Voice API | OpenAI Realtime API | Via client backend (dev.api.myaimatchmaker.ai) |
 | Service | AbbyRealtimeService.ts | Handles sessions, demo fallback |
 | TTS Fallback | AbbyTTSService.ts | Text-to-speech when realtime unavailable |
-| Auth | AWS Cognito | JWT tokens for API authentication |
+| Auth | AWS Cognito (ID Token) | JWT ID tokens for all API calls |
 
 ### Voice Architecture
 
@@ -63,10 +99,12 @@ Technology decisions for ABBY prioritize:
 User speaks → App captures → Client Backend → OpenAI Realtime → Response
      ↓              ↓              ↓                 ↓              ↓
   Orb pulses    POST /session   Proxies to      Generates      Stream audio
-  "Listening"   with token      OpenAI API      response       + animate orb
+  "Listening"   (with idToken)  OpenAI API      response       + animate orb
 ```
 
 **Demo Mode:** When API unavailable, AbbyRealtimeService provides scripted responses.
+
+**Authentication:** All voice sessions require ID token in Authorization header (see Token Strategy above).
 
 **Note:** ElevenLabs was the original plan but client switched to OpenAI Realtime API in Dec 2025.
 
@@ -256,3 +294,4 @@ src/
 
 *Document created: December 20, 2024*
 *Major update: January 4, 2026 - Voice stack changed from ElevenLabs to OpenAI Realtime API*
+*Latest update: January 7, 2026 - Added Authentication & API Strategy section documenting ID token decision (ADR-001)*
