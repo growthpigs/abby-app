@@ -12,8 +12,10 @@
 | Risk Level | Count |
 |------------|-------|
 | High | 2 |
-| Medium | 4 |
+| Medium | 5 |
 | Low | 2 |
+
+**Last Updated:** January 7, 2026 (ID Token Strategy Added)
 
 ---
 
@@ -146,9 +148,41 @@
 
 ---
 
+### RISK-007: ID Token Authentication Pattern (Non-Standard)
+
+**Description:** Rod's iOS app uses ID tokens instead of AWS-recommended access tokens for API calls. This is a pragmatic decision to avoid backend changes but deviates from best practices and may cause issues when scaling.
+
+**Likelihood:** Low (0-3 months)
+**Impact:** Medium (hidden technical debt)
+**Category:** Technical
+
+**Status:** MITIGATED - Documented in ADR-001-COGNITO-TOKEN-STRATEGY.md
+
+**Mitigation:**
+- Decision explicitly documented with risk timeline
+- ID tokens work identically for JWT validation
+- Both token types from same Cognito pool are valid
+- Token refresh mechanism handles both types
+- Clear migration path to access tokens (≈2 hours refactor effort)
+
+**Risk Timeline:**
+- 0-3 months: No risk identified (MVP phase)
+- 3-6 months: Risk emerges if adding second backend service that validates `token_use` field
+- 6+ months: Enterprise customers may audit token usage; permission scopes stored only in access tokens
+
+**Contingency:**
+- Document decision in all code reviews
+- Plan refactor to access tokens at 6-month mark
+- Budget ~2 hours for access token migration
+- Track in TECH-DEBT.md under "Authentication Refactoring"
+
+**Owner:** Rod (frontend) + Nathan (backend)
+
+---
+
 ## Low Risks
 
-### RISK-007: Typography Licensing
+### RISK-008: Typography Licensing
 
 **Description:** Playfair Display and Inter fonts need to be properly licensed for mobile app use.
 
@@ -167,7 +201,7 @@
 
 ---
 
-### RISK-008: 14-Day Timeline Pressure
+### RISK-009: 14-Day Timeline Pressure
 
 **Description:** Hard deadline of 14 days is aggressive for full MVP scope. Risk of incomplete features.
 
