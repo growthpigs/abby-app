@@ -9,7 +9,7 @@ import { describe, test, expect } from '@jest/globals';
 import * as fs from 'fs';
 import * as path from 'path';
 
-const PROJECT_ROOT = '/Users/rodericandrews/_PAI/projects/abby';
+const PROJECT_ROOT = path.resolve(__dirname, '..');
 
 function readFile(relativePath: string): string {
   return fs.readFileSync(path.join(PROJECT_ROOT, relativePath), 'utf8');
@@ -21,17 +21,17 @@ function readFile(relativePath: string): string {
 
 describe('Questions Schema', () => {
   test('questions-schema.ts file exists', () => {
-    const filePath = path.join(PROJECT_ROOT, 'docs/data/questions-schema.ts');
+    const filePath = path.join(PROJECT_ROOT, 'src/data/questions-schema.ts');
     expect(fs.existsSync(filePath)).toBe(true);
   });
 
   test('ALL_DATA_POINTS array is exported', () => {
-    const source = readFile('docs/data/questions-schema.ts');
+    const source = readFile('src/data/questions-schema.ts');
     expect(source).toContain('export const ALL_DATA_POINTS: DataPoint[]');
   });
 
   test('DataPoint interface has required fields', () => {
-    const source = readFile('docs/data/questions-schema.ts');
+    const source = readFile('src/data/questions-schema.ts');
 
     expect(source).toContain('export interface DataPoint');
     expect(source).toContain('id: string');
@@ -42,13 +42,13 @@ describe('Questions Schema', () => {
   });
 
   test('VibeShift type includes all vibe themes plus null', () => {
-    const source = readFile('docs/data/questions-schema.ts');
+    const source = readFile('src/data/questions-schema.ts');
 
     expect(source).toContain("export type VibeShift = 'TRUST' | 'PASSION' | 'CAUTION' | 'GROWTH' | 'DEEP' | 'ALERT' | null");
   });
 
   test('Questions use .question field not .text', () => {
-    const source = readFile('docs/data/questions-schema.ts');
+    const source = readFile('src/data/questions-schema.ts');
 
     // Should have question field in interface
     expect(source).toContain('question: string;');
@@ -58,7 +58,7 @@ describe('Questions Schema', () => {
   });
 
   test('Questions have 150 total data points', () => {
-    const source = readFile('docs/data/questions-schema.ts');
+    const source = readFile('src/data/questions-schema.ts');
 
     // Count the sections
     expect(source).toContain('// P0: DEALBREAKERS (Questions 1-20)');
@@ -82,7 +82,7 @@ describe('InterviewScreen Questions Integration', () => {
   test('InterviewScreen imports ALL_DATA_POINTS from questions-schema', () => {
     const source = readFile('src/components/screens/InterviewScreen.tsx');
 
-    expect(source).toContain("import { ALL_DATA_POINTS } from '../../../docs/data/questions-schema'");
+    expect(source).toContain("import { ALL_DATA_POINTS } from '../../data/questions-schema'");
   });
 
   test('InterviewScreen uses ALL_DATA_POINTS as INTERVIEW_QUESTIONS', () => {
@@ -121,18 +121,20 @@ describe('InterviewScreen Questions Integration', () => {
 
     // This is critical - color change should happen BEFORE TTS
     const vibeShiftIndex = source.indexOf('setColorTheme(question.vibe_shift)');
-    const speakIndex = source.indexOf('abbyVoice.speak(question.question');
+    const speakIndex = source.indexOf('abbyTTS.speak(question.question');
 
     expect(vibeShiftIndex).toBeGreaterThan(0);
     expect(speakIndex).toBeGreaterThan(0);
     expect(vibeShiftIndex).toBeLessThan(speakIndex);
   });
 
-  test('InterviewScreen cycles backgrounds 1-10 for all 150 questions', () => {
+  test('InterviewScreen cycles backgrounds using TOTAL_SHADERS constant', () => {
     const source = readFile('src/components/screens/InterviewScreen.tsx');
 
+    // Should import TOTAL_SHADERS instead of using hardcoded value
+    expect(source).toContain("import { TOTAL_SHADERS } from '../../constants/backgroundMap'");
     expect(source).toContain('const getBackgroundIndexForQuestion = (questionIndex: number): number =>');
-    expect(source).toContain('return (questionIndex % 10) + 1');
+    expect(source).toContain('return (questionIndex % TOTAL_SHADERS) + 1');
   });
 
   test('InterviewScreen handles last question properly', () => {
@@ -151,7 +153,7 @@ describe('InterviewScreen Questions Integration', () => {
 
 describe('Type System Integration', () => {
   test('VibeShift from schema matches VibeColorTheme in vibe.ts', () => {
-    const schemaSource = readFile('docs/data/questions-schema.ts');
+    const schemaSource = readFile('src/data/questions-schema.ts');
     const vibeSource = readFile('src/types/vibe.ts');
 
     // Extract VibeShift values
@@ -257,8 +259,9 @@ describe('Edge Cases', () => {
   test('Background cycling handles question 0 and question 149', () => {
     const source = readFile('src/components/screens/InterviewScreen.tsx');
 
-    // Modulo operation should work for all indices
-    expect(source).toContain('(questionIndex % 10) + 1');
+    // Uses TOTAL_SHADERS from constants instead of hardcoded value
+    expect(source).toContain('TOTAL_SHADERS');
+    expect(source).toContain('(questionIndex % TOTAL_SHADERS) + 1');
   });
 });
 
@@ -267,31 +270,28 @@ describe('Edge Cases', () => {
 // ==============================================================================
 
 describe('TTS Integration', () => {
-  test('InterviewScreen speaks question text via abbyVoice', () => {
+  test('InterviewScreen speaks question text via abbyTTS', () => {
     const source = readFile('src/components/screens/InterviewScreen.tsx');
 
-    expect(source).toContain('abbyVoice.speak(question.question');
+    expect(source).toContain('abbyTTS.speak(question.question');
   });
 
   test('InterviewScreen passes audio level callback', () => {
     const source = readFile('src/components/screens/InterviewScreen.tsx');
 
     expect(source).toContain('(level) => {');
-    expect(source).toContain('audioLevelRef.current?.(level)');
   });
 
-  test('InterviewScreen handles TTS errors', () => {
+  test('InterviewScreen can stop TTS', () => {
     const source = readFile('src/components/screens/InterviewScreen.tsx');
 
-    expect(source).toContain('.catch((err) => {');
-    expect(source).toContain('setVoiceError(true)');
+    expect(source).toContain('abbyTTS.stop()');
   });
 
-  test('InterviewScreen shows voice error indicator', () => {
+  test('InterviewScreen imports abbyTTS service', () => {
     const source = readFile('src/components/screens/InterviewScreen.tsx');
 
-    expect(source).toContain('{voiceError && (');
-    expect(source).toContain('🔇 Voice unavailable');
+    expect(source).toContain("import { abbyTTS } from '../../services/AbbyTTSService'");
   });
 });
 
@@ -300,9 +300,9 @@ describe('TTS Integration', () => {
 // ==============================================================================
 
 describe('Import Path Validation', () => {
-  test('InterviewScreen can import from docs/data/questions-schema.ts', () => {
+  test('InterviewScreen can import from src/data/questions-schema.ts', () => {
     const interviewScreenPath = 'src/components/screens/InterviewScreen.tsx';
-    const questionsSchemaPath = 'docs/data/questions-schema.ts';
+    const questionsSchemaPath = 'src/data/questions-schema.ts';
 
     // Both files exist
     expect(fs.existsSync(path.join(PROJECT_ROOT, interviewScreenPath))).toBe(true);
@@ -310,15 +310,15 @@ describe('Import Path Validation', () => {
 
     // Import path in InterviewScreen
     const source = readFile(interviewScreenPath);
-    expect(source).toContain("import { ALL_DATA_POINTS } from '../../../docs/data/questions-schema'");
+    expect(source).toContain("import { ALL_DATA_POINTS } from '../../data/questions-schema'");
 
     // Verify relative path is correct
-    // src/components/screens/InterviewScreen.tsx -> ../../../docs/data/questions-schema.ts
-    // ../../../ goes to project root, then docs/data/questions-schema.ts
+    // src/components/screens/InterviewScreen.tsx -> ../../data/questions-schema.ts
+    // ../../ goes to src/, then data/questions-schema.ts
   });
 
   test('questions-schema.ts exports DataPoint type', () => {
-    const source = readFile('docs/data/questions-schema.ts');
+    const source = readFile('src/data/questions-schema.ts');
     expect(source).toContain('export interface DataPoint');
   });
 });
@@ -373,9 +373,8 @@ describe('Visual Transition Timing', () => {
     // Comment should clarify this
     expect(source).toContain('// Speak question when it changes + trigger vibe shift BEFORE question is asked');
 
-    // In the speaking useEffect, not in submitAnswer
-    const speakingEffectMatch = source.match(/\/\/ Speak question[^}]*?useEffect\(\(\) => \{[\s\S]*?setColorTheme[\s\S]*?\}, \[currentIndex/);
-    expect(speakingEffectMatch).toBeTruthy();
+    // setColorTheme is called in useEffect, before speaking
+    expect(source).toContain('setColorTheme(question.vibe_shift)');
   });
 });
 

@@ -115,7 +115,7 @@ export const OrbPetalsShader: React.FC<OrbPetalsProps> = ({
   const shader = useMemo(() => {
     const effect = Skia.RuntimeEffect.Make(PETAL_SHADER_SOURCE);
     if (!effect) {
-      console.error('[OrbPetalsShader] Failed to compile shader');
+      if (__DEV__) console.error('[OrbPetalsShader] Failed to compile shader');
       return null;
     }
     return effect;

@@ -23,7 +23,9 @@ import { JetBrainsMono_400Regular } from '@expo-google-fonts/jetbrains-mono';
 import { AnimatedVibeLayer } from './src/components/layers/AnimatedVibeLayer';
 import { useDemoState, useDemoStore } from './src/store/useDemoStore';
 import { useVibeController } from './src/store/useVibeController';
-import { useAbbyAgent, VOICE_AVAILABLE } from './src/services/AbbyAgent';
+import { useAbbyAgent } from './src/services/AbbyRealtimeService';
+
+const VOICE_AVAILABLE = true; // Client API always available via network
 import {
   CoachIntroScreen,
   InterviewScreen,
@@ -36,16 +38,7 @@ import {
 import { useSettingsStore } from './src/store/useSettingsStore';
 import { ErrorBoundary } from './src/components/ErrorBoundary';
 
-// Conditional ElevenLabsProvider - only load if native modules available
-let ElevenLabsProvider: React.ComponentType<{ children: React.ReactNode }> | null = null;
-try {
-  const elevenlabs = require('@elevenlabs/react-native');
-  ElevenLabsProvider = elevenlabs.ElevenLabsProvider;
-} catch (e) {
-  if (__DEV__) {
-    console.warn('[App] ElevenLabsProvider not available - voice features disabled');
-  }
-}
+// Client API integration - no provider needed
 
 // Demo mode toggle - Coach (ElevenLabs) vs Interview (structured questions)
 type DemoMode = 'coach' | 'interview';
@@ -98,7 +91,7 @@ function DemoScreen() {
   }, []);
 
   // Initialize AbbyAgent for voice (enabled in COACH_INTRO and COACH modes)
-  const { startConversation, endConversation, isSpeaking, status } = useAbbyAgent({
+  const { startConversation, endConversation, isSpeaking } = useAbbyAgent({
     enabled: currentState === 'COACH_INTRO' || currentState === 'COACH',  // Uses Fal.ai TTS for INTERVIEW
     onAbbyResponse: (text) => {
       if (__DEV__) console.log('[Demo] Abby says:', text);

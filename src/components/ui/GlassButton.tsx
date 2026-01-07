@@ -27,6 +27,12 @@ interface GlassButtonProps {
   textStyle?: TextStyle;
   disabled?: boolean;
   variant?: 'primary' | 'secondary' | 'ghost';
+  /** Accessibility label for screen readers */
+  accessibilityLabel?: string;
+  /** Accessibility hint for screen readers */
+  accessibilityHint?: string;
+  /** Test ID for testing */
+  testID?: string;
 }
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
@@ -38,6 +44,9 @@ export const GlassButton: React.FC<GlassButtonProps> = ({
   textStyle,
   disabled = false,
   variant = 'primary',
+  accessibilityLabel,
+  accessibilityHint,
+  testID,
 }) => {
   const scale = useSharedValue(1);
   const opacity = useSharedValue(1);
@@ -88,6 +97,10 @@ export const GlassButton: React.FC<GlassButtonProps> = ({
   };
 
   const variantStyles = getVariantStyles();
+
+  // Derive accessible label from children if not provided
+  const derivedLabel = accessibilityLabel ??
+    (typeof children === 'string' ? children : undefined);
 
   return (
     <AnimatedPressable

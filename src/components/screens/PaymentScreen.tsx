@@ -44,7 +44,7 @@ export const PaymentScreen: React.FC<PaymentScreenProps> = ({
 
   return (
     <View style={styles.container}>
-      <GlassSheet height={0.55}>
+      <GlassSheet height={0.67}>
         {/* Header */}
         <Caption style={styles.label}>UNLOCK PHOTO</Caption>
 

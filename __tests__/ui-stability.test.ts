@@ -12,7 +12,7 @@ import { describe, test, expect } from '@jest/globals';
 import * as fs from 'fs';
 import * as path from 'path';
 
-const PROJECT_ROOT = '/Users/rodericandrews/_PAI/projects/abby';
+const PROJECT_ROOT = path.resolve(__dirname, '..');
 
 function readFile(relativePath: string): string {
   return fs.readFileSync(path.join(PROJECT_ROOT, relativePath), 'utf8');

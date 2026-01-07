@@ -74,13 +74,37 @@ export const RevealScreen: React.FC<RevealScreenProps> = ({
     opacity: contentOpacity.value,
   }));
 
-  const handleStartOver = () => {
-    reset();
-  };
+  const handleMessage = useCallback(() => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    if (matchData?.name) {
+      onMessage?.(matchData.name);
+    }
+    // Fallback: advance to Coach for now
+    if (!onMessage) {
+      advance();
+    }
+  }, [matchData?.name, onMessage, advance]);
 
-  const handleMeetCoach = () => {
-    advance();
-  };
+  const handleFindMoreMatches = useCallback(() => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    if (onFindMoreMatches) {
+      onFindMoreMatches();
+    } else {
+      // Fallback: reset to start new interview
+      reset();
+    }
+  }, [onFindMoreMatches, reset]);
+
+  const handleViewAllMatches = useCallback(() => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    onViewAllMatches?.();
+  }, [onViewAllMatches]);
+
+  // Navigate to coach screen (secret middle trigger or "Meet Your Coach" button)
+  const handleMeetCoach = useCallback(() => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    advance(); // Advance to CoachScreen
+  }, [advance]);
 
   // Guard against missing or incomplete matchData
   if (!matchData || !matchData.name || typeof matchData.age !== 'number') {
@@ -119,12 +143,17 @@ export const RevealScreen: React.FC<RevealScreenProps> = ({
 
         {/* Action buttons */}
         <Animated.View style={[styles.buttonContainer, contentAnimatedStyle]}>
-          <GlassButton onPress={handleMeetCoach} variant="primary">
-            Meet Your Coach
+          <GlassButton onPress={handleMessage} variant="primary">
+            Message {matchData.name}
           </GlassButton>
-          <GlassButton onPress={handleStartOver} variant="secondary">
-            Start Over (Demo)
+          <GlassButton onPress={handleFindMoreMatches} variant="secondary">
+            Find More Matches
           </GlassButton>
+          {onViewAllMatches && (
+            <Pressable onPress={handleViewAllMatches} style={styles.viewAllLink}>
+              <Caption style={styles.viewAllText}>View All Matches →</Caption>
+            </Pressable>
+          )}
         </Animated.View>
       </GlassSheet>
 

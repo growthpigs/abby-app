@@ -1,7 +1,7 @@
 /**
  * AbbyOrb - Layer 1 of the Glass Sandwich
  *
- * The Petal Orb - Abby's visual representation.
+ * LiquidGlass4 Orb - Abby's visual representation.
  * She is never hidden; she only transforms.
  *
  * ARCHITECTURE: Full-screen shader with position/scale uniforms
@@ -16,7 +16,7 @@
  */
 
 import React, { useEffect, useMemo } from 'react';
-import { View, StyleSheet, Pressable, useWindowDimensions } from 'react-native';
+import { StyleSheet, View, Pressable, useWindowDimensions } from 'react-native';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,

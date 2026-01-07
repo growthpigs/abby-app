@@ -275,7 +275,7 @@ export const useVibeController = create<VibeControllerStore>((set, get) => {
     setFromAppState: (state) => {
       const vibe = APP_STATE_VIBES[state];
       if (!vibe) {
-        console.warn('[VibeController] Unknown app state:', state);
+        if (__DEV__) console.warn('[VibeController] Unknown app state:', state);
         return;
       }
       const config = buildShaderConfig(vibe.theme, vibe.complexity);

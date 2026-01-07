@@ -4,6 +4,9 @@
  * Same visual pattern as CoachIntroScreen but for post-interview conversation.
  * Uses useDraggableSheet hook for bottom sheet behavior.
  * Snap points at 35%, 55%, 75%, 90% of screen height.
+ *
+ * DYNAMIC VIBES: Background changes based on conversation emotion.
+ * Uses EmotionVibeService to detect emotions from Abby's responses.
  */
 
 import React, { useCallback, useEffect, useState, useRef } from 'react';
@@ -20,9 +23,12 @@ import { BlurView } from 'expo-blur';
 import * as Haptics from 'expo-haptics';
 import { Pause, Play } from 'lucide-react-native';
 import { useDemoStore } from '../../store/useDemoStore';
-import { useAbbyAgent } from '../../services/AbbyAgent';
+import { useAbbyAgent } from '../../services/AbbyRealtimeService';
 import { ChatInput } from '../ui/ChatInput';
 import { useDraggableSheet } from '../../hooks/useDraggableSheet';
+import { analyzeTextForVibe } from '../../services/EmotionVibeService';
+import { VibeColorTheme, VibeComplexity } from '../../types/vibe';
+import { SHEET_SNAP_POINTS, SHEET_DEFAULT_SNAP } from '../../constants/layout';
 
 const { height: SCREEN_HEIGHT } = Dimensions.get('window');
 
@@ -47,9 +53,10 @@ export const CoachScreen: React.FC<CoachScreenProps> = ({
   const [agentStatus, setAgentStatus] = useState<string>('Connecting...');
 
   // Use draggable sheet hook (replaces manual pan responder + snap logic)
+  // Uses centralized constants from layout.ts - SINGLE SOURCE OF TRUTH
   const { translateY, panHandlers, animateIn } = useDraggableSheet({
-    snapPoints: [0.35, 0.55, 0.75, 0.9],
-    defaultSnap: 0.55,
+    snapPoints: [...SHEET_SNAP_POINTS],
+    defaultSnap: SHEET_DEFAULT_SNAP,
   });
 
   // Safe scroll helper - clears previous timeout to prevent memory leaks
@@ -77,6 +84,11 @@ export const CoachScreen: React.FC<CoachScreenProps> = ({
     onAbbyResponse: (text) => {
       addMessage('abby', text);
       scrollToTop();
+
+      // Detect emotion from Abby's response and trigger dynamic vibe change
+      const vibeConfig = analyzeTextForVibe(text);
+      onBackgroundChange?.(vibeConfig.backgroundIndex);
+      onVibeChange?.(vibeConfig.theme, vibeConfig.complexity);
     },
     onUserTranscript: (text) => {
       // Dedup: Don't add if last user message has same text (prevents double-add from typed input)
@@ -116,7 +128,7 @@ export const CoachScreen: React.FC<CoachScreenProps> = ({
       try {
         await startConversation();
       } catch (err) {
-        console.warn('[Coach] Failed to start conversation:', err);
+        if (__DEV__) console.warn('[Coach] Failed to start conversation:', err);
         setAgentStatus('Failed to connect');
       }
     };
@@ -124,8 +136,9 @@ export const CoachScreen: React.FC<CoachScreenProps> = ({
 
     // Cleanup on unmount - must handle async gracefully
     return () => {
-      endConversation().catch(() => {
-        // Ignore cleanup errors - session may already be ended
+      endConversation().catch((err) => {
+        // Cleanup errors are expected if session already ended
+        if (typeof __DEV__ !== 'undefined' && __DEV__) console.debug('[Coach] Cleanup:', err?.message || 'session ended');
       });
     };
   }, []);

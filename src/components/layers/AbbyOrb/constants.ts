@@ -15,8 +15,8 @@ export const ORB_SIZES = {
     radius: 125,
   },
   docked: {
-    diameter: 80,
-    radius: 40,
+    diameter: 120,  // Increased from 80 for better visibility
+    radius: 60,
   },
 } as const;
 
@@ -30,7 +30,7 @@ export const ORB_POSITIONS = {
   },
   docked: {
     top: undefined,
-    bottom: 40,
+    bottom: 60,  // Increased to accommodate larger orb
   },
 } as const;
 

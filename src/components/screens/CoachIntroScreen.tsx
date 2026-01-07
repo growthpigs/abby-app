@@ -23,9 +23,10 @@ import { BlurView } from 'expo-blur';
 import * as Haptics from 'expo-haptics';
 import { Pause, Play } from 'lucide-react-native';
 import { useDemoStore } from '../../store/useDemoStore';
-import { useAbbyAgent } from '../../services/AbbyAgent';
+import { useAbbyAgent } from '../../services/AbbyRealtimeService';
 import { useVibeController } from '../../store/useVibeController';
 import { VibeColorTheme } from '../../types/vibe';
+import { SHEET_SNAP_POINTS, SHEET_DEFAULT_SNAP } from '../../constants/layout';
 
 // Keywords that trigger color changes during conversation
 const VIBE_KEYWORDS: Record<VibeColorTheme, string[]> = {
@@ -50,9 +51,9 @@ const detectVibeFromText = (text: string): VibeColorTheme | null => {
 
 const { height: SCREEN_HEIGHT } = Dimensions.get('window');
 
-// Snap points as percentages of screen height (from bottom)
-const SNAP_POINTS = [0.35, 0.55, 0.75, 0.9];
-const DEFAULT_SNAP = 0.55; // Start at 55% (enough room for conversation)
+// Use centralized constants - SINGLE SOURCE OF TRUTH
+const SNAP_POINTS = SHEET_SNAP_POINTS;
+const DEFAULT_SNAP = SHEET_DEFAULT_SNAP;
 
 export interface CoachIntroScreenProps {
   onBackgroundChange?: (index: number) => void;
@@ -121,7 +122,7 @@ export const CoachIntroScreen: React.FC<CoachIntroScreenProps> = ({
   // Find closest snap point
   const findClosestSnapPoint = useCallback((position: number): number => {
     const currentPercentage = 1 - position / SCREEN_HEIGHT;
-    let closest = SNAP_POINTS[0];
+    let closest: number = SNAP_POINTS[0];
     let minDistance = Math.abs(currentPercentage - closest);
 
     for (const snap of SNAP_POINTS) {
@@ -196,7 +197,7 @@ export const CoachIntroScreen: React.FC<CoachIntroScreenProps> = ({
       try {
         await startConversation();
       } catch (err) {
-        console.warn('[CoachIntro] Failed to start conversation:', err);
+        if (__DEV__) console.warn('[CoachIntro] Failed to start conversation:', err);
         setAgentStatus('Failed to connect');
       }
     };
@@ -204,8 +205,9 @@ export const CoachIntroScreen: React.FC<CoachIntroScreenProps> = ({
 
     // Cleanup on unmount - must handle async gracefully
     return () => {
-      endConversation().catch(() => {
-        // Ignore cleanup errors - session may already be ended
+      endConversation().catch((err) => {
+        // Cleanup errors are expected if session already ended
+        if (typeof __DEV__ !== 'undefined' && __DEV__) console.debug('[CoachIntro] Cleanup:', err?.message || 'session ended');
       });
     };
   }, []);
@@ -221,7 +223,7 @@ export const CoachIntroScreen: React.FC<CoachIntroScreenProps> = ({
       await Promise.race([endConversation(), timeout]);
     } catch (err) {
       // Ignore errors - we're navigating away anyway
-      console.warn('[CoachIntro] endConversation error (continuing):', err);
+      if (__DEV__) console.warn('[CoachIntro] endConversation error (continuing):', err);
     }
 
     advance(); // Go to INTERVIEW

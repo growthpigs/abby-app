@@ -18,7 +18,7 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import { BlurView } from 'expo-blur';
-import { useAbbyAgent } from '../services/AbbyAgent';
+import { useAbbyAgent } from '../services/AbbyRealtimeService';
 
 interface AbbyConversationProps {
   onClose?: () => void;

@@ -28,6 +28,11 @@ import { useDerivedValue, useSharedValue, withTiming } from 'react-native-reanim
 const DEFAULT_COLOR_A = [0.957, 0.447, 0.714]; // #F472B6 Hot Pink
 const DEFAULT_COLOR_B = [0.659, 0.333, 0.969]; // #A855F7 Purple
 
+// Type guard for SharedValue - defined outside component to avoid recreation
+const isSharedValue = (val: unknown): val is SharedValue<number> => {
+  return val !== null && typeof val === 'object' && 'value' in val;
+};
+
 const ABBY_ORB_SHADER = Skia.RuntimeEffect.Make(`
   uniform float2 resolution;
   uniform float time;
@@ -261,7 +266,10 @@ export const LiquidGlass4: React.FC<LiquidGlass4Props> = ({
   centerY = 0,
   orbScale = 1,
 }) => {
-  const { width, height } = useWindowDimensions();
+  const windowDimensions = useWindowDimensions();
+  // Use explicit size if provided, otherwise use window dimensions
+  const width = size ?? windowDimensions.width;
+  const height = size ?? windowDimensions.height;
   const clock = useClock();
 
   // Convert React props to shared values for smooth animation
@@ -307,7 +315,7 @@ export const LiquidGlass4: React.FC<LiquidGlass4Props> = ({
   }), [clock, finalAudioLevel, colorA, colorB, centerYShared, orbScaleShared]);
 
   if (!ABBY_ORB_SHADER) {
-    console.error('[LiquidGlass4] Shader failed to compile');
+    if (__DEV__) console.error('[LiquidGlass4] Shader failed to compile');
     return null;
   }
 

@@ -11,12 +11,13 @@
  */
 
 import React from 'react';
-import { Text, StyleSheet, TextStyle } from 'react-native';
+import { Text, StyleSheet, StyleProp, TextStyle } from 'react-native';
 
 interface TypographyProps {
   children: React.ReactNode;
-  style?: TextStyle;
+  style?: StyleProp<TextStyle>;
   color?: string;
+  numberOfLines?: number;
 }
 
 // Headers - The Voice of Abby (Serif feel, high contrast)
@@ -39,8 +40,8 @@ export const HeadlineSmall: React.FC<TypographyProps> = ({ children, style, colo
 );
 
 // Body - The Data (System Sans, clean)
-export const Body: React.FC<TypographyProps> = ({ children, style, color }) => (
-  <Text style={[styles.body, color ? { color } : null, style]}>
+export const Body: React.FC<TypographyProps> = ({ children, style, color, numberOfLines }) => (
+  <Text style={[styles.body, color ? { color } : null, style]} numberOfLines={numberOfLines}>
     {children}
   </Text>
 );
@@ -167,6 +168,41 @@ const styles = StyleSheet.create({
   },
 });
 
+// Unified Typography component with variant prop
+type TypographyVariant = 'headline' | 'headlineLarge' | 'headlineSmall' | 'body' | 'bodyLarge' | 'bodySmall' | 'caption' | 'question';
+
+interface UnifiedTypographyProps extends TypographyProps {
+  variant?: TypographyVariant;
+}
+
+export const Typography: React.FC<UnifiedTypographyProps> = ({
+  variant = 'body',
+  children,
+  style,
+  color,
+}) => {
+  switch (variant) {
+    case 'headline':
+      return <Headline style={style} color={color}>{children}</Headline>;
+    case 'headlineLarge':
+      return <HeadlineLarge style={style} color={color}>{children}</HeadlineLarge>;
+    case 'headlineSmall':
+      return <HeadlineSmall style={style} color={color}>{children}</HeadlineSmall>;
+    case 'body':
+      return <Body style={style} color={color}>{children}</Body>;
+    case 'bodyLarge':
+      return <BodyLarge style={style} color={color}>{children}</BodyLarge>;
+    case 'bodySmall':
+      return <BodySmall style={style} color={color}>{children}</BodySmall>;
+    case 'caption':
+      return <Caption style={style} color={color}>{children}</Caption>;
+    case 'question':
+      return <Question style={style} color={color}>{children}</Question>;
+    default:
+      return <Body style={style} color={color}>{children}</Body>;
+  }
+};
+
 export default {
   Headline,
   HeadlineLarge,
@@ -176,4 +212,5 @@ export default {
   BodySmall,
   Caption,
   Question,
+  Typography,
 };

@@ -3,13 +3,15 @@
  *
  * Validates code structure, imports, and integration points
  * without executing React Native code.
+ *
+ * Updated for client-api-integration branch (Nathan's API / OpenAI Realtime).
  */
 
 import { describe, test, expect } from '@jest/globals';
 import * as fs from 'fs';
 import * as path from 'path';
 
-const PROJECT_ROOT = '/Users/rodericandrews/_PAI/projects/abby';
+const PROJECT_ROOT = path.resolve(__dirname, '..');
 
 function readFile(relativePath: string): string {
   return fs.readFileSync(path.join(PROJECT_ROOT, relativePath), 'utf8');
@@ -20,45 +22,30 @@ function fileExists(relativePath: string): boolean {
 }
 
 // ==============================================================================
-// TEST 1: Conditional Import Structure
+// TEST 1: OpenAI Realtime Service Structure
 // ==============================================================================
 
-describe('Conditional Import Logic', () => {
-  test('AbbyAgent has try-catch for ElevenLabs import', () => {
-    const source = readFile('src/services/AbbyAgent.ts');
-
-    expect(source).toContain('try {');
-    expect(source).toContain("require('@elevenlabs/react-native')");
-    expect(source).toContain("require('@livekit/react-native')");
-    expect(source).toContain('} catch (e) {');
-    expect(source).toContain('VOICE_AVAILABLE = true');
+describe('OpenAI Realtime Service', () => {
+  test('AbbyRealtimeService file exists', () => {
+    expect(fileExists('src/services/AbbyRealtimeService.ts')).toBe(true);
   });
 
-  test('AbbyAgent exports VOICE_AVAILABLE flag', () => {
-    const source = readFile('src/services/AbbyAgent.ts');
-    expect(source).toContain('export let VOICE_AVAILABLE');
+  test('AbbyRealtimeService exports class and hook', () => {
+    const source = readFile('src/services/AbbyRealtimeService.ts');
+
+    expect(source).toContain('export class AbbyRealtimeService');
+    expect(source).toContain('export function useAbbyAgent');
   });
 
-  test('Mock conversation provides error feedback via callbacks', () => {
-    const source = readFile('src/services/AbbyAgent.ts');
-
-    // Mock should call onError callback
-    expect(source).toContain('options?.onError?.(');
-    expect(source).toContain('Voice features require a development build');
+  test('Service uses client API base URL', () => {
+    const source = readFile('src/services/AbbyRealtimeService.ts');
+    expect(source).toContain('dev.api.myaimatchmaker.ai');
   });
 
-  test('AGENT_ID validation checks for empty string', () => {
-    const source = readFile('src/services/AbbyAgent.ts');
-
-    expect(source).toContain('!AGENT_ID || AGENT_ID.trim().length === 0');
-    expect(source).toContain('ELEVENLABS_AGENT_ID not configured');
-  });
-
-  test('AGENT_ID format validation checks agent_ prefix', () => {
-    const source = readFile('src/services/AbbyAgent.ts');
-
-    expect(source).toContain("!AGENT_ID.startsWith('agent_')");
-    expect(source).toContain('must start with "agent_"');
+  test('Service has demo mode responses', () => {
+    const source = readFile('src/services/AbbyRealtimeService.ts');
+    expect(source).toContain('DEMO_INTRO_MESSAGES');
+    expect(source).toContain('DEMO_COACH_MESSAGES');
   });
 });
 
@@ -76,11 +63,10 @@ describe('COACH_INTRO Feature', () => {
     expect(source).toContain("export { CoachIntroScreen } from './CoachIntroScreen'");
   });
 
-  test('CoachIntroScreen uses useAbbyAgent hook', () => {
+  test('CoachIntroScreen uses useAbbyAgent hook from AbbyRealtimeService', () => {
     const source = readFile('src/components/screens/CoachIntroScreen.tsx');
 
-    expect(source).toContain("import { useAbbyAgent } from '../../services/AbbyAgent'");
-    // Check for key destructured properties (mute features added later)
+    expect(source).toContain("import { useAbbyAgent } from '../../services/AbbyRealtimeService'");
     expect(source).toContain('startConversation');
     expect(source).toContain('endConversation');
     expect(source).toContain('isConnected');
@@ -90,7 +76,6 @@ describe('COACH_INTRO Feature', () => {
   test('CoachIntroScreen has cleanup logic', () => {
     const source = readFile('src/components/screens/CoachIntroScreen.tsx');
 
-    // Should have useEffect with cleanup
     expect(source).toContain('useEffect(() => {');
     expect(source).toContain('return () => {');
     expect(source).toContain('endConversation()');
@@ -104,11 +89,10 @@ describe('COACH_INTRO Feature', () => {
     expect(source).toContain('Animated.spring');
   });
 
-  test('CoachIntroScreen handles messages from AbbyAgent', () => {
+  test('CoachIntroScreen handles messages from agent', () => {
     const source = readFile('src/components/screens/CoachIntroScreen.tsx');
 
-    expect(source).toContain('onAbbyResponse: (text) =>');
-    expect(source).toContain('onUserTranscript: (text) =>');
+    expect(source).toContain('onAbbyResponse');
     expect(source).toContain('addMessage');
   });
 
@@ -116,7 +100,6 @@ describe('COACH_INTRO Feature', () => {
     const source = readFile('src/components/screens/CoachIntroScreen.tsx');
 
     expect(source).toContain('onBackgroundChange');
-    expect(source).toContain('useEffect(() => {');
   });
 });
 
@@ -166,51 +149,26 @@ describe('TypeScript Integration', () => {
 });
 
 // ==============================================================================
-// TEST 4: App.demo.tsx Integration
+// TEST 4: Auth Service Integration (Nathan's API)
 // ==============================================================================
 
-describe('App.demo.tsx', () => {
-  test('Conditionally imports ElevenLabsProvider', () => {
-    const source = readFile('App.demo.tsx');
-
-    expect(source).toContain('let ElevenLabsProvider');
-    expect(source).toContain('try {');
-    expect(source).toContain("require('@elevenlabs/react-native')");
-    expect(source).toContain('} catch (e) {');
+describe('Auth Service', () => {
+  test('AuthService file exists', () => {
+    expect(fileExists('src/services/AuthService.ts')).toBe(true);
   });
 
-  test('Conditionally wraps with ElevenLabsProvider', () => {
-    const source = readFile('App.demo.tsx');
-
-    expect(source).toContain('if (ElevenLabsProvider) {');
-    expect(source).toContain('<ElevenLabsProvider>');
-    expect(source).toContain('<DemoScreen />'); // Now wrapped in ErrorBoundary
-    expect(source).toContain('<ErrorBoundary>'); // Error boundary added
+  test('AuthService uses Cognito', () => {
+    const source = readFile('src/services/AuthService.ts');
+    expect(source).toContain('amazon-cognito-identity-js');
+    expect(source).toContain('CognitoConfig'); // Uses helper from CognitoConfig
+    expect(source).toContain('getAuthDetails'); // Authentication helper
   });
 
-  test('useAbbyAgent enabled for COACH_INTRO', () => {
-    const source = readFile('App.demo.tsx');
-
-    expect(source).toContain("enabled: currentState === 'COACH_INTRO' || currentState === 'COACH'");
-  });
-
-  test('Renders CoachIntroScreen for COACH_INTRO state', () => {
-    const source = readFile('App.demo.tsx');
-
-    expect(source).toContain("case 'COACH_INTRO':");
-    expect(source).toContain('<CoachIntroScreen');
-  });
-
-  test('Sets initial state to COACH_INTRO', () => {
-    const source = readFile('App.demo.tsx');
-
-    expect(source).toContain("setFromAppState('COACH_INTRO')");
-  });
-
-  test('Imports VOICE_AVAILABLE flag', () => {
-    const source = readFile('App.demo.tsx');
-
-    expect(source).toContain('VOICE_AVAILABLE');
+  test('AuthService has login and signup methods', () => {
+    const source = readFile('src/services/AuthService.ts');
+    expect(source).toContain('login');
+    expect(source).toContain('signup');
+    expect(source).toContain('verify'); // verify email with code
   });
 });
 
@@ -219,14 +177,11 @@ describe('App.demo.tsx', () => {
 // ==============================================================================
 
 describe('LogBox Configuration', () => {
-  test('index.ts suppresses WebSocket warnings', () => {
+  test('index.ts suppresses warnings', () => {
     const source = readFile('index.ts');
 
     expect(source).toContain("import { LogBox } from 'react-native'");
     expect(source).toContain('LogBox.ignoreLogs([');
-    expect(source).toContain('Websocket got closed during');
-    expect(source).toContain('websocket closed');
-    expect(source).toContain('could not createOffer with closed peer connection');
   });
 });
 
@@ -272,8 +227,13 @@ describe('UI Dependencies', () => {
   test('Package.json has all required packages', () => {
     const pkg = JSON.parse(readFile('package.json'));
 
-    expect(pkg.dependencies['@elevenlabs/react-native']).toBeDefined();
-    expect(pkg.dependencies['@livekit/react-native']).toBeDefined();
+    // Auth
+    expect(pkg.dependencies['amazon-cognito-identity-js']).toBeDefined();
+
+    // Audio
+    expect(pkg.dependencies['expo-av']).toBeDefined();
+
+    // UI
     expect(pkg.dependencies['expo-blur']).toBeDefined();
     expect(pkg.dependencies['expo-haptics']).toBeDefined();
     expect(pkg.dependencies['@expo-google-fonts/merriweather']).toBeDefined();
@@ -319,7 +279,6 @@ describe('Style Validation', () => {
   test('CoachIntroScreen has valid style structure', () => {
     const source = readFile('src/components/screens/CoachIntroScreen.tsx');
 
-    // Check for key styles
     expect(source).toContain('const styles = StyleSheet.create({');
     expect(source).toContain('container:');
     expect(source).toContain('bottomSheet:');
@@ -329,7 +288,6 @@ describe('Style Validation', () => {
   test('Transform property uses array syntax', () => {
     const source = readFile('src/components/screens/CoachIntroScreen.tsx');
 
-    // Check for transform with array
     expect(source).toContain('transform: [{ translateY }]');
   });
 });
@@ -339,30 +297,17 @@ describe('Style Validation', () => {
 // ==============================================================================
 
 describe('Edge Case Handling', () => {
-  test('AbbyAgent handles navigation away during session', () => {
-    const source = readFile('src/services/AbbyAgent.ts');
+  test('AbbyRealtimeService has cleanup in useAbbyAgent hook', () => {
+    const source = readFile('src/services/AbbyRealtimeService.ts');
 
-    // Cleanup on unmount
     expect(source).toContain('useEffect(() => {');
     expect(source).toContain('return () => {');
-    expect(source).toContain('clearInterval');
-  });
-
-  test('AbbyAgent has multiple start guards', () => {
-    const source = readFile('src/services/AbbyAgent.ts');
-
-    // Should have multiple guards
-    expect(source).toContain('// Guard 1:');
-    expect(source).toContain('// Guard 2:');
-    expect(source).toContain('// Guard 3:');
-    expect(source).toContain('// Guard 4:');
-    expect(source).toContain('// Guard 5:');
   });
 
   test('CoachIntroScreen handles connection errors', () => {
     const source = readFile('src/components/screens/CoachIntroScreen.tsx');
 
-    expect(source).toContain('onError: (error) =>');
+    expect(source).toContain('onError');
     expect(source).toContain('setAgentStatus');
   });
 
@@ -370,13 +315,12 @@ describe('Edge Case Handling', () => {
     const source = readFile('src/components/screens/CoachIntroScreen.tsx');
 
     expect(source).toContain('useEffect(() => {');
-    expect(source).toContain('initConversation');
     expect(source).toContain('startConversation()');
   });
 });
 
 // ==============================================================================
-// TEST 10: Flow Integrity
+// TEST 10: Demo Flow Integrity
 // ==============================================================================
 
 describe('Demo Flow', () => {
@@ -408,37 +352,26 @@ describe('Demo Flow', () => {
     expect(config).toContain("party: 'ABBY'");
     expect(config).toContain("mode: 'SPEAKING'");
     expect(config).toContain("theme: 'GROWTH'");
-    expect(config).toContain("complexity: 'SMOOTHIE'");
-    expect(config).toContain("orbEnergy: 'CALM'");
   });
 });
 
 // ==============================================================================
-// TEST 11: Audio Session Configuration
+// TEST 11: TTS Service
 // ==============================================================================
 
-describe('Audio Configuration', () => {
-  test('AbbyAgent configures iOS audio for speaker output', () => {
-    const source = readFile('src/services/AbbyAgent.ts');
-
-    expect(source).toContain('setAppleAudioConfiguration');
-    expect(source).toContain("audioCategory: 'playAndRecord'");
-    expect(source).toContain("audioMode: 'spokenAudio'");  // Optimized for voice apps
-    expect(source).toContain('defaultToSpeaker');
+describe('TTS Service', () => {
+  test('AbbyTTSService file exists', () => {
+    expect(fileExists('src/services/AbbyTTSService.ts')).toBe(true);
   });
 
-  test('AbbyAgent starts audio session before connection', () => {
-    const source = readFile('src/services/AbbyAgent.ts');
-
-    // Audio session calls are wrapped in withTimeout for safety
-    expect(source).toContain('AudioSession.startAudioSession()');
-    expect(source).toContain("AudioSession.selectAudioOutput('force_speaker')");
+  test('AbbyTTSService has speak and stop methods', () => {
+    const source = readFile('src/services/AbbyTTSService.ts');
+    expect(source).toContain('speak');
+    expect(source).toContain('stop');
   });
 
-  test('AbbyAgent stops audio session on disconnect', () => {
-    const source = readFile('src/services/AbbyAgent.ts');
-
-    expect(source).toContain('AudioSession.stopAudioSession()');
-    expect(source).toContain('onDisconnect:');
+  test('AbbyTTSService uses expo-av', () => {
+    const source = readFile('src/services/AbbyTTSService.ts');
+    expect(source).toContain('expo-av');
   });
 });

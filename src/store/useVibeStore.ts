@@ -90,7 +90,7 @@ export const useVibeStore = create<VibeStore>((set) => ({
   setFromAppState: (appState) => {
     const vibe = APP_STATE_VIBES[appState];
     if (!vibe) {
-      console.warn('[VibeStore] Unknown app state:', appState);
+      if (__DEV__) console.warn('[VibeStore] Unknown app state:', appState);
       return;
     }
     const { theme, complexity } = vibe;

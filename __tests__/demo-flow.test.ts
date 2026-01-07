@@ -13,7 +13,7 @@ import { describe, test, expect } from '@jest/globals';
 import * as fs from 'fs';
 import * as path from 'path';
 
-const PROJECT_ROOT = '/Users/rodericandrews/_PAI/projects/abby';
+const PROJECT_ROOT = path.resolve(__dirname, '..');
 
 function readFile(relativePath: string): string {
   return fs.readFileSync(path.join(PROJECT_ROOT, relativePath), 'utf8');
@@ -145,9 +145,9 @@ describe('Background Shader Progression', () => {
   test('InterviewScreen has background cycling function', () => {
     const source = readFile('src/components/screens/InterviewScreen.tsx');
 
-    // Background index is computed dynamically (cycles 1-10 for 150 questions)
+    // Background index is computed dynamically using TOTAL_SHADERS constant
     expect(source).toContain('getBackgroundIndexForQuestion');
-    expect(source).toContain('% 10'); // Cycle through 10 backgrounds
+    expect(source).toContain('% TOTAL_SHADERS'); // Cycle through all available backgrounds
   });
 
   test('InterviewScreen passes onBackgroundChange to parent', () => {
@@ -260,22 +260,22 @@ describe('Interview Question Flow', () => {
 });
 
 // ==============================================================================
-// TEST 6: Voice Agent Integration
+// TEST 6: Voice Agent Integration (OpenAI Realtime / Nathan's API)
 // ==============================================================================
 
 describe('Voice Agent Integration', () => {
-  test('AbbyAgent service exists', () => {
-    expect(fileExists('src/services/AbbyAgent.ts')).toBe(true);
+  test('AbbyRealtimeService exists', () => {
+    expect(fileExists('src/services/AbbyRealtimeService.ts')).toBe(true);
   });
 
-  test('AbbyAgent exports useAbbyAgent hook', () => {
-    const source = readFile('src/services/AbbyAgent.ts');
+  test('AbbyRealtimeService exports useAbbyAgent hook', () => {
+    const source = readFile('src/services/AbbyRealtimeService.ts');
 
     expect(source).toContain('export function useAbbyAgent');
   });
 
   test('useAbbyAgent has required callbacks', () => {
-    const source = readFile('src/services/AbbyAgent.ts');
+    const source = readFile('src/services/AbbyRealtimeService.ts');
 
     expect(source).toContain('onAbbyResponse');
     expect(source).toContain('onUserTranscript');
@@ -284,17 +284,14 @@ describe('Voice Agent Integration', () => {
     expect(source).toContain('onError');
   });
 
-  test('Voice is enabled for COACH_INTRO and COACH states', () => {
-    const source = readFile('App.demo.tsx');
-
-    expect(source).toContain("currentState === 'COACH_INTRO' || currentState === 'COACH'");
-    expect(source).toContain('enabled:');
+  test('AbbyTTSService exists for TTS', () => {
+    expect(fileExists('src/services/AbbyTTSService.ts')).toBe(true);
   });
 
-  test('InterviewScreen uses AbbyVoice for TTS', () => {
+  test('InterviewScreen uses abbyTTS for TTS', () => {
     const source = readFile('src/components/screens/InterviewScreen.tsx');
 
-    expect(source).toContain('abbyVoice');
+    expect(source).toContain('abbyTTS');
     expect(source).toContain('.speak(');
   });
 });
@@ -395,7 +392,7 @@ describe('Settings Store', () => {
 
 describe('Error Handling', () => {
   test('Voice agent has error callback handling', () => {
-    const source = readFile('src/services/AbbyAgent.ts');
+    const source = readFile('src/services/AbbyRealtimeService.ts');
 
     expect(source).toContain('onError');
     expect(source).toContain('try {');
