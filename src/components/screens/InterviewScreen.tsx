@@ -32,10 +32,14 @@ const getBackgroundIndexForQuestion = (questionIndex: number): number => {
 
 export interface InterviewScreenProps {
   onBackgroundChange?: (index: number) => void;
+  onSecretBack?: () => void;
+  onSecretForward?: () => void;
 }
 
 export const InterviewScreen: React.FC<InterviewScreenProps> = ({
   onBackgroundChange,
+  onSecretBack,
+  onSecretForward,
 }) => {
   const currentIndex = useDemoStore((state) => state.currentQuestionIndex);
   const answerQuestion = useDemoStore((state) => state.answerQuestion);
@@ -94,6 +98,17 @@ export const InterviewScreen: React.FC<InterviewScreenProps> = ({
   const handleAnswer = () => {
     submitAnswer('Answered');
   };
+
+  // Secret navigation handlers
+  const handleSecretBack = useCallback(() => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
+    onSecretBack?.();
+  }, [onSecretBack]);
+
+  const handleSecretForward = useCallback(() => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
+    onSecretForward?.();
+  }, [onSecretForward]);
 
   // Calculate background index for current question
   useEffect(() => {
@@ -205,6 +220,26 @@ export const InterviewScreen: React.FC<InterviewScreenProps> = ({
           <View style={styles.homeIndicatorPadding} />
         </BlurView>
       </View>
+
+      {/* Secret navigation triggers (all 70x70, invisible) */}
+      {/* Left = Back */}
+      <Pressable
+        onPress={handleSecretBack}
+        style={styles.secretBackTrigger}
+        hitSlop={0}
+      />
+      {/* Middle = Primary action (Submit Yes) */}
+      <Pressable
+        onPress={() => submitAnswer('Yes')}
+        style={styles.secretMiddleTrigger}
+        hitSlop={0}
+      />
+      {/* Right = Forward */}
+      <Pressable
+        onPress={handleSecretForward}
+        style={styles.secretForwardTrigger}
+        hitSlop={0}
+      />
     </View>
   );
 };
@@ -336,6 +371,42 @@ const styles = StyleSheet.create({
   // Extra padding at bottom for home indicator
   homeIndicatorPadding: {
     height: 34,
+  },
+
+  // Secret navigation triggers
+  secretBackTrigger: {
+    position: 'absolute',
+    top: 10,
+    left: 10,
+    width: 70,
+    height: 70,
+    zIndex: 9999,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.2)',
+    borderRadius: 8,
+  },
+  secretMiddleTrigger: {
+    position: 'absolute',
+    top: 10,
+    left: '50%',
+    marginLeft: -35,
+    width: 70,
+    height: 70,
+    zIndex: 9999,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.2)',
+    borderRadius: 8,
+  },
+  secretForwardTrigger: {
+    position: 'absolute',
+    top: 10,
+    right: 10,
+    width: 70,
+    height: 70,
+    zIndex: 9999,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.2)',
+    borderRadius: 8,
   },
 });
 

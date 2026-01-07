@@ -56,10 +56,14 @@ const DEFAULT_SNAP = 0.55; // Start at 55% (enough room for conversation)
 
 export interface CoachIntroScreenProps {
   onBackgroundChange?: (index: number) => void;
+  onSecretBack?: () => void;
+  onSecretForward?: () => void;
 }
 
 export const CoachIntroScreen: React.FC<CoachIntroScreenProps> = ({
   onBackgroundChange,
+  onSecretBack,
+  onSecretForward,
 }) => {
   const scrollRef = useRef<ScrollView>(null);
 
@@ -229,6 +233,17 @@ export const CoachIntroScreen: React.FC<CoachIntroScreenProps> = ({
     await toggleMute();
   }, [toggleMute]);
 
+  // Secret navigation handlers
+  const handleSecretBack = useCallback(() => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
+    onSecretBack?.();
+  }, [onSecretBack]);
+
+  const handleSecretForward = useCallback(() => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
+    onSecretForward?.();
+  }, [onSecretForward]);
+
   return (
     <View style={styles.container}>
       {/* Backdrop - not tappable for this screen */}
@@ -328,6 +343,26 @@ export const CoachIntroScreen: React.FC<CoachIntroScreenProps> = ({
           </View>
         </BlurView>
       </Animated.View>
+
+      {/* Secret navigation triggers (all 70x70, invisible) */}
+      {/* Left = Back */}
+      <Pressable
+        onPress={handleSecretBack}
+        style={styles.secretBackTrigger}
+        hitSlop={0}
+      />
+      {/* Middle = Primary action (Start Interview) */}
+      <Pressable
+        onPress={handleStartInterview}
+        style={styles.secretMiddleTrigger}
+        hitSlop={0}
+      />
+      {/* Right = Forward */}
+      <Pressable
+        onPress={handleSecretForward}
+        style={styles.secretForwardTrigger}
+        hitSlop={0}
+      />
     </View>
   );
 };
@@ -490,6 +525,42 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#FFFFFF',
     fontWeight: '600',
+  },
+
+  // Secret navigation triggers
+  secretBackTrigger: {
+    position: 'absolute',
+    top: 10,
+    left: 10,
+    width: 70,
+    height: 70,
+    zIndex: 9999,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.2)',
+    borderRadius: 8,
+  },
+  secretMiddleTrigger: {
+    position: 'absolute',
+    top: 10,
+    left: '50%',
+    marginLeft: -35,
+    width: 70,
+    height: 70,
+    zIndex: 9999,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.2)',
+    borderRadius: 8,
+  },
+  secretForwardTrigger: {
+    position: 'absolute',
+    top: 10,
+    right: 10,
+    width: 70,
+    height: 70,
+    zIndex: 9999,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.2)',
+    borderRadius: 8,
   },
 });
 

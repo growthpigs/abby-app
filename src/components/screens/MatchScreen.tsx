@@ -5,14 +5,34 @@
  * Photo is hidden until payment. Uses GlassSheet for proper glassmorphism.
  */
 
-import React from 'react';
-import { View, StyleSheet } from 'react-native';
+import React, { useCallback } from 'react';
+import { View, StyleSheet, Pressable } from 'react-native';
+import * as Haptics from 'expo-haptics';
 import { GlassSheet, GlassButton, Headline, Body, Caption } from '../ui';
 import { useDemoStore } from '../../store/useDemoStore';
 
-export const MatchScreen: React.FC = () => {
+export interface MatchScreenProps {
+  onSecretBack?: () => void;
+  onSecretForward?: () => void;
+}
+
+export const MatchScreen: React.FC<MatchScreenProps> = ({
+  onSecretBack,
+  onSecretForward,
+}) => {
   const advance = useDemoStore((state) => state.advance);
   const matchData = useDemoStore((state) => state.matchData);
+
+  // Secret navigation handlers
+  const handleSecretBack = useCallback(() => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
+    onSecretBack?.();
+  }, [onSecretBack]);
+
+  const handleSecretForward = useCallback(() => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
+    onSecretForward?.();
+  }, [onSecretForward]);
 
   if (!matchData) {
     return null;
@@ -51,6 +71,26 @@ export const MatchScreen: React.FC = () => {
           </GlassButton>
         </View>
       </GlassSheet>
+
+      {/* Secret navigation triggers (all 70x70, invisible) */}
+      {/* Left = Back */}
+      <Pressable
+        onPress={handleSecretBack}
+        style={styles.secretBackTrigger}
+        hitSlop={0}
+      />
+      {/* Middle = Primary action (I'm Interested) */}
+      <Pressable
+        onPress={advance}
+        style={styles.secretMiddleTrigger}
+        hitSlop={0}
+      />
+      {/* Right = Forward */}
+      <Pressable
+        onPress={handleSecretForward}
+        style={styles.secretForwardTrigger}
+        hitSlop={0}
+      />
     </View>
   );
 };
@@ -120,6 +160,42 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginTop: 'auto',
     paddingBottom: 32,
+  },
+
+  // Secret navigation triggers
+  secretBackTrigger: {
+    position: 'absolute',
+    top: 10,
+    left: 10,
+    width: 70,
+    height: 70,
+    zIndex: 9999,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.2)',
+    borderRadius: 8,
+  },
+  secretMiddleTrigger: {
+    position: 'absolute',
+    top: 10,
+    left: '50%',
+    marginLeft: -35,
+    width: 70,
+    height: 70,
+    zIndex: 9999,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.2)',
+    borderRadius: 8,
+  },
+  secretForwardTrigger: {
+    position: 'absolute',
+    top: 10,
+    right: 10,
+    width: 70,
+    height: 70,
+    zIndex: 9999,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.2)',
+    borderRadius: 8,
   },
 });
 

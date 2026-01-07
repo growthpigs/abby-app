@@ -185,11 +185,17 @@ function AppContent() {
   // Initialize: go to login after loading
   useEffect(() => {
     if (fontsLoaded && settingsLoaded && authState === 'LOADING') {
+      console.log('[App] Initializing auth state to LOGIN');
       setAuthState('LOGIN');
       // Set initial vibe for login (DEEP purple)
       vibeRef.current?.setVibe('DEEP');
     }
   }, [fontsLoaded, settingsLoaded, authState]);
+
+  // Log auth state changes for debugging
+  useEffect(() => {
+    console.log('[App] Auth state changed to:', authState);
+  }, [authState]);
 
   // SECRET NAVIGATION HANDLERS
   // Back: go to previous screen
@@ -502,21 +508,21 @@ function AppContent() {
   const renderDemoScreen = () => {
     switch (demoState) {
       case 'COACH_INTRO':
-        return <CoachIntroScreen onBackgroundChange={handleBackgroundChange} />;
+        return <CoachIntroScreen onBackgroundChange={handleBackgroundChange} onSecretBack={handleSecretBack} onSecretForward={handleSecretForward} />;
       case 'INTERVIEW':
-        return <InterviewScreen onBackgroundChange={handleBackgroundChange} />;
+        return <InterviewScreen onBackgroundChange={handleBackgroundChange} onSecretBack={handleSecretBack} onSecretForward={handleSecretForward} />;
       case 'SEARCHING':
-        return <SearchingScreen />;
+        return <SearchingScreen onSecretBack={handleSecretBack} onSecretForward={handleSecretForward} />;
       case 'MATCH':
-        return <MatchScreen />;
+        return <MatchScreen onSecretBack={handleSecretBack} onSecretForward={handleSecretForward} />;
       case 'PAYMENT':
-        return <PaymentScreen />;
+        return <PaymentScreen onSecretBack={handleSecretBack} onSecretForward={handleSecretForward} />;
       case 'REVEAL':
-        return <RevealScreen />;
+        return <RevealScreen onSecretBack={handleSecretBack} onSecretForward={handleSecretForward} />;
       case 'COACH':
-        return <CoachScreen onBackgroundChange={handleBackgroundChange} />;
+        return <CoachScreen onBackgroundChange={handleBackgroundChange} onSecretBack={handleSecretBack} onSecretForward={handleSecretForward} />;
       default:
-        return <CoachIntroScreen onBackgroundChange={handleBackgroundChange} />;
+        return <CoachIntroScreen onBackgroundChange={handleBackgroundChange} onSecretBack={handleSecretBack} onSecretForward={handleSecretForward} />;
     }
   };
 

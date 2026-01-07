@@ -5,8 +5,9 @@
  * Uses GlassSheet with animated content inside.
  */
 
-import React, { useEffect } from 'react';
-import { View, StyleSheet } from 'react-native';
+import React, { useEffect, useCallback } from 'react';
+import { View, StyleSheet, Pressable } from 'react-native';
+import * as Haptics from 'expo-haptics';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -17,12 +18,31 @@ import { GlassSheet, GlassButton, Headline, Body, Caption } from '../ui';
 import { useDemoStore } from '../../store/useDemoStore';
 import { useVibeController } from '../../store/useVibeController';
 
-export const RevealScreen: React.FC = () => {
+export interface RevealScreenProps {
+  onSecretBack?: () => void;
+  onSecretForward?: () => void;
+}
+
+export const RevealScreen: React.FC<RevealScreenProps> = ({
+  onSecretBack,
+  onSecretForward,
+}) => {
   const reset = useDemoStore((state) => state.reset);
   const advance = useDemoStore((state) => state.advance);
   const matchData = useDemoStore((state) => state.matchData);
   const setOrbEnergy = useVibeController((state) => state.setOrbEnergy);
   const setColorTheme = useVibeController((state) => state.setColorTheme);
+
+  // Secret navigation handlers
+  const handleSecretBack = useCallback(() => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
+    onSecretBack?.();
+  }, [onSecretBack]);
+
+  const handleSecretForward = useCallback(() => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
+    onSecretForward?.();
+  }, [onSecretForward]);
 
   // Animation values
   const photoScale = useSharedValue(0);
@@ -107,6 +127,26 @@ export const RevealScreen: React.FC = () => {
           </GlassButton>
         </Animated.View>
       </GlassSheet>
+
+      {/* Secret navigation triggers (all 70x70, invisible) */}
+      {/* Left = Back */}
+      <Pressable
+        onPress={handleSecretBack}
+        style={styles.secretBackTrigger}
+        hitSlop={0}
+      />
+      {/* Middle = Primary action (Meet Your Coach) */}
+      <Pressable
+        onPress={handleMeetCoach}
+        style={styles.secretMiddleTrigger}
+        hitSlop={0}
+      />
+      {/* Right = Forward */}
+      <Pressable
+        onPress={handleSecretForward}
+        style={styles.secretForwardTrigger}
+        hitSlop={0}
+      />
     </View>
   );
 };
@@ -183,6 +223,42 @@ const styles = StyleSheet.create({
     gap: 12,
     marginTop: 'auto',
     paddingBottom: 32,
+  },
+
+  // Secret navigation triggers
+  secretBackTrigger: {
+    position: 'absolute',
+    top: 10,
+    left: 10,
+    width: 70,
+    height: 70,
+    zIndex: 9999,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.2)',
+    borderRadius: 8,
+  },
+  secretMiddleTrigger: {
+    position: 'absolute',
+    top: 10,
+    left: '50%',
+    marginLeft: -35,
+    width: 70,
+    height: 70,
+    zIndex: 9999,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.2)',
+    borderRadius: 8,
+  },
+  secretForwardTrigger: {
+    position: 'absolute',
+    top: 10,
+    right: 10,
+    width: 70,
+    height: 70,
+    zIndex: 9999,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.2)',
+    borderRadius: 8,
   },
 });
 
