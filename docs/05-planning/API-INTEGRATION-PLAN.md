@@ -1,22 +1,32 @@
 # ABBY API Integration Plan
 
-**Status:** 🟡 PHASE 1 COMPLETE - BLOCKED ON BACKEND
-**Date:** 2026-01-01
-**Issue:** Client backend API requires full dating app features, NOT just MVP
+**Status:** 🟢 PHASE 1 READY - AUTHENTICATION DECISION MADE
+**Date:** 2026-01-07 (Updated)
+**Decision:** Rod's iOS app will use **ID tokens** (not access tokens). See `ADR-001-COGNITO-TOKEN-STRATEGY.md`
 
 ---
 
-## 🔴 CURRENT BLOCKER (2026-01-01)
+## 🟢 AUTHENTICATION RESOLVED (2026-01-07)
 
-**Backend Lambda Error:** PostConfirmation Lambda fails with `AccessDeniedException`
-- Cognito signup ✅
-- Email verification ✅
-- Login + JWT tokens ✅
-- API calls → 500 Internal Server Error ❌
+**Architecture Decision:** Use ID tokens instead of access tokens
+- Cognito signup ✅ VERIFIED
+- Email verification ✅ VERIFIED (code: 256453)
+- Login + JWT tokens ✅ VERIFIED
+- Pool ID match: `us-east-1_l3JxaWpl5` ✅
+- Client ID match: `2ljj7mif1k7jjc2ajiq676fhm1` ✅
+- Backend API operational ✅ (https://dev.api.myaimatchmaker.ai/docs)
 
-**Root Cause:** Lambda that creates user in PostgreSQL after signup doesn't have IAM permissions.
+**Critical Implementation Detail:** All API calls use ID token in Bearer header
+```
+Authorization: Bearer <ID_TOKEN>
+```
 
-**Action Required:** Nathan must fix Lambda IAM role to allow database write access.
+**Token Handling Strategy:**
+- Extract `session.getIdToken().getJwtToken()` after login
+- Store both ID + Refresh tokens securely
+- Use ID token for all authenticated API calls
+- Handle token expiry with refresh flow
+- See RUNBOOK.md section "Authentication Flow: ID Token Strategy" for full details
 
 ---
 
@@ -220,11 +230,18 @@
 
 ## Integration Strategy
 
-### Phase 1: Auth + Core Data (Days 1-2)
-1. AWS Cognito SDK integration
-2. Token management (secure storage)
-3. Auth flow screens (Login/Signup/Verification)
-4. Profile data structure
+### Phase 1: Auth + Core Data (Days 1-2) ✅ READY
+**Status:** Cognito SDK integrated, token strategy decided (ID tokens)
+
+1. ✅ AWS Cognito SDK integration (amazon-cognito-identity-js)
+2. ✅ Token management (secure storage via SecureStore)
+3. ✅ Auth flow screens (Login/Signup/Verification)
+4. **CRITICAL:** Use ID token for all API calls (not access token)
+   - After login: `const idToken = session.getIdToken().getJwtToken()`
+   - Store: Both idToken and refreshToken in SecureStore
+   - API calls: `Authorization: Bearer <idToken>`
+   - Refresh: When `token_use` expires or API returns 401
+5. Profile data structure (via `/v1/me` and `/v1/profile` endpoints)
 
 ### Phase 2: Onboarding Flow (Days 3-4)
 1. Permissions screen
@@ -287,9 +304,14 @@
 **Risk:** Payment flow interruptions lose users
 **Mitigation:** Use Stripe's prebuilt UI components
 
-### 5. Token Refresh
-**Risk:** Tokens expire (1hr), need seamless refresh
-**Mitigation:** Axios interceptor for auto-refresh
+### 5. Token Refresh (ID Token Pattern)
+**Risk:** ID tokens expire faster than access tokens. If token expires mid-conversation, API calls will fail
+**Mitigation:**
+- Check token expiry before sensitive API calls
+- Implement refresh interceptor for 401 responses
+- Call `cognitoUser.refreshSession(refreshToken)` to get new ID token
+- Never let user hit an auth error - refresh proactively
+- See RUNBOOK.md for token verification commands
 
 ---
 
