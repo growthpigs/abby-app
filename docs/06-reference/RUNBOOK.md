@@ -158,6 +158,84 @@ node scripts/test-auth-flow.js login <email> <password>
 - API `/v1/me` returns 401 Unauthorized
 - PostConfirmation Lambda still not creating user in DB (or token mismatch)
 
+### Authentication Flow: ID Token Strategy (2026-01-07 Decision)
+
+**ARCHITECTURAL DECISION:** Rod's iOS app uses **ID tokens** instead of ACCESS tokens.
+
+**Why:** Nathan's backend API explicitly expects ID tokens (documented in Swagger as "Use IdToken as the Bearer token"). This decision prioritizes getting the system working quickly over AWS best practices. See `ADR-001-COGNITO-TOKEN-STRATEGY.md` for full reasoning.
+
+**Token Lifecycle:**
+
+```typescript
+// When user logs in, Cognito returns:
+{
+  IdToken: "eyJ..." (contains user identity: name, email, profile)
+  AccessToken: "eyJ..." (designed for API authorization)
+  RefreshToken: "eyJ..." (used to get new tokens after expiry)
+}
+
+// Rod's iOS app extracts and uses the ID token:
+const idToken = session.getIdToken().getJwtToken();
+
+// Sends it to backend as Bearer token:
+Authorization: Bearer <ID_TOKEN>
+```
+
+**How to Verify Token Type:**
+
+```bash
+# Decode any JWT to check token_use field
+TOKEN="<your_token_here>"
+PAYLOAD=$(echo $TOKEN | cut -d'.' -f2)
+echo $PAYLOAD | base64 -d | jq .token_use
+
+# ID token: "id"
+# Access token: "access"
+```
+
+**When Nathan's API Accepts ID Tokens:**
+
+1. ✅ Token is valid JWT from Cognito pool `us-east-1_l3JxaWpl5`
+2. ✅ Token signature verifies against Cognito JWKS
+3. ✅ Token contains `sub` (user ID) and other standard claims
+4. ✅ Token has not expired
+
+**When This Will Break (Risk Assessment):**
+
+| Timeline | Risk | Mitigation |
+|----------|------|-----------|
+| 0-3 months | None identified | None needed for MVP |
+| 3-6 months | If adding second backend service that validates `token_use` field | Document decision; plan refactor |
+| 6+ months | Permission scopes stored in access tokens only; enterprise audits | Refactor to access token pattern (≈2 hours work) |
+
+**Testing the Token:**
+
+```bash
+# 1. Get token from app login
+# 2. Extract token from Network tab or console logs
+# 3. Test against API with ID token
+curl -H "Authorization: Bearer <ID_TOKEN>" \
+  https://dev.api.myaimatchmaker.ai/v1/me
+
+# Expected: 200 OK (or 401 if user not in DB, not if token is invalid)
+```
+
+**To Change Back to Access Tokens (if needed later):**
+
+Effort: ~2 hours
+```typescript
+// In Rod's iOS code, change:
+// FROM:
+const idToken = session.getIdToken().getJwtToken();
+// TO:
+const accessToken = session.getAccessToken().getJwtToken();
+
+// In Nathan's backend, update Lambda authorizer to validate:
+if (decoded.get('token_use') !== 'access') {
+  throw Exception('Must be access token');
+}
+```
+
 ### Security Hardening Verification (2026-01-02)
 
 **After any security-related code changes, run these to verify fixes:**
@@ -405,12 +483,12 @@ const VIBE_MATRIX_SHADER = getShaderById(0).source;
 
 ### Key Contacts
 
-| Role | Name | Responsibility |
-|------|------|----------------|
-| Client / Decision Maker | Manuel Negreiro | Approvals, direction |
-| Client Contact | Brent | Communication |
-| Frontend + Integration | Diiiploy | App development |
-| Backend / AWS | Nathan | Heavy infrastructure, APIs, S3 |
+| Role | Name | Email | Responsibility |
+|------|------|-------|----------------|
+| Client / Decision Maker | Manuel Negreiro | (TBD) | Approvals, direction |
+| Client Contact | Brent Muller | brent@diiiploy.io | Communication, partnerships |
+| Frontend + Integration | Trevor Ward | trevor@diiiploy.io | App development, OAuth |
+| Backend / AWS | Nathan Negreiro | nathan.negreiro@gmail.com | Heavy infrastructure, APIs, S3 |
 
 ### Third-Party Integrations
 

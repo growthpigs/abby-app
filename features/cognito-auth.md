@@ -1,37 +1,50 @@
 # FEATURE SPEC: AWS Cognito Authentication
 
-**What:** Email/password authentication via AWS Cognito
+**What:** Email/password authentication via AWS Cognito with ID token strategy
 **Who:** New users signing up, returning users logging in
 **Why:** Establishes user identity with client's backend infrastructure
-**Status:** ✅ COMPLETE (Frontend) | ❌ BLOCKED (Backend Lambda)
+**Status:** ✅ READY FOR IMPLEMENTATION | 🔑 AUTHENTICATED (2026-01-07)
 
 ---
 
-## 🔴 CURRENT STATUS (2026-01-01)
+## 🟢 CURRENT STATUS (2026-01-07)
 
 **Frontend Implementation:** ✅ Complete and tested
-**Backend Integration:** ❌ Blocked by PostConfirmation Lambda
+**Architecture Decision:** ✅ ID Token Strategy Approved
+**Backend API:** ✅ Verified and documented
 
 ### What Works
 - ✅ Real Cognito signup with amazon-cognito-identity-js
-- ✅ Email verification codes delivered and accepted
-- ✅ Login returns valid JWT tokens (Access + ID)
-- ✅ Tokens stored securely in SecureStore
+- ✅ Email verification codes delivered and accepted (verified: code `256453`)
+- ✅ Login returns valid JWT tokens (ID + Access + Refresh)
+- ✅ **Cognito pool matches backend perfectly:**
+  - Pool ID: `us-east-1_l3JxaWpl5` (verified match)
+  - Client ID: `2ljj7mif1k7jjc2ajiq676fhm1` (verified match)
+- ✅ Backend API accessible at `https://dev.api.myaimatchmaker.ai/docs`
+- ✅ Swagger UI operational and documented
 - ✅ Error handling with user-friendly messages
 
-### Backend Blocker
-```
-UnexpectedLambdaException: PostConfirmation invocation failed due to error AccessDeniedException
-```
-- Lambda that creates user in PostgreSQL lacks IAM permissions
-- API calls return 500 because user doesn't exist in backend DB
-- **Nathan must fix Lambda IAM role**
+### Architecture Decision (Pragmatic Approach)
+**Rod's iOS app will send ID tokens, not access tokens.**
 
-### Test Account
+Rationale:
+- Nathan's backend explicitly expects ID tokens (documented in Swagger)
+- Avoids backend changes; gets system working immediately
+- Risk level: Low (can refactor in ~2 hours if needed later)
+
+See `docs/05-planning/ADR-001-COGNITO-TOKEN-STRATEGY.md` for full decision record.
+
+### Test Accounts
 ```
+Account 1 (Legacy):
 Email:    rodericandrews+4@gmail.com
 Password: TestPass123!
 UserSub:  f4b854d8-30d1-7062-c933-ea7071a64b64
+
+Account 2 (Current Session):
+Email:    rodericandrews@gmail.com
+Password: (verified with code 256453)
+Status:   Verified ✅, logged in successfully ✅
 ```
 
 ---
@@ -143,8 +156,11 @@ What this feature does NOT do:
 1. User enters: email, password
 2. Call: cognitoUser.authenticateUser(authDetails)
 3. On success: receive accessToken, idToken, refreshToken
-4. Store tokens via TokenManager
-5. Navigate to authenticated state
+4. **IMPORTANT:** Store and send ID token to backend API (not access token)
+   - const idToken = session.getIdToken().getJwtToken()
+   - This is the pragmatic decision documented in ADR-001
+5. Store tokens via TokenManager
+6. Navigate to authenticated state
 ```
 
 ### Token Refresh Flow
@@ -152,8 +168,20 @@ What this feature does NOT do:
 1. API returns 401 OR token expires
 2. Call: cognitoUser.refreshSession(refreshToken)
 3. Receive new accessToken, idToken
-4. Update stored tokens
-5. Retry failed request
+4. Update stored tokens (both types)
+5. Use ID token for subsequent API calls
+6. Retry failed request
+```
+
+### Token Type Verification
+```bash
+# To verify which token type you're using:
+TOKEN="<your_jwt>"
+PAYLOAD=$(echo $TOKEN | cut -d'.' -f2)
+echo $PAYLOAD | base64 -d | jq .token_use
+
+# Expected output for ID token: "id"
+# Expected output for access token: "access"
 ```
 
 ---
@@ -274,4 +302,7 @@ Fields stored:
 
 | Date | Change |
 |------|--------|
+| 2026-01-07 | **Architecture Decision: ID Token Strategy** - Team approved pragmatic approach to use ID tokens instead of access tokens. Documented in ADR-001. Backend API verified operational. Ready for iOS implementation. |
+| 2026-01-06 | Root cause identified - API expects ID tokens (not access tokens). Nathan's backend confirmed via Swagger. Documented in FOR-NATHAN.md. |
+| 2026-01-04 | Cognito pool configuration discovered - Non-email username required, given_name/family_name attributes needed. |
 | 2026-01-01 | Created spec - Cognito email/password auth |

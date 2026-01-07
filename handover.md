@@ -83,3 +83,65 @@
 2. Update `AuthService.ts` - generate non-email username
 3. End-to-end test with fresh signup
 4. Done!
+
+---
+## Session 2026-01-07 15:30
+
+### Completed
+- **Architectural Decision: ID Token Authentication**
+  - Team agreed to pragmatic approach: Use ID tokens instead of ACCESS tokens
+  - Matches Nathan's backend expectations (Swagger docs state "Use IdToken")
+  - Avoids backend changes; gets system working immediately
+  - Risk level: Low (can refactor in ~2 hours if needed later)
+
+- **Browser API Testing**
+  - Navigated to https://dev.api.myaimatchmaker.ai/docs (Swagger UI)
+  - Verified Cognito pool configuration matches exactly:
+    - Both use: `us-east-1_l3JxaWpl5` ✅
+    - Both use: `2ljj7mif1k7jjc2ajiq676fhm1` ✅
+  - Tested signup flow: Created account `rodericandrews@gmail.com`
+  - Email verification worked: Code `256453` accepted
+  - Successfully logged in via Swagger
+
+- **Architecture Decision Documentation**
+  - Created: `docs/05-planning/ADR-001-COGNITO-TOKEN-STRATEGY.md`
+    - Full architectural decision record
+    - Rationale, technical details, risks, tradeoffs
+    - Implementation checklist
+  - Updated: `docs/06-reference/RUNBOOK.md` (added "Authentication Flow: ID Token Strategy" section)
+    - Token lifecycle documentation
+    - How to verify token type
+    - When/why API accepts ID tokens
+    - Risk assessment timeline
+    - Migration path if needed later
+  - Updated: `CLAUDE.md`
+    - Recent session work section (2026-01-07)
+    - Updated dependencies (real API ready, not mocked)
+    - Updated notes (real authentication pattern, not ElevenLabs)
+    - Added session artifacts list
+
+### Not Blocked
+- ✅ Cognito authentication is REAL and TESTED
+- ✅ Swagger API is accessible and documented
+- ✅ Team has agreed on pragmatic token strategy
+- ✅ Decision is well-documented for future reference
+
+### Next Session Actions
+1. **Implement ID token extraction** in iOS app:
+   - Change `AuthService.ts` to use `session.getIdToken()` instead of `session.getAccessToken()`
+   - Test login flow with extracted ID token
+
+2. **Test against actual API**:
+   - Use ID token from app login
+   - Call `/v1/me` endpoint
+   - Verify 200 OK response (or identify new blocker if any)
+
+3. **If successful**: Continue with frontend username/attribute fixes
+   - Username format (non-email)
+   - Use given_name/family_name attributes
+
+### Session Artifacts
+- ADR-001-COGNITO-TOKEN-STRATEGY.md (NEW)
+- RUNBOOK.md (UPDATED - authentication section)
+- CLAUDE.md (UPDATED - recent work)
+- handover.md (this file)

@@ -4,6 +4,21 @@
 
 ---
 
+## 🚪 MANDATORY: READ GLOBAL PAI SYSTEM FIRST
+
+**Before doing anything on this project:**
+
+Read `/Users/rodericandrews/.claude/CLAUDE.md` completely.
+
+This file contains:
+- The mandatory startup sequence (mem0, chi-gateway MCPs, local docs)
+- Tool selection priorities (which tools to use, when)
+- The entire PAI infrastructure that makes this system work
+
+**Do not proceed with project work until you understand the global system.**
+
+---
+
 ## 🚨 BUILD COMMAND (Dev Build, NOT Expo Go)
 
 ```bash
@@ -132,9 +147,10 @@ ABBY is a high-end matchmaking app where users interact with an AI entity (Abby)
 
 ### Dependencies
 
-- ElevenLabs agent (already built)
-- Existing codebase (shaders in progress)
-- Supabase (V2 - mocked for MVP)
+- ✅ **AWS Cognito** - User authentication (ready, tested with real signup/login)
+- ✅ **Client API** - Backend at `https://dev.api.myaimatchmaker.ai` (ready for integration)
+- ✅ **OpenAI Realtime API** - Voice conversation (via client backend)
+- 🟡 **Supabase** - User data persistence (V2 - mocked for MVP, real integration via API)
 
 ### Risks
 
@@ -298,16 +314,28 @@ npx eas build --platform ios --profile preview
 
 ---
 
-## Recent Session Work (2024-12-23)
+## Recent Session Work (2026-01-07)
 
-### Fixed
+### Authentication Decision Made ✅
 
-| Issue | Root Cause | Fix |
-|-------|------------|-----|
-| Text not flowing (only 1 sentence visible) | `DEFAULT_SNAP` changed from 0.55 to 0.25 | Reverted to 0.55 (55% modal height) |
-| No shader transitions during interview | `BACKGROUND_SEQUENCE` started at 5 (same as COACH_INTRO) | Changed to `[1,2,3,4,5,6,7,8,9,10]` |
-| No progress indicator | Missing UI element | Added "X/10" in JetBrains Mono 12pt uppercase |
-| Mute button inconsistent | CoachIntroScreen had 44x44, CoachScreen had 28x28 | Unified to 28x28 |
+**ARCHITECTURAL DECISION:** Rod's iOS app will use **ID tokens** instead of access tokens.
+
+- ✅ Verified Cognito pools match: Both use `us-east-1_l3JxaWpl5`
+- ✅ Verified client IDs match: Both use `2ljj7mif1k7jjc2ajiq676fhm1`
+- ✅ Tested Swagger API authentication with real account
+- ✅ Created account: `rodericandrews@gmail.com` (verified with code 256453)
+- ✅ Documented decision in `ADR-001-COGNITO-TOKEN-STRATEGY.md`
+- ✅ Updated RUNBOOK.md with ID token authentication flow
+
+**Why ID tokens?** Nathan's backend API explicitly expects ID tokens (Swagger docs: "Use IdToken as the Bearer token"). This pragmatic decision avoids backend changes and gets the system working immediately.
+
+**Breakdown:**
+- Duration: ~2 hours
+- Files Created: 1 (ADR-001)
+- Files Updated: 2 (RUNBOOK.md, CLAUDE.md)
+- Risk Level: Low (can refactor to access tokens in ~2 hours if needed later)
+
+See `docs/05-planning/ADR-001-COGNITO-TOKEN-STRATEGY.md` for full technical details and risk assessment.
 
 ### Key Parameters (Don't Change!)
 
@@ -315,18 +343,32 @@ npx eas build --platform ios --profile preview
 // CoachIntroScreen.tsx & CoachScreen.tsx
 const SNAP_POINTS = [0.35, 0.55, 0.75, 0.9];
 const DEFAULT_SNAP = 0.55;  // 55% - enough room for conversation
+
+// Cognito Configuration (MUST MATCH Nathan's backend)
+// Pool ID:  us-east-1_l3JxaWpl5
+// Client:   2ljj7mif1k7jjc2ajiq676fhm1
+// Token:    ID token (not access token) - documented in ADR-001
 ```
 
 ### Tests
 
-- 211 tests in 6 test suites
+- 399 tests in 11 test suites
 - Run with: `npm test`
+
+### Session Artifacts
+
+- Created: `docs/05-planning/ADR-001-COGNITO-TOKEN-STRATEGY.md` (architectural decision record)
+- Updated: `docs/06-reference/RUNBOOK.md` (authentication flow documentation)
+- Updated: `CLAUDE.md` (this file - project status)
 
 ---
 
 ## Notes
 
-- Backend is mocked locally (Android backend is separate)
-- All question logic uses local JSON graph
-- TestFlight for client demos
-- Low Power Mode: Replace shaders with static images when battery < 20%
+- **Backend:** Client's Nathan Negreiro is building `dev.api.myaimatchmaker.ai` API
+- **Authentication:** AWS Cognito with ID token pattern (documented in ADR)
+- **Voice:** OpenAI Realtime API via client's backend (NOT ElevenLabs)
+- **Matching Engine:** Backend-driven (we send answers, get candidates back)
+- **TestFlight:** Used for client demos
+- **Battery Optimization:** Low Power Mode - replace shaders with static images when battery < 20%
+- **Token Lifetime:** ID tokens expire faster than access tokens (watch for refresh logic)

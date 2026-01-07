@@ -1,7 +1,7 @@
 # ABBY - Features Index
 
 **Project:** ABBY - The Anti-Dating App
-**Last Updated:** January 2, 2026
+**Last Updated:** January 7, 2026 (Authentication Decision)
 
 ---
 
@@ -134,6 +134,47 @@ All core MVP features are implemented. Remaining work is connecting demo mode to
 🚧 **Voice Integration** - Demo Mode (AbbyRealtimeService needs real API connection)
 
 **Next Step**: Connect AbbyRealtimeService to real OpenAI Realtime API via client backend.
+
+---
+
+## 2026-01-07 Update (Architectural Decision: ID Token Strategy)
+
+**What was done:**
+- **Architecture Decision Approved:** Rod's iOS app will use ID tokens instead of access tokens
+- **Rationale:** Nathan's backend explicitly expects ID tokens (documented in Swagger). Pragmatic approach gets system working immediately without backend changes.
+- **Risk Assessment:** Low risk (can refactor to access tokens in ~2 hours if needed later)
+- **Documentation Created:** `docs/05-planning/ADR-001-COGNITO-TOKEN-STRATEGY.md` (full decision record)
+- **Verified Integration Points:**
+  - Cognito Pool ID matches: `us-east-1_l3JxaWpl5` ✅
+  - Client ID matches: `2ljj7mif1k7jjc2ajiq676fhm1` ✅
+  - Backend API operational at `https://dev.api.myaimatchmaker.ai` ✅
+  - Swagger documentation accessible and correct ✅
+- **Test Results:** Successfully created and verified account `rodericandrews@gmail.com` with code `256453`
+
+**Files created:**
+- `docs/05-planning/ADR-001-COGNITO-TOKEN-STRATEGY.md` - Full architectural decision record
+
+**Files updated:**
+- `features/cognito-auth.md` - Updated with ID token decision and verification steps
+- `docs/06-reference/RUNBOOK.md` - Added "Authentication Flow: ID Token Strategy" section
+- `CLAUDE.md` - Updated recent session work and dependencies
+- `handover.md` - Session 2026-01-07 entry
+
+**Key Changes to cognito-auth feature:**
+- Status: 🚀 Implemented & Ready for Integration
+- Login flow now specifies: Use ID token for backend API calls
+- Token verification guide added
+- Test account created and verified
+
+**Next Steps:**
+1. Implement ID token extraction in `AuthService.ts` (change from access token to ID token)
+2. Test against real `/v1/me` endpoint
+3. If successful: Continue with username/attribute fixes (given_name/family_name)
+4. End-to-end test with fresh signup
+
+**Commits pending:**
+- Documentation updates (CLAUDE.md, RUNBOOK.md, handover.md)
+- Feature spec updates (cognito-auth.md, INDEX.md)
 
 ---
 
