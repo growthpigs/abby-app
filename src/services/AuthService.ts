@@ -301,8 +301,8 @@ export const AuthService = {
           const refreshToken = session.getRefreshToken().getToken();
           const expiresIn = session.getAccessToken().getExpiration();
 
-          // Store tokens securely
-          await TokenManager.setToken(accessToken);
+          // Store tokens securely (ID token for API calls per ADR-001)
+          await TokenManager.setToken(idToken);
           await TokenManager.setRefreshToken(refreshToken);
 
           if (__DEV__) console.log('[AuthService] Tokens stored');
@@ -385,8 +385,8 @@ export const AuthService = {
         const idToken = session.getIdToken().getJwtToken();
         const expiresIn = session.getAccessToken().getExpiration();
 
-        // Update stored access token
-        await TokenManager.setToken(accessToken);
+        // Update stored ID token for API calls (per ADR-001)
+        await TokenManager.setToken(idToken);
 
         if (__DEV__) console.log('[AuthService] Token refreshed');
 
