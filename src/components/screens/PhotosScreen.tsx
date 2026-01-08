@@ -91,7 +91,9 @@ export const PhotosScreen: React.FC<PhotosScreenProps> = ({
 
       setPhotos(response.photos || []);
     } catch (err) {
-      if (__DEV__) console.log('[PhotosScreen] Fetch error:', err);
+      if (__DEV__) {
+        if (__DEV__) console.log('[PhotosScreen] Fetch error:', err);
+      }
       // Gracefully handle - start with empty photos
       setPhotos([]);
     } finally {
@@ -138,7 +140,9 @@ export const PhotosScreen: React.FC<PhotosScreenProps> = ({
               // Remove from local state
               setPhotos((prev) => prev.filter((p) => p.id !== id));
             } catch (err) {
-              if (__DEV__) console.log('[PhotosScreen] Delete error:', err);
+              if (__DEV__) {
+                if (__DEV__) console.log('[PhotosScreen] Delete error:', err);
+              }
               // Remove from local state anyway for better UX
               setPhotos((prev) => prev.filter((p) => p.id !== id));
             } finally {
@@ -172,7 +176,9 @@ export const PhotosScreen: React.FC<PhotosScreenProps> = ({
         });
       }
     } catch (err) {
-      if (__DEV__) console.log('[PhotosScreen] Set primary error:', err);
+      if (__DEV__) {
+        if (__DEV__) console.log('[PhotosScreen] Set primary error:', err);
+      }
       // Keep optimistic update - API might not be ready
     }
   }, []);

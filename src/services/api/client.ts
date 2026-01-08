@@ -1,0 +1,414 @@
+/**
+ * Real API Client
+ *
+ * Production implementation of IApiService for MyAIMatchmaker API.
+ * Handles authentication, retries, and error handling.
+ *
+ * STATUS: BLOCKED - Cannot test without working credentials
+ * @see docs/BACKEND-INTEGRATION.md
+ */
+
+import { API_CONFIG } from '../../config';
+import { TokenManager } from '../TokenManager';
+import {
+  IApiService,
+  UserProfile,
+  QuestionCategory,
+  Question,
+  UserAnswer,
+  SubmitAnswerRequest,
+  ParseAnswerRequest,
+  ParseAnswerResponse,
+  MatchCandidate,
+  Match,
+  LikeResponse,
+  AbbyRealtimeSession,
+  AbbyMemoryContext,
+  AbbyToolExecuteRequest,
+  AbbyToolExecuteResponse,
+  AbbyTTSRequest,
+  AbbyTTSResponse,
+  AbbyChatRequest,
+  AbbyChatResponse,
+  Thread,
+  Message,
+  SendMessageRequest,
+  PaginationParams,
+  PresignedUploadRequest,
+  PresignedUploadResponse,
+  RegisterPhotoRequest,
+  Photo,
+  BlockUserRequest,
+  ReportUserRequest,
+  ConsentType,
+  VerificationStatus,
+  StartVerificationRequest,
+  PaymentRequest,
+  PaymentResponse,
+  ApiError,
+  MatchPreferences,
+} from './types';
+
+// ============================================================
+// HTTP CLIENT
+// ============================================================
+
+class HttpError extends Error {
+  constructor(
+    public statusCode: number,
+    public code: string,
+    message: string,
+    public details?: Record<string, unknown>
+  ) {
+    super(message);
+    this.name = 'HttpError';
+  }
+}
+
+interface RequestOptions {
+  method?: 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH';
+  body?: unknown;
+  headers?: Record<string, string>;
+  requiresAuth?: boolean;
+}
+
+/**
+ * Make authenticated HTTP request to API
+ */
+async function request<T>(endpoint: string, options: RequestOptions = {}): Promise<T> {
+  const { method = 'GET', body, headers = {}, requiresAuth = true } = options;
+
+  const url = `${API_CONFIG.API_URL}${endpoint}`;
+
+  // Add auth header if required
+  if (requiresAuth) {
+    const token = await TokenManager.getToken();
+    if (!token) {
+      throw new HttpError(401, 'UNAUTHORIZED', 'No authentication token available');
+    }
+    headers['Authorization'] = `Bearer ${token}`;
+  }
+
+  // Add content type for requests with body
+  if (body) {
+    headers['Content-Type'] = 'application/json';
+  }
+
+  if (__DEV__) {
+    console.log(`[API] ${method} ${endpoint}`);
+  }
+
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), API_CONFIG.TIMEOUT_MS);
+
+  try {
+    const response = await fetch(url, {
+      method,
+      headers,
+      body: body ? JSON.stringify(body) : undefined,
+      signal: controller.signal,
+    });
+
+    clearTimeout(timeoutId);
+
+    if (!response.ok) {
+      let errorBody: ApiError;
+      try {
+        errorBody = await response.json();
+      } catch {
+        errorBody = {
+          message: response.statusText || 'Unknown error',
+          code: 'UNKNOWN',
+          statusCode: response.status,
+        };
+      }
+      throw new HttpError(
+        response.status,
+        errorBody.code,
+        errorBody.message,
+        errorBody.details
+      );
+    }
+
+    // Handle empty responses
+    const contentType = response.headers.get('content-type');
+    if (!contentType || !contentType.includes('application/json')) {
+      return {} as T;
+    }
+
+    return await response.json();
+  } catch (error) {
+    clearTimeout(timeoutId);
+
+    if (error instanceof HttpError) {
+      throw error;
+    }
+
+    if (error instanceof Error) {
+      if (error.name === 'AbortError') {
+        throw new HttpError(408, 'TIMEOUT', 'Request timed out');
+      }
+      throw new HttpError(0, 'NETWORK_ERROR', error.message);
+    }
+
+    throw new HttpError(0, 'UNKNOWN', 'An unexpected error occurred');
+  }
+}
+
+// ============================================================
+// REAL API SERVICE IMPLEMENTATION
+// ============================================================
+
+export const RealApiService: IApiService = {
+  // ----------------------------------------------------------
+  // PROFILE
+  // ----------------------------------------------------------
+
+  async getMe(): Promise<UserProfile> {
+    return request<UserProfile>('/me');
+  },
+
+  async updatePublicProfile(data: Partial<UserProfile>): Promise<UserProfile> {
+    return request<UserProfile>('/profile/public', {
+      method: 'PUT',
+      body: data,
+    });
+  },
+
+  async updatePrivateSettings(data: Partial<MatchPreferences>): Promise<void> {
+    await request<void>('/profile/private', {
+      method: 'PUT',
+      body: data,
+    });
+  },
+
+  // ----------------------------------------------------------
+  // QUESTIONS
+  // ----------------------------------------------------------
+
+  async getCategories(): Promise<QuestionCategory[]> {
+    return request<QuestionCategory[]>('/questions/categories');
+  },
+
+  async getCategoryQuestions(slug: string): Promise<Question[]> {
+    return request<Question[]>(`/questions/category/${slug}`);
+  },
+
+  async getNextQuestions(count: number = 3): Promise<Question[]> {
+    return request<Question[]>(`/questions/next?count=${count}`);
+  },
+
+  async getProfileGaps(): Promise<Question[]> {
+    return request<Question[]>('/questions/gaps');
+  },
+
+  async getQuestion(id: string): Promise<Question> {
+    return request<Question>(`/questions/${id}`);
+  },
+
+  async getAnswers(): Promise<UserAnswer[]> {
+    return request<UserAnswer[]>('/answers');
+  },
+
+  async submitAnswer(req: SubmitAnswerRequest): Promise<void> {
+    await request<void>('/answers', {
+      method: 'POST',
+      body: req,
+    });
+  },
+
+  async parseAnswer(req: ParseAnswerRequest): Promise<ParseAnswerResponse> {
+    return request<ParseAnswerResponse>('/answers/parse', {
+      method: 'POST',
+      body: req,
+    });
+  },
+
+  // ----------------------------------------------------------
+  // MATCHING
+  // ----------------------------------------------------------
+
+  async getCandidates(): Promise<MatchCandidate[]> {
+    return request<MatchCandidate[]>('/matches/candidates');
+  },
+
+  async likeUser(userId: string): Promise<LikeResponse> {
+    return request<LikeResponse>(`/matches/${userId}/like`, {
+      method: 'POST',
+    });
+  },
+
+  async passUser(userId: string): Promise<void> {
+    await request<void>(`/matches/${userId}/pass`, {
+      method: 'POST',
+    });
+  },
+
+  async getMatches(): Promise<Match[]> {
+    return request<Match[]>('/matches');
+  },
+
+  // ----------------------------------------------------------
+  // ABBY VOICE
+  // ----------------------------------------------------------
+
+  async createRealtimeSession(): Promise<AbbyRealtimeSession> {
+    return request<AbbyRealtimeSession>('/abby/realtime/session', {
+      method: 'POST',
+    });
+  },
+
+  async endSession(sessionId: string): Promise<void> {
+    await request<void>(`/abby/session/${sessionId}/end`, {
+      method: 'POST',
+    });
+  },
+
+  async getMemoryContext(): Promise<AbbyMemoryContext> {
+    return request<AbbyMemoryContext>('/abby/memory/context');
+  },
+
+  async injectMessage(sessionId: string, message: string): Promise<void> {
+    await request<void>(`/abby/realtime/${sessionId}/message`, {
+      method: 'POST',
+      body: { message },
+    });
+  },
+
+  async executeToolCall(req: AbbyToolExecuteRequest): Promise<AbbyToolExecuteResponse> {
+    return request<AbbyToolExecuteResponse>('/abby/tools/execute', {
+      method: 'POST',
+      body: req,
+    });
+  },
+
+  async textToSpeech(req: AbbyTTSRequest): Promise<AbbyTTSResponse> {
+    return request<AbbyTTSResponse>('/abby/tts', {
+      method: 'POST',
+      body: req,
+    });
+  },
+
+  async checkRealtimeAvailability(): Promise<boolean> {
+    try {
+      const response = await request<{ available: boolean }>('/abby/realtime/available');
+      return response.available;
+    } catch {
+      return false;
+    }
+  },
+
+  async sendChatMessage(req: AbbyChatRequest): Promise<AbbyChatResponse> {
+    return request<AbbyChatResponse>('/chat', {
+      method: 'POST',
+      body: req,
+    });
+  },
+
+  // ----------------------------------------------------------
+  // MESSAGING
+  // ----------------------------------------------------------
+
+  async getThreads(): Promise<Thread[]> {
+    return request<Thread[]>('/threads');
+  },
+
+  async getMessages(threadId: string, params?: PaginationParams): Promise<Message[]> {
+    const queryParams = new URLSearchParams();
+    if (params?.page) queryParams.set('page', String(params.page));
+    if (params?.pageSize) queryParams.set('pageSize', String(params.pageSize));
+    const query = queryParams.toString();
+    return request<Message[]>(`/threads/${threadId}/messages${query ? `?${query}` : ''}`);
+  },
+
+  async sendMessage(threadId: string, req: SendMessageRequest): Promise<Message> {
+    return request<Message>(`/threads/${threadId}/messages`, {
+      method: 'POST',
+      body: req,
+    });
+  },
+
+  // ----------------------------------------------------------
+  // PHOTOS
+  // ----------------------------------------------------------
+
+  async getPresignedUpload(req: PresignedUploadRequest): Promise<PresignedUploadResponse> {
+    return request<PresignedUploadResponse>('/photos/presign', {
+      method: 'POST',
+      body: req,
+    });
+  },
+
+  async registerPhoto(req: RegisterPhotoRequest): Promise<Photo> {
+    return request<Photo>('/photos', {
+      method: 'POST',
+      body: req,
+    });
+  },
+
+  async deletePhoto(photoId: string): Promise<void> {
+    await request<void>(`/photos/${photoId}`, {
+      method: 'DELETE',
+    });
+  },
+
+  // ----------------------------------------------------------
+  // SAFETY
+  // ----------------------------------------------------------
+
+  async blockUser(req: BlockUserRequest): Promise<void> {
+    await request<void>('/blocks', {
+      method: 'POST',
+      body: req,
+    });
+  },
+
+  async reportUser(req: ReportUserRequest): Promise<void> {
+    await request<void>('/reports', {
+      method: 'POST',
+      body: req,
+    });
+  },
+
+  async recordConsent(type: ConsentType): Promise<void> {
+    await request<void>('/consents', {
+      method: 'POST',
+      body: { type },
+    });
+  },
+
+  async revokeConsent(type: ConsentType): Promise<void> {
+    await request<void>('/consents', {
+      method: 'DELETE',
+      body: { type },
+    });
+  },
+
+  // ----------------------------------------------------------
+  // VERIFICATION
+  // ----------------------------------------------------------
+
+  async getVerificationStatus(): Promise<VerificationStatus> {
+    return request<VerificationStatus>('/verification');
+  },
+
+  async startVerification(req: StartVerificationRequest): Promise<void> {
+    await request<void>('/verification', {
+      method: 'POST',
+      body: req,
+    });
+  },
+
+  // ----------------------------------------------------------
+  // PAYMENTS
+  // ----------------------------------------------------------
+
+  async createPayment(req: PaymentRequest): Promise<PaymentResponse> {
+    return request<PaymentResponse>('/payments', {
+      method: 'POST',
+      body: req,
+    });
+  },
+};
+
+export default RealApiService;

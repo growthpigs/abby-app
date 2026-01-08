@@ -9,8 +9,9 @@
  */
 
 import { create } from 'zustand';
-import { subscribeWithSelector } from 'zustand/middleware';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { VibeColorTheme, AppState } from '../types/vibe';
+import { useVibeController } from './useVibeController';
 import { ConversationMessage } from '../components/ui/ConversationOverlay';
 
 // Storage key and version
@@ -80,6 +81,9 @@ interface DemoStoreActions {
   // Match
   setMatchData: (match: MatchProfile) => void;
 
+  // Internal
+  syncVibeState: (demoState: DemoState) => void;
+
   // Persistence
   saveToStorage: () => Promise<void>;
   loadFromStorage: () => Promise<boolean>; // Returns true if session recovered
@@ -87,6 +91,17 @@ interface DemoStoreActions {
 }
 
 type DemoStore = DemoStoreState & DemoStoreActions;
+
+// Map demo states to app states for vibe controller
+const DEMO_TO_APP_STATE: Record<DemoState, AppState> = {
+  COACH_INTRO: 'COACH_INTRO',
+  INTERVIEW: 'INTERVIEW_LIGHT',
+  SEARCHING: 'SEARCHING',
+  MATCH: 'MATCH_FOUND',
+  PAYMENT: 'MATCH_FOUND',
+  REVEAL: 'MATCH_FOUND',
+  COACH: 'COACH',
+};
 
 // State flow order - SINGLE SOURCE OF TRUTH
 // When adding/removing states, update this array AND the DemoState type above
@@ -131,8 +146,7 @@ const isValidState = (state: DemoState): boolean => {
   return STATE_ORDER.includes(state);
 };
 
-export const useDemoStore = create<DemoStore>()(
-  subscribeWithSelector((set, get) => ({
+export const useDemoStore = create<DemoStore>((set, get) => ({
   // Initial state
   currentState: 'COACH_INTRO',
   currentQuestionIndex: 0,
@@ -146,12 +160,12 @@ export const useDemoStore = create<DemoStore>()(
   isLoaded: false,
 
   // Navigation
-  // Note: Vibe sync is handled automatically via subscription in storeSync.ts
   advance: () => {
-    const { currentState } = get();
+    const { currentState, syncVibeState } = get();
     const nextState = getNextState(currentState);
     if (nextState) {
       set({ currentState: nextState });
+      syncVibeState(nextState);
     } else if (__DEV__) {
       console.log('[DemoStore] Already at final state:', currentState);
     }
@@ -162,11 +176,13 @@ export const useDemoStore = create<DemoStore>()(
       if (__DEV__) console.error('[DemoStore] Invalid state:', state);
       return;
     }
+    const { syncVibeState } = get();
     set({ currentState: state });
+    syncVibeState(state);
   },
 
   reset: () => {
-    const { clearStorage } = get();
+    const { syncVibeState, clearStorage } = get();
     set({
       currentState: 'COACH_INTRO',
       currentQuestionIndex: 0,
@@ -177,6 +193,7 @@ export const useDemoStore = create<DemoStore>()(
       messages: [],
       savedAt: null,
     });
+    syncVibeState('COACH_INTRO');
     // Clear storage when explicitly reset
     clearStorage();
   },
@@ -191,11 +208,17 @@ export const useDemoStore = create<DemoStore>()(
     const newAnswers = [...answers, answer];
     const newCoverage = totalQuestions > 0 ? (newAnswers.length / totalQuestions) * 100 : 0;
 
-    // Vibe controller sync is handled automatically via subscription in storeSync.ts
     set({
       answers: newAnswers,
       coveragePercent: newCoverage,
     });
+
+    // Update vibe controller with coverage
+    // Use setTimeout(0) to break synchronous execution chain and prevent potential circular updates
+    setTimeout(() => {
+      const vibeController = useVibeController.getState();
+      vibeController.setCoveragePercent(newCoverage);
+    }, 0);
   },
 
   nextQuestion: () => {
@@ -231,6 +254,16 @@ export const useDemoStore = create<DemoStore>()(
   // Match
   setMatchData: (match: MatchProfile) => {
     set({ matchData: match });
+  },
+
+  // Internal: Sync vibe state with demo state
+  // Use setTimeout(0) to break synchronous execution chain and prevent potential circular updates
+  syncVibeState: (demoState: DemoState) => {
+    setTimeout(() => {
+      const vibeController = useVibeController.getState();
+      const appState = DEMO_TO_APP_STATE[demoState];
+      vibeController.setFromAppState(appState);
+    }, 0);
   },
 
   // Persistence: Save interview state to AsyncStorage
@@ -307,7 +340,8 @@ export const useDemoStore = create<DemoStore>()(
         return false;
       }
 
-      // Restore state - vibe sync is handled automatically via subscription in storeSync.ts
+      // Restore state
+      const { syncVibeState } = get();
       set({
         isLoaded: true,
         savedAt: data.savedAt,
@@ -319,6 +353,7 @@ export const useDemoStore = create<DemoStore>()(
         userName: data.userName || '',
         messages: data.messages || [],
       });
+      syncVibeState(data.currentState);
 
       if (__DEV__) {
         if (__DEV__) console.log('[DemoStore] Recovered interview, question:', data.currentQuestionIndex);
@@ -346,7 +381,7 @@ export const useDemoStore = create<DemoStore>()(
       }
     }
   },
-})));
+}));
 
 // Selectors
 export const useDemoState = () => useDemoStore((state) => state.currentState);

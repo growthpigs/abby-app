@@ -11,11 +11,9 @@ import {
   StyleSheet,
   Pressable,
   TextInput,
-  ActivityIndicator,
 } from 'react-native';
 import * as Haptics from 'expo-haptics';
 import { Typography } from '../ui/Typography';
-import { GlassButton } from '../ui/GlassButton';
 
 interface EmailVerificationScreenProps {
   email?: string;
@@ -23,8 +21,6 @@ interface EmailVerificationScreenProps {
   onResend?: () => void;
   onSecretBack?: () => void;
   onSecretForward?: () => void;
-  isLoading?: boolean;
-  error?: string | null;
 }
 
 export const EmailVerificationScreen: React.FC<EmailVerificationScreenProps> = ({
@@ -33,28 +29,19 @@ export const EmailVerificationScreen: React.FC<EmailVerificationScreenProps> = (
   onResend,
   onSecretBack,
   onSecretForward,
-  isLoading = false,
-  error = null,
 }) => {
   const [code, setCode] = useState('');
-  const [resendMessage, setResendMessage] = useState<string | null>(null);
 
   const handleNext = () => {
-    if (code.length === 6 && !isLoading) {
+    if (code.length === 6) {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
       onNext?.(code);
     }
   };
 
-  const handleResend = async () => {
+  const handleResend = () => {
     Haptics.selectionAsync();
-    setResendMessage(null);
-    try {
-      await onResend?.();
-      setResendMessage('Code sent! Check your email.');
-    } catch {
-      setResendMessage('Failed to resend. Try again.');
-    }
+    onResend?.();
   };
 
   const handleSecretBack = () => {
@@ -71,6 +58,9 @@ export const EmailVerificationScreen: React.FC<EmailVerificationScreenProps> = (
 
   return (
     <View style={styles.container}>
+      {/* Full-screen glass overlay */}
+      <View style={styles.glassOverlay} />
+
       {/* Back button */}
       <Pressable
         onPress={handleSecretBack}
@@ -106,50 +96,14 @@ export const EmailVerificationScreen: React.FC<EmailVerificationScreenProps> = (
           returnKeyType="done"
           onSubmitEditing={handleNext}
           placeholderTextColor="rgba(255, 255, 255, 0.3)"
-          editable={!isLoading}
         />
 
-        {/* Loading indicator */}
-        {isLoading && (
-          <View style={styles.loadingContainer}>
-            <ActivityIndicator color="rgba(255, 255, 255, 0.9)" />
-            <Typography variant="body" style={styles.loadingText}>
-              Verifying...
-            </Typography>
-          </View>
-        )}
+        {/* Spacer */}
+        <View style={{ flex: 1 }} />
 
-        {/* Error message */}
-        {error && !isLoading && (
-          <View style={styles.errorContainer}>
-            <Typography variant="caption" style={styles.errorText}>
-              {error}
-            </Typography>
-          </View>
-        )}
-
-        {/* Resend success message */}
-        {resendMessage && !error && !isLoading && (
-          <View style={styles.resendMessageContainer}>
-            <Typography variant="caption" style={styles.resendMessageText}>
-              {resendMessage}
-            </Typography>
-          </View>
-        )}
-
-      </View>
-
-      {/* Fixed footer with Continue button and resend link */}
-      <View style={styles.footer}>
-        <GlassButton
-          onPress={handleNext}
-          disabled={!isValid || isLoading}
-          variant="primary"
-        >
-          {isLoading ? 'Verifying...' : 'Continue'}
-        </GlassButton>
-        <Pressable onPress={handleResend} disabled={isLoading} style={styles.resendButton}>
-          <Typography variant="body" style={[styles.resendText, isLoading && styles.resendTextDisabled]}>
+        {/* Resend link */}
+        <Pressable onPress={handleResend} style={styles.resendButton}>
+          <Typography variant="body" style={styles.resendText}>
             Didn't receive a code?
           </Typography>
         </Pressable>
@@ -165,7 +119,7 @@ export const EmailVerificationScreen: React.FC<EmailVerificationScreenProps> = (
       {/* Middle = Primary action (Next/Done/OK) */}
       <Pressable
         onPress={handleNext}
-        disabled={!isValid || isLoading}
+        disabled={!isValid}
         style={styles.secretMiddleTrigger}
         hitSlop={0}
       />
@@ -182,6 +136,10 @@ export const EmailVerificationScreen: React.FC<EmailVerificationScreenProps> = (
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+  },
+  glassOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(255, 255, 255, 0.05)',
   },
   backButton: {
     position: 'absolute',
@@ -224,12 +182,6 @@ const styles = StyleSheet.create({
     letterSpacing: 8,
     textAlign: 'center',
   },
-  footer: {
-    position: 'absolute',
-    bottom: 48,
-    left: 24,
-    right: 24,
-  },
   resendButton: {
     paddingVertical: 12,
     alignItems: 'center',
@@ -238,42 +190,6 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: 'rgba(255, 255, 255, 0.8)',
     textDecorationLine: 'underline',
-  },
-  resendTextDisabled: {
-    color: 'rgba(255, 255, 255, 0.4)',
-  },
-  loadingContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginTop: 24,
-    gap: 12,
-  },
-  loadingText: {
-    color: 'rgba(255, 255, 255, 0.7)',
-    fontSize: 14,
-  },
-  errorContainer: {
-    marginTop: 16,
-    padding: 12,
-    backgroundColor: 'rgba(255, 100, 100, 0.2)',
-    borderRadius: 8,
-  },
-  errorText: {
-    fontSize: 14,
-    color: 'rgba(255, 150, 150, 0.95)',
-    textAlign: 'center',
-  },
-  resendMessageContainer: {
-    marginTop: 16,
-    padding: 12,
-    backgroundColor: 'rgba(100, 255, 150, 0.15)',
-    borderRadius: 8,
-  },
-  resendMessageText: {
-    fontSize: 14,
-    color: 'rgba(150, 255, 180, 0.95)',
-    textAlign: 'center',
   },
   secretBackTrigger: {
     position: 'absolute',

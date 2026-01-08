@@ -387,7 +387,7 @@ const styles = StyleSheet.create({
     height: 70,
     zIndex: 9999,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.5)',
+    borderColor: 'rgba(255, 255, 255, 0.2)',
     borderRadius: 8,
   },
   secretMiddleTrigger: {
@@ -399,7 +399,7 @@ const styles = StyleSheet.create({
     height: 70,
     zIndex: 9999,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.5)',
+    borderColor: 'rgba(255, 255, 255, 0.2)',
     borderRadius: 8,
   },
   secretForwardTrigger: {
@@ -410,7 +410,7 @@ const styles = StyleSheet.create({
     height: 70,
     zIndex: 9999,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.5)',
+    borderColor: 'rgba(255, 255, 255, 0.2)',
     borderRadius: 8,
   },
 });

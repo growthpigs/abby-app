@@ -19,8 +19,6 @@ import {
 } from 'react-native';
 import * as Haptics from 'expo-haptics';
 import { Typography } from '../ui/Typography';
-import { GlassButton } from '../ui/GlassButton';
-import { Checkbox } from '../ui/Checkbox';
 
 interface DOBScreenProps {
   onNext?: (dob: { month: number; day: number; year: number }, ageRange: { min: number; max: number }) => void;
@@ -42,9 +40,6 @@ export const DOBScreen: React.FC<DOBScreenProps> = ({
   const [ageMin, setAgeMin] = useState('18');
   const [ageMax, setAgeMax] = useState('65');
 
-  // 18+ confirmation (legal requirement)
-  const [confirmed18, setConfirmed18] = useState(false);
-
   // Refs for focus management
   const dayRef = useRef<TextInput>(null);
   const yearRef = useRef<TextInput>(null);
@@ -55,8 +50,8 @@ export const DOBScreen: React.FC<DOBScreenProps> = ({
     if (isValid) {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
       onNext?.(
-        { month: parseInt(month, 10), day: parseInt(day, 10), year: parseInt(year, 10) },
-        { min: parseInt(ageMin, 10), max: parseInt(ageMax, 10) }
+        { month: parseInt(month), day: parseInt(day), year: parseInt(year) },
+        { min: parseInt(ageMin), max: parseInt(ageMax) }
       );
     }
   };
@@ -106,12 +101,12 @@ export const DOBScreen: React.FC<DOBScreenProps> = ({
     setAgeMax(numeric);
   };
 
-  // Validation - always use radix 10 to avoid octal parsing issues (e.g., '08' → 8, not 0)
-  const monthNum = parseInt(month, 10);
-  const dayNum = parseInt(day, 10);
-  const yearNum = parseInt(year, 10);
-  const ageMinNum = parseInt(ageMin, 10);
-  const ageMaxNum = parseInt(ageMax, 10);
+  // Validation
+  const monthNum = parseInt(month);
+  const dayNum = parseInt(day);
+  const yearNum = parseInt(year);
+  const ageMinNum = parseInt(ageMin);
+  const ageMaxNum = parseInt(ageMax);
 
   // Check if date is valid for the given month/year (handles Feb 30, etc.)
   const isValidCalendarDate = (m: number, d: number, y: number): boolean => {
@@ -136,8 +131,7 @@ export const DOBScreen: React.FC<DOBScreenProps> = ({
     ageMaxNum <= 99
   );
 
-  // All validations must pass including 18+ confirmation
-  const isValid = isValidDOB && isValidAgeRange && confirmed18;
+  const isValid = isValidDOB && isValidAgeRange;
 
   // Calculate age for display
   const calculateAge = () => {
@@ -159,6 +153,9 @@ export const DOBScreen: React.FC<DOBScreenProps> = ({
       style={styles.container}
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
     >
+      {/* Full-screen glass overlay */}
+      <View style={styles.glassOverlay} />
+
       {/* Back button */}
       <Pressable
         onPress={handleSecretBack}
@@ -266,30 +263,6 @@ export const DOBScreen: React.FC<DOBScreenProps> = ({
             </View>
           </View>
         </View>
-
-        {/* 18+ Age Confirmation (Legal Requirement) */}
-        <View style={styles.confirmationGroup}>
-          <Checkbox
-            checked={confirmed18}
-            onChange={setConfirmed18}
-            label="I confirm I am at least 18 years old"
-            description="Required to use this app"
-            testID="age-confirmation-checkbox"
-            accessibilityLabel="Confirm you are at least 18 years old"
-          />
-        </View>
-
-      </View>
-
-      {/* Fixed footer with Continue button */}
-      <View style={styles.footer}>
-        <GlassButton
-          onPress={handleNext}
-          disabled={!isValid}
-          variant="primary"
-        >
-          Continue
-        </GlassButton>
       </View>
 
       {/* Secret navigation triggers */}
@@ -316,6 +289,10 @@ export const DOBScreen: React.FC<DOBScreenProps> = ({
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+  },
+  glassOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(255, 255, 255, 0.05)',
   },
   backButton: {
     position: 'absolute',
@@ -406,18 +383,6 @@ const styles = StyleSheet.create({
     fontSize: 20,
     color: 'rgba(255, 255, 255, 0.5)',
     marginHorizontal: 16,
-  },
-  confirmationGroup: {
-    marginTop: 24,
-    paddingTop: 16,
-    borderTopWidth: 1,
-    borderTopColor: 'rgba(255, 255, 255, 0.1)',
-  },
-  footer: {
-    position: 'absolute',
-    bottom: 48,
-    left: 24,
-    right: 24,
   },
   secretBackTrigger: {
     position: 'absolute',

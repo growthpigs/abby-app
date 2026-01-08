@@ -143,7 +143,7 @@ export function CodeInput({
               ]}
             >
               <TextInput
-                ref={(ref) => { inputRefs.current[index] = ref; }}
+                ref={(ref) => (inputRefs.current[index] = ref)}
                 value={digit.trim()}
                 onChangeText={(text) => handleChangeText(text, index)}
                 onFocus={() => handleFocus(index)}

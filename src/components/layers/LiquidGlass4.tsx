@@ -22,7 +22,7 @@ import {
   Skia,
   useClock,
 } from '@shopify/react-native-skia';
-import { useDerivedValue, useSharedValue, SharedValue } from 'react-native-reanimated';
+import { useDerivedValue, useSharedValue, withTiming } from 'react-native-reanimated';
 
 // Default vibe colors (PASSION: pink/red)
 const DEFAULT_COLOR_A = [0.957, 0.447, 0.714]; // #F472B6 Hot Pink
@@ -39,8 +39,8 @@ const ABBY_ORB_SHADER = Skia.RuntimeEffect.Make(`
   uniform float audioLevel;
   uniform float3 colorA;
   uniform float3 colorB;
-  uniform float centerY;    // Y offset in UV space (moves orb vertically)
-  uniform float orbScale;   // Size multiplier (1.0 = full, 0.32 = small)
+  uniform float centerY;    // Y offset in UV space (-1 to 1)
+  uniform float orbScale;   // Size multiplier (1.0 = full, <1 = smaller)
 
   // === NOISE FUNCTIONS ===
   float hash(vec2 p) {
@@ -110,12 +110,12 @@ const ABBY_ORB_SHADER = Skia.RuntimeEffect.Make(`
   vec4 main(vec2 fragCoord) {
     vec2 uv = (fragCoord * 2.0 - resolution) / min(resolution.x, resolution.y);
 
-    // Apply position offset (moves orb vertically on screen)
+    // Apply position offset (move orb vertically)
     uv.y -= centerY;
 
-    // Apply scale (larger orbScale = larger orb, smaller = smaller orb)
-    // dividing UV makes the coordinate space larger, so orb appears smaller
-    uv /= max(orbScale, 0.1);  // Clamp to prevent division by zero
+    // Apply scale (makes UV space larger = orb appears smaller)
+    // When orbScale < 1.0, dividing makes coords bigger, so orb is smaller
+    uv /= max(orbScale, 0.1);  // Clamp to avoid division by zero
 
     float t = time;  // Full speed like G2
     float audio = audioLevel;
@@ -255,16 +255,14 @@ interface LiquidGlass4Props {
   audioLevel?: number; // 0.0 - 1.0
   colorA?: [number, number, number]; // Primary vibe color
   colorB?: [number, number, number]; // Secondary vibe color
-  size?: number; // Optional size override (for when used in container)
-  centerY?: number | SharedValue<number>; // Y offset in UV space, or SharedValue for animation
-  orbScale?: number | SharedValue<number>; // Size multiplier, or SharedValue for animation
+  centerY?: number; // Y offset in UV space (-1 to 1), default 0
+  orbScale?: number; // Size multiplier (1.0 = full, <1 = smaller), default 1
 }
 
 export const LiquidGlass4: React.FC<LiquidGlass4Props> = ({
   audioLevel = 0,
   colorA = DEFAULT_COLOR_A,
   colorB = DEFAULT_COLOR_B,
-  size,
   centerY = 0,
   orbScale = 1,
 }) => {
@@ -274,36 +272,28 @@ export const LiquidGlass4: React.FC<LiquidGlass4Props> = ({
   const height = size ?? windowDimensions.height;
   const clock = useClock();
 
-  // Check if props are SharedValues (cached to avoid re-checking)
-  const centerYIsShared = isSharedValue(centerY);
-  const orbScaleIsShared = isSharedValue(orbScale);
-
   // Convert React props to shared values for smooth animation
-  // Initialize with defaults, update via useEffect to avoid reading .value during render
   const audioLevelShared = useSharedValue(0);
-  const centerYInternal = useSharedValue(centerYIsShared ? 0 : (centerY as number));
-  const orbScaleInternal = useSharedValue(orbScaleIsShared ? 1 : (orbScale as number));
+  const centerYShared = useSharedValue(centerY);
+  const orbScaleShared = useSharedValue(orbScale);
 
-  // If props are SharedValues, use them directly; otherwise use internal SharedValues
-  const centerYShared = centerYIsShared ? (centerY as SharedValue<number>) : centerYInternal;
-  const orbScaleShared = orbScaleIsShared ? (orbScale as SharedValue<number>) : orbScaleInternal;
-
-  // Update internal shared values when number props change
+  // Update shared values when props change (with smooth animation)
   React.useEffect(() => {
     audioLevelShared.value = audioLevel;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [audioLevel]);
 
   React.useEffect(() => {
-    if (!centerYIsShared) {
-      centerYInternal.value = centerY as number;
-    }
-  }, [centerY, centerYIsShared]);
+    // Animate centerY changes for smooth mode transitions
+    centerYShared.value = withTiming(centerY, { duration: 800 });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [centerY]);
 
   React.useEffect(() => {
-    if (!orbScaleIsShared) {
-      orbScaleInternal.value = orbScale as number;
-    }
-  }, [orbScale, orbScaleIsShared]);
+    // Animate orbScale changes for smooth mode transitions
+    orbScaleShared.value = withTiming(orbScale, { duration: 800 });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [orbScale]);
 
   // Compute final audio level (with idle breathing when silent)
   const finalAudioLevel = useDerivedValue(() => {
@@ -322,7 +312,7 @@ export const LiquidGlass4: React.FC<LiquidGlass4Props> = ({
     colorB: colorB,
     centerY: centerYShared.value,
     orbScale: orbScaleShared.value,
-  }), [clock, finalAudioLevel, colorA, colorB]);
+  }), [clock, finalAudioLevel, colorA, colorB, centerYShared, orbScaleShared]);
 
   if (!ABBY_ORB_SHADER) {
     if (__DEV__) console.error('[LiquidGlass4] Shader failed to compile');

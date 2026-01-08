@@ -1,23 +1,25 @@
 /**
- * NameScreen - Name entry for signup
+ * NameScreen - Full name + Nickname entry
  *
- * Collects user's name during signup flow.
- * Full-screen glass overlay on VibeMatrix
+ * Screen 4 in client onboarding spec.
+ * Full name is private (not shown to matches).
+ * Nickname/first name appears on profile.
  */
 
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import {
   View,
   StyleSheet,
   Pressable,
   TextInput,
+  KeyboardAvoidingView,
+  Platform,
 } from 'react-native';
 import * as Haptics from 'expo-haptics';
 import { Typography } from '../ui/Typography';
-import { GlassButton } from '../ui/GlassButton';
 
 interface NameScreenProps {
-  onNext?: (name: string, nickname: string) => void;
+  onNext?: (fullName: string, nickname: string) => void;
   onSecretBack?: () => void;
   onSecretForward?: () => void;
 }
@@ -27,15 +29,14 @@ export const NameScreen: React.FC<NameScreenProps> = ({
   onSecretBack,
   onSecretForward,
 }) => {
-  const [name, setName] = useState('');
+  const [fullName, setFullName] = useState('');
   const [nickname, setNickname] = useState('');
+  const nicknameRef = useRef<TextInput>(null);
 
   const handleNext = () => {
     if (isValid) {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-      // Pass nickname or fall back to first name
-      const displayName = nickname.trim() || name.trim();
-      onNext?.(name.trim(), displayName);
+      onNext?.(fullName.trim(), nickname.trim());
     }
   };
 
@@ -49,11 +50,21 @@ export const NameScreen: React.FC<NameScreenProps> = ({
     onSecretForward?.();
   };
 
-  // Name validation: at least 2 characters
-  const isValid = name.trim().length >= 2;
+  const handleFullNameSubmit = () => {
+    nicknameRef.current?.focus();
+  };
+
+  // Validation: both fields required, min 1 char each
+  const isValid = fullName.trim().length > 0 && nickname.trim().length > 0;
 
   return (
-    <View style={styles.container}>
+    <KeyboardAvoidingView
+      style={styles.container}
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+    >
+      {/* Full-screen glass overlay */}
+      <View style={styles.glassOverlay} />
+
       {/* Back button */}
       <Pressable
         onPress={handleSecretBack}
@@ -69,57 +80,52 @@ export const NameScreen: React.FC<NameScreenProps> = ({
       <View style={styles.content}>
         {/* Headline */}
         <Typography variant="headline" style={styles.headline}>
-          What's your{'\n'}first name?
+          What's your{'\n'}name?
         </Typography>
 
-        {/* Name input */}
-        <TextInput
-          style={styles.nameInput}
-          value={name}
-          onChangeText={setName}
-          placeholder=""
-          autoCapitalize="words"
-          autoCorrect={false}
-          autoFocus={true}
-          returnKeyType="next"
-          placeholderTextColor="rgba(255, 255, 255, 0.3)"
-          maxLength={100}
-        />
-
-        {/* Nickname section */}
-        <Typography variant="body" style={styles.nicknameLabel}>
-          Nickname (optional)
-        </Typography>
-        <TextInput
-          style={styles.nicknameInput}
-          value={nickname}
-          onChangeText={setNickname}
-          placeholder="What should we call you?"
-          autoCapitalize="words"
-          autoCorrect={false}
-          returnKeyType="done"
-          onSubmitEditing={handleNext}
-          placeholderTextColor="rgba(255, 255, 255, 0.3)"
-          maxLength={100}
-        />
-
-        {/* Help text */}
-        <View style={styles.helpTextContainer}>
-          <Typography variant="caption" style={styles.helpText}>
-            This is how you'll appear to your matches
+        {/* Full name input */}
+        <View style={styles.inputGroup}>
+          <Typography variant="body" style={styles.inputLabel}>
+            Full name
+          </Typography>
+          <TextInput
+            style={styles.textInput}
+            value={fullName}
+            onChangeText={setFullName}
+            placeholder=""
+            autoCapitalize="words"
+            autoCorrect={false}
+            autoFocus={true}
+            returnKeyType="next"
+            onSubmitEditing={handleFullNameSubmit}
+            placeholderTextColor="rgba(255, 255, 255, 0.3)"
+          />
+          <Typography variant="caption" style={styles.inputHint}>
+            This won't appear anywhere on your profile
           </Typography>
         </View>
-      </View>
 
-      {/* Fixed footer with Continue button */}
-      <View style={styles.footer}>
-        <GlassButton
-          onPress={handleNext}
-          disabled={!isValid}
-          variant="primary"
-        >
-          Continue
-        </GlassButton>
+        {/* Nickname input */}
+        <View style={styles.inputGroup}>
+          <Typography variant="body" style={styles.inputLabel}>
+            Nickname / First name
+          </Typography>
+          <TextInput
+            ref={nicknameRef}
+            style={styles.textInput}
+            value={nickname}
+            onChangeText={setNickname}
+            placeholder=""
+            autoCapitalize="words"
+            autoCorrect={false}
+            returnKeyType="done"
+            onSubmitEditing={handleNext}
+            placeholderTextColor="rgba(255, 255, 255, 0.3)"
+          />
+          <Typography variant="caption" style={styles.inputHint}>
+            This will appear on your profile
+          </Typography>
+        </View>
       </View>
 
       {/* Secret navigation triggers */}
@@ -139,13 +145,17 @@ export const NameScreen: React.FC<NameScreenProps> = ({
         style={styles.secretForwardTrigger}
         hitSlop={0}
       />
-    </View>
+    </KeyboardAvoidingView>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+  },
+  glassOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(255, 255, 255, 0.05)',
   },
   backButton: {
     position: 'absolute',
@@ -171,23 +181,15 @@ const styles = StyleSheet.create({
     letterSpacing: -0.5,
     marginBottom: 32,
   },
-  nameInput: {
-    width: '100%',
-    paddingVertical: 12,
-    paddingHorizontal: 8,
-    borderBottomWidth: 2,
-    borderBottomColor: 'rgba(255, 255, 255, 0.3)',
-    fontSize: 24,
-    color: 'rgba(255, 255, 255, 0.95)',
-    fontWeight: '500',
+  inputGroup: {
+    marginBottom: 24,
   },
-  nicknameLabel: {
-    marginTop: 32,
+  inputLabel: {
     fontSize: 14,
     color: 'rgba(255, 255, 255, 0.7)',
     marginBottom: 8,
   },
-  nicknameInput: {
+  textInput: {
     width: '100%',
     paddingVertical: 12,
     paddingHorizontal: 8,
@@ -195,21 +197,13 @@ const styles = StyleSheet.create({
     borderBottomColor: 'rgba(255, 255, 255, 0.3)',
     fontSize: 18,
     color: 'rgba(255, 255, 255, 0.95)',
-    fontWeight: '500',
+    fontWeight: '400',
   },
-  helpTextContainer: {
-    marginTop: 16,
-  },
-  helpText: {
+  inputHint: {
     fontSize: 12,
-    color: 'rgba(255, 255, 255, 0.6)',
-    lineHeight: 18,
-  },
-  footer: {
-    position: 'absolute',
-    bottom: 48,
-    left: 24,
-    right: 24,
+    color: 'rgba(255, 255, 255, 0.5)',
+    marginTop: 8,
+    fontStyle: 'italic',
   },
   secretBackTrigger: {
     position: 'absolute',
@@ -218,9 +212,6 @@ const styles = StyleSheet.create({
     width: 70,
     height: 70,
     zIndex: 9999,
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.2)',
-    borderRadius: 8,
   },
   secretMiddleTrigger: {
     position: 'absolute',
@@ -230,9 +221,6 @@ const styles = StyleSheet.create({
     width: 70,
     height: 70,
     zIndex: 9999,
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.2)',
-    borderRadius: 8,
   },
   secretForwardTrigger: {
     position: 'absolute',
@@ -241,9 +229,6 @@ const styles = StyleSheet.create({
     width: 70,
     height: 70,
     zIndex: 9999,
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.2)',
-    borderRadius: 8,
   },
 });
 

@@ -116,6 +116,9 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
 
   return (
     <View style={styles.container}>
+      {/* Full-screen glass overlay */}
+      <View style={styles.glassOverlay} />
+
       {/* Content centered */}
       <View style={styles.content}>
         {/* Logo */}
@@ -247,6 +250,10 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+  },
+  glassOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(255, 255, 255, 0.05)', // Subtle glass tint
   },
   content: {
     flex: 1,

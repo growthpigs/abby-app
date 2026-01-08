@@ -72,6 +72,41 @@ export const Question: React.FC<TypographyProps> = ({ children, style, color }) 
   </Text>
 );
 
+// Unified Typography component with variant prop
+type TypographyVariant = 'headline' | 'headlineLarge' | 'headlineSmall' | 'body' | 'bodyLarge' | 'bodySmall' | 'caption' | 'question';
+
+interface UnifiedTypographyProps extends TypographyProps {
+  variant?: TypographyVariant;
+}
+
+export const Typography: React.FC<UnifiedTypographyProps> = ({
+  variant = 'body',
+  children,
+  style,
+  color,
+}) => {
+  switch (variant) {
+    case 'headline':
+      return <Headline style={style} color={color}>{children}</Headline>;
+    case 'headlineLarge':
+      return <HeadlineLarge style={style} color={color}>{children}</HeadlineLarge>;
+    case 'headlineSmall':
+      return <HeadlineSmall style={style} color={color}>{children}</HeadlineSmall>;
+    case 'body':
+      return <Body style={style} color={color}>{children}</Body>;
+    case 'bodyLarge':
+      return <BodyLarge style={style} color={color}>{children}</BodyLarge>;
+    case 'bodySmall':
+      return <BodySmall style={style} color={color}>{children}</BodySmall>;
+    case 'caption':
+      return <Caption style={style} color={color}>{children}</Caption>;
+    case 'question':
+      return <Question style={style} color={color}>{children}</Question>;
+    default:
+      return <Body style={style} color={color}>{children}</Body>;
+  }
+};
+
 const styles = StyleSheet.create({
   // Headers - Editorial luxury feel
   headline: {

@@ -34,14 +34,12 @@ const { height: SCREEN_HEIGHT } = Dimensions.get('window');
 
 export interface CoachScreenProps {
   onBackgroundChange?: (index: number) => void;
-  onVibeChange?: (theme: VibeColorTheme, complexity: VibeComplexity) => void;
   onSecretBack?: () => void;
   onSecretForward?: () => void;
 }
 
 export const CoachScreen: React.FC<CoachScreenProps> = ({
   onBackgroundChange,
-  onVibeChange,
   onSecretBack,
   onSecretForward,
 }) => {
@@ -474,7 +472,7 @@ const styles = StyleSheet.create({
     height: 70,
     zIndex: 9999,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.5)',
+    borderColor: 'rgba(255, 255, 255, 0.2)',
     borderRadius: 8,
   },
   secretMiddleTrigger: {
@@ -486,7 +484,7 @@ const styles = StyleSheet.create({
     height: 70,
     zIndex: 9999,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.5)',
+    borderColor: 'rgba(255, 255, 255, 0.2)',
     borderRadius: 8,
   },
   secretForwardTrigger: {
@@ -497,7 +495,7 @@ const styles = StyleSheet.create({
     height: 70,
     zIndex: 9999,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.5)',
+    borderColor: 'rgba(255, 255, 255, 0.2)',
     borderRadius: 8,
   },
 });

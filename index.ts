@@ -12,12 +12,8 @@ LogBox.ignoreLogs([
 /**
  * FULL AUTH FLOW
  *
- * Complete authentication with Cognito:
- * SIGNUP: Login → Name → Email → Password → Email Verification → Main App
- * SIGNIN: Login → Email → Password → Main App
- *
+ * Complete flow: Login → Phone → Email → CoachIntro → Interview → Match → etc.
  * Uses VibeMatrix animated shader backgrounds.
- * Integrates with AuthService for Cognito authentication.
  */
 import App from './App';
 

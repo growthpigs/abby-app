@@ -27,14 +27,15 @@
       "bitcode": false
     },
     "plugins": [
+      "@livekit/react-native-expo-plugin",
+      "@config-plugins/react-native-webrtc",
       "expo-font",
       [
         "expo-location",
         {
           "locationWhenInUsePermission": "Abby uses your location to find matches near you."
         }
-      ],
-      "expo-secure-store"
+      ]
     ],
     "extra": {
       "eas": {

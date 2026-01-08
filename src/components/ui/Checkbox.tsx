@@ -139,18 +139,15 @@ const styles = StyleSheet.create({
     gap: 4,
   },
   label: {
-    color: '#FFFFFF',
+    color: 'rgba(255, 255, 255, 0.9)',
     lineHeight: 20,
   },
   disabledLabel: {
-    color: 'rgba(255, 255, 255, 0.7)',
+    color: 'rgba(255, 255, 255, 0.4)',
   },
   description: {
-    color: 'rgba(255, 255, 255, 0.8)',
+    color: 'rgba(255, 255, 255, 0.5)',
     lineHeight: 16,
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
-    fontSize: 11,
   },
 });
 

@@ -14,7 +14,6 @@ import {
 } from 'react-native';
 import * as Haptics from 'expo-haptics';
 import { Typography } from '../ui/Typography';
-import { GlassButton } from '../ui/GlassButton';
 
 interface EmailScreenProps {
   onNext?: (email: string) => void;
@@ -51,6 +50,9 @@ export const EmailScreen: React.FC<EmailScreenProps> = ({
 
   return (
     <View style={styles.container}>
+      {/* Full-screen glass overlay */}
+      <View style={styles.glassOverlay} />
+
       {/* Back button */}
       <Pressable
         onPress={handleSecretBack}
@@ -96,17 +98,6 @@ export const EmailScreen: React.FC<EmailScreenProps> = ({
         </View>
       </View>
 
-      {/* Fixed footer with Continue button */}
-      <View style={styles.footer}>
-        <GlassButton
-          onPress={handleNext}
-          disabled={!isValid}
-          variant="primary"
-        >
-          Continue
-        </GlassButton>
-      </View>
-
       {/* Secret navigation triggers (all 70x70, invisible) */}
       {/* Left = Back */}
       <Pressable
@@ -134,6 +125,10 @@ export const EmailScreen: React.FC<EmailScreenProps> = ({
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+  },
+  glassOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(255, 255, 255, 0.05)',
   },
   backButton: {
     position: 'absolute',
@@ -181,12 +176,6 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: 'rgba(255, 255, 255, 0.8)',
     textDecorationLine: 'underline',
-  },
-  footer: {
-    position: 'absolute',
-    bottom: 48,
-    left: 24,
-    right: 24,
   },
   secretBackTrigger: {
     position: 'absolute',

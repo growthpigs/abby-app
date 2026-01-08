@@ -67,6 +67,9 @@ export const SmokingScreen: React.FC<SmokingScreenProps> = ({
 
   return (
     <View style={styles.container}>
+      {/* Full-screen glass overlay */}
+      <View style={styles.glassOverlay} />
+
       {/* Back button */}
       <Pressable
         onPress={handleSecretBack}
@@ -122,14 +125,16 @@ export const SmokingScreen: React.FC<SmokingScreenProps> = ({
             />
           </View>
         </ScrollView>
-      </View>
 
-      {/* Fixed footer with Continue button */}
-      <View style={styles.footer}>
+        {/* Spacer */}
+        <View style={{ flex: 1 }} />
+
+        {/* Continue button */}
         <GlassButton
           onPress={handleNext}
           disabled={!isValid}
           variant="primary"
+          style={styles.continueButton}
         >
           Continue
         </GlassButton>
@@ -159,6 +164,10 @@ export const SmokingScreen: React.FC<SmokingScreenProps> = ({
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+  },
+  glassOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(255, 255, 255, 0.05)',
   },
   backButton: {
     position: 'absolute',
@@ -207,11 +216,8 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: 'rgba(255, 255, 255, 0.9)',
   },
-  footer: {
-    position: 'absolute',
-    bottom: 48,
-    left: 24,
-    right: 24,
+  continueButton: {
+    marginTop: 24,
   },
   secretBackTrigger: {
     position: 'absolute',

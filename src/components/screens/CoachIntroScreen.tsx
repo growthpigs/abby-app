@@ -17,6 +17,7 @@ import {
   Dimensions,
   ScrollView,
   Animated,
+  PanResponder,
 } from 'react-native';
 import { BlurView } from 'expo-blur';
 import * as Haptics from 'expo-haptics';
@@ -25,7 +26,7 @@ import { useDemoStore } from '../../store/useDemoStore';
 import { useAbbyAgent } from '../../services/AbbyRealtimeService';
 import { useVibeController } from '../../store/useVibeController';
 import { VibeColorTheme } from '../../types/vibe';
-import { useDraggableSheet } from '../../hooks/useDraggableSheet';
+import { SHEET_SNAP_POINTS, SHEET_DEFAULT_SNAP } from '../../constants/layout';
 
 // Keywords that trigger color changes during conversation
 const VIBE_KEYWORDS: Record<VibeColorTheme, string[]> = {
@@ -50,6 +51,10 @@ const detectVibeFromText = (text: string): VibeColorTheme | null => {
 
 const { height: SCREEN_HEIGHT } = Dimensions.get('window');
 
+// Use centralized constants - SINGLE SOURCE OF TRUTH
+const SNAP_POINTS = SHEET_SNAP_POINTS;
+const DEFAULT_SNAP = SHEET_DEFAULT_SNAP;
+
 export interface CoachIntroScreenProps {
   onBackgroundChange?: (index: number) => void;
   onSecretBack?: () => void;
@@ -72,8 +77,8 @@ export const CoachIntroScreen: React.FC<CoachIntroScreenProps> = ({
 
   const [agentStatus, setAgentStatus] = useState<string>('Connecting...');
 
-  // Draggable sheet hook - centralizes pan responder and snap logic
-  const { translateY, panHandlers, animateIn } = useDraggableSheet();
+  // Animated value for bottom sheet position
+  const translateY = useRef(new Animated.Value(SCREEN_HEIGHT)).current;
 
   // Initialize ElevenLabs Agent
   const { startConversation, endConversation, toggleMute, isSpeaking, isConnected, isMuted } = useAbbyAgent({
@@ -114,6 +119,61 @@ export const CoachIntroScreen: React.FC<CoachIntroScreenProps> = ({
     },
   });
 
+  // Find closest snap point
+  const findClosestSnapPoint = useCallback((position: number): number => {
+    const currentPercentage = 1 - position / SCREEN_HEIGHT;
+    let closest: number = SNAP_POINTS[0];
+    let minDistance = Math.abs(currentPercentage - closest);
+
+    for (const snap of SNAP_POINTS) {
+      const distance = Math.abs(currentPercentage - snap);
+      if (distance < minDistance) {
+        minDistance = distance;
+        closest = snap;
+      }
+    }
+
+    return SCREEN_HEIGHT * (1 - closest);
+  }, []);
+
+  // Pan responder for draggable header
+  const panResponder = useRef(
+    PanResponder.create({
+      onStartShouldSetPanResponder: () => true,
+      onMoveShouldSetPanResponder: (_, gestureState) => {
+        // Only respond to vertical drags
+        return Math.abs(gestureState.dy) > Math.abs(gestureState.dx);
+      },
+      onPanResponderGrant: () => {
+        translateY.setOffset((translateY as unknown as { _value: number })._value);
+        translateY.setValue(0);
+      },
+      onPanResponderMove: (_, gestureState) => {
+        const newY = gestureState.dy;
+        const offset = (translateY as unknown as { _offset: number })._offset;
+        const minY = SCREEN_HEIGHT * 0.1 - offset;
+        const maxY = SCREEN_HEIGHT - offset;
+
+        const constrainedY = Math.max(minY, Math.min(maxY, newY));
+        translateY.setValue(constrainedY);
+      },
+      onPanResponderRelease: (_, gestureState) => {
+        translateY.flattenOffset();
+        const currentY = (translateY as unknown as { _value: number })._value;
+        const velocity = gestureState.vy;
+
+        // Snap to closest point
+        const snapY = findClosestSnapPoint(currentY + velocity * 100);
+        Animated.spring(translateY, {
+          toValue: snapY,
+          useNativeDriver: true,
+          damping: 50,
+          stiffness: 400,
+        }).start();
+      },
+    })
+  ).current;
+
   // Set background to Liquid Marble shader
   useEffect(() => {
     if (onBackgroundChange) {
@@ -123,8 +183,13 @@ export const CoachIntroScreen: React.FC<CoachIntroScreenProps> = ({
 
   // Animate sheet in on mount
   useEffect(() => {
-    animateIn();
-  }, [animateIn]);
+    Animated.spring(translateY, {
+      toValue: SCREEN_HEIGHT * (1 - DEFAULT_SNAP),
+      useNativeDriver: true,
+      damping: 50,
+      stiffness: 400,
+    }).start();
+  }, []);
 
   // Auto-start conversation when screen mounts
   useEffect(() => {
@@ -197,7 +262,7 @@ export const CoachIntroScreen: React.FC<CoachIntroScreenProps> = ({
       >
         <BlurView intensity={80} tint="light" style={styles.blurContainer} pointerEvents="box-none">
           {/* DRAGGABLE HEADER - Handle only, no buttons */}
-          <View {...panHandlers} style={styles.draggableHeader}>
+          <View {...panResponder.panHandlers} style={styles.draggableHeader}>
             <View style={styles.handleContainer}>
               <View style={styles.handle} />
             </View>
@@ -473,7 +538,7 @@ const styles = StyleSheet.create({
     height: 70,
     zIndex: 9999,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.5)',
+    borderColor: 'rgba(255, 255, 255, 0.2)',
     borderRadius: 8,
   },
   secretMiddleTrigger: {
@@ -485,7 +550,7 @@ const styles = StyleSheet.create({
     height: 70,
     zIndex: 9999,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.5)',
+    borderColor: 'rgba(255, 255, 255, 0.2)',
     borderRadius: 8,
   },
   secretForwardTrigger: {
@@ -496,7 +561,7 @@ const styles = StyleSheet.create({
     height: 70,
     zIndex: 9999,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.5)',
+    borderColor: 'rgba(255, 255, 255, 0.2)',
     borderRadius: 8,
   },
 });
