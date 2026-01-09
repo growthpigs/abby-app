@@ -577,6 +577,107 @@ These versions are tested and work together:
 
 ---
 
+## Apple Developer & App Store Setup
+
+### ⚠️ CRITICAL: Two Separate Systems
+
+Apple has TWO portals that serve different purposes:
+
+| Portal | URL | Purpose | Manuel Negreiro Access |
+|--------|-----|---------|------------------------|
+| **App Store Connect** | appstoreconnect.apple.com | Manage apps, TestFlight, releases | ✅ HAS ACCESS |
+| **Developer Portal** | developer.apple.com/account | Bundle IDs, certificates, profiles | ❌ NO ACCESS |
+
+**Key Insight:** You need BOTH to publish an app:
+- App Store Connect = where your app lives
+- Developer Portal = where bundle IDs & signing certificates live
+
+### Current Account Situation (2026-01-09)
+
+```
+Roderic Andrews (Apple ID: rodericandrews@icloud.com)
+├── App Store Connect
+│   ├── Proper Dress LLC ✅
+│   └── manuel negreiro ✅ (has existing "matchmaker" app)
+│
+└── Developer Portal (Certificates, IDs, Profiles)
+    └── Proper Dress LLC ✅ (ONLY - no Manuel Negreiro!)
+```
+
+**Why Manuel Negreiro can't create NEW apps:**
+1. He appears in App Store Connect ✅
+2. He does NOT appear in Developer Portal ❌
+3. Without Developer Portal → NO bundle IDs → CANNOT create new apps
+
+### Existing Bundle IDs (Under Proper Dress LLC)
+
+| Name | Bundle ID | Notes |
+|------|-----------|-------|
+| Abby | ai.myaimatchmaker.abby | Nathan's bundle (DON'T USE) |
+| Abby App | com.manuelnegreiro.abby | Created for our use ✅ |
+| agrobrosabbyapp | com.getabby.app | - |
+| agrobrosabbyapp | com.properdress.abby | - |
+| ProperDress | com.properdress.charlie | Different project |
+
+**Matchmaker's bundle ID:** `com.uniquedatingcompany.abby` (registered when Manuel had access)
+
+### 🚨 TO CREATE ABBY APP UNDER MANUEL NEGREIRO:
+
+**Option 1: Manuel Negreiro enrolls in Apple Developer Program ($99/year)**
+
+1. Go to: https://developer.apple.com/programs/enroll/
+2. Sign in with Manuel Negreiro's Apple ID
+3. Pay $99 annual fee
+4. Wait 24-48 hours for activation
+5. Then can register bundle IDs and create apps
+
+**Option 2: Use Proper Dress LLC (NOT RECOMMENDED)**
+- Would put app under wrong company
+- Client (Manuel) would not own the App Store listing
+
+### Bundle ID Rules
+
+1. **Bundle IDs are GLOBALLY unique** - once registered, no one else can use it
+2. **Must match app.json** - iOS project bundleIdentifier must match App Store
+3. **Cannot transfer between teams** - if registered under Team A, Team B can't use it
+4. **Our bundle ID:** `com.manuelnegreiro.abby` (registered under Proper Dress LLC)
+
+### Current app.json Bundle ID
+
+```json
+{
+  "expo": {
+    "ios": {
+      "bundleIdentifier": "com.manuelnegreiro.abby"
+    }
+  }
+}
+```
+
+**Status:** This bundle ID is registered under Proper Dress LLC, NOT Manuel Negreiro.
+To use this with Manuel Negreiro's App Store Connect, he needs Developer Portal access.
+
+### TestFlight Requirements
+
+To get app on TestFlight, you need:
+1. ✅ App in App Store Connect
+2. ❌ Bundle ID registered in Developer Portal (BLOCKED)
+3. ❌ Distribution certificate (requires Developer Portal)
+4. ❌ Provisioning profile (requires Developer Portal)
+
+**Bottom line:** Without Developer Portal access, no TestFlight.
+
+### Action Items for Manuel Negreiro App
+
+- [ ] Manuel enrolls in Apple Developer Program ($99/year)
+- [ ] Register bundle ID `com.manuelnegreiro.abby` under his team
+- [ ] Create "Abby" app in App Store Connect under "manuel negreiro"
+- [ ] Generate distribution certificate
+- [ ] Create provisioning profile
+- [ ] Build and upload to TestFlight
+
+---
+
 ## Environment Setup
 
 ### Required Configuration
