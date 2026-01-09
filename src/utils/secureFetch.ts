@@ -60,7 +60,8 @@ async function refreshAuthToken(): Promise<string | null> {
     // AuthService.refreshToken() has its own mutex - concurrent calls return the same promise
     const response = await AuthService.refreshToken();
     if (__DEV__) console.log('[secureFetch] Token refreshed successfully');
-    return response.accessToken;
+    // API expects ID token, not access token
+    return response.idToken;
   } catch (error) {
     if (__DEV__) console.log('[secureFetch] Token refresh failed:', error);
     return null;

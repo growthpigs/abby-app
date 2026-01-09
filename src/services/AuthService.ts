@@ -302,10 +302,11 @@ export const AuthService = {
           const expiresIn = session.getAccessToken().getExpiration();
 
           // Store tokens securely
-          await TokenManager.setToken(accessToken);
+          // IMPORTANT: API expects ID token, not access token
+          await TokenManager.setToken(idToken);
           await TokenManager.setRefreshToken(refreshToken);
 
-          if (__DEV__) console.log('[AuthService] Tokens stored');
+          if (__DEV__) console.log('[AuthService] Tokens stored (using idToken)');
 
           resolve({
             accessToken,
@@ -385,10 +386,10 @@ export const AuthService = {
         const idToken = session.getIdToken().getJwtToken();
         const expiresIn = session.getAccessToken().getExpiration();
 
-        // Update stored access token
-        await TokenManager.setToken(accessToken);
+        // Update stored token (using idToken - API expects ID token)
+        await TokenManager.setToken(idToken);
 
-        if (__DEV__) console.log('[AuthService] Token refreshed');
+        if (__DEV__) console.log('[AuthService] Token refreshed (using idToken)');
 
         resolve({
           accessToken,
