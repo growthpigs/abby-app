@@ -14,7 +14,7 @@
     },
     "ios": {
       "supportsTablet": false,
-      "bundleIdentifier": "com.properdress.abby",
+      "bundleIdentifier": "com.manuelnegreiro.abby",
       "deploymentTarget": "16.0",
       "infoPlist": {
         "NSMicrophoneUsageDescription": "Abby needs your microphone to have a conversation with you.",
