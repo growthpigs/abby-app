@@ -657,15 +657,32 @@ Roderic Andrews (Apple ID: rodericandrews@icloud.com)
 **Status:** This bundle ID is registered under Proper Dress LLC, NOT Manuel Negreiro.
 To use this with Manuel Negreiro's App Store Connect, he needs Developer Portal access.
 
-### TestFlight Requirements
+### 🚨 TestFlight Requirements (BLOCKING)
 
-To get app on TestFlight, you need:
-1. ✅ App in App Store Connect
-2. ❌ Bundle ID registered in Developer Portal (BLOCKED)
-3. ❌ Distribution certificate (requires Developer Portal)
-4. ❌ Provisioning profile (requires Developer Portal)
+**Q: Does Manuel need to pay the $99 to get TestFlight?**
+**A: YES. The $99 Apple Developer Program enrollment is a BLOCKING requirement.**
 
-**Bottom line:** Without Developer Portal access, no TestFlight.
+To get app on TestFlight, you need ALL of these:
+
+| Requirement | Where it comes from | Manuel has? |
+|-------------|---------------------|-------------|
+| App in App Store Connect | App Store Connect | ✅ Can create |
+| Bundle ID registered | Developer Portal | ❌ NO ACCESS |
+| Distribution certificate | Developer Portal | ❌ NO ACCESS |
+| Provisioning profile | Developer Portal | ❌ NO ACCESS |
+
+**Without Developer Portal access ($99/year), you CANNOT:**
+- Register new bundle IDs
+- Generate distribution certificates
+- Create provisioning profiles
+- Sign builds for TestFlight
+- Submit to App Store
+
+**There is no workaround.** This is how Apple's ecosystem works.
+
+**Alternatives (if $99 is not an option):**
+1. **Ad-hoc distribution** - Install via Xcode cable (no $99 needed, but limited to ~100 registered devices, requires collecting UDIDs manually)
+2. **Use Proper Dress LLC** - Build under existing team (but wrong ownership, not recommended)
 
 ### Action Items for Manuel Negreiro App
 
