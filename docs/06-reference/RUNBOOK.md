@@ -6,6 +6,63 @@
 
 ---
 
+## ⛔ VIBEMATRIX ANIMATION - READ THIS FIRST ⛔
+
+```
+╔══════════════════════════════════════════════════════════════════════════════╗
+║  🚨 VIBEMATRIX ANIMATION ONLY WORKS ON: test-jan2-animation BRANCH           ║
+╠══════════════════════════════════════════════════════════════════════════════╣
+║                                                                              ║
+║  WORKING:     test-jan2-animation  ← USE THIS FOR DEMOS/TESTING              ║
+║  BROKEN:      client-api-integration (animation static, not organic)         ║
+║                                                                              ║
+║  The organic swirling animation ONLY works on test-jan2-animation.           ║
+║  On client-api-integration, the shader renders but doesn't animate           ║
+║  properly - it just shifts the static image around.                          ║
+║                                                                              ║
+║  ROOT CAUSE: Unknown. Same VibeMatrixAnimated.tsx file, same node_modules,   ║
+║  but animation only works on test-jan2-animation. Likely App.tsx             ║
+║  differences in initialization/render order affect Reanimated behavior.      ║
+║                                                                              ║
+║  BEFORE MERGING: Animation MUST be verified visually (not just clock logs)   ║
+║                                                                              ║
+╚══════════════════════════════════════════════════════════════════════════════╝
+```
+
+### Quick Branch Commands
+
+```bash
+# Switch to WORKING animation branch
+git checkout test-jan2-animation
+npx expo run:ios
+
+# Verify animation is working: swirls should FLOW organically, not just shift
+```
+
+### What "Working Animation" Looks Like
+
+- Swirls flow and morph **continuously** like oil on water
+- Colors blend and transition **organically**
+- Pattern changes **smoothly** over seconds
+- NOT: static image that shifts position
+- NOT: subtle movement that's barely visible
+
+---
+
+## 🔴 CRITICAL: Build Command (Skia/Metro)
+
+```
+╔══════════════════════════════════════════════════════════════════════════════╗
+║  ⚠️  ABBY uses @shopify/react-native-skia (GLSL shaders for VibeMatrix).     ║
+║  Skia has NATIVE CODE that must be compiled into the app binary.             ║
+║  ✅ ONLY USE:    npx expo run:ios                                            ║
+║  ❌ NEVER USE:   expo start / npx expo start (Expo Go doesn't have Skia)     ║
+║  If you see "reanimated not installed" → you ran the wrong command!          ║
+╚══════════════════════════════════════════════════════════════════════════════╝
+```
+
+---
+
 ## 🔴 CRITICAL: Worktree Verification (RUN FIRST)
 
 **Before ANY work, verify you're in the correct worktree:**
@@ -21,10 +78,11 @@ git rev-parse --show-toplevel | grep -o "abby-client-api" && echo "✅ CORRECT" 
 pwd | grep -q "abby-client-api" && echo "✅ Correct" || echo "❌ Go to /abby-client-api"
 ```
 
-| Worktree | Branch | Voice Service | Purpose |
-|----------|--------|---------------|---------|
-| `/abby` | `main` | AbbyAgent.ts (ElevenLabs) | ❌ LEGACY |
-| `/abby-client-api` | `client-api-integration` | AbbyRealtimeService.ts (OpenAI) | ✅ ACTIVE |
+| Worktree | Branch | VibeMatrix Animation | Purpose |
+|----------|--------|----------------------|---------|
+| `/abby` | `main` | ❌ LEGACY | Old ElevenLabs version |
+| `/abby-client-api` | `test-jan2-animation` | ✅ WORKING | **USE THIS for demos** |
+| `/abby-client-api` | `client-api-integration` | ❌ BROKEN | Auth flow, static animation |
 
 **NEVER copy files from `/abby` to `/abby-client-api` - the service imports are different!**
 
