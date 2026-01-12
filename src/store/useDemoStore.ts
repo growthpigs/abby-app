@@ -194,8 +194,12 @@ export const useDemoStore = create<DemoStore>((set, get) => ({
       savedAt: null,
     });
     syncVibeState('COACH_INTRO');
-    // Clear storage when explicitly reset
-    clearStorage();
+    // Clear storage when explicitly reset (handle async properly)
+    clearStorage().catch((err) => {
+      if (__DEV__) {
+        console.warn('[DemoStore] clearStorage failed:', err);
+      }
+    });
   },
 
   // Interview

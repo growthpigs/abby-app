@@ -163,8 +163,13 @@ export const CoachScreen: React.FC<CoachScreenProps> = ({
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     // Add user message to conversation display
     addMessage('user', text);
-    // Send to Abby agent
-    sendTextMessage(text);
+    // Send to Abby agent (with error handling)
+    sendTextMessage(text).catch((err) => {
+      if (__DEV__) {
+        console.warn('[CoachScreen] sendTextMessage failed:', err);
+      }
+      // Could add user-visible error feedback here in future
+    });
     // Scroll to show newest message
     scrollToTop();
   }, [addMessage, sendTextMessage, scrollToTop]);

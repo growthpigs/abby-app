@@ -244,15 +244,33 @@ function AppContent() {
     loadSettings();
   }, [loadSettings]);
 
-  // Initialize: go to login after loading
+  // Initialize: check for existing session, then go to login or authenticated
   useEffect(() => {
-    if (fontsLoaded && settingsLoaded && authState === 'LOADING') {
-      console.log('[App] Initializing auth state to LOGIN');
-      setAuthState('LOGIN');
-      // Set initial vibe for login (DEEP purple)
-      vibeRef.current?.setVibe('DEEP');
-    }
-  }, [fontsLoaded, settingsLoaded, authState]);
+    const checkAuth = async () => {
+      if (fontsLoaded && settingsLoaded && authState === 'LOADING') {
+        try {
+          // Check if user has valid session (token exists and not expired)
+          const isAuth = await AuthService.isAuthenticated();
+          if (isAuth) {
+            if (__DEV__) console.log('[App] Existing session found, restoring authenticated state');
+            setAuthState('AUTHENTICATED');
+            reset(); // Reset demo state for fresh start
+            vibeRef.current?.setVibe('TRUST');
+          } else {
+            if (__DEV__) console.log('[App] No valid session, going to login');
+            setAuthState('LOGIN');
+            vibeRef.current?.setVibe('DEEP');
+          }
+        } catch (error) {
+          // Auth check failed - default to login
+          if (__DEV__) console.log('[App] Auth check failed, going to login:', error);
+          setAuthState('LOGIN');
+          vibeRef.current?.setVibe('DEEP');
+        }
+      }
+    };
+    checkAuth();
+  }, [fontsLoaded, settingsLoaded, authState, reset]);
 
   // Apply vibe on auth state change
   useEffect(() => {
@@ -554,7 +572,7 @@ function AppContent() {
     markOnboardingComplete();
     clearOnboarding(); // Clean up persisted data after completion
 
-    // Submit profile to backend (don't block auth on failure)
+    // Submit profile to backend (with user feedback on failure)
     try {
       const profilePayload = useOnboardingStore.getState().getProfilePayload();
       const token = await TokenManager.getToken();
@@ -574,9 +592,14 @@ function AppContent() {
         }
       }
     } catch (error) {
-      // Log but don't block - profile can be updated later
+      // Show error to user - don't silently fail
+      Alert.alert(
+        'Profile Save Issue',
+        'Your profile couldn\'t be saved to the server. You can update it later in Settings.',
+        [{ text: 'Continue', style: 'default' }]
+      );
       if (__DEV__) {
-        console.warn('[App] Profile submission failed (non-blocking):', error);
+        console.warn('[App] Profile submission failed:', error);
       }
     }
 
