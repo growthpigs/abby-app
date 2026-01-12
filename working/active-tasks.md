@@ -100,6 +100,11 @@
 - [x] UX/Performance audit (Superpower agent) - 15 UX issues
 - [x] Created SCREEN-STATUS.md in docs/05-planning/
 - [x] Documented branch divergence analysis
+- [x] **FIX: Session persistence** - App.tsx now checks AuthService.isAuthenticated() on startup
+- [x] **FIX: Profile feedback** - Alert shown on profile submission failure
+- [x] **FIX: Fire-and-forget useDemoStore** - clearStorage() now has .catch()
+- [x] **FIX: Fire-and-forget CoachScreen** - sendTextMessage() now has .catch()
+- [x] **Commit:** `4ee62d56` - 4 critical bugs fixed
 
 ---
 
@@ -107,10 +112,10 @@
 
 | Metric | Before | After | Target |
 |--------|--------|-------|--------|
-| Technical Debt | 7/10 | - | 9/10 |
-| Critical Bugs | 3 | - | 0 |
-| High Bugs | 3 | - | 0 |
-| Tests Passing | 404 | - | 404+ |
+| Technical Debt | 7/10 | 8/10 | 9/10 |
+| Critical Bugs | 3 | 0 | 0 |
+| High Bugs | 3 | 3 | 0 |
+| Tests Passing | 404 | 404 | 404+ |
 
 ---
 
