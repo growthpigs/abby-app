@@ -4,6 +4,28 @@
 
 ---
 
+## ⛔⛔⛔ VIBEMATRIX ANIMATION - CRITICAL ⛔⛔⛔
+
+```
+┌──────────────────────────────────────────────────────────────────────────────┐
+│  ANIMATION ONLY WORKS ON: test-jan2-animation                                │
+│                                                                              │
+│  ✅ test-jan2-animation     = Organic flowing animation WORKS                │
+│  ❌ client-api-integration  = Animation BROKEN (static, just shifts around)  │
+│                                                                              │
+│  FOR DEMOS: git checkout test-jan2-animation && npx expo run:ios             │
+└──────────────────────────────────────────────────────────────────────────────┘
+```
+
+**What working animation looks like:**
+- Swirls flow like oil on water, continuously morphing
+- Colors blend organically
+- NOT: static image that shifts position
+
+**Root cause unknown** - same VibeMatrixAnimated.tsx but different behavior. Likely App.tsx init order.
+
+---
+
 ## 🚨 BUILD COMMAND (Dev Build, NOT Expo Go)
 
 ```bash
@@ -27,8 +49,8 @@ npx expo run:ios
 # 1. Confirm correct worktree (MUST be abby-client-api)
 pwd  # Should show: /Users/rodericandrews/_PAI/projects/abby-client-api
 
-# 2. Confirm correct branch
-git branch --show-current  # Should show: client-api-integration
+# 2. For ANIMATION/DEMOS: use test-jan2-animation
+git checkout test-jan2-animation
 
 # 3. Confirm NOT in /abby (the legacy worktree)
 # If pwd shows /abby without -client-api, STOP and cd to correct location
@@ -40,14 +62,13 @@ git branch --show-current  # Should show: client-api-integration
 
 ---
 
-## ✅ CORRECT WORKTREE - YOU ARE IN THE RIGHT PLACE
+## Branch Status
 
-**This is `/abby-client-api` (client-api-integration branch) - ACTIVE DEVELOPMENT.**
-
-| Worktree | Branch | Services |
-|----------|--------|----------|
-| `/abby` | `main` | ❌ LEGACY - ElevenLabs (AbbyAgent.ts) |
-| `/abby-client-api` (HERE) | `client-api-integration` | ✅ ACTIVE - OpenAI (AbbyRealtimeService.ts) |
+| Worktree | Branch | Animation | Auth | Use For |
+|----------|--------|-----------|------|---------|
+| `/abby` | `main` | ❌ | ❌ | LEGACY - don't use |
+| `/abby-client-api` | `test-jan2-animation` | ✅ WORKS | ✅ | **DEMOS, visual testing** |
+| `/abby-client-api` | `client-api-integration` | ❌ BROKEN | ✅ | API integration work |
 
 ---
 
