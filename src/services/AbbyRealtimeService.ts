@@ -123,7 +123,11 @@ export class AbbyRealtimeService {
       // Check API availability first
       const isAvailable = await this.checkAvailability();
       if (!isAvailable) {
-        if (__DEV__) console.log('[AbbyRealtime] API unavailable, entering demo mode');
+        const msg = `Backend unavailable at ${API_BASE_URL}. Entering demo mode.`;
+        if (__DEV__) {
+          console.warn('[AbbyRealtime]', msg);
+          console.warn('[AbbyRealtime] Set EXPO_PUBLIC_USE_REAL_API=true in .env to use real backend');
+        }
         return this.startDemoMode();
       }
 
