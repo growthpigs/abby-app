@@ -122,6 +122,8 @@ const styles = StyleSheet.create({
     color: 'rgba(0, 0, 0, 0.85)',
     paddingVertical: 6,
     paddingRight: 8,
+    letterSpacing: 0,
+    textAlign: 'left',
   },
 
   sendButton: {

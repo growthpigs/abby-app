@@ -180,6 +180,8 @@ const styles = StyleSheet.create({
     fontSize: 24,
     color: 'rgba(255, 255, 255, 0.95)',
     fontWeight: '500',
+    letterSpacing: 0,
+    textAlign: 'left',
   },
   nicknameLabel: {
     marginTop: 32,
@@ -196,6 +198,8 @@ const styles = StyleSheet.create({
     fontSize: 18,
     color: 'rgba(255, 255, 255, 0.95)',
     fontWeight: '500',
+    letterSpacing: 0,
+    textAlign: 'left',
   },
   helpTextContainer: {
     marginTop: 16,

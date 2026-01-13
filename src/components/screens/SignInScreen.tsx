@@ -221,6 +221,8 @@ const styles = StyleSheet.create({
     fontSize: 18,
     color: 'rgba(255, 255, 255, 0.95)',
     fontWeight: '400',
+    letterSpacing: 0,
+    textAlign: 'left',
   },
   inputError: {
     borderBottomColor: 'rgba(255, 100, 100, 0.7)',

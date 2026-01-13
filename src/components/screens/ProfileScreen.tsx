@@ -378,6 +378,8 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     marginBottom: 16,
     color: 'rgba(0, 0, 0, 0.85)',
+    letterSpacing: 0,
+    textAlign: 'left',
   },
   editButtons: {
     flexDirection: 'row',
