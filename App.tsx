@@ -390,14 +390,7 @@ function AppContent() {
       // Call Cognito SignUp
       const name = fullName || 'User';
 
-      // DEBUG: Show parameters in Alert
-      if (__DEV__) {
-        Alert.alert(
-          'DEBUG: Signup Params',
-          `Email: ${emailData}\nName: "${name}"\nPassword length: ${password?.length}`,
-          [{ text: 'OK' }]
-        );
-      }
+      if (__DEV__) console.log('[App] Signup params:', { email: emailData, name, passwordLength: password?.length });
 
       const signupResult = await AuthService.signup(emailData, password, name);
 
@@ -412,13 +405,7 @@ function AppContent() {
       const errorMsg = authError?.message || (error instanceof Error ? error.message : 'Signup failed');
       const errorCode = authError?.code || 'Unknown';
 
-      if (__DEV__) {
-        Alert.alert(
-          'Signup Failed',
-          `Code: ${errorCode}\n\nMessage: ${errorMsg}\n\nEmail: ${emailData}\nName: ${fullName || 'User'}`,
-          [{ text: 'OK' }]
-        );
-      }
+      if (__DEV__) console.log('[App] Signup failed:', { code: errorCode, message: errorMsg });
 
       setAuthError(`${errorCode}: ${errorMsg}`);
     } finally {
@@ -448,13 +435,7 @@ function AppContent() {
       const errorMsg = authError?.message || (error instanceof Error ? error.message : 'Sign in failed');
       const errorCode = authError?.code || 'Unknown';
 
-      if (__DEV__) {
-        Alert.alert(
-          'Sign In Failed',
-          `Code: ${errorCode}\n\nMessage: ${errorMsg}`,
-          [{ text: 'OK' }]
-        );
-      }
+      if (__DEV__) console.log('[App] Sign in failed:', { code: errorCode, message: errorMsg });
 
       setAuthError(`${errorCode}: ${errorMsg}`);
     } finally {
