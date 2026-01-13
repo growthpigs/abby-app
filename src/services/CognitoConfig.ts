@@ -1,79 +1,148 @@
 /**
- * AWS Cognito Configuration
+ * CognitoConfig - Stub for iOS Simulator Testing
  *
- * Client backend uses Cognito for authentication.
- * User Pool: us-east-1_l3JxaWpl5
+ * Provides mock implementations of Cognito User Pool functions
+ * for testing the authentication flow on the iOS simulator.
+ *
+ * NOTE: In production, this would use real AWS Cognito User Pool.
  */
 
-import {
-  CognitoUserPool,
-  CognitoUser,
-  AuthenticationDetails,
-  CognitoUserAttribute,
-  ISignUpResult,
-  CognitoUserSession,
-} from 'amazon-cognito-identity-js';
+export interface CognitoUserSession {
+  getAccessToken(): { getJwtToken(): string; getExpiration(): number };
+  getIdToken(): { getJwtToken(): string };
+  getRefreshToken(): { getToken(): string };
+}
 
-// Cognito User Pool configuration (from client)
-const poolData = {
-  UserPoolId: 'us-east-1_l3JxaWpl5',
-  ClientId: '2ljj7mif1k7jjc2ajiq676fhm1',
-};
+export interface CognitoUserAttribute {
+  getName(): string;
+  getValue(): string;
+}
 
-// Create the user pool instance
-export const userPool = new CognitoUserPool(poolData);
+// Type for the mock Cognito user returned by getCognitoUser
+export type MockCognitoUser = ReturnType<typeof getCognitoUser>;
 
 /**
- * Get a CognitoUser instance for the given email
+ * Mock Cognito User Pool for simulator testing
  */
-export function getCognitoUser(email: string): CognitoUser {
-  return new CognitoUser({
-    Username: email,
-    Pool: userPool,
-  });
-}
+export const userPool = {
+  signUp: (
+    username: string,
+    password: string,
+    attributes: CognitoUserAttribute[],
+    validation: any[],
+    callback: (err: any, result: any) => void
+  ) => {
+    setTimeout(() => {
+      if (typeof __DEV__ !== 'undefined' && __DEV__) {
+        console.log('[CognitoConfig] Mock signUp called for:', username);
+      }
+      callback(null, {
+        userSub: 'mock-user-sub-' + Date.now(),
+        codeDeliveryDetails: {
+          Destination: username,
+          DeliveryMedium: 'EMAIL',
+          AttributeName: 'email',
+        },
+      });
+    }, 500);
+  },
+
+  getCurrentUser: (): MockCognitoUser | null => null,
+};
+
+/**
+ * Get mock Cognito user for a username
+ */
+export const getCognitoUser = (username: string) => ({
+  confirmRegistration: (code: string, _force: boolean, callback: (err: any, result: any) => void) => {
+    setTimeout(() => {
+      if (typeof __DEV__ !== 'undefined' && __DEV__) {
+        console.log('[CognitoConfig] Mock confirmRegistration');
+      }
+      callback(null, 'SUCCESS');
+    }, 300);
+  },
+
+  authenticateUser: (authDetails: any, callbacks: any) => {
+    setTimeout(() => {
+      if (typeof __DEV__ !== 'undefined' && __DEV__) {
+        console.log('[CognitoConfig] Mock authenticateUser');
+      }
+      const mockSession: CognitoUserSession = {
+        getAccessToken: () => ({
+          getJwtToken: () => 'mock.access.token.' + Date.now(),
+          getExpiration: () => Math.floor(Date.now() / 1000) + 3600,
+        }),
+        getIdToken: () => ({
+          getJwtToken: () => 'mock.id.token.eyJzdWIiOiIxMjM0NTY3ODkwIn0=' + Date.now(),
+        }),
+        getRefreshToken: () => ({
+          getToken: () => 'mock.refresh.token.' + Date.now(),
+        }),
+      };
+      callbacks.onSuccess(mockSession);
+    }, 800);
+  },
+
+  refreshSession: (refreshToken: any, callback: (err: any, session: any) => void) => {
+    setTimeout(() => {
+      if (typeof __DEV__ !== 'undefined' && __DEV__) {
+        console.log('[CognitoConfig] Mock refreshSession');
+      }
+      const mockSession: CognitoUserSession = {
+        getAccessToken: () => ({
+          getJwtToken: () => 'mock.new.access.token.' + Date.now(),
+          getExpiration: () => Math.floor(Date.now() / 1000) + 3600,
+        }),
+        getIdToken: () => ({
+          getJwtToken: () => 'mock.new.id.token.' + Date.now(),
+        }),
+        getRefreshToken: () => ({
+          getToken: () => 'mock.refresh.token.' + Date.now(),
+        }),
+      };
+      callback(null, mockSession);
+    }, 600);
+  },
+
+  resendConfirmationCode: (callback: (err: any, result: any) => void) => {
+    setTimeout(() => {
+      if (typeof __DEV__ !== 'undefined' && __DEV__) {
+        console.log('[CognitoConfig] Mock resendConfirmationCode');
+      }
+      callback(null, 'SUCCESS');
+    }, 300);
+  },
+
+  signOut: () => {
+    if (typeof __DEV__ !== 'undefined' && __DEV__) {
+      console.log('[CognitoConfig] Mock signOut');
+    }
+  },
+
+  getUsername: () => username,
+});
 
 /**
  * Create authentication details for login
  */
-export function getAuthDetails(
-  email: string,
-  password: string
-): AuthenticationDetails {
-  return new AuthenticationDetails({
-    Username: email,
-    Password: password,
-  });
-}
+export const getAuthDetails = (username: string, password: string) => ({
+  username,
+  password,
+});
 
 /**
  * Create user attributes for signup
- *
- * IMPORTANT: Only send attributes that Nathan's Cognito pool has configured.
- * We've tested: email only (fails), given_name (fails)
- * Now testing: 'name' attribute instead of 'given_name'
  */
-export function createUserAttributes(
-  email: string,
-  firstName: string,
-  lastName: string
-): CognitoUserAttribute[] {
-  // Build full name for 'name' attribute
-  const fullName = lastName ? `${firstName} ${lastName}` : firstName;
+export const createUserAttributes = (email: string, firstName: string, lastName: string): CognitoUserAttribute[] => [
+  { getName: () => 'email', getValue: () => email },
+  { getName: () => 'given_name', getValue: () => firstName },
+  { getName: () => 'family_name', getValue: () => lastName },
+] as CognitoUserAttribute[];
 
-  const attributes = [
-    new CognitoUserAttribute({ Name: 'email', Value: email }),
-    // Try 'name' instead of 'given_name' - some pools require this
-    new CognitoUserAttribute({ Name: 'name', Value: fullName }),
-  ];
-
-  return attributes;
-}
-
-// Re-export types for convenience
-export type {
-  ISignUpResult,
-  CognitoUserSession,
-  CognitoUser,
-  CognitoUserAttribute,
+export default {
+  userPool,
+  getCognitoUser,
+  getAuthDetails,
+  createUserAttributes,
 };
