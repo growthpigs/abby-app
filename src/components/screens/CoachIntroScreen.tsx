@@ -27,6 +27,7 @@ import { useAbbyAgent } from '../../services/AbbyRealtimeService';
 import { useVibeController } from '../../store/useVibeController';
 import { VibeColorTheme } from '../../types/vibe';
 import { SHEET_SNAP_POINTS, SHEET_DEFAULT_SNAP } from '../../constants/layout';
+import { TIMEOUTS } from '../../config';
 
 // Keywords that trigger color changes during conversation
 const VIBE_KEYWORDS: Record<VibeColorTheme, string[]> = {
@@ -96,13 +97,13 @@ export const CoachIntroScreen: React.FC<CoachIntroScreenProps> = ({
       // Scroll to top to show newest message
       setTimeout(() => {
         scrollRef.current?.scrollTo({ y: 0, animated: true });
-      }, 100);
+      }, TIMEOUTS.UI.SCROLL_DELAY);
     },
     onUserTranscript: (text) => {
       addMessage('user', text);
       setTimeout(() => {
         scrollRef.current?.scrollTo({ y: 0, animated: true });
-      }, 100);
+      }, TIMEOUTS.UI.SCROLL_DELAY);
     },
     onConnect: () => {
       setAgentStatus('Connected');

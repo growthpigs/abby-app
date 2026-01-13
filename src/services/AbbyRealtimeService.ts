@@ -17,14 +17,15 @@
 
 import { TokenManager } from './TokenManager';
 import { secureFetch, type SecureFetchError } from '../utils/secureFetch';
+import { TIMEOUTS } from '../config';
 
 const API_BASE_URL = 'https://dev.api.myaimatchmaker.ai/v1';
 
 // Request timeout for realtime API (20 seconds - slightly longer for voice)
-const REQUEST_TIMEOUT_MS = 20000;
+const REQUEST_TIMEOUT_MS = TIMEOUTS.NETWORK.REALTIME;
 
 // Availability check timeout (5 seconds - fast fail)
-const AVAILABILITY_TIMEOUT_MS = 5000;
+const AVAILABILITY_TIMEOUT_MS = TIMEOUTS.NETWORK.AVAILABILITY;
 
 // ========================================
 // Demo Mode Responses
@@ -196,7 +197,7 @@ export class AbbyRealtimeService {
     }
 
     // Simulate typing delay (1.5-3 seconds)
-    const delay = 1500 + Math.random() * 1500;
+    const delay = TIMEOUTS.DEMO.TYPING_MIN + Math.random() * (TIMEOUTS.DEMO.TYPING_MAX - TIMEOUTS.DEMO.TYPING_MIN);
 
     this.scheduleTimer(() => {
       if (!this.isConnectedState) return; // Session ended
@@ -207,7 +208,7 @@ export class AbbyRealtimeService {
 
       // Continue with next message after a pause
       if (this.demoMessageIndex < messages.length) {
-        const nextDelay = 2000 + Math.random() * 2000;
+        const nextDelay = TIMEOUTS.DEMO.MESSAGE_PAUSE + Math.random() * TIMEOUTS.DEMO.MESSAGE_PAUSE;
         this.scheduleTimer(() => {
           this.sendNextDemoMessage();
         }, nextDelay);

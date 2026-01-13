@@ -49,6 +49,7 @@ import { useOnboardingStore } from './src/store/useOnboardingStore';
 import { OrbMode } from './src/types/orb';
 import { VibeColorTheme, VibeComplexity } from './src/types/vibe';
 import { useVibeController } from './src/store/useVibeController';
+import { Z_INDEX } from './src/constants/layout';
 
 // Auth screens (Nathan's API flow)
 import { LoginScreen } from './src/components/screens/LoginScreen';
@@ -850,24 +851,30 @@ function AppContent() {
 
       {/* Layer 0: Animated shader background */}
       {/* DEV: Toggle to test if useClock works at all - set false to use VibeMatrixAnimated */}
-      {__DEV__ && false ? (
-        <ClockTest />
-      ) : (
-        <VibeMatrixAnimated
-          ref={vibeRef}
-          initialTheme="DEEP"
-          initialComplexity="FLOW"
-        />
-      )}
+      <View style={styles.vibeMatrixLayer}>
+        {__DEV__ && false ? (
+          <ClockTest />
+        ) : (
+          <VibeMatrixAnimated
+            ref={vibeRef}
+            initialTheme="DEEP"
+            initialComplexity="FLOW"
+          />
+        )}
+      </View>
 
       {/* Layer 0.5: GlassFloor (auth/onboarding screens only) */}
       {(authState as AuthState) !== 'AUTHENTICATED' && (authState as AuthState) !== 'LOADING' && (
-        <GlassFloor />
+        <View style={styles.glassFloorLayer}>
+          <GlassFloor />
+        </View>
       )}
 
       {/* Layer 1: Abby Orb (only in demo mode) */}
       {authState === 'AUTHENTICATED' && (
-        <AbbyOrb mode={orbMode} />
+        <View style={styles.orbLayer}>
+          <AbbyOrb mode={orbMode} />
+        </View>
       )}
 
       {/* Hamburger Menu (only when authenticated) */}
@@ -962,7 +969,21 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
+  // Glass Sandwich Layer Structure (explicit z-index)
+  vibeMatrixLayer: {
+    ...StyleSheet.absoluteFillObject,
+    zIndex: Z_INDEX.VIBE_MATRIX,
+  },
+  glassFloorLayer: {
+    ...StyleSheet.absoluteFillObject,
+    zIndex: Z_INDEX.GLASS_FLOOR,
+  },
+  orbLayer: {
+    ...StyleSheet.absoluteFillObject,
+    zIndex: Z_INDEX.ABBY_ORB,
+  },
   uiLayer: {
     ...StyleSheet.absoluteFillObject,
+    zIndex: Z_INDEX.GLASS_INTERFACE,
   },
 });

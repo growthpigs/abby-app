@@ -37,17 +37,6 @@ export const ANIMATION_DURATIONS = {
 } as const;
 
 /**
- * Demo typing simulation delays (ms)
- * Used by AbbyRealtimeService for simulated responses
- */
-export const DEMO_TYPING_DELAYS = {
-  /** Minimum delay before next character */
-  min: 1500,
-  /** Additional random delay (0 to this value) */
-  variance: 1500,
-} as const;
-
-/**
  * Touch targets (min size for accessibility)
  */
 export const TOUCH_TARGETS = {
@@ -62,21 +51,32 @@ export const TOUCH_TARGETS = {
 } as const;
 
 /**
- * Modal/overlay z-index values
+ * Glass Sandwich Architecture - Z-Index Layers
+ * CRITICAL: These values enforce the visual hierarchy. Do NOT reorder.
+ *
+ * Layer Stack (bottom to top):
+ * L0: VibeMatrix - Animated shader background (always alive)
+ * L0.5: GlassFloor - Frosted glass base (auth screens only)
+ * L1: AbbyOrb - Reactive 3D orb (center ↔ docked transitions)
+ * L2: GlassInterface - All UI content on glass (cards, text, buttons)
+ * L3: Modals/Overlays - Temporary UI (payments, errors)
+ * L4: Debug - Development tools
  */
 export const Z_INDEX = {
-  /** Background shader layer */
-  background: 0,
-  /** Main content */
-  content: 10,
-  /** Glass UI layer */
-  glass: 20,
-  /** Modals and overlays */
-  modal: 100,
-  /** Tooltips and dropdowns */
-  tooltip: 1000,
-  /** Dev/debug overlays */
-  debug: 9999,
+  /** Layer 0: VibeMatrix shader background (always renders) */
+  VIBE_MATRIX: 0,
+  /** Layer 0.5: GlassFloor (auth/onboarding screens) */
+  GLASS_FLOOR: 5,
+  /** Layer 1: AbbyOrb (center ↔ docked modes) */
+  ABBY_ORB: 10,
+  /** Layer 2: GlassInterface - All UI content */
+  GLASS_INTERFACE: 20,
+  /** Layer 3: Modals and overlays (payments, errors) */
+  MODAL: 100,
+  /** Layer 3.5: Tooltips and dropdowns */
+  TOOLTIP: 500,
+  /** Layer 4: Dev/debug overlays (always on top) */
+  DEBUG: 9999,
 } as const;
 
 /**

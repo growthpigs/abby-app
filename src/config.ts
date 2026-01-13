@@ -72,6 +72,59 @@ export const VOICE_CONFIG = {
   },
 };
 
+/**
+ * Timeout Configuration
+ * Centralized timeout values for network requests, UI interactions, and demo mode.
+ * Single source of truth to prevent scattered hardcoded values.
+ *
+ * SCOPE: This constant centralizes timeouts for:
+ * - Service layer (AbbyRealtimeService, TokenManager)
+ * - Main UI interactions (App.tsx, CoachIntroScreen)
+ * - Demo mode simulations
+ *
+ * OUT OF SCOPE (intentionally separate):
+ * - Screen-internal animation durations (see ANIMATION_DURATIONS in constants/layout.ts)
+ * - Component-specific delays (HamburgerMenu, etc.)
+ * - Service-specific overrides (QuestionsService, secureFetch defaults)
+ */
+export const TIMEOUTS = {
+  /**
+   * Network request timeouts (milliseconds)
+   */
+  NETWORK: {
+    /** Standard API requests */
+    STANDARD: 30000,
+    /** Realtime voice API requests (longer for voice) */
+    REALTIME: 20000,
+    /** Availability checks (fast fail) */
+    AVAILABILITY: 5000,
+  },
+
+  /**
+   * UI interaction delays (milliseconds)
+   */
+  UI: {
+    /** Scroll animation delay (for smooth auto-scroll) */
+    SCROLL_DELAY: 100,
+    /** Debounce input fields */
+    INPUT_DEBOUNCE: 300,
+    /** Toast/snackbar auto-dismiss */
+    TOAST_DURATION: 3000,
+  },
+
+  /**
+   * Demo mode simulation delays (milliseconds)
+   */
+  DEMO: {
+    /** Minimum typing delay before message */
+    TYPING_MIN: 1500,
+    /** Maximum total typing delay (random between MIN and this value) */
+    TYPING_MAX: 3000,
+    /** Pause between messages */
+    MESSAGE_PAUSE: 2000,
+  },
+} as const;
+
 export const FEATURE_FLAGS = {
   /** Enable voice features (requires native build) */
   VOICE_ENABLED: true,
@@ -90,5 +143,6 @@ export default {
   API: API_CONFIG,
   COGNITO: COGNITO_CONFIG,
   VOICE: VOICE_CONFIG,
+  TIMEOUTS,
   FEATURES: FEATURE_FLAGS,
 };

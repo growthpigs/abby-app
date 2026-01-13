@@ -330,8 +330,10 @@ describe('Timeout Configuration', () => {
 
   test('AbbyRealtimeService has appropriate timeouts', () => {
     const source = readFile('src/services/AbbyRealtimeService.ts');
-    expect(source).toContain('REQUEST_TIMEOUT_MS = 20000');
-    expect(source).toContain('AVAILABILITY_TIMEOUT_MS = 5000');
+    // Should use centralized TIMEOUTS from config
+    expect(source).toContain("import { TIMEOUTS } from '../config'");
+    expect(source).toContain('REQUEST_TIMEOUT_MS = TIMEOUTS.NETWORK.REALTIME');
+    expect(source).toContain('AVAILABILITY_TIMEOUT_MS = TIMEOUTS.NETWORK.AVAILABILITY');
   });
 });
 
