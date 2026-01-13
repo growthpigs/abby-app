@@ -4,6 +4,23 @@
 
 ---
 
+## 🚀 QUICK START (Copy-Paste Ready)
+
+```bash
+# Navigate to project
+cd /Users/rodericandrews/_PAI/projects/abby-client-api
+
+# Switch to demo branch
+git checkout test-jan2-animation
+
+# Build and run on iOS
+npx expo run:ios
+```
+
+**Full Path:** `/Users/rodericandrews/_PAI/projects/abby-client-api` (note: ends with `-api`)
+
+---
+
 ## ⚠️ VIBEMATRIX ANIMATION - STATUS (2026-01-13)
 
 ```
