@@ -387,7 +387,8 @@ export class AbbyRealtimeService {
       const response = await secureFetch(`${API_BASE_URL}/abby/realtime/available`, {
         timeout: AVAILABILITY_TIMEOUT_MS,
       });
-      return response.ok;
+      // Accept 401 as "available but needs auth" (backend requires auth on health check)
+      return response.ok || response.status === 401;
     } catch (error) {
       if (__DEV__) console.error('[AbbyRealtime] Availability check failed:', error);
       return false;

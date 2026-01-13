@@ -2,27 +2,28 @@
  * App Configuration
  *
  * Central configuration for API, Cognito, and feature flags.
- * Controls whether app uses real backend or mocks.
+ * Uses EXPO_PUBLIC_ environment variables for environment-specific config.
  *
+ * @see .env.development for development config
+ * @see .env.production for production config
  * @see docs/BACKEND-INTEGRATION.md for integration status
  */
 
 export const API_CONFIG = {
   /**
    * USE_REAL_API: Master switch for backend integration
+   * Controlled via EXPO_PUBLIC_USE_REAL_API environment variable
    *
-   * false = Use mock services (current state - backend blocked)
-   * true  = Use real API calls to dev.api.myaimatchmaker.ai
-   *
-   * TESTING: Attempting to connect to real backend
+   * false = Use mock services (development)
+   * true  = Use real API calls to backend
    */
-  USE_REAL_API: true,
+  USE_REAL_API: process.env.EXPO_PUBLIC_USE_REAL_API === 'true',
 
-  /** Backend base URL */
-  BASE_URL: 'https://dev.api.myaimatchmaker.ai',
+  /** Backend base URL (from environment) */
+  BASE_URL: process.env.EXPO_PUBLIC_API_BASE_URL || 'https://dev.api.myaimatchmaker.ai',
 
-  /** API version prefix */
-  API_VERSION: 'v1',
+  /** API version prefix (from environment) */
+  API_VERSION: process.env.EXPO_PUBLIC_API_VERSION || 'v1',
 
   /** Full API URL */
   get API_URL() {
@@ -42,13 +43,13 @@ export const API_CONFIG = {
 
 export const COGNITO_CONFIG = {
   /** AWS Region */
-  REGION: 'us-east-1',
+  REGION: process.env.EXPO_PUBLIC_COGNITO_REGION || 'us-east-1',
 
   /** Cognito User Pool ID */
-  USER_POOL_ID: 'us-east-1_l3JxaWpl5',
+  USER_POOL_ID: process.env.EXPO_PUBLIC_COGNITO_USER_POOL_ID || 'us-east-1_l3JxaWpl5',
 
   /** Cognito App Client ID */
-  CLIENT_ID: '2ljj7mif1k7jjc2ajiq676fhm1',
+  CLIENT_ID: process.env.EXPO_PUBLIC_COGNITO_CLIENT_ID || '2ljj7mif1k7jjc2ajiq676fhm1',
 
   /** Token refresh threshold (refresh when less than this time remaining) */
   TOKEN_REFRESH_THRESHOLD_MS: 5 * 60 * 1000, // 5 minutes
@@ -127,10 +128,10 @@ export const TIMEOUTS = {
 
 export const FEATURE_FLAGS = {
   /** Enable voice features (requires native build) */
-  VOICE_ENABLED: true,
+  VOICE_ENABLED: process.env.EXPO_PUBLIC_VOICE_ENABLED === 'true',
 
   /** Show developer debug overlay */
-  DEV_OVERLAY: __DEV__,
+  DEV_OVERLAY: process.env.EXPO_PUBLIC_DEV_OVERLAY === 'true' || __DEV__,
 
   /** Enable analytics */
   ANALYTICS_ENABLED: !__DEV__,
