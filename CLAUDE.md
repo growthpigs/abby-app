@@ -88,11 +88,11 @@ git checkout test-jan2-animation
 
 ## Branch Status
 
-| Worktree | Branch | Animation | Auth | Use For |
-|----------|--------|-----------|------|---------|
-| `/abby` | `main` | ❌ | ❌ | LEGACY - don't use |
-| `/abby-client-api` | `test-jan2-animation` | ✅ WORKS | ✅ | **DEMOS, visual testing** |
-| `/abby-client-api` | `client-api-integration` | ❌ BROKEN | ✅ | API integration work |
+| Worktree | Branch | Animation | Auth | Keyboard | Use For |
+|----------|--------|-----------|------|----------|---------|
+| `/abby` | `main` | ❌ | ❌ | ❌ | LEGACY - don't use |
+| `/abby-client-api` | `main` | ✅ | ✅ | ✅ | **PRODUCTION - all features working** |
+| `/abby-client-api` | `test-jan2-animation` | ✅ | ✅ | ✅ | Testing/development |
 
 ---
 
@@ -345,6 +345,12 @@ npx eas build --platform ios --profile preview
 
 ## Recent Session Work (2026-01-13)
 
+### Keyboard Fix (CRITICAL)
+
+| Issue | Root Cause | Fix | File |
+|-------|------------|-----|------|
+| **Keyboard not working** | Voice subsystem intercepting input | Set `EXPO_PUBLIC_VOICE_ENABLED=false` | `.env.development` |
+
 ### Animation Fixes Applied
 
 | Issue | Root Cause | Fix | File |
@@ -354,13 +360,21 @@ npx eas build --platform ios --profile preview
 | Animation too slow | Low speed multiplier | Increased 3x (0.05→0.15 min) | domainWarp.ts:36 |
 | No shader switching | Debug overlay colors only | Added shader preset buttons (0-18) | VibeDebugOverlay.tsx |
 
-### Files Modified (Uncommitted)
+### Environment Configuration Changes
 
+```bash
+# .env.development - PRODUCTION VALUES
+EXPO_PUBLIC_USE_REAL_API=true                          # Use real backend
+EXPO_PUBLIC_API_BASE_URL=https://dev.api.myaimatchmaker.ai
+EXPO_PUBLIC_VOICE_ENABLED=false                        # CRITICAL: Must be false for keyboard!
 ```
-src/components/layers/VibeMatrixAnimated.tsx  - dep array fix, mode="continuous"
-src/shaders/factory/effects/domainWarp.ts     - speed increase
-src/components/dev/VibeDebugOverlay.tsx       - shader switching
-App.tsx                                        - vibeMatrixRef to debug overlay
+
+### Bundle ID & Team
+
+```json
+// app.json
+"bundleIdentifier": "com.chi.abby.localdev"
+"appleTeamId": "V832DPFMMB"
 ```
 
 ### Debug Overlay Usage
@@ -382,6 +396,23 @@ const DEFAULT_SNAP = 0.55;  // 55% - enough room for conversation
 // Client:   2ljj7mif1k7jjc2ajiq676fhm1
 // Token:    ID token (not access token) - documented in ADR-001
 ```
+
+### ⚠️ CRITICAL: Voice Feature Flag (2026-01-13)
+
+```bash
+# In .env.development - MUST BE FALSE for keyboard input to work!
+EXPO_PUBLIC_VOICE_ENABLED=false
+```
+
+**WHY:** When `EXPO_PUBLIC_VOICE_ENABLED=true`, the ElevenLabs/voice audio subsystem
+initializes and intercepts keyboard input events in iOS Simulator. This causes:
+- Hardware keyboard input to be blocked
+- User cannot type in text fields
+- Only paste works (Cmd+V)
+
+**FIX:** Set `EXPO_PUBLIC_VOICE_ENABLED=false` in `.env.development`
+
+**SYMPTOM:** If keyboard stops working in simulator, CHECK THIS FLAG FIRST.
 
 ### Tests
 

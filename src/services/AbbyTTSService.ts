@@ -14,8 +14,9 @@
 
 import { TokenManager } from './TokenManager';
 import { Audio } from 'expo-av';
+import { API_CONFIG } from '../config';
 
-const API_BASE_URL = 'https://dev.api.myaimatchmaker.ai/v1';
+const API_BASE_URL = API_CONFIG.API_URL;
 
 // ========================================
 // Types

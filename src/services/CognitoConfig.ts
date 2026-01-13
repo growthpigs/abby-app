@@ -48,17 +48,24 @@ export function getAuthDetails(
 
 /**
  * Create user attributes for signup
+ * Note: Only includes family_name if provided (Cognito rejects empty strings)
  */
 export function createUserAttributes(
   email: string,
   firstName: string,
   lastName: string
 ): CognitoUserAttribute[] {
-  return [
+  const attrs = [
     new CognitoUserAttribute({ Name: 'email', Value: email }),
-    new CognitoUserAttribute({ Name: 'given_name', Value: firstName }),
-    new CognitoUserAttribute({ Name: 'family_name', Value: lastName }),
+    new CognitoUserAttribute({ Name: 'given_name', Value: firstName || 'User' }),
   ];
+
+  // Only add family_name if it's a non-empty string (Cognito rejects empty values)
+  if (lastName && lastName.trim().length > 0) {
+    attrs.push(new CognitoUserAttribute({ Name: 'family_name', Value: lastName }));
+  }
+
+  return attrs;
 }
 
 // Re-export types for convenience

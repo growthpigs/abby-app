@@ -14,7 +14,7 @@
     },
     "ios": {
       "supportsTablet": false,
-      "bundleIdentifier": "com.rodericandrews.abby.dev",
+      "bundleIdentifier": "com.chi.abby.localdev",
       "deploymentTarget": "16.0",
       "infoPlist": {
         "NSMicrophoneUsageDescription": "Abby needs your microphone to have a conversation with you.",
@@ -24,7 +24,8 @@
         ],
         "ITSAppUsesNonExemptEncryption": false
       },
-      "bitcode": false
+      "bitcode": false,
+      "appleTeamId": "V832DPFMMB"
     },
     "plugins": [
       "expo-font",

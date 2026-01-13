@@ -17,9 +17,9 @@
 
 import { TokenManager } from './TokenManager';
 import { secureFetch, type SecureFetchError } from '../utils/secureFetch';
-import { TIMEOUTS } from '../config';
+import { TIMEOUTS, API_CONFIG } from '../config';
 
-const API_BASE_URL = 'https://dev.api.myaimatchmaker.ai/v1';
+const API_BASE_URL = API_CONFIG.API_URL;
 
 // Request timeout for realtime API (20 seconds - slightly longer for voice)
 const REQUEST_TIMEOUT_MS = TIMEOUTS.NETWORK.REALTIME;
