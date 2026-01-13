@@ -4,6 +4,12 @@
  * Extracts the common pan responder and snap point logic used by
  * CoachIntroScreen and CoachScreen. Uses standard Animated API.
  *
+ * ⚠️ INTERNAL API ACCESS: React Native Animated.Value
+ * This hook accesses Animated.Value internals (_value, _offset) via type
+ * assertions. These are undocumented APIs used for gesture state tracking.
+ * While stable across RN versions, test pan gestures after major RN upgrades.
+ * See lines 131, 137, 147 for the internal access points.
+ *
  * Usage:
  *   const { translateY, panHandlers, animateIn } = useDraggableSheet({
  *     snapPoints: [0.35, 0.55, 0.75, 0.9],
@@ -121,11 +127,13 @@ export function useDraggableSheet(config?: DraggableSheetConfig): DraggableSheet
       },
       onPanResponderGrant: () => {
         // Store current position as offset
+        // ⚠️ INTERNAL API: Accessing _value (see VERSION LOCK in header)
         translateY.setOffset((translateY as unknown as { _value: number })._value);
         translateY.setValue(0);
       },
       onPanResponderMove: (_, gestureState) => {
         const newY = gestureState.dy;
+        // ⚠️ INTERNAL API: Accessing _offset (see VERSION LOCK in header)
         const offset = (translateY as unknown as { _offset: number })._offset;
         const minY = SCREEN_HEIGHT * 0.1 - offset; // Don't go above 10% from top
         const maxY = SCREEN_HEIGHT - offset; // Don't go below screen
@@ -135,6 +143,7 @@ export function useDraggableSheet(config?: DraggableSheetConfig): DraggableSheet
       },
       onPanResponderRelease: (_, gestureState) => {
         translateY.flattenOffset();
+        // ⚠️ INTERNAL API: Accessing _value (see VERSION LOCK in header)
         const currentY = (translateY as unknown as { _value: number })._value;
         const velocity = gestureState.vy;
 

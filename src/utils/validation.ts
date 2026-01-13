@@ -323,12 +323,13 @@ export function validateBio(bio: string): ValidationResult {
  * Validate entire form object
  * Returns first error found, or null if all valid
  */
-export function validateForm(
-  fields: Record<string, any>,
-  validators: Record<string, (value: any) => ValidationResult>
+export function validateForm<T extends Record<string, unknown>>(
+  fields: T,
+  validators: Partial<Record<keyof T, (value: unknown) => ValidationResult>>
 ): ValidationResult {
   for (const [fieldName, validator] of Object.entries(validators)) {
-    const result = validator(fields[fieldName]);
+    if (!validator) continue;
+    const result = validator(fields[fieldName as keyof T]);
     if (!result.valid) {
       return result;
     }

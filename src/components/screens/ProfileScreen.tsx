@@ -22,6 +22,7 @@ import { GlassButton } from '../ui/GlassButton';
 import { useOnboardingStore } from '../../store/useOnboardingStore';
 import { TokenManager } from '../../services/TokenManager';
 import { secureFetchJSON } from '../../utils/secureFetch';
+import { API_CONFIG } from '../../config';
 
 export interface ProfileScreenProps {
   onClose?: () => void;
@@ -80,8 +81,7 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
       const token = await TokenManager.getToken();
 
       if (token && Object.keys(profilePayload).length > 0) {
-        const API_BASE = 'https://dev.api.myaimatchmaker.ai';
-        await secureFetchJSON(`${API_BASE}/v1/profile/public`, {
+        await secureFetchJSON(`${API_CONFIG.API_URL}/profile/public`, {
           method: 'PUT',
           headers: {
             'Content-Type': 'application/json',

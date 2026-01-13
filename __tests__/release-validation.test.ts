@@ -50,9 +50,11 @@ describe('OpenAI Realtime Service', () => {
     expect(source).toContain('endConversation');
   });
 
-  test('Service uses client API base URL', () => {
+  test('Service uses centralized API config', () => {
     const source = readFile('src/services/AbbyRealtimeService.ts');
-    expect(source).toContain('dev.api.myaimatchmaker.ai');
+    // Services should use API_CONFIG, not hardcoded URLs
+    expect(source).toContain('API_CONFIG');
+    expect(source).toContain('API_CONFIG.API_URL');
   });
 });
 

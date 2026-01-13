@@ -23,8 +23,7 @@ import { Body, Caption, Headline } from '../ui/Typography';
 import { GlassButton } from '../ui/GlassButton';
 import { TokenManager } from '../../services/TokenManager';
 import { secureFetchJSON } from '../../utils/secureFetch';
-
-const API_BASE = 'https://dev.api.myaimatchmaker.ai';
+import { API_CONFIG } from '../../config';
 
 // Demo photos for when no auth token (demo mode)
 const DEMO_PHOTOS: PhotoItem[] = [
@@ -79,7 +78,7 @@ export const PhotosScreen: React.FC<PhotosScreenProps> = ({
       }
 
       const response = await secureFetchJSON<{ photos: PhotoItem[] }>(
-        `${API_BASE}/v1/photos`,
+        `${API_CONFIG.API_URL}/photos`,
         {
           method: 'GET',
           headers: {
@@ -130,7 +129,7 @@ export const PhotosScreen: React.FC<PhotosScreenProps> = ({
             try {
               const token = await TokenManager.getToken();
               if (token) {
-                await secureFetchJSON(`${API_BASE}/v1/photos/${id}`, {
+                await secureFetchJSON(`${API_CONFIG.API_URL}/photos/${id}`, {
                   method: 'DELETE',
                   headers: {
                     'Authorization': `Bearer ${token}`,
@@ -168,7 +167,7 @@ export const PhotosScreen: React.FC<PhotosScreenProps> = ({
     try {
       const token = await TokenManager.getToken();
       if (token) {
-        await secureFetchJSON(`${API_BASE}/v1/photos/${id}/primary`, {
+        await secureFetchJSON(`${API_CONFIG.API_URL}/photos/${id}/primary`, {
           method: 'PUT',
           headers: {
             'Authorization': `Bearer ${token}`,

@@ -22,8 +22,7 @@ import { GlassButton } from '../ui/GlassButton';
 import { checkIsDemoMode } from '../../hooks/useIsDemoMode';
 import { secureFetchJSON } from '../../utils/secureFetch';
 import { TokenManager } from '../../services/TokenManager';
-
-const API_BASE = 'https://dev.api.myaimatchmaker.ai';
+import { API_CONFIG } from '../../config';
 
 // Demo data for when no auth token (demo mode)
 // Note: compatibilityScore is 0-1 decimal (API format), displayed as percentage
@@ -145,6 +144,7 @@ export const MatchesScreen: React.FC<MatchesScreenProps> = ({
   const [refreshing, setRefreshing] = useState(false);
   const [selectedMatch, setSelectedMatch] = useState<MatchCandidate | null>(null);
   const [photoLoadFailed, setPhotoLoadFailed] = useState(false);
+  const [isActioning, setIsActioning] = useState(false); // Prevent double-tap on like/pass
 
   const fetchMatches = useCallback(async () => {
     try {
@@ -163,7 +163,7 @@ export const MatchesScreen: React.FC<MatchesScreenProps> = ({
       // Authenticated mode - fetch from API
       const token = await TokenManager.getToken();
       const response = await secureFetchJSON<{ candidates: RawMatchCandidate[] }>(
-        `${API_BASE}/v1/matches/candidates`,
+        `${API_CONFIG.API_URL}/matches/candidates`,
         {
           method: 'GET',
           headers: {
@@ -203,6 +203,82 @@ export const MatchesScreen: React.FC<MatchesScreenProps> = ({
   const handleBackToList = useCallback(() => {
     setSelectedMatch(null);
   }, []);
+
+  /**
+   * Like/Accept a match candidate
+   * POST /v1/matches/{userId}/like
+   */
+  const handleLike = useCallback(async (userId: string) => {
+    if (isActioning) return; // Prevent double-tap
+    setIsActioning(true);
+
+    try {
+      const isDemoMode = await checkIsDemoMode();
+      if (isDemoMode) {
+        if (__DEV__) console.log('[MatchesScreen] Demo mode - simulating like');
+        // Remove from list and show success
+        setMatches(prev => prev.filter(m => m.id !== userId));
+        setSelectedMatch(null);
+        return;
+      }
+
+      const token = await TokenManager.getToken();
+      await secureFetchJSON(`${API_CONFIG.API_URL}/matches/${userId}/like`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (__DEV__) console.log('[MatchesScreen] Liked user:', userId);
+      // Remove from candidates, they're now a match
+      setMatches(prev => prev.filter(m => m.id !== userId));
+      setSelectedMatch(null);
+    } catch (err) {
+      if (__DEV__) console.error('[MatchesScreen] Like failed:', err);
+      setError('Failed to like. Please try again.');
+    } finally {
+      setIsActioning(false);
+    }
+  }, [isActioning]);
+
+  /**
+   * Pass/Reject a match candidate
+   * POST /v1/matches/{userId}/pass
+   */
+  const handlePass = useCallback(async (userId: string) => {
+    if (isActioning) return; // Prevent double-tap
+    setIsActioning(true);
+
+    try {
+      const isDemoMode = await checkIsDemoMode();
+      if (isDemoMode) {
+        if (__DEV__) console.log('[MatchesScreen] Demo mode - simulating pass');
+        setMatches(prev => prev.filter(m => m.id !== userId));
+        setSelectedMatch(null);
+        return;
+      }
+
+      const token = await TokenManager.getToken();
+      await secureFetchJSON(`${API_CONFIG.API_URL}/matches/${userId}/pass`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (__DEV__) console.log('[MatchesScreen] Passed on user:', userId);
+      setMatches(prev => prev.filter(m => m.id !== userId));
+      setSelectedMatch(null);
+    } catch (err) {
+      if (__DEV__) console.error('[MatchesScreen] Pass failed:', err);
+      setError('Failed to pass. Please try again.');
+    } finally {
+      setIsActioning(false);
+    }
+  }, [isActioning]);
 
   const hasMatches = matches.length > 0;
 
@@ -261,22 +337,35 @@ export const MatchesScreen: React.FC<MatchesScreenProps> = ({
               </View>
             )}
 
-            {/* Action Buttons */}
+            {/* Action Buttons - Like/Pass */}
             <View style={styles.detailActions}>
-              <GlassButton
-                onPress={() => {
-                  // Messaging not yet implemented - button is disabled
-                  if (__DEV__) console.log('[MatchesScreen] Messaging coming soon');
-                }}
-                variant="secondary"
-                style={styles.messageButtonDisabled}
-                disabled={true}
+              <Pressable
+                onPress={() => handlePass(selectedMatch.id)}
+                disabled={isActioning}
+                style={({ pressed }) => [
+                  styles.actionButton,
+                  styles.passButton,
+                  pressed && styles.actionButtonPressed,
+                  isActioning && styles.actionButtonDisabled,
+                ]}
               >
-                <View style={styles.buttonContent}>
-                  <MessageCircle size={20} stroke="rgba(0, 0, 0, 0.3)" />
-                  <Body style={styles.messageButtonTextDisabled}>Messaging Coming Soon</Body>
-                </View>
-              </GlassButton>
+                <X size={28} stroke={isActioning ? 'rgba(220, 38, 38, 0.4)' : '#DC2626'} strokeWidth={2.5} />
+                <Body style={[styles.passButtonText, isActioning && styles.buttonTextDisabled]}>Pass</Body>
+              </Pressable>
+
+              <Pressable
+                onPress={() => handleLike(selectedMatch.id)}
+                disabled={isActioning}
+                style={({ pressed }) => [
+                  styles.actionButton,
+                  styles.likeButton,
+                  pressed && styles.actionButtonPressed,
+                  isActioning && styles.actionButtonDisabled,
+                ]}
+              >
+                <Check size={28} stroke={isActioning ? 'rgba(16, 185, 129, 0.4)' : '#10B981'} strokeWidth={2.5} />
+                <Body style={[styles.likeButtonText, isActioning && styles.buttonTextDisabled]}>Like</Body>
+              </Pressable>
             </View>
           </ScrollView>
         </BlurView>
@@ -631,7 +720,52 @@ const styles = StyleSheet.create({
   },
   detailActions: {
     width: '100%',
-    marginTop: 16,
+    marginTop: 24,
+    flexDirection: 'row',
+    justifyContent: 'center',
+    gap: 24,
+  },
+  actionButton: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'rgba(255, 255, 255, 0.9)',
+    borderWidth: 2,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  actionButtonPressed: {
+    opacity: 0.7,
+    transform: [{ scale: 0.95 }],
+  },
+  actionButtonDisabled: {
+    opacity: 0.5,
+  },
+  buttonTextDisabled: {
+    opacity: 0.5,
+  },
+  passButton: {
+    borderColor: '#DC2626',
+  },
+  likeButton: {
+    borderColor: '#10B981',
+  },
+  passButtonText: {
+    color: '#DC2626',
+    fontSize: 12,
+    fontWeight: '600',
+    marginTop: 2,
+  },
+  likeButtonText: {
+    color: '#10B981',
+    fontSize: 12,
+    fontWeight: '600',
+    marginTop: 2,
   },
   messageButton: {
     width: '100%',
