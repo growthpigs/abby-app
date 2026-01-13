@@ -142,18 +142,18 @@ export const BasicsPreferencesScreen: React.FC<BasicsPreferencesScreenProps> = (
       <Pressable
         onPress={handleSecretBack}
         style={styles.secretBackTrigger}
-        hitSlop={0}
+        hitSlop={10}
       />
       <Pressable
         onPress={handleNext}
         disabled={!selectedPreference}
         style={styles.secretMiddleTrigger}
-        hitSlop={0}
+        hitSlop={10}
       />
       <Pressable
         onPress={handleSecretForward}
         style={styles.secretForwardTrigger}
-        hitSlop={0}
+        hitSlop={10}
       />
     </View>
   );

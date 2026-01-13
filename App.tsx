@@ -657,9 +657,27 @@ function AppContent() {
               }
             }}
             onBack={() => setAuthState('LOGIN')}
-            onForgotPassword={() => {
-              // TODO: Implement forgot password flow
-              if (__DEV__) console.log('[App] Forgot password pressed');
+            onForgotPassword={async () => {
+              if (!emailData) {
+                setAuthError('Please enter your email first');
+                return;
+              }
+              try {
+                setIsAuthLoading(true);
+                await AuthService.forgotPassword(emailData);
+                // Show success message - user needs to check email
+                setAuthError(null);
+                Alert.alert(
+                  'Reset Code Sent',
+                  `A password reset code has been sent to ${emailData}. Check your email and use the code to reset your password.`,
+                  [{ text: 'OK' }]
+                );
+              } catch (error: unknown) {
+                const authError = error as { message?: string; code?: string };
+                setAuthError(authError?.message || 'Failed to send reset code');
+              } finally {
+                setIsAuthLoading(false);
+              }
             }}
             isLoading={isAuthLoading}
             error={authError}

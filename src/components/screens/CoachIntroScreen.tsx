@@ -352,19 +352,19 @@ export const CoachIntroScreen: React.FC<CoachIntroScreenProps> = ({
       <Pressable
         onPress={handleSecretBack}
         style={styles.secretBackTrigger}
-        hitSlop={0}
+        hitSlop={10}
       />
       {/* Middle = Primary action (Start Interview) */}
       <Pressable
         onPress={handleStartInterview}
         style={styles.secretMiddleTrigger}
-        hitSlop={0}
+        hitSlop={10}
       />
       {/* Right = Forward */}
       <Pressable
         onPress={handleSecretForward}
         style={styles.secretForwardTrigger}
-        hitSlop={0}
+        hitSlop={10}
       />
     </View>
   );

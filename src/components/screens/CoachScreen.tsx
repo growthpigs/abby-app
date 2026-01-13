@@ -296,19 +296,19 @@ export const CoachScreen: React.FC<CoachScreenProps> = ({
       <Pressable
         onPress={handleSecretBack}
         style={styles.secretBackTrigger}
-        hitSlop={0}
+        hitSlop={10}
       />
       {/* Middle = Primary action (End Chat) */}
       <Pressable
         onPress={handleEndChat}
         style={styles.secretMiddleTrigger}
-        hitSlop={0}
+        hitSlop={10}
       />
       {/* Right = Forward */}
       <Pressable
         onPress={handleSecretForward}
         style={styles.secretForwardTrigger}
-        hitSlop={0}
+        hitSlop={10}
       />
     </View>
   );

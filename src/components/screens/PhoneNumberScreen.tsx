@@ -130,20 +130,20 @@ export const PhoneNumberScreen: React.FC<PhoneNumberScreenProps> = ({
       <Pressable
         onPress={handleSecretBack}
         style={styles.secretBackTrigger}
-        hitSlop={0}
+        hitSlop={10}
       />
       {/* Middle = Primary action (Next/Done/OK) */}
       <Pressable
         onPress={handleNext}
         disabled={!isValid}
         style={styles.secretMiddleTrigger}
-        hitSlop={0}
+        hitSlop={10}
       />
       {/* Right = Forward */}
       <Pressable
         onPress={handleSecretForward}
         style={styles.secretForwardTrigger}
-        hitSlop={0}
+        hitSlop={10}
       />
     </View>
   );

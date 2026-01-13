@@ -78,19 +78,19 @@ export const PaymentScreen: React.FC<PaymentScreenProps> = ({
       <Pressable
         onPress={handleSecretBack}
         style={styles.secretBackTrigger}
-        hitSlop={0}
+        hitSlop={10}
       />
       {/* Middle = Primary action (Unlock Photo) */}
       <Pressable
         onPress={handlePay}
         style={styles.secretMiddleTrigger}
-        hitSlop={0}
+        hitSlop={10}
       />
       {/* Right = Forward */}
       <Pressable
         onPress={handleSecretForward}
         style={styles.secretForwardTrigger}
-        hitSlop={0}
+        hitSlop={10}
       />
     </View>
   );

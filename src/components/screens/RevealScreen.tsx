@@ -168,19 +168,19 @@ export const RevealScreen: React.FC<RevealScreenProps> = ({
       <Pressable
         onPress={handleSecretBack}
         style={styles.secretBackTrigger}
-        hitSlop={0}
+        hitSlop={10}
       />
       {/* Middle = Primary action (Meet Your Coach) */}
       <Pressable
         onPress={handleMeetCoach}
         style={styles.secretMiddleTrigger}
-        hitSlop={0}
+        hitSlop={10}
       />
       {/* Right = Forward */}
       <Pressable
         onPress={handleSecretForward}
         style={styles.secretForwardTrigger}
-        hitSlop={0}
+        hitSlop={10}
       />
     </View>
   );

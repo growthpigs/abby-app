@@ -169,18 +169,18 @@ export const BasicsRelationshipScreen: React.FC<BasicsRelationshipScreenProps> =
       <Pressable
         onPress={handleSecretBack}
         style={styles.secretBackTrigger}
-        hitSlop={0}
+        hitSlop={10}
       />
       <Pressable
         onPress={handleNext}
         disabled={!selectedType}
         style={styles.secretMiddleTrigger}
-        hitSlop={0}
+        hitSlop={10}
       />
       <Pressable
         onPress={handleSecretForward}
         style={styles.secretForwardTrigger}
-        hitSlop={0}
+        hitSlop={10}
       />
     </View>
   );

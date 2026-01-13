@@ -467,6 +467,59 @@ export const AuthService = {
     const cognitoUser = userPool.getCurrentUser();
     return cognitoUser?.getUsername() || null;
   },
+
+  /**
+   * Initiate forgot password flow
+   *
+   * Sends a verification code to the user's email.
+   * User must then call confirmForgotPassword with the code and new password.
+   */
+  async forgotPassword(email: string): Promise<{ destination: string }> {
+    if (__DEV__) console.log('[AuthService] forgotPassword() - Initiating reset');
+
+    const cognitoUser = getCognitoUser(email);
+
+    return new Promise((resolve, reject) => {
+      cognitoUser.forgotPassword({
+        onSuccess: (data) => {
+          if (__DEV__) console.log('[AuthService] Reset code sent:', data);
+          resolve({
+            destination: data.CodeDeliveryDetails?.Destination || email,
+          });
+        },
+        onFailure: (err: Error & { code?: string }) => {
+          if (__DEV__) console.log('[AuthService] Forgot password error:', err);
+          reject(mapCognitoError(err));
+        },
+      });
+    });
+  },
+
+  /**
+   * Confirm forgot password with verification code and new password
+   */
+  async confirmForgotPassword(
+    email: string,
+    code: string,
+    newPassword: string
+  ): Promise<void> {
+    if (__DEV__) console.log('[AuthService] confirmForgotPassword()');
+
+    const cognitoUser = getCognitoUser(email);
+
+    return new Promise((resolve, reject) => {
+      cognitoUser.confirmPassword(code, newPassword, {
+        onSuccess: () => {
+          if (__DEV__) console.log('[AuthService] Password reset successful');
+          resolve();
+        },
+        onFailure: (err: Error & { code?: string }) => {
+          if (__DEV__) console.log('[AuthService] Confirm password error:', err);
+          reject(mapCognitoError(err));
+        },
+      });
+    });
+  },
 };
 
 export default AuthService;
