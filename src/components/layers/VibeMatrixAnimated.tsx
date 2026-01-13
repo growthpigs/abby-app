@@ -131,7 +131,7 @@ const ShaderLayer = React.memo(({
 
   return (
     <View style={styles.canvas}>
-      {/* @ts-ignore - mode prop exists but not in type definitions (Skia 2.4.7) */}
+      {/* mode="continuous" required for useClock - ensures 60fps render loop (Skia 2.4.7) */}
       <Canvas style={styles.canvas} mode="continuous">
         <Fill>
           <Shader source={shader} uniforms={uniforms} />
