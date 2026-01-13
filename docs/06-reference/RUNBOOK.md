@@ -33,11 +33,38 @@
 ### Quick Branch Commands
 
 ```bash
-# Switch to WORKING animation branch
-git checkout test-jan2-animation
+# Animation now works on client-api-integration (commit 58dba57)
+git checkout client-api-integration
 npx expo run:ios
 
 # Verify animation is working: swirls should FLOW organically, not just shift
+```
+
+### Animation Verification Commands (RUNTIME - NOT STATIC)
+
+**⚠️ FILE EXISTENCE FALLACY: Never verify animation by grepping code. ALWAYS run visual tests.**
+
+```bash
+# 1. STATIC VERIFICATION (❌ INSUFFICIENT - DON'T RELY ON THESE ALONE)
+grep "useDerivedValue" src/components/layers/VibeMatrixAnimated.tsx  # ❌ Proves nothing
+grep "mode=\"continuous\"" src/components/layers/VibeMatrixAnimated.tsx  # ❌ Proves nothing
+grep "mix(0.15, 0.5" src/shaders/factory/effects/domainWarp.ts  # ❌ Proves nothing
+
+# 2. RUNTIME VERIFICATION (✅ USE THESE)
+npx expo run:ios                          # Build and run on simulator
+# Then VISUALLY verify:
+# - Swirls flow organically (like oil on water)
+# - Colors blend smoothly
+# - Pattern changes over 5-10 seconds
+# - NOT: static image that pans/shifts
+
+# 3. DEBUG OVERLAY TEST
+# In app: Tap 🎨 button → SHADER PRESETS → Tap buttons 0-18
+# Each should change the visual texture/pattern
+
+# 4. GITHUB ISSUE VERIFICATION (For future similar bugs)
+# Visit: https://github.com/Shopify/react-native-skia/issues/2640
+# Confirm: wcandillon says "if you remove the [t] it should work"
 ```
 
 ### What "Working Animation" Looks Like
@@ -47,6 +74,16 @@ npx expo run:ios
 - Pattern changes **smoothly** over seconds
 - NOT: static image that shifts position
 - NOT: subtle movement that's barely visible
+
+### Animation Debug Checklist (When Animation Breaks)
+
+| Check | How | Expected |
+|-------|-----|----------|
+| useDerivedValue has NO dep array | Read line 102-113 | Ends with `});` not `}, [deps]);` |
+| Canvas has mode="continuous" | Read line 134 | `<Canvas ... mode="continuous">` |
+| Speed multiplier correct | Read domainWarp.ts:36 | `mix(0.15, 0.5, u_complexity)` |
+| Packages match | `grep reanimated package.json` | `~4.1.1` |
+| GitHub Issue #2640 | Browser visit | Issue closed, fix confirmed |
 
 ---
 
@@ -82,8 +119,8 @@ pwd | grep -q "abby-client-api" && echo "✅ Correct" || echo "❌ Go to /abby-c
 | Worktree | Branch | VibeMatrix Animation | Purpose |
 |----------|--------|----------------------|---------|
 | `/abby` | `main` | ❌ LEGACY | Old ElevenLabs version |
-| `/abby-client-api` | `test-jan2-animation` | ✅ WORKING | **USE THIS for demos** |
-| `/abby-client-api` | `client-api-integration` | ❌ BROKEN | Auth flow, static animation |
+| `/abby-client-api` | `test-jan2-animation` | ✅ WORKING | Reference branch |
+| `/abby-client-api` | `client-api-integration` | ✅ FIXED (2026-01-13) | **USE THIS for demos + dev** |
 
 **NEVER copy files from `/abby` to `/abby-client-api` - the service imports are different!**
 

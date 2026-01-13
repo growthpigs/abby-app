@@ -1,7 +1,7 @@
 # ABBY Active Tasks
 
-**Last Updated:** 2026-01-12
-**Branch:** `test-jan2-animation`
+**Last Updated:** 2026-01-13
+**Branch:** `client-api-integration`
 **Technical Debt Score:** 9/10 → Target: 9/10 ✅ ACHIEVED
 
 ---
@@ -18,11 +18,19 @@
 - [x] **Fix Applied:** Alert shown to user on profile submission failure
 - [x] **Test:** Disconnect network, complete onboarding, should see error message
 
-### 3. Branch Merge - STILL NEEDED
-- [ ] **Branches:** `test-jan2-animation` ↔ `client-api-integration`
-- [ ] **Issue:** idToken fix on one branch, animation fixes on other
-- [ ] **Fix:** Cherry-pick `466ee989` into client-api-integration, then merge to main
-- [ ] **Test:** Both auth AND animations work on merged branch
+### 3. VibeMatrix Animation Fix - COMPLETED ✅ (2026-01-13)
+- [x] **Branch:** `client-api-integration`
+- [x] **Root Cause:** GitHub Issue #2640 - useDerivedValue dep array breaks Skia animation
+- [x] **Fixes Applied (commit 58dba57):**
+  - Removed dep array from useDerivedValue in VibeMatrixAnimated.tsx
+  - Added mode="continuous" to Canvas
+  - Increased animation speed 3x in domainWarp.ts
+  - Added 19 shader preset switching in VibeDebugOverlay.tsx
+- [x] **Validation:** Stress test passed (9.5/10 confidence), GitHub Issue verified via browser
+- [x] **PAI Documentation Updates:**
+  - EP-084 added to error-patterns.md ("File Existence Fallacy")
+  - Animation verification commands added to RUNBOOK.md
+  - Lesson committed to mem0
 
 ### 4. Fire-and-Forget Bugs - FIXED (commit 4ee62d56)
 - [x] **File:** `useDemoStore.ts:197-202` - `clearStorage()` now has .catch()
@@ -88,7 +96,21 @@
 
 ---
 
-## COMPLETED THIS SESSION
+## COMPLETED THIS SESSION (2026-01-13)
+
+- [x] **VibeMatrix Animation Fix** - Root cause: GitHub Issue #2640
+- [x] Removed useDerivedValue dependency array (VibeMatrixAnimated.tsx)
+- [x] Added Canvas mode="continuous" (VibeMatrixAnimated.tsx)
+- [x] Increased animation speed 3x (domainWarp.ts)
+- [x] Added 19 shader preset switching (VibeDebugOverlay.tsx)
+- [x] **Commit:** `58dba57` - Animation fixes + documentation
+- [x] **Validation Stress Test:** 9.5/10 confidence score
+- [x] **PAI Documentation Phase:**
+  - EP-084 added to ~/.claude/troubleshooting/error-patterns.md
+  - Animation verification commands added to RUNBOOK.md
+  - Lesson committed to mem0
+
+## COMPLETED PREVIOUS SESSION (2026-01-12)
 
 - [x] First principles verification (branch check)
 - [x] Deep bug scan (Explore agent) - 14 bugs found
@@ -119,4 +141,4 @@
 
 ---
 
-*Next session: Start with `handover.md`, branch merge is the only critical item remaining*
+*Animation fixed (2026-01-13). Next priorities: Medium priority UX items (Password UX, Inline Validation, SearchingScreen Cancel)*
