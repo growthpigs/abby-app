@@ -49,7 +49,7 @@ const VIBE_STATES: { state: AppState; label: string; color: string }[] = [
 
 // Props for vibeMatrix ref (to switch shaders)
 interface VibeDebugOverlayProps {
-  vibeMatrixRef?: React.RefObject<VibeMatrixAnimatedRef>;
+  vibeMatrixRef?: React.RefObject<VibeMatrixAnimatedRef | null>;
 }
 
 // Get all 19 shader presets

@@ -317,9 +317,9 @@ export const AuthService = {
           });
         },
 
-        onFailure: (err) => {
+        onFailure: (err: Error & { code?: string }) => {
           if (__DEV__) console.log('[AuthService] Login error:', err);
-          reject(mapCognitoError(err as Error & { code?: string }));
+          reject(mapCognitoError(err));
         },
 
         // Handle MFA if required (not currently used)

@@ -227,7 +227,7 @@ function AppContent() {
   const orbMode = getOrbMode();
 
   // Vibe controller ref
-  const vibeRef = useRef<VibeMatrixAnimatedRef>(null);
+  const vibeRef = useRef<VibeMatrixAnimatedRef | null>(null);
 
   // Settings
   const settingsLoaded = useSettingsStore((state) => state.isLoaded);

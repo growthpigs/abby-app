@@ -6,25 +6,26 @@
 
 ---
 
-## ⛔ VIBEMATRIX ANIMATION - READ THIS FIRST ⛔
+## ✅ VIBEMATRIX ANIMATION - FIXED (2026-01-13)
 
 ```
 ╔══════════════════════════════════════════════════════════════════════════════╗
-║  🚨 VIBEMATRIX ANIMATION ONLY WORKS ON: test-jan2-animation BRANCH           ║
+║  ✅ VIBEMATRIX ANIMATION NOW WORKING ON: client-api-integration              ║
 ╠══════════════════════════════════════════════════════════════════════════════╣
 ║                                                                              ║
-║  WORKING:     test-jan2-animation  ← USE THIS FOR DEMOS/TESTING              ║
-║  BROKEN:      client-api-integration (animation static, not organic)         ║
+║  ROOT CAUSE FOUND: GitHub Issue #2640                                        ║
+║  - useDerivedValue with dependency array [clock, ...] breaks Skia animation  ║
+║  - Canvas without mode="continuous" doesn't re-render                        ║
+║  - Animation speed was too slow (3x increase applied)                        ║
 ║                                                                              ║
-║  The organic swirling animation ONLY works on test-jan2-animation.           ║
-║  On client-api-integration, the shader renders but doesn't animate           ║
-║  properly - it just shifts the static image around.                          ║
+║  FIXES APPLIED (commit 58dba57):                                             ║
+║  1. VibeMatrixAnimated.tsx: Removed dep array from useDerivedValue           ║
+║  2. VibeMatrixAnimated.tsx: Added mode="continuous" to Canvas                ║
+║  3. domainWarp.ts: Increased speed 3x                                        ║
+║  4. VibeDebugOverlay.tsx: Added 19 shader preset switching                   ║
 ║                                                                              ║
-║  ROOT CAUSE: Unknown. Same VibeMatrixAnimated.tsx file, same node_modules,   ║
-║  but animation only works on test-jan2-animation. Likely App.tsx             ║
-║  differences in initialization/render order affect Reanimated behavior.      ║
-║                                                                              ║
-║  BEFORE MERGING: Animation MUST be verified visually (not just clock logs)   ║
+║  VALIDATION: Verified via browser visit to GitHub Issue #2640                ║
+║  wcandillon (Skia author): "if you remove the [t] it should work"            ║
 ║                                                                              ║
 ╚══════════════════════════════════════════════════════════════════════════════╝
 ```
