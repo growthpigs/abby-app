@@ -14,9 +14,9 @@ export const API_CONFIG = {
    * false = Use mock services (current state - backend blocked)
    * true  = Use real API calls to dev.api.myaimatchmaker.ai
    *
-   * BLOCKED: Set to true when client provides working credentials
+   * TESTING: Attempting to connect to real backend
    */
-  USE_REAL_API: false,
+  USE_REAL_API: true,
 
   /** Backend base URL */
   BASE_URL: 'https://dev.api.myaimatchmaker.ai',
