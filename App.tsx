@@ -21,6 +21,7 @@ import {
 import { JetBrainsMono_400Regular } from '@expo-google-fonts/jetbrains-mono';
 
 import { VibeMatrixAnimated, VibeMatrixAnimatedRef } from './src/components/layers/VibeMatrixAnimated';
+import { getAllShaders } from './src/shaders/factory/registryV2';
 import { ClockTest } from './src/components/dev/ClockTest';
 import { AbbyOrb } from './src/components/layers/AbbyOrb';
 import { GlassFloor } from './src/components/ui/GlassFloor';
@@ -627,9 +628,11 @@ function AppContent() {
     vibeRef.current?.setVibe('TRUST');
   };
 
-  // DEMO FLOW - just passes through to screens
+  // DEMO FLOW - shader changes during interview/coach
   const handleBackgroundChange = useCallback((index: number) => {
-    // Background changes handled by InterviewScreen internally
+    const shaders = getAllShaders();
+    const shader = shaders.find(s => s.id === index) || shaders[0];
+    vibeRef.current?.setShader(shader.source);
   }, []);
 
   // Dynamic vibe changes (for CoachScreen emotion-based transitions)
