@@ -484,13 +484,13 @@ export const MockApiService: IApiService = {
     await delay(400);
   },
 
-  async recordConsent(type: ConsentType): Promise<void> {
-    if (__DEV__) console.log('[MockAPI] recordConsent()', type);
+  async recordConsent(type: ConsentType, counterpartUserId: string): Promise<void> {
+    if (__DEV__) console.log('[MockAPI] recordConsent()', type, 'for user:', counterpartUserId);
     await delay(200);
   },
 
-  async revokeConsent(type: ConsentType): Promise<void> {
-    if (__DEV__) console.log('[MockAPI] revokeConsent()', type);
+  async revokeConsent(type: ConsentType, counterpartUserId: string): Promise<void> {
+    if (__DEV__) console.log('[MockAPI] revokeConsent()', type, 'for user:', counterpartUserId);
     await delay(200);
   },
 

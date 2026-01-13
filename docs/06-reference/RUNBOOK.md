@@ -263,6 +263,209 @@ textShadowColor: 'transparent',
 
 ---
 
+### Quality Gate Ultimate Verification (2026-01-13)
+
+**Run this complete checklist before ANY production deployment or PR merge:**
+
+```bash
+# 1. RUNTIME TEST SUITE (⚠️ Not just "tests exist")
+npm test --no-coverage 2>&1 | tail -10
+# Expected: "Test Suites: 14 passed, 14 total"
+#           "Tests:       461 passed, 461 total"
+
+# 2. TEST COVERAGE (optional but recommended)
+npm test -- --coverage --coverageReporters=text-summary 2>&1 | tail -15
+# Expected: Lines > 80%, Branches > 65%
+
+# 3. TYPESCRIPT COMPILATION
+npx tsc --noEmit 2>&1; echo "Exit code: $?"
+# Expected: Exit code: 0 (no output = success)
+
+# 4. API HEALTH CHECK (RUNTIME - proves backend reachable)
+curl -s https://dev.api.myaimatchmaker.ai/v1/health | jq .
+# Expected: {"status":"healthy","timestamp":"...","environment":"dev"}
+
+# 5. CONFIGURATION CONSISTENCY
+grep "EXPO_PUBLIC_COGNITO_USER_POOL_ID" .env.development .env.production
+# Expected: Same Pool ID in both files
+
+# 6. FEATURE FLAGS CORRECT FOR ENVIRONMENT
+grep "EXPO_PUBLIC_VOICE_ENABLED" .env.development
+# Expected: false (for keyboard input in simulator)
+
+grep "EXPO_PUBLIC_VOICE_ENABLED" .env.production
+# Expected: true (for production voice features)
+```
+
+**⚠️ FILE EXISTENCE FALLACY REMINDER:**
+- `grep "config" file.ts` ≠ "config works"
+- `ls .env` ≠ "environment variables loaded"
+- `cat package.json | grep dep` ≠ "dependency installed and working"
+
+**ALWAYS execute runtime commands to prove functionality.**
+
+---
+
+### API Integration Verification (2026-01-13) - Matches & Consent
+
+**Run after ANY changes to MatchesScreen, consent, or API types:**
+
+```bash
+# 1. TypeScript compiles clean
+npx tsc --noEmit 2>&1 | head -5
+# Expected: No output (clean)
+
+# 2. API integration tests pass
+npm test -- __tests__/api-integration.test.ts --silent
+# Expected: 31 passed
+
+# 3. Verify Matches endpoints exist in code
+grep "matches/.*like" src/components/screens/MatchesScreen.tsx
+grep "matches/.*pass" src/components/screens/MatchesScreen.tsx
+# Expected: POST URLs found
+
+# 4. Verify ConsentType matches API spec
+grep -A5 "ConsentType =" src/services/api/types.ts
+# Expected: photo_exchange, phone_exchange, payment_agreement, private_photos
+# NOT: terms_of_service (invalid!)
+
+# 5. Verify recordConsent has counterpartUserId
+grep "counterpartUserId\|counterpart_user_id" src/services/api/client.ts
+# Expected: Both variants present (param + body)
+
+# 6. Verify double-tap prevention
+grep "isActioning" src/components/screens/MatchesScreen.tsx | wc -l
+# Expected: 10+ occurrences (state, guards, buttons)
+
+# 7. Full test suite
+npm test -- --silent 2>&1 | grep -E "Test Suites|Tests:"
+# Expected: 461+ tests passing
+```
+
+**With Authentication (Live API Test):**
+```bash
+# Get token from app login
+TOKEN="<access_token>"
+
+# Test like endpoint exists
+curl -X POST https://dev.api.myaimatchmaker.ai/v1/matches/test-user-id/like \
+  -H "Authorization: Bearer $TOKEN" \
+  -H "Content-Type: application/json"
+# Expected: 404 (user not found) or 200 (success)
+# BAD: 500 (backend broken)
+
+# Test consent endpoint with correct types
+curl -X POST https://dev.api.myaimatchmaker.ai/v1/consents \
+  -H "Authorization: Bearer $TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"consent_type": "photo_exchange", "counterpart_user_id": "test-id"}'
+# Expected: 200 or 404 (user not found)
+# BAD: 400 "Invalid consent_type" → frontend types wrong
+```
+
+**Key Lesson (2026-01-13):**
+> ConsentType API returned 400 because frontend used `terms_of_service` but API only accepts `photo_exchange`, `phone_exchange`, `payment_agreement`, `private_photos`. Always verify types against live API or Swagger.
+
+---
+
+### Code Robustness Verification (2026-01-13)
+
+**Run these to verify fragility fixes and error handling patterns:**
+
+```bash
+# 1. Token Refresh Timeout Protection (CRITICAL - prevents infinite hangs)
+grep -n "withTimeout.*TOKEN_REFRESH_TIMEOUT" src/services/AuthService.ts
+grep -n "TOKEN_REFRESH_TIMEOUT_MS" src/services/AuthService.ts
+# Expected: withTimeout wrapper around refreshToken at ~line 382
+
+# 2. Voice Feature Flag Guards (prevents keyboard blocking in simulator)
+grep -n "FEATURE_FLAGS.VOICE_ENABLED" src/components/screens/InterviewScreen.tsx
+# Expected: Guards around TTS calls at ~lines 316, 330
+
+# 3. Unknown Question Type Logging (early detection of API changes)
+grep -n "Unknown question type from API" src/services/QuestionsService.ts
+# Expected: Warning log in mapQuestionType at ~line 173
+
+# 4. parseInt Validation Logging (catches malformed API responses)
+grep -n "Invalid total_questions from API" src/services/QuestionsService.ts
+# Expected: Warning log at ~line 244
+
+# 5. API URL Centralization (no hardcoded URLs)
+grep -rn "dev\.api\.myaimatchmaker" src/components/ --include="*.tsx"
+# Expected: Should ONLY find API_CONFIG references, NOT hardcoded strings
+
+# 6. Full Test Suite (runtime verification)
+npm test -- --silent 2>&1 | grep -E "Test Suites|Tests:"
+# Expected: 461+ tests passing, 0 failed
+
+# 7. Build Verification (runtime proof of changes)
+npx expo export --platform ios 2>&1 | grep -E "Exporting|Exported|error"
+# Expected: "Exported" message, no errors
+```
+
+**Warning Log Patterns to Monitor in Production:**
+```bash
+# These logs indicate issues to investigate:
+"[QuestionsService] Unknown question type from API"     # API contract changed
+"[QuestionsService] Invalid total_questions from API"   # Malformed response
+"[Interview] Voice disabled, skipping TTS"              # Expected in simulator
+"Token refresh timed out after 30 seconds"              # Cognito unresponsive
+```
+
+**Key Lesson (2026-01-13):**
+> Static analysis can miss features that exist but use different naming. "Shader has no fallback" was WRONG - code had `renderFallback` function at lines 116-129. Always verify by reading actual code sections, not just keyword searches.
+
+---
+
+### API URL Centralization Verification (2026-01-13)
+
+**Run these after ANY changes to API endpoint URLs:**
+
+```bash
+# 1. Check NO hardcoded API URLs remain in components
+grep -rn "dev\.api\.myaimatchmaker" src/components/ --include="*.tsx"
+# Expected: EMPTY (all should use API_CONFIG)
+
+# 2. Verify all screens import from config
+grep -rn "API_CONFIG\.API_URL" src/components/screens/
+# Expected: PhotosScreen, MatchesScreen, ProfileScreen (3+ files)
+
+# 3. Browser test - endpoints exist (runtime verification)
+curl -s https://dev.api.myaimatchmaker.ai/v1/photos
+# Expected: {"message":"Unauthorized"} (401 = endpoint exists)
+
+curl -s https://dev.api.myaimatchmaker.ai/v1/matches/candidates
+# Expected: {"message":"Unauthorized"} (401 = endpoint exists)
+
+curl -s https://dev.api.myaimatchmaker.ai/v1/profile/public
+# Expected: {"message":"Unauthorized"} (401 = endpoint exists)
+
+# 4. Verify URL generation is correct (JavaScript execution test)
+node -e "
+const config = {
+  BASE_URL: 'https://dev.api.myaimatchmaker.ai',
+  API_VERSION: 'v1',
+  get API_URL() { return this.BASE_URL + '/' + this.API_VERSION; }
+};
+console.log('API_URL:', config.API_URL);
+console.log('/photos:', config.API_URL + '/photos');
+"
+# Expected: https://dev.api.myaimatchmaker.ai/v1/photos
+
+# 5. TypeScript compiles (catches import errors)
+npx tsc --noEmit
+# Expected: No errors
+
+# 6. Tests pass (catches test assertion issues)
+npm test -- --silent
+# Expected: 461+ tests passing
+```
+
+**Key Lesson (2026-01-13):**
+> When centralizing URLs, static validation tests that grep for literal strings will FAIL. Tests should check for PATTERNS (API_CONFIG import) not LITERALS (hardcoded URLs). Update test assertions from `toContain('dev.api...')` to `toContain('API_CONFIG')`.
+
+---
+
 ### API Field Mapping Verification (2026-01-02)
 
 **CRITICAL:** Verify API response fields match code expectations BEFORE claiming integration works.
@@ -1010,4 +1213,4 @@ Menu screens accessible from hamburger menu now have demo mode fallbacks:
 
 ---
 
-*Last Updated: 2026-01-02*
+*Last Updated: 2026-01-13*

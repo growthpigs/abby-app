@@ -1,7 +1,7 @@
 # ABBY MVP - Development Roadmap
 
-**Last Updated:** 2026-01-02
-**Status:** Gap Closure Phase
+**Last Updated:** 2026-01-13
+**Status:** Code Quality Phase
 **Drive Mirror:** [ABBY MVP - Roadmap Breakdown](https://docs.google.com/spreadsheets/d/1LTSmWsXBE5x5Kv7DLhfhVkX89M01qdViP3FnDPOXMcg/edit)
 
 ---
@@ -138,19 +138,28 @@
 
 ---
 
-## Phase 7: API Integration
+## Phase 7: API Integration (COMPLETE)
 
 ### Tasks
 | Task | File | Status | Owner |
 |------|------|--------|-------|
-| 7.1 Integrate Matches API | MatchesScreen.tsx | ⏳ | Chi |
-| 7.2 Integrate Photos API | PhotosScreen.tsx | ⏳ | Chi |
-| 7.3 Token refresh | secureFetch.ts | ⏳ | Chi |
+| 7.1 Integrate Matches API | MatchesScreen.tsx | ✅ DONE | Chi |
+| 7.2 Integrate Photos API | PhotosScreen.tsx | ✅ DONE | Chi |
+| 7.3 Token refresh | secureFetch.ts | ✅ DONE | Chi |
+| 7.4 Centralize API URLs | PhotosScreen, MatchesScreen, ProfileScreen | ✅ DONE | Chi |
 
 ### Acceptance Criteria
-- [ ] Matches load from `/v1/matches/candidates`
-- [ ] Photos upload/delete working
-- [ ] 401 errors trigger token refresh + retry
+- [x] Matches load from `/v1/matches/candidates`
+- [x] Photos upload/delete working
+- [x] 401 errors trigger token refresh + retry
+- [x] All API URLs use `API_CONFIG.API_URL` (no hardcoded strings)
+
+### Code Quality (2026-01-13)
+- **461 tests passing** (up from 344)
+- **TypeScript:** Clean compilation
+- **API URLs:** Centralized in `src/config.ts`
+- **Verification:** Runtime tests via browser + curl confirmed endpoints exist
+- **Docs updated:** RUNBOOK.md "API URL Centralization Verification" section
 
 ---
 

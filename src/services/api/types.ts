@@ -310,19 +310,28 @@ export type ReportReason =
   | 'underage'
   | 'other';
 
+/**
+ * Consent API types
+ *
+ * Note: This API is for match-specific consent (sharing info with a matched user),
+ * NOT for onboarding terms acceptance. Terms/Privacy acceptance is handled locally.
+ */
 export interface ConsentRecord {
-  type: ConsentType;
-  granted: boolean;
-  timestamp: string;
-  version: string;
+  consent_type: ConsentType;
+  counterpart_user_id: string;
+  created_at?: string;
+}
+
+export interface RecordConsentRequest {
+  consent_type: ConsentType;
+  counterpart_user_id: string;
 }
 
 export type ConsentType =
-  | 'terms_of_service'
-  | 'privacy_policy'
-  | 'marketing_emails'
-  | 'data_processing'
-  | 'location_access';
+  | 'photo_exchange'      // Consent to exchange photos with match
+  | 'phone_exchange'      // Consent to share phone number
+  | 'payment_agreement'   // Consent for payment/reveal flow
+  | 'private_photos';     // Consent to view private photos
 
 // ============================================================
 // VERIFICATION & PAYMENTS
@@ -439,8 +448,8 @@ export interface IApiService {
   // Safety
   blockUser(request: BlockUserRequest): Promise<void>;
   reportUser(request: ReportUserRequest): Promise<void>;
-  recordConsent(type: ConsentType): Promise<void>;
-  revokeConsent(type: ConsentType): Promise<void>;
+  recordConsent(type: ConsentType, counterpartUserId: string): Promise<void>;
+  revokeConsent(type: ConsentType, counterpartUserId: string): Promise<void>;
 
   // Verification
   getVerificationStatus(): Promise<VerificationStatus>;

@@ -144,6 +144,11 @@ export const PermissionsScreen: React.FC<PermissionsScreenProps> = ({
     setIsRequesting(true);
 
     try {
+      // Note: Terms/Privacy acceptance is recorded locally via termsAccepted state.
+      // The /v1/consents API is for match-specific consent (photo_exchange, phone_exchange, etc.)
+      // not for onboarding terms acceptance.
+      if (__DEV__) console.log('[PermissionsScreen] Terms accepted, proceeding with permissions');
+
       // Request microphone (required for voice)
       const micGranted = await requestMicrophonePermission();
 
@@ -168,7 +173,7 @@ export const PermissionsScreen: React.FC<PermissionsScreenProps> = ({
       onNext?.();
     } catch (error) {
       if (__DEV__) {
-        if (__DEV__) console.error('[PermissionsScreen] Permission request error:', error);
+        console.error('[PermissionsScreen] Permission request error:', error);
       }
       Alert.alert('Error', 'Something went wrong. Please try again.');
     } finally {

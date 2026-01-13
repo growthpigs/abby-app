@@ -27,6 +27,7 @@ import { getShaderForVibe, DEFAULT_VIBE_SHADERS } from '../../constants/vibeShad
 import { questionsService, type Question, type NextQuestionResponse } from '../../services/QuestionsService';
 import { TokenManager } from '../../services/TokenManager';
 import { type VibeShift } from '../../data/questions-schema';
+import { FEATURE_FLAGS } from '../../config';
 
 // Use the full 150 questions for demo/fallback mode
 const DEMO_QUESTIONS = ALL_DATA_POINTS;
@@ -311,17 +312,24 @@ export const InterviewScreen: React.FC<InterviewScreenProps> = ({
 
     addMessage('abby', currentQuestion.question);
 
-    abbyTTS
-      .speak(currentQuestion.question, (level) => {
-        audioLevelRef.current?.(level);
-      })
-      .catch((err) => {
-        if (__DEV__) console.warn('[Interview] TTS error:', err);
-        setVoiceError(true);
-      });
+    // Only speak if voice feature is enabled (prevents keyboard blocking in simulator)
+    if (FEATURE_FLAGS.VOICE_ENABLED) {
+      abbyTTS
+        .speak(currentQuestion.question, (level) => {
+          audioLevelRef.current?.(level);
+        })
+        .catch((err) => {
+          if (__DEV__) console.warn('[Interview] TTS error:', err);
+          setVoiceError(true);
+        });
+    } else if (__DEV__) {
+      console.log('[Interview] Voice disabled, skipping TTS');
+    }
 
     return () => {
-      abbyTTS.stop();
+      if (FEATURE_FLAGS.VOICE_ENABLED) {
+        abbyTTS.stop();
+      }
     };
   }, [currentQuestion?.id, isLoading, setColorTheme, currentVibe]);
 

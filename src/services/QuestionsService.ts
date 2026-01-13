@@ -165,7 +165,17 @@ export class QuestionsService {
       'scale': 'scale',
       'yes_no': 'yes_no',
     };
-    return typeMap[apiType] || 'open_ended';
+
+    const mappedType = typeMap[apiType];
+    if (!mappedType) {
+      // Log unknown type for debugging - helps detect API changes early
+      console.warn(
+        `[QuestionsService] Unknown question type from API: "${apiType}". ` +
+        `Defaulting to 'open_ended'. Consider adding to typeMap if intentional.`
+      );
+      return 'open_ended';
+    }
+    return mappedType;
   }
 
   /**
@@ -225,8 +235,25 @@ export class QuestionsService {
       }
 
       // Transform to normalized format (take first question)
-      const total = parseInt(apiData.total_questions, 10) || 0;
-      const answered = parseInt(apiData.answered_questions, 10) || 0;
+      // Validate numeric fields with explicit logging for API contract violations
+      const parsedTotal = parseInt(apiData.total_questions, 10);
+      const parsedAnswered = parseInt(apiData.answered_questions, 10);
+
+      if (isNaN(parsedTotal)) {
+        console.warn(
+          `[QuestionsService] Invalid total_questions from API: "${apiData.total_questions}". ` +
+          'Expected numeric string. Defaulting to 0.'
+        );
+      }
+      if (isNaN(parsedAnswered)) {
+        console.warn(
+          `[QuestionsService] Invalid answered_questions from API: "${apiData.answered_questions}". ` +
+          'Expected numeric string. Defaulting to 0.'
+        );
+      }
+
+      const total = isNaN(parsedTotal) ? 0 : parsedTotal;
+      const answered = isNaN(parsedAnswered) ? 0 : parsedAnswered;
       const current = answered + 1;
 
       const normalizedResponse: NextQuestionResponse = {

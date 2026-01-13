@@ -370,17 +370,30 @@ export const RealApiService: IApiService = {
     });
   },
 
-  async recordConsent(type: ConsentType): Promise<void> {
+  /**
+   * Record consent to share info with a matched user
+   * Used for: photo_exchange, phone_exchange, payment_agreement, private_photos
+   */
+  async recordConsent(type: ConsentType, counterpartUserId: string): Promise<void> {
     await request<void>('/consents', {
       method: 'POST',
-      body: { type },
+      body: {
+        consent_type: type,
+        counterpart_user_id: counterpartUserId,
+      },
     });
   },
 
-  async revokeConsent(type: ConsentType): Promise<void> {
+  /**
+   * Revoke consent to share info with a matched user
+   */
+  async revokeConsent(type: ConsentType, counterpartUserId: string): Promise<void> {
     await request<void>('/consents', {
       method: 'DELETE',
-      body: { type },
+      body: {
+        consent_type: type,
+        counterpart_user_id: counterpartUserId,
+      },
     });
   },
 

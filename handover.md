@@ -1,54 +1,77 @@
 # Session Handover
 
 **Last Session:** 2026-01-13
-**Working Branch:** `client-api-integration`
-**Uncommitted Changes:** Yes (shader fixes)
+**Working Branch:** `test-jan2-animation`
+**Uncommitted Changes:** Yes (API integration fixes)
 
 ---
 
 ## Session Summary
 
-Debugged VibeMatrix shader animation. Found and fixed multiple root causes. Animation now working but slower than original. Added shader preset switching to debug overlay.
+Completed full API integration audit and fixes per Brent's concerns about missing backend calls. Fixed MatchesScreen like/pass handlers, ConsentType mismatch, and added comprehensive verification commands to RUNBOOK.md. All changes validated through 5-gate Quality Pipeline.
 
 ---
 
 ## Fixes Applied This Session
 
-### 1. useDerivedValue Dependency Array (CRITICAL)
+### 1. MatchesScreen Like/Pass Handlers (CRITICAL)
 
-**File:** `src/components/layers/VibeMatrixAnimated.tsx:102-113`
+**File:** `src/components/screens/MatchesScreen.tsx:211-290`
 
-GitHub Issue #2640 - `useClock()` stops updating when `useDerivedValue` has a dependency array.
+Missing POST endpoints for accepting/rejecting matches. Added:
 
 ```typescript
-// FIXED: Removed dependency array
-const uniforms = useDerivedValue(() => {
-  return { u_time: clock.value, ... };
-});  // NO dependency array
+const handleLike = useCallback(async (userId: string) => {
+  // POST /v1/matches/{userId}/like with auth
+  await secureFetchJSON(`${API_CONFIG.API_URL}/matches/${userId}/like`, {
+    method: 'POST',
+    headers: { 'Authorization': `Bearer ${token}` },
+  });
+});
+
+const handlePass = useCallback(async (userId: string) => {
+  // POST /v1/matches/{userId}/pass with auth
+});
 ```
 
-### 2. Canvas mode="continuous" (CRITICAL)
+Also added:
+- Double-tap prevention with `isActioning` state
+- userId validation guards
+- Disabled button styles
 
-**File:** `src/components/layers/VibeMatrixAnimated.tsx:134`
+### 2. ConsentType Fix (CRITICAL)
 
-```tsx
-<Canvas style={styles.canvas} mode="continuous">
+**File:** `src/services/api/types.ts:330-334`
+
+API rejected `terms_of_service` - only accepts these types:
+
+```typescript
+export type ConsentType =
+  | 'photo_exchange'
+  | 'phone_exchange'
+  | 'payment_agreement'
+  | 'private_photos';
 ```
 
-### 3. Animation Speed Increase
+Also added `counterpart_user_id` parameter requirement.
 
-**File:** `src/shaders/factory/effects/domainWarp.ts:36`
+### 3. Removed Incorrect Consent Call
 
-```glsl
-// Changed from mix(0.05, 0.25, ...) to:
-float speed = mix(0.15, 0.5, u_complexity);  // 3x faster
-```
+**File:** `src/components/screens/PermissionsScreen.tsx`
 
-### 4. Shader Preset Switching
+Removed call to consent API with `terms_of_service` (invalid type). Terms acceptance is handled locally.
 
-**File:** `src/components/dev/VibeDebugOverlay.tsx`
+---
 
-Added 19 shader preset buttons (0-18) to switch textures, not just colors.
+## PAI Documentation Updates
+
+| Document | Update |
+|----------|--------|
+| `~/.claude/troubleshooting/error-patterns.md` | Added API integration example to EP-084 |
+| `docs/06-reference/RUNBOOK.md` | Added API verification commands (2026-01-13 section) |
+| `docs/features/api-integration.md` | Created living document for API integration |
+| `working/active-tasks.md` | Marked API integration fixes complete |
+| mem0 | Committed "runtime vs static verification" lesson |
 
 ---
 
@@ -56,77 +79,58 @@ Added 19 shader preset buttons (0-18) to switch textures, not just colors.
 
 | Feature | Status |
 |---------|--------|
-| Animation working | Partial - slower than original |
-| Shader switching | Working via debug overlay |
-| Color transitions | Working |
-| 19 shader presets | Available |
-
----
-
-## Known Issues
-
-1. **Directional bias** - Animation drifts toward top-left
-2. **Speed still slow** - May need further speed increase
-3. **Not matching original quality** - Factory-generated shaders differ from handwritten originals
+| TypeScript | ✅ Clean (0 errors) |
+| Tests | ✅ 461/461 passing |
+| API Integration | ✅ Complete |
+| Quality Gate | ✅ All 5 gates passed |
+| Confidence Score | 10/10 |
 
 ---
 
 ## Files Modified (Uncommitted)
 
 ```
-src/components/layers/VibeMatrixAnimated.tsx  - dep array fix, mode="continuous"
-src/shaders/factory/effects/domainWarp.ts     - speed increase
-src/components/dev/VibeDebugOverlay.tsx       - shader switching
-App.tsx                                        - vibeMatrixRef to debug overlay
+M src/components/screens/MatchesScreen.tsx   - like/pass handlers, validation, styles
+M src/components/screens/PermissionsScreen.tsx - removed bad consent call
+M src/services/api/types.ts                   - ConsentType fix
+M src/services/api/client.ts                  - consent signature fix
+M src/services/api/mock.ts                    - consent mock update
+A docs/features/api-integration.md            - living document
 ```
 
 ---
 
-## How to Test
+## Brent's Concerns - Addressed
+
+| Concern | Status | Evidence |
+|---------|--------|----------|
+| **Matches POST** | ✅ FIXED | handleLike/handlePass at lines 211-290 |
+| **Chat** | ✅ EXISTS | getThreads, sendMessage in client.ts:312-329 |
+| **Consent** | ✅ FIXED | Updated types + signatures |
+| **MCP** | ❓ UNKNOWN | Need clarification from Nathan |
+
+---
+
+## How to Verify
 
 ```bash
-# Build and run
-npx expo run:ios
+# Quick validation
+npx tsc --noEmit && npm test -- --silent
 
-# Open debug overlay
-# Tap 🎨 button → scroll down → SHADER PRESETS
-# Tap numbered buttons (0-18) to switch textures
+# Full API verification (see RUNBOOK.md)
+grep "matches/.*like" src/components/screens/MatchesScreen.tsx
+grep -A5 "ConsentType =" src/services/api/types.ts
 ```
-
----
-
-## Shader Presets Quick Reference
-
-| ID | Name | Effect |
-|----|------|--------|
-| 0 | DOMAIN_WARP | Organic flow (default) |
-| 2 | WARM_FIRE_SWIRLS | Fire swirls |
-| 3 | NEON_AURORA_SPIRALS | Aurora |
-| 5 | LIQUID_MARBLE | Marble veins |
-| 9 | BLOB_METABALLS | Metaballs |
-| 13 | BREATHING_NEBULA | Nebula |
-| 18 | AURORA_CURTAINS | Curtains |
 
 ---
 
 ## Next Steps
 
-1. Test shader presets to find best-looking one
-2. Consider further speed increase if still too slow
-3. Fix directional bias in domain warp
-4. Commit working state
+1. Commit API integration fixes
+2. Clarify MCP endpoint with Nathan (if needed)
+3. Move to Medium priority UX items (Password UX, Inline Validation)
 
 ---
 
-## Reference Branches
-
-| Branch | Purpose |
-|--------|---------|
-| `client-api-integration` | Current work (this branch) |
-| `test-jan2-animation` | Reference for working animation |
-| `main` | Legacy |
-
----
-
-*Session Duration:* Extended debugging session
-*Work:* Animation fixes, shader switching, documentation
+*Session Duration:* API Integration Audit + Quality Gate Pipeline
+*Work:* MatchesScreen fixes, ConsentType fix, PAI documentation updates

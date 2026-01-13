@@ -123,6 +123,27 @@ function isTokenExpired(token: string, bufferSeconds = 60): boolean {
 // Refresh Token Mutex
 // ========================================
 
+/** Maximum time to wait for token refresh before giving up (30 seconds) */
+const TOKEN_REFRESH_TIMEOUT_MS = 30000;
+
+/**
+ * Wrap a promise with a timeout to prevent infinite hangs
+ */
+function withTimeout<T>(
+  promise: Promise<T>,
+  timeoutMs: number,
+  errorMessage: string
+): Promise<T> {
+  return Promise.race([
+    promise,
+    new Promise<never>((_, reject) => {
+      setTimeout(() => {
+        reject({ code: 'TIMEOUT', message: errorMessage });
+      }, timeoutMs);
+    }),
+  ]);
+}
+
 /**
  * Singleton promise for token refresh to prevent race conditions.
  * If multiple requests need a refresh, they all wait on the same promise.
@@ -343,6 +364,8 @@ export const AuthService = {
    * Uses mutex pattern to prevent race conditions when multiple
    * concurrent requests all detect an expired token simultaneously.
    *
+   * Includes 30s timeout to prevent infinite hangs if Cognito is unresponsive.
+   *
    * Called automatically when access token expires (1 hour).
    */
   async refreshToken(): Promise<RefreshTokenResponse> {
@@ -354,9 +377,14 @@ export const AuthService = {
 
     if (__DEV__) console.log('[AuthService] refreshToken() - starting new refresh');
 
-    // Create the refresh promise and store it
-    refreshPromise = this._doRefreshToken().finally(() => {
-      // Clear the promise when done (success or failure)
+    // Create the refresh promise with timeout protection and store it
+    // Timeout prevents infinite hangs if Cognito is unresponsive
+    refreshPromise = withTimeout(
+      this._doRefreshToken(),
+      TOKEN_REFRESH_TIMEOUT_MS,
+      'Token refresh timed out after 30 seconds. Please try again.'
+    ).finally(() => {
+      // Clear the promise when done (success, failure, or timeout)
       refreshPromise = null;
     });
 

@@ -142,12 +142,12 @@ describe('Background Shader Progression', () => {
     expect(source).toContain('useCallback');
   });
 
-  test('InterviewScreen has background cycling function', () => {
+  test('InterviewScreen has shader selection for vibes', () => {
     const source = readFile('src/components/screens/InterviewScreen.tsx');
 
-    // Background index is computed dynamically using TOTAL_SHADERS constant
-    expect(source).toContain('getBackgroundIndexForQuestion');
-    expect(source).toContain('% TOTAL_SHADERS'); // Cycle through all available backgrounds
+    // Shader selection based on vibe theme (refactored from TOTAL_SHADERS approach)
+    expect(source).toContain('getShaderForVibeAndIndex');
+    expect(source).toContain('getShaderForVibe');
   });
 
   test('InterviewScreen passes onBackgroundChange to parent', () => {
@@ -238,7 +238,8 @@ describe('Interview Question Flow', () => {
   test('InterviewScreen tracks currentQuestionIndex', () => {
     const source = readFile('src/components/screens/InterviewScreen.tsx');
 
-    expect(source).toContain('currentIndex');
+    // Screen uses currentDemoIndex from demo store
+    expect(source).toContain('currentDemoIndex');
     expect(source).toContain('useDemoStore');
   });
 

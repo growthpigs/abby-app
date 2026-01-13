@@ -210,6 +210,10 @@ export const MatchesScreen: React.FC<MatchesScreenProps> = ({
    */
   const handleLike = useCallback(async (userId: string) => {
     if (isActioning) return; // Prevent double-tap
+    if (!userId) {
+      if (__DEV__) console.error('[MatchesScreen] handleLike called with empty userId');
+      return;
+    }
     setIsActioning(true);
 
     try {
@@ -249,6 +253,10 @@ export const MatchesScreen: React.FC<MatchesScreenProps> = ({
    */
   const handlePass = useCallback(async (userId: string) => {
     if (isActioning) return; // Prevent double-tap
+    if (!userId) {
+      if (__DEV__) console.error('[MatchesScreen] handlePass called with empty userId');
+      return;
+    }
     setIsActioning(true);
 
     try {

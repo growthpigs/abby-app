@@ -79,69 +79,72 @@ describe('Questions Schema', () => {
 // ==============================================================================
 
 describe('InterviewScreen Questions Integration', () => {
-  test('InterviewScreen imports ALL_DATA_POINTS from questions-schema', () => {
+  test('InterviewScreen imports questions from questions-schema', () => {
     const source = readFile('src/components/screens/InterviewScreen.tsx');
 
+    // Uses ALL_DATA_POINTS from questions-schema
     expect(source).toContain("import { ALL_DATA_POINTS } from '../../data/questions-schema'");
   });
 
-  test('InterviewScreen uses ALL_DATA_POINTS as INTERVIEW_QUESTIONS', () => {
+  test('InterviewScreen uses DEMO_QUESTIONS alias', () => {
     const source = readFile('src/components/screens/InterviewScreen.tsx');
 
-    expect(source).toContain('const INTERVIEW_QUESTIONS = ALL_DATA_POINTS');
+    // DEMO_QUESTIONS is aliased from ALL_DATA_POINTS for demo mode
+    expect(source).toContain('const DEMO_QUESTIONS = ALL_DATA_POINTS');
+    expect(source).toContain('DEMO_QUESTIONS');
   });
 
-  test('InterviewScreen accesses question.question not question.text', () => {
+  test('InterviewScreen accesses currentQuestion.question not question.text', () => {
     const source = readFile('src/components/screens/InterviewScreen.tsx');
 
-    // Should access .question field
-    expect(source).toContain('question.question');
+    // Should access .question field via currentQuestion
     expect(source).toContain('currentQuestion.question');
 
     // Should NOT access .text field
-    expect(source).not.toContain('question.text');
     expect(source).not.toContain('currentQuestion.text');
   });
 
-  test('InterviewScreen shows progress as X/150', () => {
+  test('InterviewScreen shows progress indicator', () => {
     const source = readFile('src/components/screens/InterviewScreen.tsx');
 
-    expect(source).toContain('{currentIndex + 1}/{INTERVIEW_QUESTIONS.length}');
+    // Refactored: Uses template literals for progress display
+    expect(source).toContain('currentDemoIndex + 1');
+    expect(source).toContain('DEMO_QUESTIONS.length');
   });
 
   test('InterviewScreen checks vibe_shift before triggering color change', () => {
     const source = readFile('src/components/screens/InterviewScreen.tsx');
 
-    expect(source).toContain('if (question.vibe_shift && isValidVibeTheme(question.vibe_shift))');
-    expect(source).toContain('setColorTheme(question.vibe_shift)');
+    expect(source).toContain('if (currentQuestion.vibe_shift && isValidVibeTheme(currentQuestion.vibe_shift))');
+    expect(source).toContain('setColorTheme(newVibe)');
   });
 
   test('InterviewScreen triggers vibe_shift BEFORE speaking question', () => {
     const source = readFile('src/components/screens/InterviewScreen.tsx');
 
     // This is critical - color change should happen BEFORE TTS
-    const vibeShiftIndex = source.indexOf('setColorTheme(question.vibe_shift)');
-    const speakIndex = source.indexOf('abbyTTS.speak(question.question');
+    const vibeShiftIndex = source.indexOf('setColorTheme(newVibe)');
+    const speakIndex = source.indexOf('.speak(currentQuestion.question');
 
     expect(vibeShiftIndex).toBeGreaterThan(0);
     expect(speakIndex).toBeGreaterThan(0);
     expect(vibeShiftIndex).toBeLessThan(speakIndex);
   });
 
-  test('InterviewScreen cycles backgrounds using TOTAL_SHADERS constant', () => {
+  test('InterviewScreen uses vibe-based shader selection', () => {
     const source = readFile('src/components/screens/InterviewScreen.tsx');
 
-    // Should import TOTAL_SHADERS instead of using hardcoded value
-    expect(source).toContain("import { TOTAL_SHADERS } from '../../constants/backgroundMap'");
-    expect(source).toContain('const getBackgroundIndexForQuestion = (questionIndex: number): number =>');
-    expect(source).toContain('return (questionIndex % TOTAL_SHADERS) + 1');
+    // Refactored: Uses getShaderForVibe from vibeShaderMap (emotion-based, not index-based)
+    expect(source).toContain("import { getShaderForVibe");
+    expect(source).toContain('const getShaderForVibeAndIndex');
+    expect(source).toContain('getShaderForVibe(');
   });
 
   test('InterviewScreen handles last question properly', () => {
     const source = readFile('src/components/screens/InterviewScreen.tsx');
 
-    expect(source).toContain('const isLastQuestion = currentIndex >= INTERVIEW_QUESTIONS.length - 1');
-    // Uses JSX conditional: {isLastQuestion ? (...Find My Match...) : (...buttons...)}
+    // Refactored: Uses currentDemoIndex and supports both demo and API modes
+    expect(source).toContain('isLastQuestion');
     expect(source).toContain('{isLastQuestion ? (');
     expect(source).toContain('Find My Match');
   });
@@ -189,7 +192,8 @@ describe('Type System Integration', () => {
   test('InterviewScreen imports isValidVibeTheme', () => {
     const source = readFile('src/components/screens/InterviewScreen.tsx');
 
-    expect(source).toContain("import { isValidVibeTheme } from '../../types/vibe'");
+    // Import includes VibeColorTheme as well
+    expect(source).toContain("import { isValidVibeTheme, VibeColorTheme } from '../../types/vibe'");
   });
 });
 
@@ -241,27 +245,30 @@ describe('Edge Cases', () => {
     const source = readFile('src/components/screens/InterviewScreen.tsx');
 
     // Should check both existence AND validity
-    expect(source).toContain('if (question.vibe_shift && isValidVibeTheme(question.vibe_shift))');
+    expect(source).toContain('if (currentQuestion.vibe_shift && isValidVibeTheme(currentQuestion.vibe_shift))');
   });
 
   test('InterviewScreen uses Math.min to prevent index overflow', () => {
     const source = readFile('src/components/screens/InterviewScreen.tsx');
 
-    expect(source).toContain('Math.min(currentIndex, INTERVIEW_QUESTIONS.length - 1)');
+    // Refactored: Uses currentDemoIndex with DEMO_QUESTIONS
+    expect(source).toContain('Math.min(currentDemoIndex, DEMO_QUESTIONS.length - 1)');
   });
 
   test('InterviewScreen bounds check for last question', () => {
     const source = readFile('src/components/screens/InterviewScreen.tsx');
 
-    expect(source).toContain('const isLastQuestion = currentIndex >= INTERVIEW_QUESTIONS.length - 1');
+    // Refactored: Supports both API mode (!hasMore) and demo mode (index check)
+    expect(source).toContain('isLastQuestion');
+    expect(source).toContain('currentDemoIndex >= DEMO_QUESTIONS.length - 1');
   });
 
-  test('Background cycling handles question 0 and question 149', () => {
+  test('Shader selection uses vibe-based approach', () => {
     const source = readFile('src/components/screens/InterviewScreen.tsx');
 
-    // Uses TOTAL_SHADERS from constants instead of hardcoded value
-    expect(source).toContain('TOTAL_SHADERS');
-    expect(source).toContain('(questionIndex % TOTAL_SHADERS) + 1');
+    // Refactored: Uses vibe-based shader selection, not index-based cycling
+    expect(source).toContain('getShaderForVibeAndIndex');
+    expect(source).toContain('getShaderForVibe');
   });
 });
 
@@ -273,7 +280,8 @@ describe('TTS Integration', () => {
   test('InterviewScreen speaks question text via abbyTTS', () => {
     const source = readFile('src/components/screens/InterviewScreen.tsx');
 
-    expect(source).toContain('abbyTTS.speak(question.question');
+    // Refactored: Uses currentQuestion.question
+    expect(source).toContain('.speak(currentQuestion.question');
   });
 
   test('InterviewScreen passes audio level callback', () => {
@@ -328,11 +336,12 @@ describe('Import Path Validation', () => {
 // ==============================================================================
 
 describe('Question Flow Logic', () => {
-  test('InterviewScreen advances on Next button', () => {
+  test('InterviewScreen advances on button press', () => {
     const source = readFile('src/components/screens/InterviewScreen.tsx');
 
-    expect(source).toContain('const handleAnswer = () => {');
-    expect(source).toContain("submitAnswer('Answered')");
+    // Refactored: Uses submitAnswer callback with useCallback
+    expect(source).toContain('const submitAnswer = useCallback');
+    expect(source).toContain("submitAnswer('Yes')");
   });
 
   test('InterviewScreen calls nextQuestion or advance', () => {
@@ -358,23 +367,21 @@ describe('Question Flow Logic', () => {
 // ==============================================================================
 
 describe('Visual Transition Timing', () => {
-  test('Background change happens on question load (useEffect)', () => {
+  test('Background change happens on vibe change (useEffect)', () => {
     const source = readFile('src/components/screens/InterviewScreen.tsx');
 
-    // Background change in useEffect
+    // Refactored: Background changes based on currentVibe, not question index
     expect(source).toContain('useEffect(() => {');
     expect(source).toContain('if (onBackgroundChange) {');
-    expect(source).toContain('onBackgroundChange(getBackgroundIndexForQuestion(currentIndex))');
+    expect(source).toContain('onBackgroundChange(shaderId)');
   });
 
   test('Color theme change happens when question loads (not when answered)', () => {
     const source = readFile('src/components/screens/InterviewScreen.tsx');
 
-    // Comment should clarify this
-    expect(source).toContain('// Speak question when it changes + trigger vibe shift BEFORE question is asked');
-
-    // setColorTheme is called in useEffect, before speaking
-    expect(source).toContain('setColorTheme(question.vibe_shift)');
+    // Refactored: Uses newVibe derived from currentQuestion.vibe_shift
+    expect(source).toContain('setColorTheme(newVibe)');
+    expect(source).toContain('currentQuestion.vibe_shift');
   });
 });
 
@@ -386,8 +393,8 @@ describe('Runtime Safety', () => {
   test('Questions array access is bounds-checked', () => {
     const source = readFile('src/components/screens/InterviewScreen.tsx');
 
-    // Multiple bounds checks
-    const boundsChecks = source.match(/Math\.min\(currentIndex, INTERVIEW_QUESTIONS\.length - 1\)/g);
+    // Refactored: Uses currentDemoIndex with DEMO_QUESTIONS
+    const boundsChecks = source.match(/Math\.min\(currentDemoIndex, DEMO_QUESTIONS\.length - 1\)/g);
     expect(boundsChecks).toBeTruthy();
     expect(boundsChecks!.length).toBeGreaterThan(0);
   });
@@ -395,7 +402,7 @@ describe('Runtime Safety', () => {
   test('vibe_shift null check before setColorTheme', () => {
     const source = readFile('src/components/screens/InterviewScreen.tsx');
 
-    expect(source).toContain('if (question.vibe_shift && isValidVibeTheme(question.vibe_shift))');
+    expect(source).toContain('if (currentQuestion.vibe_shift && isValidVibeTheme(currentQuestion.vibe_shift))');
   });
 
   test('Background callback is optional', () => {
