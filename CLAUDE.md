@@ -4,25 +4,32 @@
 
 ---
 
-## ⛔⛔⛔ VIBEMATRIX ANIMATION - CRITICAL ⛔⛔⛔
+## ⚠️ VIBEMATRIX ANIMATION - STATUS (2026-01-13)
 
 ```
 ┌──────────────────────────────────────────────────────────────────────────────┐
-│  ANIMATION ONLY WORKS ON: test-jan2-animation                                │
+│  ANIMATION NOW WORKING ON: client-api-integration (with fixes applied)       │
 │                                                                              │
-│  ✅ test-jan2-animation     = Organic flowing animation WORKS                │
-│  ❌ client-api-integration  = Animation BROKEN (static, just shifts around)  │
+│  ✅ Animation runs (not static anymore)                                       │
+│  ⚠️  Speed slower than original                                               │
+│  ⚠️  Directional bias toward top-left                                         │
 │                                                                              │
-│  FOR DEMOS: git checkout test-jan2-animation && npx expo run:ios             │
+│  BUILD: npx expo run:ios                                                      │
+│  DEBUG: Tap 🎨 → SHADER PRESETS → switch textures (0-18)                      │
 └──────────────────────────────────────────────────────────────────────────────┘
 ```
 
-**What working animation looks like:**
-- Swirls flow like oil on water, continuously morphing
-- Colors blend organically
-- NOT: static image that shifts position
+### Fixes Applied (2026-01-13)
 
-**Root cause unknown** - same VibeMatrixAnimated.tsx but different behavior. Likely App.tsx init order.
+1. **useDerivedValue** - Removed dependency array (GitHub Issue #2640)
+2. **Canvas mode** - Added `mode="continuous"` for 60fps
+3. **Speed** - Increased 3x in domainWarp.ts
+
+### Remaining Issues
+
+- Animation slower than original handwritten shaders
+- Drifts toward top-left corner
+- May need to restore original G1/G2/G4 shaders for full quality
 
 ---
 
@@ -319,16 +326,32 @@ npx eas build --platform ios --profile preview
 
 ---
 
-## Recent Session Work (2024-12-23)
+## Recent Session Work (2026-01-13)
 
-### Fixed
+### Animation Fixes Applied
 
-| Issue | Root Cause | Fix |
-|-------|------------|-----|
-| Text not flowing (only 1 sentence visible) | `DEFAULT_SNAP` changed from 0.55 to 0.25 | Reverted to 0.55 (55% modal height) |
-| No shader transitions during interview | `BACKGROUND_SEQUENCE` started at 5 (same as COACH_INTRO) | Changed to `[1,2,3,4,5,6,7,8,9,10]` |
-| No progress indicator | Missing UI element | Added "X/10" in JetBrains Mono 12pt uppercase |
-| Mute button inconsistent | CoachIntroScreen had 44x44, CoachScreen had 28x28 | Unified to 28x28 |
+| Issue | Root Cause | Fix | File |
+|-------|------------|-----|------|
+| Animation static | useDerivedValue dep array | Removed dependency array | VibeMatrixAnimated.tsx:102 |
+| No 60fps render | Missing Canvas mode | Added `mode="continuous"` | VibeMatrixAnimated.tsx:134 |
+| Animation too slow | Low speed multiplier | Increased 3x (0.05→0.15 min) | domainWarp.ts:36 |
+| No shader switching | Debug overlay colors only | Added shader preset buttons (0-18) | VibeDebugOverlay.tsx |
+
+### Files Modified (Uncommitted)
+
+```
+src/components/layers/VibeMatrixAnimated.tsx  - dep array fix, mode="continuous"
+src/shaders/factory/effects/domainWarp.ts     - speed increase
+src/components/dev/VibeDebugOverlay.tsx       - shader switching
+App.tsx                                        - vibeMatrixRef to debug overlay
+```
+
+### Debug Overlay Usage
+
+1. Tap 🎨 button (bottom right)
+2. Scroll down to **SHADER PRESETS (Textures)**
+3. Tap numbered buttons (0-18) to switch shader effects
+4. Each number is a completely different visual texture
 
 ### Key Parameters (Don't Change!)
 
@@ -336,18 +359,26 @@ npx eas build --platform ios --profile preview
 // CoachIntroScreen.tsx & CoachScreen.tsx
 const SNAP_POINTS = [0.35, 0.55, 0.75, 0.9];
 const DEFAULT_SNAP = 0.55;  // 55% - enough room for conversation
+
+// Cognito Configuration (MUST MATCH Nathan's backend)
+// Pool ID:  us-east-1_l3JxaWpl5
+// Client:   2ljj7mif1k7jjc2ajiq676fhm1
+// Token:    ID token (not access token) - documented in ADR-001
 ```
 
 ### Tests
 
-- 211 tests in 6 test suites
+- 454 tests in 11 test suites
 - Run with: `npm test`
 
 ---
 
 ## Notes
 
-- Backend is mocked locally (Android backend is separate)
-- All question logic uses local JSON graph
-- TestFlight for client demos
-- Low Power Mode: Replace shaders with static images when battery < 20%
+- **Backend:** Client's Nathan Negreiro is building `dev.api.myaimatchmaker.ai` API
+- **Authentication:** AWS Cognito with ID token pattern (documented in ADR)
+- **Voice:** OpenAI Realtime API via client's backend (NOT ElevenLabs)
+- **Matching Engine:** Backend-driven (we send answers, get candidates back)
+- **TestFlight:** Used for client demos
+- **Battery Optimization:** Low Power Mode - replace shaders with static images when battery < 20%
+- **Token Lifetime:** ID tokens expire faster than access tokens (watch for refresh logic)

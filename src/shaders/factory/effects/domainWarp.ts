@@ -32,8 +32,8 @@ float2 domainWarp(float2 p, float time, float intensity) {
   // Scale for nice pattern size
   uv *= 3.0;
 
-  // Complexity controls animation speed
-  float speed = mix(0.05, 0.25, u_complexity);
+  // Complexity controls animation speed (increased 3x for visible flow)
+  float speed = mix(0.15, 0.5, u_complexity);
   float octaves = 1.0 + u_complexity * 4.0;
   float warpIntensity = 0.15 + u_complexity * 1.2;
 

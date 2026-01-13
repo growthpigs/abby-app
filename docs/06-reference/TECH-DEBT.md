@@ -1,8 +1,34 @@
 # Tech Debt Register
 
 > **Status:** Deferred until post-MVP validation
-> **Last Updated:** 2024-12-24
+> **Last Updated:** 2026-01-13
 > **Decision:** Ship MVP first, refactor after client validates concept
+
+---
+
+## Animation Technical Debt (2026-01-13)
+
+### Critical Issues Fixed
+
+| Issue | Fix | File |
+|-------|-----|------|
+| useDerivedValue dep array | Removed dependency array | VibeMatrixAnimated.tsx:102 |
+| Canvas not re-rendering | Added mode="continuous" | VibeMatrixAnimated.tsx:134 |
+| Animation too slow | Increased speed 3x | domainWarp.ts:36 |
+
+### Remaining Animation Issues
+
+| Issue | Impact | Priority |
+|-------|--------|----------|
+| Directional bias (top-left) | Visual quality | P2 |
+| Speed still slower than original | Visual quality | P2 |
+| Factory shaders ≠ handwritten | Missing original effects | P3 |
+
+### Potential Solutions
+
+1. **Increase speed further** - Try 5-10x multiplier in domainWarp.ts
+2. **Fix directional bias** - Adjust offset vectors in domainWarp function
+3. **Restore original shaders** - Use handwritten G1/G2/G4 instead of factory
 
 ---
 

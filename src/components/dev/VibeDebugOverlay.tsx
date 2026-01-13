@@ -2,10 +2,11 @@
  * VibeDebugOverlay - Dev-only state tester
  *
  * Shows a floating button that opens a panel to test all vibe states.
+ * Now includes SHADER PRESET switching (the different textures/effects).
  * Only renders in __DEV__ mode.
  */
 
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import {
   View,
   TouchableOpacity,
@@ -17,6 +18,8 @@ import {
 import { useDemoStore, DemoState } from '../../store/useDemoStore';
 import { useVibeController } from '../../store/useVibeController';
 import { AppState } from '../../types/vibe';
+import { getAllShaders, type ShaderEntry } from '../../shaders/factory/registryV2';
+import type { VibeMatrixAnimatedRef } from '../layers/VibeMatrixAnimated';
 
 const { height: SCREEN_HEIGHT } = Dimensions.get('window');
 
@@ -44,8 +47,17 @@ const VIBE_STATES: { state: AppState; label: string; color: string }[] = [
   { state: 'INTERVENTION', label: 'INTERVENE', color: '#4C1D95' },
 ];
 
-export const VibeDebugOverlay: React.FC = () => {
+// Props for vibeMatrix ref (to switch shaders)
+interface VibeDebugOverlayProps {
+  vibeMatrixRef?: React.RefObject<VibeMatrixAnimatedRef>;
+}
+
+// Get all 19 shader presets
+const SHADER_PRESETS = getAllShaders();
+
+export const VibeDebugOverlay: React.FC<VibeDebugOverlayProps> = ({ vibeMatrixRef }) => {
   const [expanded, setExpanded] = useState(false);
+  const [currentShaderId, setCurrentShaderId] = useState(0);
   const goToState = useDemoStore((s) => s.goToState);
   const currentDemoState = useDemoStore((s) => s.currentState);
   const setFromAppState = useVibeController((s) => s.setFromAppState);
@@ -53,6 +65,14 @@ export const VibeDebugOverlay: React.FC = () => {
   const complexity = useVibeController((s) => s.complexity);
   const activeParty = useVibeController((s) => s.activeParty);
   const activeMode = useVibeController((s) => s.activeMode);
+
+  // Switch shader preset
+  const switchShader = (shader: ShaderEntry) => {
+    if (vibeMatrixRef?.current) {
+      vibeMatrixRef.current.setShader(shader.source);
+      setCurrentShaderId(shader.id);
+    }
+  };
 
   if (!__DEV__) return null;
 
@@ -126,6 +146,38 @@ export const VibeDebugOverlay: React.FC = () => {
               </Text>
             </TouchableOpacity>
           ))}
+        </View>
+
+        {/* SHADER PRESETS - The actual background textures/effects */}
+        <Text style={styles.sectionTitle}>SHADER PRESETS (Textures) - ID: {currentShaderId}</Text>
+        <View style={styles.buttonRow}>
+          {SHADER_PRESETS.map((shader) => {
+            const isActive = currentShaderId === shader.id;
+            // Color based on shader type
+            const color = shader.id === 0 ? '#10B981' : // Domain Warp = green
+                          shader.id <= 3 ? '#3B82F6' :  // Aurora/Spirals = blue
+                          shader.id <= 7 ? '#F59E0B' :  // Fire/Marble = orange
+                          shader.id <= 11 ? '#E11D48' : // Metaballs/Bloom = red
+                          '#8B5CF6';                     // Others = purple
+            return (
+              <TouchableOpacity
+                key={shader.id}
+                style={[
+                  styles.shaderButton,
+                  { borderColor: color },
+                  isActive && { backgroundColor: color + '40' },
+                ]}
+                onPress={() => switchShader(shader)}
+              >
+                <Text style={[styles.shaderButtonText, { color }]}>
+                  {shader.id}
+                </Text>
+                <Text style={[styles.shaderName, { color: color + 'AA' }]} numberOfLines={1}>
+                  {shader.name.replace(/_/g, ' ').slice(0, 10)}
+                </Text>
+              </TouchableOpacity>
+            );
+          })}
         </View>
       </ScrollView>
     </View>
@@ -220,6 +272,24 @@ const styles = StyleSheet.create({
   buttonText: {
     fontSize: 11,
     fontWeight: '600',
+  },
+  shaderButton: {
+    width: 55,
+    paddingVertical: 6,
+    borderRadius: 6,
+    borderWidth: 1.5,
+    marginRight: 6,
+    marginBottom: 6,
+    backgroundColor: 'rgba(255,255,255,0.05)',
+    alignItems: 'center',
+  },
+  shaderButtonText: {
+    fontSize: 14,
+    fontWeight: 'bold',
+  },
+  shaderName: {
+    fontSize: 7,
+    marginTop: 2,
   },
 });
 

@@ -21,6 +21,7 @@ import {
 import { JetBrainsMono_400Regular } from '@expo-google-fonts/jetbrains-mono';
 
 import { VibeMatrixAnimated, VibeMatrixAnimatedRef } from './src/components/layers/VibeMatrixAnimated';
+import { ClockTest } from './src/components/dev/ClockTest';
 import { AbbyOrb } from './src/components/layers/AbbyOrb';
 import { GlassFloor } from './src/components/ui/GlassFloor';
 import { HamburgerMenu } from './src/components/ui/HamburgerMenu';
@@ -294,6 +295,22 @@ function AppContent() {
       vibeRef.current?.setVibeAndComplexity(vibe.theme, vibe.complexity);
     }
   }, [authState, demoState]);
+
+  // DEV: Subscribe to vibe controller for debug overlay
+  // This allows changing vibes from any screen, not just authenticated
+  useEffect(() => {
+    if (!__DEV__) return;
+
+    const unsubscribe = useVibeController.subscribe((state) => {
+      // Forward vibe controller changes to shader ref
+      vibeRef.current?.setVibeAndComplexity(state.colorTheme, state.complexity);
+      if (__DEV__) {
+        console.log('[VibeDebug] → Shader:', state.colorTheme, state.complexity);
+      }
+    });
+
+    return unsubscribe;
+  }, []);
 
   // SECRET NAVIGATION HANDLERS
   // Back: go to previous screen
@@ -829,11 +846,16 @@ function AppContent() {
       <StatusBar hidden />
 
       {/* Layer 0: Animated shader background */}
-      <VibeMatrixAnimated
-        ref={vibeRef}
-        initialTheme="DEEP"
-        initialComplexity="FLOW"
-      />
+      {/* DEV: Toggle to test if useClock works at all - set false to use VibeMatrixAnimated */}
+      {__DEV__ && false ? (
+        <ClockTest />
+      ) : (
+        <VibeMatrixAnimated
+          ref={vibeRef}
+          initialTheme="DEEP"
+          initialComplexity="FLOW"
+        />
+      )}
 
       {/* Layer 0.5: GlassFloor (auth/onboarding screens only) */}
       {(authState as AuthState) !== 'AUTHENTICATED' && (authState as AuthState) !== 'LOADING' && (
@@ -903,6 +925,9 @@ function AppContent() {
       <View style={styles.uiLayer}>
         {authState !== 'AUTHENTICATED' ? renderAuthScreen() : renderDemoScreen()}
       </View>
+
+      {/* Dev: Vibe Debug Overlay with shader switching */}
+      {__DEV__ && <VibeDebugOverlay vibeMatrixRef={vibeRef} />}
     </View>
   );
 }
@@ -918,7 +943,6 @@ export default function App() {
     <SafeAreaProvider initialMetrics={initialWindowMetrics ?? fallbackMetrics}>
       <ErrorBoundary>
         {wrappedContent}
-        {__DEV__ && <VibeDebugOverlay />}
       </ErrorBoundary>
     </SafeAreaProvider>
   );

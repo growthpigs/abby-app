@@ -2,8 +2,9 @@
 
 > Complete documentation of Abby's 750-state visual system
 
-**Branch:** `test-jan2-animation` (WORKING)
-**Last Verified:** 2026-01-13
+**Branch:** `client-api-integration` (CURRENT)
+**Last Updated:** 2026-01-13
+**Animation Status:** Working (with fixes applied)
 
 ---
 
@@ -121,17 +122,40 @@
 | `src/store/storeSync.ts` | Demo→Vibe synchronization |
 | `src/constants/colors.ts` | Color definitions |
 | `src/components/layers/VibeMatrixAnimated.tsx` | Shader rendering |
+| `src/shaders/factory/registryV2.ts` | Shader preset registry |
+| `src/shaders/factory/presets.ts` | 19 shader preset definitions |
+| `src/shaders/factory/effects/domainWarp.ts` | Domain warp effect |
+| `src/components/dev/VibeDebugOverlay.tsx` | Debug overlay with shader switching |
 
-### Critical Fix Applied
+### Critical Fixes Applied (2026-01-13)
+
+#### Fix 1: useDerivedValue Dependency Array
 
 ```typescript
 // VibeMatrixAnimated.tsx - GitHub Issue #2640
+// WRONG: dependency array kills useClock updates
 const uniforms = useDerivedValue(() => {
-  return {
-    u_time: clock.value,
-    // ... other uniforms
-  };
-}); // NO dependency array - required for useClock to update
+  return { u_time: clock.value, ... };
+}, [clock, morphProgress]);  // ❌ BREAKS ANIMATION
+
+// CORRECT: no dependency array
+const uniforms = useDerivedValue(() => {
+  return { u_time: clock.value, ... };
+});  // ✅ Animation works
+```
+
+#### Fix 2: Canvas mode="continuous"
+
+```tsx
+// Without this, Skia only re-renders on prop changes
+<Canvas style={styles.canvas} mode="continuous">
+```
+
+#### Fix 3: Animation Speed
+
+```glsl
+// domainWarp.ts - increased 3x
+float speed = mix(0.15, 0.5, u_complexity);  // was 0.05, 0.25
 ```
 
 ### Package Requirements
@@ -146,14 +170,56 @@ const uniforms = useDerivedValue(() => {
 
 ---
 
+## Shader Presets (19 Available)
+
+Switch via debug overlay (🎨 button → SHADER PRESETS):
+
+| ID | Name | Description |
+|----|------|-------------|
+| 0 | DOMAIN_WARP | Organic flowing patterns (default) |
+| 1 | DOMAIN_WARP_ENHANCED | Enhanced with tie-dye flow |
+| 2 | WARM_FIRE_SWIRLS | Fire swirls, warm colors |
+| 3 | NEON_AURORA_SPIRALS | Aurora, neon colors |
+| 4 | CELLULAR_DREAMS | Aerial reef patterns |
+| 5 | LIQUID_MARBLE | Marble with veins |
+| 6 | KALEIDOSCOPE_BLOOM | Radial symmetry |
+| 7 | FLOWING_STREAMS | Ocean shore streams |
+| 8 | RADIAL_FLOW_FIELD | Deep ocean flow |
+| 9 | BLOB_METABALLS | Organic metaballs |
+| 10 | CHROMATIC_BLOOM | Chromatic aberration |
+| 11 | LAYERED_ORBS | Coral reef orbs |
+| 12 | STIPPLED_GRADIENT | Pointillist effect |
+| 13 | BREATHING_NEBULA | Fluid nebula |
+| 14 | MAGNETIC_FIELD_LINES | Tidal pool lines |
+| 15 | CRYSTALLINE_FACETS | Seafoam crystals |
+| 16 | INK_BLOOM | Ink in water |
+| 17 | CELLULAR_MEMBRANE | Lagoon membrane |
+| 18 | AURORA_CURTAINS | Ocean aurora |
+
+---
+
 ## Known Issues
 
-1. **Branch-specific:** Animation ONLY works on `test-jan2-animation`, not `client-api-integration`
-2. **Web not supported:** Skia CanvasKit (WASM) doesn't match iOS native behavior
-3. **Haptics warning:** iOS simulator shows haptic pattern errors (harmless)
+1. **Speed still slow** - Animation slower than original handwritten shaders
+2. **Directional bias** - Animation drifts toward top-left corner
+3. **Factory vs Original** - Generated shaders differ from original G1/G2/G4
+4. **Web not supported** - Skia CanvasKit (WASM) doesn't match iOS native behavior
+5. **Haptics warning** - iOS simulator shows haptic pattern errors (harmless)
+
+---
+
+## Debug Overlay Usage
+
+1. Tap 🎨 button (bottom right)
+2. **DEMO STATES** - Switch app screens
+3. **DIRECT VIBE STATES** - Change color themes
+4. **SHADER PRESETS** - Switch texture effects (0-18)
 
 ---
 
 ## Verified Working: 2026-01-13
 
-Screenshot shows login screen with purple/pink gradient animating ✓
+- Animation is running (not static)
+- Color transitions work
+- Shader switching works
+- Speed slower than original (needs tuning)

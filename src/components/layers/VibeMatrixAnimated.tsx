@@ -98,6 +98,7 @@ const ShaderLayer = React.memo(({
   }, [shaderSource]);
 
   // Create animated uniforms including morph params
+  // CRITICAL: NO dependency array - required for useClock to update (GitHub Issue #2640)
   const uniforms = useDerivedValue(() => {
     return {
       u_time: clock.value,
@@ -109,7 +110,7 @@ const ShaderLayer = React.memo(({
       u_morphProgress: morphProgress.value,
       u_morphDirection: morphDirection,
     };
-  }, [clock, morphProgress, morphDirection]);
+  });
 
   // Fallback gradient when shader fails to compile (never show blank screen)
   if (!shader) {
@@ -130,7 +131,7 @@ const ShaderLayer = React.memo(({
 
   return (
     <View style={styles.canvas}>
-      <Canvas style={styles.canvas}>
+      <Canvas style={styles.canvas} mode="continuous">
         <Fill>
           <Shader source={shader} uniforms={uniforms} />
         </Fill>
