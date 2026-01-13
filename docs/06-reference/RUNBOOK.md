@@ -489,20 +489,60 @@ Status:   Verified ✅, Login works ✅
 
 ## Development Startup
 
-### TL;DR - Two Options
+### TL;DR - Commands
 
 ```bash
-# Option 1: Single command (builds + runs + starts Metro)
+# Simulator (most common)
 npx expo run:ios
 
-# Option 2: Separate Metro (faster for rebuilds)
-npm start              # Terminal 1 - Metro bundler
-npx expo run:ios       # Terminal 2 - Build & run app
+# Physical Device (via USB cable)
+npx expo run:ios --device
+
+# Clean Metro & rebuild (when things are weird)
+lsof -ti:8081 | xargs kill -9 && npx expo run:ios
 ```
+
+### 🚨 EXPO GO vs METRO BUNDLER vs NATIVE BUILD - Clarified
+
+| Term | What it is | Used by ABBY? |
+|------|------------|---------------|
+| **Expo Go** | Pre-built app from App Store. Loads JS over network. NO native modules. | ❌ NEVER |
+| **Metro Bundler** | JavaScript bundler (compiles TS/JS into bundle). Runs on port 8081. | ✅ YES (always) |
+| **Native Build** | Compiles native code (C++/ObjC) into app binary. Includes Skia. | ✅ YES (always) |
+
+**ABBY uses:** Native Build (`npx expo run:ios`) which:
+1. Compiles native C++/ObjC code into iOS binary (includes Skia shaders)
+2. Starts Metro Bundler (bundles JavaScript)
+3. Runs app on simulator/device
+
+**Common Confusion:**
+- "Are we using Metro?" → YES, Metro bundles the JS
+- "Are we using Expo Go?" → NO, we use native builds
+- "Why can't I use `expo start`?" → That launches Expo Go which lacks Skia
+
+### Simulator vs Physical Device
+
+```bash
+# iOS SIMULATOR (boots iPhone in Xcode simulator)
+npx expo run:ios
+
+# PHYSICAL DEVICE (your actual iPhone via USB cable)
+npx expo run:ios --device
+# → Select your phone when prompted
+```
+
+**Physical Device First-Time Setup:**
+1. Connect iPhone via USB cable
+2. Unlock phone
+3. Run `npx expo run:ios --device`
+4. Select your device from the list
+5. After install: **Settings → General → VPN & Device Management**
+6. Tap your developer certificate
+7. Tap "Trust"
 
 ### Port: 8081
 
-Metro runs on `http://localhost:8081`. If you see "Could not connect to development server":
+Metro runs on `http://localhost:8081`. If you see "Could not connect to development server" or wrong project:
 
 ```bash
 # Kill stale processes
@@ -510,9 +550,30 @@ pkill -f metro
 pkill -f "expo start"
 lsof -ti:8081 | xargs kill -9  # Nuclear option
 
-# Then restart
-npm start
+# Then rebuild
+npx expo run:ios
 ```
+
+**Wrong project showing (e.g., TurkEats)?** → Another Metro is hogging port 8081. Kill it first.
+
+### Environment Switching
+
+```bash
+# Development (mock API)
+cp .env.development .env
+npx expo run:ios
+
+# Production (real API)
+cp .env.production .env
+npx expo run:ios
+```
+
+| File | USE_REAL_API | API URL |
+|------|--------------|---------|
+| `.env.development` | false | http://localhost:3000 |
+| `.env.production` | true | https://dev.api.myaimatchmaker.ai |
+
+**Note:** EAS Build uses `.env.production` automatically.
 
 ### Why Dev Build (not Expo Go)?
 
@@ -520,7 +581,8 @@ npm start
 
 | Command | Mode | Skia | Use |
 |---------|------|------|-----|
-| `npx expo run:ios` | Dev Build | ✅ | **Always use this** |
+| `npx expo run:ios` | Dev Build | ✅ | **Simulator** |
+| `npx expo run:ios --device` | Dev Build | ✅ | **Physical iPhone** |
 | `npm start` | Metro only | - | Must run app separately |
 | `expo start` | Expo Go | ❌ | Never for ABBY |
 
