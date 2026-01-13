@@ -5,11 +5,16 @@
  * Updated to match client spec with all 11 screens.
  *
  * Persists to AsyncStorage for crash recovery (30-day timeout).
- * Data submitted to /v1/profile/public API on completion.
+ *
+ * Data submission:
+ * - Profile fields (display_name, birthday, gender) → PUT /v1/profile/public
+ * - All other onboarding data → POST /v1/answers with ONB_001-008 question IDs
  */
 
 import { create } from 'zustand';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { questionsService } from '../services/QuestionsService';
+import { ONBOARDING_QUESTION_IDS } from '../constants/onboardingQuestions';
 
 // Storage key and version
 const ONBOARDING_KEY = '@abby/onboarding';
@@ -143,6 +148,7 @@ interface OnboardingStoreActions {
   markComplete: () => void;
   reset: () => void;
   getProfilePayload: () => Record<string, unknown>;
+  submitOnboardingAnswers: () => Promise<{ success: boolean; errors: string[] }>;
 
   // Persistence
   setCurrentScreen: (screenId: OnboardingScreenId) => void;
@@ -265,82 +271,130 @@ export const useOnboardingStore = create<OnboardingStore>((set, get) => ({
 
   /**
    * Get profile payload for API submission
-   * Maps internal state to PUT /user/profile request body
+   * Maps internal state to PUT /v1/profile/public request body
+   * Uses snake_case to match API convention
+   *
+   * IMPORTANT: API /v1/profile/public ONLY accepts these fields:
+   *   - display_name, birthday, gender, city, country, interests
+   *
+   * All other onboarding data (ethnicity, smoking, relationship, location)
+   * should be submitted via POST /v1/answers with question IDs ONB_001-008.
+   * See: GET /v1/questions/category/onboarding for the question mapping.
    */
   getProfilePayload: () => {
     const state = get();
     const payload: Record<string, unknown> = {};
 
-    // Screen 4: Name
-    if (state.fullName) {
-      payload.fullName = state.fullName;
-    }
-    if (state.nickname) {
-      payload.nickname = state.nickname;
-      payload.displayName = state.nickname; // Also set as display name
+    // === FIELDS ACCEPTED BY /v1/profile/public ===
+
+    // display_name (with input sanitization)
+    if (state.nickname?.trim()) {
+      payload.display_name = state.nickname.trim();
     }
 
-    // Screen 5: DOB & Age Range
+    // birthday (YYYY-MM-DD format)
     if (state.dateOfBirth) {
-      payload.dateOfBirth = state.dateOfBirth.toISOString().split('T')[0];
-    }
-    payload.ageRangeMin = state.ageRangeMin;
-    payload.ageRangeMax = state.ageRangeMax;
-
-    // Screen 6: Gender
-    if (state.gender) {
-      payload.gender = state.gender;
+      payload.birthday = state.dateOfBirth.toISOString().split('T')[0];
     }
 
-    // Screen 7: Dating Preference
-    if (state.datingPreference) {
-      // Map preference to array format for API
-      if (state.datingPreference === 'everyone') {
-        payload.seekingGenders = ['man', 'woman', 'non_binary'];
-      } else if (state.datingPreference === 'men') {
-        payload.seekingGenders = ['man'];
-      } else if (state.datingPreference === 'women') {
-        payload.seekingGenders = ['woman'];
-      } else {
-        payload.seekingGenders = [state.datingPreference];
-      }
+    // gender (with input sanitization)
+    if (state.gender?.trim()) {
+      payload.gender = state.gender.trim();
     }
 
-    // Screen 8: Ethnicity
-    if (state.ethnicity) {
-      payload.ethnicity = state.ethnicity;
-    }
-
-    // Screen 9: Ethnicity Preferences
-    if (state.ethnicityPreferences.length > 0) {
-      payload.ethnicityPreferences = state.ethnicityPreferences;
-    }
-
-    // Screen 10: Relationship Type
-    if (state.relationshipType) {
-      payload.relationshipType = state.relationshipType;
-    }
-
-    // Screen 11: Smoking
-    if (state.smokingMe) {
-      payload.smokingMe = state.smokingMe;
-    }
-    if (state.smokingPartner) {
-      payload.smokingPartner = state.smokingPartner;
-    }
-
-    // Location
-    if (state.location) {
-      if (state.location.type === 'gps') {
-        const gps = state.location.value as GPSLocation;
-        payload.latitude = gps.lat;
-        payload.longitude = gps.lng;
-      } else {
-        payload.zipCode = state.location.value as string;
-      }
-    }
+    // === FIELDS REJECTED BY API (DO NOT SEND) ===
+    // These must be submitted via POST /v1/answers instead:
+    // - ethnicity → ONB_005
+    // - ethnicity_preferences → ONB_006
+    // - relationship_type → ONB_007
+    // - smoking_me, smoking_partner → ONB_008
+    // - latitude, longitude, zip_code → location questions
 
     return payload;
+  },
+
+  /**
+   * Submit onboarding answers via POST /v1/answers
+   *
+   * This submits all the onboarding data that can't go to /v1/profile/public:
+   * - Dating preference, ethnicity, relationship type, smoking
+   *
+   * Returns { success: boolean, errors: string[] }
+   */
+  submitOnboardingAnswers: async () => {
+    const state = get();
+    const errors: string[] = [];
+    let successCount = 0;
+
+    // Build answers array - only include non-null values
+    const answers: Array<{ questionId: string; answer: string | string[] }> = [];
+
+    // ONB_004: Dating Preference
+    if (state.datingPreference?.trim()) {
+      answers.push({
+        questionId: ONBOARDING_QUESTION_IDS.DATING_PREFERENCE,
+        answer: state.datingPreference.trim(),
+      });
+    }
+
+    // ONB_005: Ethnicity
+    if (state.ethnicity?.trim()) {
+      answers.push({
+        questionId: ONBOARDING_QUESTION_IDS.ETHNICITY,
+        answer: state.ethnicity.trim(),
+      });
+    }
+
+    // ONB_006: Ethnicity Preferences (multi_select)
+    if (state.ethnicityPreferences.length > 0) {
+      answers.push({
+        questionId: ONBOARDING_QUESTION_IDS.ETHNICITY_PREFERENCES,
+        answer: state.ethnicityPreferences,
+      });
+    }
+
+    // ONB_007: Relationship Type
+    if (state.relationshipType?.trim()) {
+      answers.push({
+        questionId: ONBOARDING_QUESTION_IDS.RELATIONSHIP_TYPE,
+        answer: state.relationshipType.trim(),
+      });
+    }
+
+    // ONB_008: Smoking (combine smokingMe and smokingPartner)
+    // The API expects a single answer, so we'll send smokingMe
+    if (state.smokingMe?.trim()) {
+      answers.push({
+        questionId: ONBOARDING_QUESTION_IDS.SMOKING,
+        answer: state.smokingMe.trim(),
+      });
+    }
+
+    // Submit each answer
+    for (const ans of answers) {
+      try {
+        await questionsService.submitAnswer(ans.questionId, ans.answer);
+        successCount++;
+        if (__DEV__) {
+          console.log(`[Onboarding] Submitted answer for ${ans.questionId}`);
+        }
+      } catch (error) {
+        const errMsg = error instanceof Error ? error.message : String(error);
+        errors.push(`Failed to submit ${ans.questionId}: ${errMsg}`);
+        if (__DEV__) {
+          console.error(`[Onboarding] Failed to submit ${ans.questionId}:`, error);
+        }
+      }
+    }
+
+    if (__DEV__) {
+      console.log(`[Onboarding] Submitted ${successCount}/${answers.length} answers`);
+    }
+
+    return {
+      success: errors.length === 0,
+      errors,
+    };
   },
 
   // Persistence: Set current screen by identifier (resilient to reordering)

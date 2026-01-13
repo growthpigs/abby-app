@@ -19,6 +19,7 @@
       "infoPlist": {
         "NSMicrophoneUsageDescription": "Abby needs your microphone to have a conversation with you.",
         "NSLocationWhenInUseUsageDescription": "Abby uses your location to find matches near you.",
+        "NSPhotoLibraryUsageDescription": "Abby needs access to your photos to upload profile pictures.",
         "UIBackgroundModes": [
           "audio"
         ],
@@ -33,6 +34,12 @@
         "expo-location",
         {
           "locationWhenInUsePermission": "Abby uses your location to find matches near you."
+        }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Abby needs access to your photos to upload profile pictures."
         }
       ],
       "expo-secure-store"

@@ -9,7 +9,8 @@
  */
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { StyleSheet, View, ActivityIndicator, Alert } from 'react-native';
+import { StyleSheet, View, ActivityIndicator, Alert, Platform } from 'react-native';
+import * as ImagePicker from 'expo-image-picker';
 import { SafeAreaProvider, initialWindowMetrics } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 import {
@@ -577,9 +578,23 @@ function AppContent() {
       const profilePayload = useOnboardingStore.getState().getProfilePayload();
       const token = await TokenManager.getToken();
 
+      if (__DEV__) {
+        console.log('[App] Profile payload:', JSON.stringify(profilePayload, null, 2));
+        console.log('[App] Token exists:', !!token);
+      }
+
       if (token && Object.keys(profilePayload).length > 0) {
         const API_BASE = 'https://dev.api.myaimatchmaker.ai';
-        await secureFetchJSON(`${API_BASE}/v1/profile/public`, {
+
+        // PROOF OF API CONNECTION - Log everything
+        console.log('══════════════════════════════════════════════════════');
+        console.log('🔥 SENDING TO BACKEND API:');
+        console.log('URL:', `${API_BASE}/v1/profile/public`);
+        console.log('METHOD:', 'PUT');
+        console.log('PAYLOAD:', JSON.stringify(profilePayload, null, 2));
+        console.log('══════════════════════════════════════════════════════');
+
+        const response = await secureFetchJSON(`${API_BASE}/v1/profile/public`, {
           method: 'PUT',
           headers: {
             'Content-Type': 'application/json',
@@ -587,19 +602,48 @@ function AppContent() {
           },
           body: JSON.stringify(profilePayload),
         });
-        if (__DEV__) {
-          console.log('[App] Profile submitted successfully');
-        }
+
+        // PROOF OF API RESPONSE
+        console.log('══════════════════════════════════════════════════════');
+        console.log('✅ BACKEND API RESPONSE:');
+        console.log('RESPONSE:', JSON.stringify(response, null, 2));
+        console.log('══════════════════════════════════════════════════════');
       }
-    } catch (error) {
+    } catch (error: unknown) {
       // Show error to user - don't silently fail
+      const errMsg = error instanceof Error ? error.message : String(error);
       Alert.alert(
         'Profile Save Issue',
-        'Your profile couldn\'t be saved to the server. You can update it later in Settings.',
+        `Your profile couldn't be saved to the server. You can update it later in Settings.\n\nError: ${errMsg}`,
         [{ text: 'Continue', style: 'default' }]
       );
       if (__DEV__) {
         console.warn('[App] Profile submission failed:', error);
+        // Log full error details
+        if (error && typeof error === 'object') {
+          console.warn('[App] Error details:', JSON.stringify(error, null, 2));
+        }
+      }
+    }
+
+    // Submit onboarding answers via POST /v1/answers (data not accepted by profile API)
+    // This includes: dating preference, ethnicity, relationship type, smoking
+    try {
+      console.log('══════════════════════════════════════════════════════');
+      console.log('🔥 SUBMITTING ONBOARDING ANSWERS TO /v1/answers:');
+
+      const answersResult = await useOnboardingStore.getState().submitOnboardingAnswers();
+
+      if (answersResult.success) {
+        console.log('✅ ALL ONBOARDING ANSWERS SUBMITTED SUCCESSFULLY');
+      } else {
+        console.log('⚠️ SOME ANSWERS FAILED:', answersResult.errors);
+      }
+      console.log('══════════════════════════════════════════════════════');
+    } catch (error: unknown) {
+      // Log but don't block - answers can be re-submitted later
+      if (__DEV__) {
+        console.warn('[App] Onboarding answers submission failed:', error);
       }
     }
 
@@ -923,8 +967,77 @@ function AppContent() {
       {menuScreen === 'photos' && (
         <PhotosScreen
           onClose={() => setMenuScreen('none')}
-          onAddPhoto={() => {
+          onAddPhoto={async () => {
             if (__DEV__) console.log('[App] Add photo pressed');
+
+            try {
+              // Request permission
+              const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+              if (status !== 'granted') {
+                Alert.alert('Permission Required', 'Please allow access to your photos to upload.');
+                return;
+              }
+
+              // Pick image
+              const result = await ImagePicker.launchImageLibraryAsync({
+                mediaTypes: ['images'],
+                allowsEditing: true,
+                aspect: [1, 1],
+                quality: 0.8,
+              });
+
+              if (result.canceled) {
+                if (__DEV__) console.log('[App] Image picker cancelled');
+                return;
+              }
+
+              const image = result.assets[0];
+              if (__DEV__) console.log('[App] Image selected:', image.uri);
+
+              // Upload to API
+              const token = await TokenManager.getToken();
+              if (!token) {
+                Alert.alert('Not Logged In', 'Please log in to upload photos.');
+                return;
+              }
+
+              const API_BASE = 'https://dev.api.myaimatchmaker.ai';
+
+              // Create form data for multipart upload
+              const formData = new FormData();
+              formData.append('file', {
+                uri: Platform.OS === 'ios' ? image.uri.replace('file://', '') : image.uri,
+                type: image.mimeType || 'image/jpeg',
+                name: image.fileName || `photo_${Date.now()}.jpg`,
+              } as unknown as Blob);
+
+              const response = await fetch(`${API_BASE}/v1/photos`, {
+                method: 'POST',
+                headers: {
+                  'Authorization': `Bearer ${token}`,
+                  // Note: DO NOT set Content-Type for FormData
+                  // fetch() will set it automatically with proper boundary
+                },
+                body: formData,
+              });
+
+              if (!response.ok) {
+                const errorText = await response.text();
+                if (__DEV__) console.error('[App] Photo upload failed:', response.status, errorText);
+                Alert.alert('Upload Failed', `Could not upload photo: ${response.status}`);
+                return;
+              }
+
+              if (__DEV__) console.log('[App] Photo uploaded successfully');
+              Alert.alert('Success', 'Photo uploaded! Pull down to refresh.');
+
+              // Close and reopen to refresh
+              setMenuScreen('none');
+              setTimeout(() => setMenuScreen('photos'), 100);
+            } catch (error) {
+              if (__DEV__) console.error('[App] Photo upload error:', error);
+              Alert.alert('Upload Error', 'Something went wrong uploading your photo.');
+            }
           }}
         />
       )}

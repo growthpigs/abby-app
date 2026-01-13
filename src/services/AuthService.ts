@@ -154,9 +154,9 @@ export const AuthService = {
 
     const attributes = createUserAttributes(email, firstName, lastName);
 
-    // TEST: Try using email AS username (some pools require email format)
-    // Previously tried: `${emailPrefix}_${Date.now()}` - got InvalidParameterException
-    const username = email; // Use email directly as username
+    // Cognito pool is configured with email as ALIAS, not username
+    // Username must NOT be email format - generate unique ID
+    const username = `user_${Date.now()}_${Math.random().toString(36).substring(2, 8)}`;
 
     // DETAILED DEBUG LOGGING - see exactly what we're sending
     if (__DEV__) {
@@ -177,13 +177,21 @@ export const AuthService = {
     return new Promise((resolve, reject) => {
       userPool.signUp(username, password, attributes, [], (err, result) => {
         if (err) {
-          const cognitoErr = err as Error & { code?: string; message?: string };
+          const cognitoErr = err as Error & { code?: string; message?: string; name?: string };
           if (__DEV__) {
-            if (__DEV__) console.log('[AuthService] Signup FAILED');
-            if (__DEV__) console.log('Error code:', cognitoErr.code);
-            if (__DEV__) console.log('Error message:', cognitoErr.message);
+            console.log('=== COGNITO SIGNUP ERROR ===');
+            console.log('Error code:', cognitoErr.code);
+            console.log('Error name:', cognitoErr.name);
+            console.log('Error message:', cognitoErr.message);
+            console.log('Full error:', JSON.stringify(cognitoErr, null, 2));
+            console.log('=== END ERROR ===');
           }
-          reject(mapCognitoError(cognitoErr));
+          // For InvalidParameterException, show the ACTUAL Cognito message (more specific)
+          if (cognitoErr.code === 'InvalidParameterException') {
+            reject({ code: cognitoErr.code, message: cognitoErr.message || 'Invalid parameter' });
+          } else {
+            reject(mapCognitoError(cognitoErr));
+          }
           return;
         }
 

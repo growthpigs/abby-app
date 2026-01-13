@@ -29,9 +29,51 @@ const API_BASE_URL = API_CONFIG.API_URL;
 const REQUEST_TIMEOUT_MS = 15000;
 
 // ========================================
-// Types
+// Types - Matches actual API response
 // ========================================
 
+/**
+ * Raw question from API (snake_case)
+ */
+export interface ApiQuestion {
+  question_id: string;
+  question_code: string;
+  category_id: number;
+  category_name: string;
+  question_text: string;
+  llm_prompt: string;
+  llm_context: string;
+  llm_followup_prompt: string | null;
+  parsing_hints: Record<string, unknown>;
+  question_type: 'open_ended' | 'single_select' | 'multi_select' | 'scale';
+  screen_group: string;
+  display_order: number;
+  importance_tier: number;
+  dealbreaker_eligible: boolean;
+  options: ApiQuestionOption[];
+}
+
+export interface ApiQuestionOption {
+  option_id: string;
+  option_code: string;
+  option_text: string;
+  synonyms: string[];
+  display_order: number;
+}
+
+/**
+ * Raw API response for /v1/questions/next
+ */
+export interface ApiNextQuestionsResponse {
+  questions: ApiQuestion[];
+  profile_completion: number;
+  total_questions: string; // API returns as string
+  answered_questions: string; // API returns as string
+}
+
+/**
+ * Normalized question for app use (camelCase)
+ */
 export interface Question {
   id: string;
   category: string;
@@ -39,7 +81,7 @@ export interface Question {
   type: 'multiple_choice' | 'open_ended' | 'scale' | 'yes_no';
   options?: string[];
   required: boolean;
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
 }
 
 export interface Answer {
@@ -48,6 +90,18 @@ export interface Answer {
   timestamp: string;
 }
 
+/**
+ * Raw API answer format (snake_case)
+ */
+interface ApiAnswer {
+  question_id: string;
+  answer: string | number | string[];
+  answered_at: string;
+}
+
+/**
+ * Normalized response for app use
+ */
 export interface NextQuestionResponse {
   question: Question;
   progress: {
@@ -101,6 +155,39 @@ export interface ProfileGap {
 
 export class QuestionsService {
   /**
+   * Transform API question type to our normalized type
+   */
+  private mapQuestionType(apiType: string): Question['type'] {
+    const typeMap: Record<string, Question['type']> = {
+      'open_ended': 'open_ended',
+      'single_select': 'multiple_choice',
+      'multi_select': 'multiple_choice',
+      'scale': 'scale',
+      'yes_no': 'yes_no',
+    };
+    return typeMap[apiType] || 'open_ended';
+  }
+
+  /**
+   * Transform raw API question to normalized Question
+   */
+  private transformQuestion(apiQ: ApiQuestion): Question {
+    return {
+      id: apiQ.question_id,
+      category: apiQ.category_name,
+      text: apiQ.llm_prompt || apiQ.question_text, // Use LLM prompt if available
+      type: this.mapQuestionType(apiQ.question_type),
+      options: apiQ.options?.map(o => o.option_text),
+      required: apiQ.importance_tier <= 2, // Tier 1-2 are required
+      metadata: {
+        vibe_shift: apiQ.screen_group, // Map screen_group to vibe
+        question_code: apiQ.question_code,
+        dealbreaker_eligible: apiQ.dealbreaker_eligible,
+      },
+    };
+  }
+
+  /**
    * Get the next question to ask
    * The API determines the best question based on profile gaps and previous answers
    */
@@ -129,14 +216,35 @@ export class QuestionsService {
         throw fetchError;
       }
 
-      const data: NextQuestionResponse = await response.json();
+      // Parse raw API response
+      const apiData: ApiNextQuestionsResponse = await response.json();
 
-      if (__DEV__) {
-        if (__DEV__) console.log('[Questions] Next question:', data.question.text);
-        if (__DEV__) console.log('[Questions] Progress:', `${data.progress.current}/${data.progress.total}`);
+      // Validate we have questions
+      if (!apiData.questions || apiData.questions.length === 0) {
+        throw { code: 'NO_QUESTIONS', message: 'No questions available' };
       }
 
-      return data;
+      // Transform to normalized format (take first question)
+      const total = parseInt(apiData.total_questions, 10) || 0;
+      const answered = parseInt(apiData.answered_questions, 10) || 0;
+      const current = answered + 1;
+
+      const normalizedResponse: NextQuestionResponse = {
+        question: this.transformQuestion(apiData.questions[0]),
+        progress: {
+          current,
+          total,
+          percentage: total > 0 ? Math.round((answered / total) * 100) : 0,
+        },
+        hasMore: current < total,
+      };
+
+      if (__DEV__) {
+        console.log('[Questions] Next question:', normalizedResponse.question.text);
+        console.log('[Questions] Progress:', `${current}/${total}`);
+      }
+
+      return normalizedResponse;
     } catch (error) {
       if (__DEV__) console.error('[Questions] Get next failed:', error);
       // Re-throw secure errors, sanitize others
@@ -163,6 +271,7 @@ export class QuestionsService {
         throw new Error('Not authenticated');
       }
 
+      // API expects snake_case: question_id, not questionId
       const response = await secureFetch(`${API_BASE_URL}/answers`, {
         method: 'POST',
         headers: {
@@ -170,10 +279,10 @@ export class QuestionsService {
           'Authorization': `Bearer ${token}`,
         },
         body: JSON.stringify({
-          questionId,
+          question_id: questionId,  // API uses snake_case
           answer,
-          responseTime,
-        } as SubmitAnswerRequest),
+          response_time: responseTime,  // Likely also snake_case
+        }),
         timeout: REQUEST_TIMEOUT_MS,
       });
 
@@ -223,9 +332,9 @@ export class QuestionsService {
           'Authorization': `Bearer ${token}`,
         },
         body: JSON.stringify({
-          questionId,
-          naturalLanguageAnswer,
-        } as ParseAnswerRequest),
+          question_id: questionId,  // API uses snake_case
+          natural_language_answer: naturalLanguageAnswer,
+        }),
         timeout: REQUEST_TIMEOUT_MS,
       });
 
@@ -241,8 +350,8 @@ export class QuestionsService {
       const data: ParseAnswerResponse = await response.json();
 
       if (__DEV__) {
-        if (__DEV__) console.log('[Questions] Parsed value:', data.parsedValue);
-        if (__DEV__) console.log('[Questions] Confidence:', data.confidence);
+        console.log('[Questions] Parsed value:', data.parsedValue);
+        console.log('[Questions] Confidence:', data.confidence);
       }
 
       return data;
@@ -413,11 +522,17 @@ export class QuestionsService {
         throw fetchError;
       }
 
-      const data: Answer[] = await response.json();
+      // API returns snake_case, transform to camelCase
+      const apiData: ApiAnswer[] = await response.json();
+      const answers: Answer[] = apiData.map(a => ({
+        questionId: a.question_id,
+        value: a.answer,
+        timestamp: a.answered_at,
+      }));
 
-      if (__DEV__) console.log('[Questions] User answers:', data.length);
+      if (__DEV__) console.log('[Questions] User answers:', answers.length);
 
-      return data;
+      return answers;
     } catch (error) {
       if (__DEV__) console.error('[Questions] Get answers failed:', error);
       if (error && typeof error === 'object' && 'code' in error) {

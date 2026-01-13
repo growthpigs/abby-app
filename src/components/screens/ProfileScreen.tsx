@@ -90,17 +90,13 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
           body: JSON.stringify(profilePayload),
         });
 
-        if (__DEV__) {
-          if (__DEV__) console.log('[ProfileScreen] Profile saved successfully');
-        }
+        if (__DEV__) console.log('[ProfileScreen] Profile saved successfully');
 
         Alert.alert('Success', 'Your profile has been updated.');
         onClose?.();
       }
     } catch (error) {
-      if (__DEV__) {
-        if (__DEV__) console.error('[ProfileScreen] Save failed:', error);
-      }
+      if (__DEV__) console.error('[ProfileScreen] Save failed:', error);
       Alert.alert('Error', 'Failed to save profile. Please try again.');
     } finally {
       setIsSaving(false);

@@ -16,7 +16,7 @@ import {
   Image,
 } from 'react-native';
 import { BlurView } from 'expo-blur';
-import { Heart, AlertCircle, RefreshCw, ChevronLeft, ChevronRight, MessageCircle } from 'lucide-react-native';
+import { Heart, AlertCircle, RefreshCw, ChevronLeft, ChevronRight, MessageCircle, X, Check } from 'lucide-react-native';
 import { Headline, Body, Caption } from '../ui/Typography';
 import { GlassButton } from '../ui/GlassButton';
 import { checkIsDemoMode } from '../../hooks/useIsDemoMode';
