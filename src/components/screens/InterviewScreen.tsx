@@ -17,22 +17,27 @@ import Animated, { FadeIn, FadeOut } from 'react-native-reanimated';
 import { useDemoStore } from '../../store/useDemoStore';
 import { useVibeController } from '../../store/useVibeController';
 import { ALL_DATA_POINTS } from '../../data/questions-schema';
-import { isValidVibeTheme } from '../../types/vibe';
+import { isValidVibeTheme, VibeColorTheme } from '../../types/vibe';
 import { abbyTTS } from '../../services/AbbyTTSService';
-import { TOTAL_SHADERS } from '../../constants/backgroundMap';
+import { getShaderForVibe, DEFAULT_VIBE_SHADERS } from '../../constants/vibeShaderMap';
 
 // Use the full 150 questions for interview mode
 const INTERVIEW_QUESTIONS = ALL_DATA_POINTS;
 
 /**
- * Get background shader index for a question
- * Cycles through all available shaders (1 to TOTAL_SHADERS)
- * Uses TOTAL_SHADERS from constants to avoid hardcoded magic numbers
+ * Get emotionally-appropriate shader for a vibe theme
+ * Selects from the vibe's shader group with variety based on index
  */
-const getBackgroundIndexForQuestion = (questionIndex: number): number => {
-  // Cycle through all available backgrounds (1 to TOTAL_SHADERS)
-  // Ensures we never request an invalid shader index
-  return (questionIndex % TOTAL_SHADERS) + 1;
+const getShaderForVibeAndIndex = (
+  theme: VibeColorTheme | null,
+  vibeChangeCount: number
+): number => {
+  if (!theme) {
+    // Default to TRUST if no vibe specified
+    return DEFAULT_VIBE_SHADERS.TRUST;
+  }
+  // Cycle through the vibe's shader group based on how many times we've changed vibes
+  return getShaderForVibe(theme, vibeChangeCount);
 };
 
 export interface InterviewScreenProps {
@@ -71,6 +76,10 @@ export const InterviewScreen: React.FC<InterviewScreenProps> = ({
 
   // Track TTS errors for user feedback
   const [voiceError, setVoiceError] = useState(false);
+
+  // Track current vibe for emotion-based texture selection
+  const [currentVibe, setCurrentVibe] = useState<VibeColorTheme>('TRUST');
+  const [vibeChangeCount, setVibeChangeCount] = useState(0);
 
   // Ref for audio level callback
   const audioLevelRef = useRef(setAudioLevel);
@@ -115,12 +124,16 @@ export const InterviewScreen: React.FC<InterviewScreenProps> = ({
     onSecretForward?.();
   }, [onSecretForward]);
 
-  // Calculate background index for current question
+  // Emotion-based texture selection: change shader when vibe changes
   useEffect(() => {
     if (onBackgroundChange) {
-      onBackgroundChange(getBackgroundIndexForQuestion(currentIndex));
+      const shaderId = getShaderForVibeAndIndex(currentVibe, vibeChangeCount);
+      onBackgroundChange(shaderId);
+      if (__DEV__) {
+        console.log('[Interview] Shader →', shaderId, 'for vibe', currentVibe);
+      }
     }
-  }, [currentIndex, onBackgroundChange]);
+  }, [currentVibe, vibeChangeCount, onBackgroundChange]);
 
   // Speak question when it changes + trigger vibe shift BEFORE question is asked
   useEffect(() => {
@@ -128,9 +141,16 @@ export const InterviewScreen: React.FC<InterviewScreenProps> = ({
     if (question) {
       setVoiceError(false);
 
-      // Trigger vibe_shift BEFORE speaking the question (organic color transition)
+      // Trigger vibe_shift BEFORE speaking the question (organic color + texture transition)
       if (question.vibe_shift && isValidVibeTheme(question.vibe_shift)) {
-        setColorTheme(question.vibe_shift);
+        const newVibe = question.vibe_shift as VibeColorTheme;
+        setColorTheme(newVibe);
+
+        // Update local vibe tracking for texture selection
+        if (newVibe !== currentVibe) {
+          setCurrentVibe(newVibe);
+          setVibeChangeCount(prev => prev + 1);
+        }
       }
 
       addMessage('abby', question.question);
@@ -146,7 +166,7 @@ export const InterviewScreen: React.FC<InterviewScreenProps> = ({
     return () => {
       abbyTTS.stop();
     };
-  }, [currentIndex, setColorTheme]);
+  }, [currentIndex, setColorTheme, currentVibe]);
 
   return (
     <View style={styles.container}>

@@ -298,16 +298,15 @@ function AppContent() {
     }
   }, [authState, demoState]);
 
-  // DEV: Subscribe to vibe controller for debug overlay
-  // This allows changing vibes from any screen, not just authenticated
+  // Subscribe to vibe controller for interview vibe_shift and debug overlay
+  // CRITICAL: This bridge forwards store changes (e.g., InterviewScreen.setColorTheme)
+  // to the shader ref. Without this, vibe_shift during questions won't animate!
   useEffect(() => {
-    if (!__DEV__) return;
-
     const unsubscribe = useVibeController.subscribe((state) => {
       // Forward vibe controller changes to shader ref
       vibeRef.current?.setVibeAndComplexity(state.colorTheme, state.complexity);
       if (__DEV__) {
-        console.log('[VibeDebug] → Shader:', state.colorTheme, state.complexity);
+        console.log('[VibeController] → Shader:', state.colorTheme, state.complexity);
       }
     });
 
