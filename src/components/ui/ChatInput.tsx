@@ -17,6 +17,7 @@ import {
 } from 'react-native';
 import { BlurView } from 'expo-blur';
 import { Send } from 'lucide-react-native';
+import { LIQUID_GLASS } from '../../constants/layout';
 
 interface ChatInputProps {
   onSend: (message: string) => void;
@@ -63,7 +64,7 @@ export function ChatInput({
 
   return (
     <View style={styles.container}>
-      <BlurView intensity={80} tint="light" style={styles.blurContainer}>
+      <BlurView intensity={LIQUID_GLASS.blurIntensity} tint={LIQUID_GLASS.blurTint} style={styles.blurContainer}>
         <View style={styles.inputRow}>
           <TextInput
             style={styles.input}
@@ -106,17 +107,13 @@ export function ChatInput({
 }
 
 const styles = StyleSheet.create({
+  // iOS Liquid Glass style from shared constants
   container: {
-    // Outer shadow for floating effect
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.15,
-    shadowRadius: 12,
-    elevation: 8,
+    ...LIQUID_GLASS.container,
   },
 
   blurContainer: {
-    borderRadius: 28, // Match login buttons
+    borderRadius: 27, // Slightly less than container to fit inside border
     overflow: 'hidden',
   },
 
@@ -125,9 +122,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: 20,
     paddingVertical: 8,
-    minHeight: 56, // Match login button height
-    // iOS Liquid Glass: subtle transparent white that lets background shine through
-    backgroundColor: 'rgba(255, 255, 255, 0.15)',
+    minHeight: 56,
+    ...LIQUID_GLASS.content,
   },
 
   input: {

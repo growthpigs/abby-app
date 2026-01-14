@@ -426,7 +426,8 @@ export const useOnboardingStore = create<OnboardingStore>((set, get) => ({
         version: ONBOARDING_VERSION,
         savedAt: Date.now(),
         currentScreenId: state.currentScreenId, // Use identifier, not index
-        fullName: state.fullName,
+        firstName: state.firstName,
+        familyName: state.familyName,
         nickname: state.nickname,
         dateOfBirth: state.dateOfBirth?.toISOString() || null,
         ageRangeMin: state.ageRangeMin,
@@ -507,7 +508,8 @@ export const useOnboardingStore = create<OnboardingStore>((set, get) => ({
         isLoaded: true,
         savedAt: data.savedAt,
         currentScreenId: validScreenId,
-        fullName: data.fullName || null,
+        firstName: data.firstName || null,
+        familyName: data.familyName || null,
         nickname: data.nickname || null,
         dateOfBirth: data.dateOfBirth ? new Date(data.dateOfBirth) : null,
         ageRangeMin: data.ageRangeMin ?? 18,
@@ -551,9 +553,6 @@ export const useOnboardingStore = create<OnboardingStore>((set, get) => ({
 }));
 
 // Selectors
-export const useOnboardingFullName = () =>
-  useOnboardingStore((state) => state.fullName);
-
 export const useOnboardingNickname = () =>
   useOnboardingStore((state) => state.nickname);
 

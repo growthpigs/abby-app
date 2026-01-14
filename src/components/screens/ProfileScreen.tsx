@@ -114,7 +114,7 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
 
     switch (editingField) {
       case 'fullName':
-        store.setFullName(editValue);
+        store.setFirstName(editValue);
         break;
       case 'nickname':
         store.setNickname(editValue);
@@ -214,8 +214,8 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
           <ProfileSection
             icon={<User size={20} stroke="rgba(0, 0, 0, 0.6)" />}
             title="Full Name"
-            value={store.fullName}
-            onPress={() => startEditing('fullName', store.fullName)}
+            value={store.firstName && store.familyName ? `${store.firstName} ${store.familyName}` : store.firstName || store.familyName || ''}
+            onPress={() => startEditing('fullName', store.firstName || '')}
           />
 
           <ProfileSection

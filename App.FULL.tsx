@@ -405,7 +405,8 @@ function AppContent() {
   };
 
   // ONBOARDING FLOW HANDLERS
-  const setFullName = useOnboardingStore((state) => state.setFullName);
+  const setFirstName = useOnboardingStore((state) => state.setFirstName);
+  const setFamilyName = useOnboardingStore((state) => state.setFamilyName);
   const setNickname = useOnboardingStore((state) => state.setNickname);
   const setDateOfBirth = useOnboardingStore((state) => state.setDateOfBirth);
   const setAgeRange = useOnboardingStore((state) => state.setAgeRange);
@@ -420,9 +421,10 @@ function AppContent() {
   const markOnboardingComplete = useOnboardingStore((state) => state.markComplete);
 
   // Screen 4: Name
-  const handleNameComplete = (fullName: string, nickname: string) => {
-    setFullName(fullName);
-    setNickname(nickname);
+  const handleNameComplete = (firstName: string, familyName: string) => {
+    setFirstName(firstName);
+    setFamilyName(familyName);
+    setNickname(firstName);
     setAuthState('DOB');
   };
 

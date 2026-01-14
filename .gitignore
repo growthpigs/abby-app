@@ -41,3 +41,4 @@ yarn-error.*
 /android
 pai-context
 pai-docs
+App.FULL.tsx
