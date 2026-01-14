@@ -86,7 +86,7 @@ export const HamburgerMenu: React.FC<HamburgerMenuProps> = ({
         ]}
         hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
       >
-        <Menu size={24} stroke="rgba(255, 255, 255, 0.85)" strokeWidth={2} />
+        <Menu size={28} stroke="rgba(255, 255, 255, 0.95)" strokeWidth={3} />
       </Pressable>
 
       {/* Slide-out Menu Modal */}
@@ -197,12 +197,10 @@ export const HamburgerMenu: React.FC<HamburgerMenuProps> = ({
 const styles = StyleSheet.create({
   hamburgerButton: {
     position: 'absolute',
-    top: 60,
+    top: 12,
     left: 20,
     width: 44,
     height: 44,
-    borderRadius: 22,
-    backgroundColor: 'rgba(0, 0, 0, 0.15)',
     alignItems: 'center',
     justifyContent: 'center',
     zIndex: 1000,

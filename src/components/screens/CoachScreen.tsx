@@ -56,7 +56,7 @@ export const CoachScreen: React.FC<CoachScreenProps> = ({
 
   // Use draggable sheet hook (replaces manual pan responder + snap logic)
   // Uses centralized constants from layout.ts - SINGLE SOURCE OF TRUTH
-  const { translateY, panHandlers, animateIn } = useDraggableSheet({
+  const { translateY, panHandlers, animateIn, snapTo } = useDraggableSheet({
     snapPoints: [...SHEET_SNAP_POINTS],
     defaultSnap: SHEET_DEFAULT_SNAP,
   });
@@ -174,6 +174,12 @@ export const CoachScreen: React.FC<CoachScreenProps> = ({
     scrollToTop();
   }, [addMessage, sendTextMessage, scrollToTop]);
 
+  // Handle ChatInput focus - snap to 100% when user taps
+  // Snap points: [0.35, 0.55, 0.75, 0.9, 1.0], so index 4 is 100%
+  const handleChatInputFocus = useCallback(() => {
+    snapTo(4);
+  }, [snapTo]);
+
   // Secret navigation handlers
   const handleSecretBack = useCallback(() => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
@@ -270,13 +276,6 @@ export const CoachScreen: React.FC<CoachScreenProps> = ({
               )}
             </ScrollView>
 
-            {/* Chat input */}
-            <ChatInput
-              onSend={handleSendMessage}
-              disabled={!isConnected}
-              placeholder="Message Abby..."
-            />
-
             {/* End Chat button */}
             <Pressable
               onPress={handleEndChat}
@@ -288,8 +287,18 @@ export const CoachScreen: React.FC<CoachScreenProps> = ({
               <Text style={styles.buttonText}>End Chat</Text>
             </Pressable>
           </View>
+
         </BlurView>
       </Animated.View>
+
+      {/* Chat input - positioned OUTSIDE bottom sheet, relative to screen */}
+      <View style={styles.chatInputContainer}>
+        <ChatInput
+          onSend={handleSendMessage}
+          disabled={!isConnected}
+          onFocus={handleChatInputFocus}
+        />
+      </View>
 
       {/* Secret navigation triggers (all 70x70, invisible) */}
       {/* Left = Back */}
@@ -334,6 +343,7 @@ const styles = StyleSheet.create({
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
     overflow: 'hidden',
+    zIndex: 50,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: -4 },
     shadowOpacity: 0.15,
@@ -423,7 +433,16 @@ const styles = StyleSheet.create({
   },
   messagesContent: {
     paddingTop: 8,
-    paddingBottom: 16,
+    paddingBottom: 20,
+  },
+
+  chatInputContainer: {
+    position: 'absolute',
+    bottom: 15,
+    left: 6,
+    right: 6,
+    zIndex: 200,
+    pointerEvents: 'box-none',
   },
   placeholderText: {
     fontFamily: 'Merriweather_400Regular',

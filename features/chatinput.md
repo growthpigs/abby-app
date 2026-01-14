@@ -3,13 +3,39 @@
 **What:** Text input component for typing messages to Abby during Coach mode conversations
 **Who:** Users who prefer typing or need to supplement voice with text
 **Why:** Alternative input method + accessibility + silent environments
-**Status:** ✅ Complete
+**Status:** 🔄 In Progress (UI refinements + Toast integration planned)
 
 ---
 
 ## Overview
 
 ChatInput provides a liquid glass text input component that allows users to send typed messages to Abby during Coach mode conversations. It maintains the app's glass/ocean metaphor while providing robust input sanitization and error handling.
+
+---
+
+## 2026-01-14 Session - UI Refinements & Toast Integration
+
+### Current Work:
+- **In Progress:** Reposition ChatInput to bottom of screen with proper spacing
+  - Anchor to bottom with 12px padding
+  - 6px left/right padding (wider layout)
+  - Vertically center "Reply to Abby" placeholder
+  - Reduce placeholder text size
+  - Lighter gray color for "Reply to Abby" placeholder
+
+### Planned:
+- **Toast Notification System:** Replace modal pop-ups app-wide with toast notifications
+  - Simple acknowledgments → toasts (auto-dismiss)
+  - Decision-requiring alerts → keep as modals
+  - Create global `useToast()` hook with queue support
+  - Support types: `success`, `error`, `info`, `warning`
+
+### Related Fixes (Session):
+- **Auth:** Fixed Cognito signup validation error (missing `family_name`)
+  - Updated `NameScreen` to collect `firstName` + `familyName` separately
+  - Updated `AuthService.signup()` signature to accept both parameters
+  - Updated `useOnboardingStore` state management
+  - Updated `App.tsx` auth flow to pass both values
 
 ---
 

@@ -75,8 +75,9 @@ export interface OnboardingLocation {
 // Onboarding store state (matches client spec screens 4-11)
 interface OnboardingStoreState {
   // Screen 4: Name
-  fullName: string | null;
-  nickname: string | null;
+  firstName: string | null;
+  familyName: string | null;
+  nickname: string | null;  // Display name for profile
 
   // Screen 5: DOB
   dateOfBirth: Date | null;
@@ -115,7 +116,8 @@ interface OnboardingStoreState {
 // Onboarding store actions
 interface OnboardingStoreActions {
   // Screen 4
-  setFullName: (name: string) => void;
+  setFirstName: (name: string) => void;
+  setFamilyName: (name: string) => void;
   setNickname: (name: string) => void;
 
   // Screen 5
@@ -163,7 +165,8 @@ type OnboardingStore = OnboardingStoreState & OnboardingStoreActions;
 // Default state
 const initialState: OnboardingStoreState = {
   // Screen 4
-  fullName: null,
+  firstName: null,
+  familyName: null,
   nickname: null,
 
   // Screen 5
@@ -204,8 +207,12 @@ export const useOnboardingStore = create<OnboardingStore>((set, get) => ({
   ...initialState,
 
   // Screen 4: Name
-  setFullName: (name: string) => {
-    set({ fullName: name });
+  setFirstName: (name: string) => {
+    set({ firstName: name });
+  },
+
+  setFamilyName: (name: string) => {
+    set({ familyName: name });
   },
 
   setNickname: (name: string) => {

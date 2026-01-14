@@ -316,54 +316,52 @@ export const CoachIntroScreen: React.FC<CoachIntroScreenProps> = ({
             )}
           </View>
 
-          {/* Content area - pointerEvents auto to capture touches */}
-          <View style={styles.contentContainer} pointerEvents="auto">
-            {/* Conversation transcript - newest at top */}
-            <ScrollView
-              ref={scrollRef}
-              style={styles.messagesContainer}
-              contentContainerStyle={[styles.messagesContent, { flexGrow: 1 }]}
-              showsVerticalScrollIndicator={true}
-              bounces={true}
-              alwaysBounceVertical={true}
-              scrollEventThrottle={16}
-            >
-              {messages.length === 0 ? (
-                <Text style={styles.placeholderText}>
-                  {isConnected ? "Hi! I'm Abby. Ready to help you find your perfect match?" : "Connecting to Abby..."}
-                </Text>
-              ) : (
-                [...messages].reverse().map((message) => {
-                  if (!message?.text) return null;
-                  return (
-                    <View key={message.id} style={[
-                      styles.messageBubble,
-                      message.speaker === 'user' && styles.messageBubbleUser
+          {/* Conversation transcript - grows to fill available space */}
+          <ScrollView
+            ref={scrollRef}
+            style={styles.messagesContainer}
+            contentContainerStyle={styles.messagesContent}
+            showsVerticalScrollIndicator={true}
+            bounces={true}
+            alwaysBounceVertical={true}
+            scrollEventThrottle={16}
+          >
+            {messages.length === 0 ? (
+              <Text style={styles.placeholderText}>
+                {isConnected ? "Hi! I'm Abby. Ready to help you find your perfect match?" : "Connecting to Abby..."}
+              </Text>
+            ) : (
+              [...messages].reverse().map((message) => {
+                if (!message?.text) return null;
+                return (
+                  <View key={message.id} style={[
+                    styles.messageBubble,
+                    message.speaker === 'user' && styles.messageBubbleUser
+                  ]}>
+                    <Text style={[
+                      styles.messageText,
+                      message.speaker === 'user' && styles.userMessageText
                     ]}>
-                      <Text style={[
-                        styles.messageText,
-                        message.speaker === 'user' && styles.userMessageText
-                      ]}>
-                        {message.speaker === 'abby' ? '' : 'You: '}{message.text}
-                      </Text>
-                    </View>
-                  );
-                })
-              )}
-            </ScrollView>
+                      {message.speaker === 'abby' ? '' : 'You: '}{message.text}
+                    </Text>
+                  </View>
+                );
+              })
+            )}
+          </ScrollView>
 
-          </View>
-
-          {/* Chat input - positioned absolutely at bottom */}
-          <View style={styles.chatInputContainer}>
-            <ChatInput
-              onSend={handleSendMessage}
-              disabled={!isConnected}
-              placeholder="Reply to Abby..."
-            />
-          </View>
         </BlurView>
       </Animated.View>
+
+      {/* Chat input - OUTSIDE the animated sheet, fixed at actual screen bottom */}
+      {/* This ensures it's always visible regardless of sheet translateY position */}
+      <View style={styles.chatInputContainer}>
+        <ChatInput
+          onSend={handleSendMessage}
+          disabled={!isConnected}
+          placeholder="Reply to Abby..."
+        />
+      </View>
 
       {/* Secret navigation triggers (all 70x70, invisible) */}
       {/* Left = Back */}
@@ -487,21 +485,17 @@ const styles = StyleSheet.create({
     transform: [{ scale: 0.95 }],
   },
 
-  // Content area - vertical flexbox with messages above, chat input below
-  contentContainer: {
-    flex: 1,
-    flexDirection: 'column',
-    paddingHorizontal: 0,
-  },
-
-  // Messages container (NO flex: 1 - let it grow naturally, ChatInput comes after)
+  // Messages container - THE flexible element
+  // In flex column layout: items WITHOUT flex get natural size FIRST,
+  // then items WITH flex: 1 split remaining space.
+  // Order: header (natural) → status (natural) → scroll (flex:1) → input (natural)
   messagesContainer: {
-    // flex: 1 removed - ScrollView will take available space naturally
-    minHeight: 200, // Minimum height to ensure scrolling works
+    flex: 1,          // ← Takes remaining space after header, status, and input
+    minHeight: 100,   // Minimum to ensure scrolling works
   },
   messagesContent: {
     paddingTop: 8,
-    paddingBottom: 16,
+    paddingBottom: 100, // Extra space so messages don't hide behind fixed input at screen bottom
     paddingHorizontal: 20,
   },
   placeholderText: {
@@ -587,12 +581,16 @@ const styles = StyleSheet.create({
     borderRadius: 8,
   },
 
-  // Chat input wrapper - positions at bottom of content area
+  // Chat input wrapper - FLOATING PILL at screen bottom
+  // CRITICAL: Outside animated sheet so it's always visible
+  // Uses horizontal margins to create floating pill effect
   chatInputContainer: {
-    paddingHorizontal: 20,
-    paddingVertical: 8,
-    backgroundColor: 'transparent',
-    flexShrink: 0, // Prevent flex shrinking - take only needed space
+    position: 'absolute',
+    bottom: 34, // Safe area for home indicator
+    left: 20,
+    right: 20,
+    // NO background - ChatInput component has its own glassmorphic blur
+    zIndex: 200, // Above everything including sheet
   },
 });
 

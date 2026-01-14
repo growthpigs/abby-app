@@ -387,12 +387,13 @@ function AppContent() {
     setIsAuthLoading(true);
 
     try {
-      // Call Cognito SignUp
-      const name = fullName || 'User';
+      // Call Cognito SignUp with both firstName and familyName
+      const first = firstName || 'User';
+      const family = familyName || 'User';
 
-      if (__DEV__) console.log('[App] Signup params:', { email: emailData, name, passwordLength: password?.length });
+      if (__DEV__) console.log('[App] Signup params:', { email: emailData, firstName: first, familyName: family, passwordLength: password?.length });
 
-      const signupResult = await AuthService.signup(emailData, password, name);
+      const signupResult = await AuthService.signup(emailData, password, first, family);
 
       // Store the generated username (needed for verify/login)
       setUsernameData(signupResult.username);
@@ -478,8 +479,10 @@ function AppContent() {
   };
 
   // ONBOARDING FLOW HANDLERS
-  const fullName = useOnboardingStore((state) => state.fullName);
-  const setFullName = useOnboardingStore((state) => state.setFullName);
+  const firstName = useOnboardingStore((state) => state.firstName);
+  const familyName = useOnboardingStore((state) => state.familyName);
+  const setFirstName = useOnboardingStore((state) => state.setFirstName);
+  const setFamilyName = useOnboardingStore((state) => state.setFamilyName);
   const setNickname = useOnboardingStore((state) => state.setNickname);
   const setDateOfBirth = useOnboardingStore((state) => state.setDateOfBirth);
   const setAgeRange = useOnboardingStore((state) => state.setAgeRange);
@@ -503,9 +506,10 @@ function AppContent() {
   }, [loadOnboarding]);
 
   // Name screen (comes first in Nathan's API flow)
-  const handleNameComplete = (name: string, nickname: string) => {
-    setFullName(name);
-    setNickname(nickname); // User-provided nickname or their first name
+  const handleNameComplete = (firstName: string, familyName: string) => {
+    setFirstName(firstName);
+    setFamilyName(familyName);
+    setNickname(firstName); // Default to first name for display
     saveOnboarding(); // Persist for crash recovery
     setAuthState('EMAIL');  // Name → Email → Password → Verify
   };

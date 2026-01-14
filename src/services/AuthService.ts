@@ -156,7 +156,7 @@ let refreshPromise: Promise<RefreshTokenResponse> | null = null;
 
 export const AuthService = {
   /**
-   * Sign up a new user with email and password
+   * Sign up a new user with email, password, and name
    *
    * Flow:
    * 1. Call Cognito signUp with email, password, and attributes
@@ -166,14 +166,11 @@ export const AuthService = {
   async signup(
     email: string,
     password: string,
-    name: string
+    firstName: string,
+    familyName: string
   ): Promise<SignupResponse> {
-    // Split name into first/last if space present, otherwise use as first name
-    const nameParts = name.trim().split(' ');
-    const firstName = nameParts[0] || name;
-    const lastName = nameParts.slice(1).join(' ') || '';
 
-    const attributes = createUserAttributes(email, firstName, lastName);
+    const attributes = createUserAttributes(email, firstName, familyName);
 
     // Cognito pool is configured with email as ALIAS, not username
     // Username must NOT be email format - generate unique ID
@@ -183,9 +180,8 @@ export const AuthService = {
     if (__DEV__) {
       if (__DEV__) console.log('=== COGNITO SIGNUP DEBUG ===');
       if (__DEV__) console.log('Input email:', JSON.stringify(email));
-      if (__DEV__) console.log('Input name:', JSON.stringify(name));
-      if (__DEV__) console.log('Parsed firstName:', JSON.stringify(firstName));
-      if (__DEV__) console.log('Parsed lastName:', JSON.stringify(lastName));
+      if (__DEV__) console.log('Input firstName:', JSON.stringify(firstName));
+      if (__DEV__) console.log('Input familyName:', JSON.stringify(familyName));
       if (__DEV__) console.log('Generated username:', username);
       if (__DEV__) console.log('Password length:', password?.length);
       if (__DEV__) console.log('Attributes count:', attributes.length);

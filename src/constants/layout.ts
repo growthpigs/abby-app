@@ -9,7 +9,7 @@
  * Bottom sheet snap points (percentage of screen height)
  * Used by: CoachIntroScreen, CoachScreen, useDraggableSheet
  */
-export const SHEET_SNAP_POINTS = [0.35, 0.55, 0.75, 0.9] as const;
+export const SHEET_SNAP_POINTS = [0.35, 0.55, 0.75, 0.9, 1.0] as const;
 
 /**
  * Default snap point index (55% height - room for conversation)

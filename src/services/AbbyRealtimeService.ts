@@ -11,13 +11,19 @@
  * - GET /v1/abby/memory/context - Get conversation context
  * - GET /v1/abby/realtime/available - Check API availability
  *
- * NOTE: This is a simplified stub to match the ElevenLabs interface.
+ * Audio Playback:
+ * - Uses native Text-to-Speech (TTS) to speak Abby's responses
+ * - Updates isSpeakingState during audio playback
+ * - Respects mute setting - no audio when muted
+ *
+ * NOTE: This includes TTS support via native platform APIs.
  * Real OpenAI Realtime API requires WebRTC/WebSocket connection handling.
  */
 
 import { TokenManager } from './TokenManager';
 import { secureFetch, type SecureFetchError } from '../utils/secureFetch';
 import { TIMEOUTS, API_CONFIG } from '../config';
+import { Platform, NativeModules, Alert } from 'react-native';
 
 const API_BASE_URL = API_CONFIG.API_URL;
 
@@ -208,6 +214,10 @@ export class AbbyRealtimeService {
 
       const message = messages[this.demoMessageIndex];
       this.callbacks.onAbbyResponse?.(message);
+      // IMPORTANT: Speak the message (respects mute setting)
+      this.speakText(message).catch((err) => {
+        if (__DEV__) console.warn('[AbbyRealtime] Speech failed for message:', err);
+      });
       this.demoMessageIndex++;
 
       // Continue with next message after a pause
@@ -288,6 +298,10 @@ export class AbbyRealtimeService {
       this.scheduleTimer(() => {
         const demoResponse = this.generateDemoResponse(message);
         this.callbacks.onAbbyResponse?.(demoResponse);
+        // IMPORTANT: Speak the response
+        this.speakText(demoResponse).catch((err) => {
+          if (__DEV__) console.warn('[AbbyRealtime] Speech failed for demo response:', err);
+        });
       }, 1000 + Math.random() * 1500);
 
       return;
@@ -334,6 +348,10 @@ export class AbbyRealtimeService {
       // Trigger callback with Abby's response
       if (data.response) {
         this.callbacks.onAbbyResponse?.(data.response);
+        // IMPORTANT: Speak the response
+        this.speakText(data.response).catch((err) => {
+          if (__DEV__) console.warn('[AbbyRealtime] Speech failed for backend response:', err);
+        });
       }
 
       if (__DEV__) console.log('[AbbyRealtime] Message sent, response received');
@@ -455,6 +473,108 @@ export class AbbyRealtimeService {
   // Update speaking state (would be triggered by WebRTC events)
   setSpeaking(speaking: boolean): void {
     this.isSpeakingState = speaking;
+  }
+
+  /**
+   * Speak text using native platform TTS
+   * Updates isSpeakingState during playback
+   * Respects mute setting
+   */
+  private async speakText(text: string): Promise<void> {
+    // Don't speak if muted
+    if (this.isMutedState) {
+      if (__DEV__) console.log('[AbbyRealtime] Muted - not speaking:', text.substring(0, 50));
+      return;
+    }
+
+    try {
+      // Update speaking state
+      this.isSpeakingState = true;
+
+      if (__DEV__) console.log('[AbbyRealtime] 🔊 Speaking:', text.substring(0, 50));
+
+      // Use native TTS based on platform
+      if (Platform.OS === 'ios') {
+        // iOS: Use native Speech Synthesis
+        await this.speakViaIOS(text);
+      } else if (Platform.OS === 'android') {
+        // Android: Use native TextToSpeech
+        await this.speakViaAndroid(text);
+      }
+
+      // Mark speaking complete
+      this.isSpeakingState = false;
+    } catch (error) {
+      if (__DEV__) console.warn('[AbbyRealtime] TTS error:', error);
+      this.isSpeakingState = false;
+    }
+  }
+
+  /**
+   * iOS Text-to-Speech using native AVSpeechSynthesizer
+   */
+  private async speakViaIOS(text: string): Promise<void> {
+    return new Promise((resolve, reject) => {
+      try {
+        const utteranceId = `utterance-${Date.now()}`;
+
+        // Use native module if available, otherwise use setTimeout simulation
+        if (NativeModules.SpeechModule) {
+          NativeModules.SpeechModule.speak(text, utteranceId)
+            .then(() => {
+              // Estimate speech duration: ~200ms per word
+              const estimatedDuration = Math.max(1000, (text.split(' ').length * 200));
+              setTimeout(resolve, estimatedDuration);
+            })
+            .catch((err: any) => {
+              if (__DEV__) console.warn('[TTS-iOS] Native speech failed:', err);
+              reject(err);
+            });
+        } else {
+          // Fallback: Simulate speech duration (~200ms per word)
+          const estimatedDuration = Math.max(1000, (text.split(' ').length * 200));
+          if (__DEV__) {
+            console.log('[TTS-iOS] No native module - simulating TTS for', estimatedDuration, 'ms');
+          }
+          setTimeout(resolve, estimatedDuration);
+        }
+      } catch (error) {
+        reject(error);
+      }
+    });
+  }
+
+  /**
+   * Android Text-to-Speech using native TextToSpeech
+   */
+  private async speakViaAndroid(text: string): Promise<void> {
+    return new Promise((resolve, reject) => {
+      try {
+        const utteranceId = `utterance-${Date.now()}`;
+
+        if (NativeModules.TextToSpeechModule) {
+          NativeModules.TextToSpeechModule.speak(text, utteranceId)
+            .then(() => {
+              // Estimate speech duration: ~200ms per word
+              const estimatedDuration = Math.max(1000, (text.split(' ').length * 200));
+              setTimeout(resolve, estimatedDuration);
+            })
+            .catch((err: any) => {
+              if (__DEV__) console.warn('[TTS-Android] Native speech failed:', err);
+              reject(err);
+            });
+        } else {
+          // Fallback: Simulate speech duration
+          const estimatedDuration = Math.max(1000, (text.split(' ').length * 200));
+          if (__DEV__) {
+            console.log('[TTS-Android] No native module - simulating TTS for', estimatedDuration, 'ms');
+          }
+          setTimeout(resolve, estimatedDuration);
+        }
+      } catch (error) {
+        reject(error);
+      }
+    });
   }
 }
 

@@ -17,7 +17,7 @@ import { Typography } from '../ui/Typography';
 import { GlassButton } from '../ui/GlassButton';
 
 interface NameScreenProps {
-  onNext?: (name: string, nickname: string) => void;
+  onNext?: (firstName: string, familyName: string) => void;
   onSecretBack?: () => void;
   onSecretForward?: () => void;
 }
@@ -27,15 +27,13 @@ export const NameScreen: React.FC<NameScreenProps> = ({
   onSecretBack,
   onSecretForward,
 }) => {
-  const [name, setName] = useState('');
-  const [nickname, setNickname] = useState('');
+  const [firstName, setFirstName] = useState('');
+  const [familyName, setFamilyName] = useState('');
 
   const handleNext = () => {
     if (isValid) {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-      // Pass nickname or fall back to first name
-      const displayName = nickname.trim() || name.trim();
-      onNext?.(name.trim(), displayName);
+      onNext?.(firstName.trim(), familyName.trim());
     }
   };
 
@@ -49,8 +47,8 @@ export const NameScreen: React.FC<NameScreenProps> = ({
     onSecretForward?.();
   };
 
-  // Name validation: at least 2 characters
-  const isValid = name.trim().length >= 2;
+  // Name validation: both first and family name required, at least 2 characters each
+  const isValid = firstName.trim().length >= 2 && familyName.trim().length >= 2;
 
   return (
     <View style={styles.container}>
@@ -72,11 +70,11 @@ export const NameScreen: React.FC<NameScreenProps> = ({
           What's your{'\n'}first name?
         </Typography>
 
-        {/* Name input */}
+        {/* First name input */}
         <TextInput
           style={styles.nameInput}
-          value={name}
-          onChangeText={setName}
+          value={firstName}
+          onChangeText={setFirstName}
           placeholder=""
           autoCapitalize="words"
           autoCorrect={false}
@@ -86,15 +84,15 @@ export const NameScreen: React.FC<NameScreenProps> = ({
           maxLength={100}
         />
 
-        {/* Nickname section */}
+        {/* Family name section */}
         <Typography variant="body" style={styles.nicknameLabel}>
-          Nickname (optional)
+          Family Name
         </Typography>
         <TextInput
           style={styles.nicknameInput}
-          value={nickname}
-          onChangeText={setNickname}
-          placeholder="What should we call you?"
+          value={familyName}
+          onChangeText={setFamilyName}
+          placeholder=""
           autoCapitalize="words"
           autoCorrect={false}
           returnKeyType="done"
@@ -106,7 +104,7 @@ export const NameScreen: React.FC<NameScreenProps> = ({
         {/* Help text */}
         <View style={styles.helpTextContainer}>
           <Typography variant="caption" style={styles.helpText}>
-            This is how you'll appear to your matches
+            Both first and last name are required
           </Typography>
         </View>
       </View>
