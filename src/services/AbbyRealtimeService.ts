@@ -91,7 +91,7 @@ export class AbbyRealtimeService {
   private activeTimers: Set<NodeJS.Timeout> = new Set();
   private callbacks: ConversationCallbacks = {};
   private screenType: 'intro' | 'coach' = 'intro';
-  // Conversation history for /v1/chat fallback endpoint
+  // Conversation history for multi-turn chat context (OpenAI format)
   private conversationHistory: Array<{ role: 'user' | 'assistant'; content: string }> = [];
 
   constructor(callbacks?: ConversationCallbacks, screenType: 'intro' | 'coach' = 'intro') {
@@ -266,11 +266,11 @@ export class AbbyRealtimeService {
     // Clear ALL tracked timers (demo messages, text message responses, etc.)
     this.clearAllTimers();
 
+    // Clear conversation history
+    this.conversationHistory = [];
+
     // Stop any playing TTS audio
     await abbyTTS.stop();
-
-    // Clear conversation history for next session
-    this.conversationHistory = [];
 
     // If in demo mode, just cleanup state
     if (this.isDemoModeState) {
@@ -350,6 +350,10 @@ export class AbbyRealtimeService {
     // NOTE: We use /v1/chat for text mode, NOT /v1/abby/realtime/{session_id}/message
     // The realtime/message endpoint only INJECTS text into WebRTC sessions.
     // The /v1/chat endpoint actually returns Abby's response via HTTP.
+    //
+    // API Contract (from types.ts):
+    //   Request:  { message: string, conversationId?: string }
+    //   Response: { response: string, conversationId: string, suggestedActions?: string[] }
 
     try {
       if (__DEV__) console.log('[AbbyRealtime] 💬 Sending message via /v1/chat:', message);
@@ -359,11 +363,10 @@ export class AbbyRealtimeService {
         throw new Error('Not authenticated');
       }
 
-      // Add user message to conversation history
+      // Add user message to conversation history for multi-turn context
       this.conversationHistory.push({ role: 'user', content: message });
 
-      // Use POST /v1/chat with use_abby_fallback: true
-      // This is the TEXT FALLBACK endpoint per API docs
+      // Use POST /v1/chat with OpenAI format (per Swagger docs, NOT types.ts which is outdated)
       const response = await secureFetch(
         `${API_BASE_URL}/chat`,
         {
@@ -373,10 +376,10 @@ export class AbbyRealtimeService {
             'Authorization': `Bearer ${token}`,
           },
           body: JSON.stringify({
+            // OpenAI chat completion format - send FULL conversation history
             messages: this.conversationHistory,
             model: 'gpt-4o',
-            temperature: 0.8,
-            use_abby_fallback: true,  // Enable Abby persona, tools, phase logic
+            use_abby_fallback: true,  // Enable Abby persona
           }),
           timeout: REQUEST_TIMEOUT_MS,
         }
@@ -389,8 +392,6 @@ export class AbbyRealtimeService {
           console.error('[AbbyRealtime]   Status:', response.status);
           console.error('[AbbyRealtime]   Response:', errorText.substring(0, 200));
         }
-        // Remove failed message from history
-        this.conversationHistory.pop();
         const fetchError: SecureFetchError = {
           code: `HTTP_${response.status}`,
           message: `HTTP ${response.status}: ${errorText.substring(0, 150)}`,
@@ -402,23 +403,26 @@ export class AbbyRealtimeService {
       const data = await response.json();
       if (__DEV__) console.log('[AbbyRealtime] ✅ Chat response:', JSON.stringify(data).substring(0, 300));
 
-      // Extract Abby's response from OpenAI-style chat completion format
-      // Response format: { choices: [{ message: { role: "assistant", content: "..." } }] }
+      // Extract Abby's response - API returns { response: string, conversationId: string }
       let abbyResponse: string | null = null;
 
-      if (data.choices?.[0]?.message?.content) {
-        // Standard OpenAI chat completion format
-        abbyResponse = data.choices[0].message.content;
-      } else if (data.response) {
-        // Simplified backend format
+      if (data.response) {
+        // Expected format from AbbyChatResponse
         abbyResponse = data.response;
+        // Store conversationId for future messages
+        if (data.conversationId && !this.sessionId) {
+          this.sessionId = data.conversationId;
+        }
+      } else if (data.choices?.[0]?.message?.content) {
+        // Fallback: OpenAI chat completion format (if backend proxies to OpenAI)
+        abbyResponse = data.choices[0].message.content;
       } else if (data.content) {
-        // Direct content format
+        // Fallback: Direct content format
         abbyResponse = data.content;
       }
 
       if (abbyResponse) {
-        // Add Abby's response to conversation history
+        // Add assistant response to conversation history
         this.conversationHistory.push({ role: 'assistant', content: abbyResponse });
 
         this.callbacks.onAbbyResponse?.(abbyResponse);
@@ -428,11 +432,11 @@ export class AbbyRealtimeService {
         });
         if (__DEV__) console.log('[AbbyRealtime] ✅ Response received and spoken');
       } else {
+        // Remove failed user message from history
+        this.conversationHistory.pop();
         // Unexpected response format - log for debugging
         const debugData = JSON.stringify(data, null, 0).substring(0, 300);
         if (__DEV__) console.error('[AbbyRealtime] Unexpected chat response format:', debugData);
-        // Remove failed message from history
-        this.conversationHistory.pop();
         this.callbacks.onError?.(new Error(`Unexpected response format: ${debugData}`));
       }
     } catch (error) {
