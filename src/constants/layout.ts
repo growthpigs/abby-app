@@ -89,6 +89,61 @@ export const BORDER_RADIUS = {
   md: 16,
   /** Large (modals, sheets) */
   lg: 24,
+  /** Pills (inputs, buttons) */
+  pill: 28,
   /** Full round (avatars, pills) */
   full: 9999,
+} as const;
+
+/**
+ * iOS Liquid Glass Style
+ *
+ * The signature "shiny transparent glass" look from iOS.
+ * NOT frosted/opaque - you can see through it clearly.
+ *
+ * Key characteristics:
+ * - Very transparent fill (0.08 opacity)
+ * - Subtle white border stroke (0.5 opacity)
+ * - Soft outer glow (white shadow)
+ * - Low blur intensity (20) to keep transparency
+ */
+export const LIQUID_GLASS = {
+  /** Container style - apply to outer View */
+  container: {
+    borderRadius: 28,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.5)',
+    backgroundColor: 'rgba(255, 255, 255, 0.08)',
+    shadowColor: 'rgba(255, 255, 255, 0.3)',
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 1,
+    shadowRadius: 8,
+    elevation: 4,
+    overflow: 'hidden' as const,
+  },
+
+  /** BlurView intensity - keep low for transparency */
+  blurIntensity: 20,
+
+  /** BlurView tint */
+  blurTint: 'light' as const,
+
+  /** Inner content style - fully transparent */
+  content: {
+    backgroundColor: 'transparent',
+  },
+
+  /** Variant: Smaller pill (for compact buttons) */
+  containerSmall: {
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.4)',
+    backgroundColor: 'rgba(255, 255, 255, 0.06)',
+    shadowColor: 'rgba(255, 255, 255, 0.2)',
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 1,
+    shadowRadius: 4,
+    elevation: 2,
+    overflow: 'hidden' as const,
+  },
 } as const;

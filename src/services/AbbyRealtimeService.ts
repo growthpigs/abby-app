@@ -158,14 +158,21 @@ export class AbbyRealtimeService {
       });
 
       if (!response.ok) {
-        if (__DEV__) console.log('[AbbyRealtime] Session creation failed, entering demo mode');
+        const errorText = await response.text().catch(() => 'no response body');
+        if (__DEV__) {
+          console.error('[AbbyRealtime] Session creation failed');
+          console.error('[AbbyRealtime]   Status:', response.status);
+          console.error('[AbbyRealtime]   URL:', `${API_BASE_URL}/abby/realtime/session`);
+          console.error('[AbbyRealtime]   Response:', errorText);
+          console.log('[AbbyRealtime] Entering demo mode');
+        }
         return this.startDemoMode();
       }
 
       const data: RealtimeSessionResponse = await response.json();
       this.sessionId = data.sessionId;
 
-      if (__DEV__) console.log('[AbbyRealtime] Session created:', this.sessionId);
+      if (__DEV__) console.log('[AbbyRealtime] ✅ Session created:', this.sessionId);
 
       // TODO: Establish WebSocket/WebRTC connection
       // For now, simulate connection
@@ -292,7 +299,7 @@ export class AbbyRealtimeService {
   async sendTextMessage(message: string): Promise<void> {
     // Demo mode - generate a simulated response
     if (this.isDemoModeState) {
-      if (__DEV__) console.log('[AbbyRealtime] Demo mode - simulating response to:', message);
+      if (__DEV__) console.warn('[AbbyRealtime] 🎭 DEMO MODE - Not sending to backend:', message);
 
       // Simulate typing delay - uses tracked timer for cleanup
       this.scheduleTimer(() => {
@@ -335,6 +342,13 @@ export class AbbyRealtimeService {
       );
 
       if (!response.ok) {
+        const errorText = await response.text().catch(() => 'no response body');
+        if (__DEV__) {
+          console.error('[AbbyRealtime] Message send failed');
+          console.error('[AbbyRealtime]   Status:', response.status);
+          console.error('[AbbyRealtime]   Session ID:', this.sessionId);
+          console.error('[AbbyRealtime]   Response:', errorText);
+        }
         const fetchError: SecureFetchError = {
           code: `HTTP_${response.status}`,
           message: 'Failed to send message',
@@ -344,6 +358,7 @@ export class AbbyRealtimeService {
       }
 
       const data = await response.json();
+      if (__DEV__) console.log('[AbbyRealtime] ✅ Message sent, got response:', data);
 
       // Trigger callback with Abby's response
       if (data.response) {

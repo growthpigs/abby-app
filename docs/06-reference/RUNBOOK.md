@@ -87,6 +87,94 @@ npx expo run:ios                          # Build and run on simulator
 
 ---
 
+## ✅ VERIFICATION COMMANDS (Use Before Claiming Work Done)
+
+**Critical Rule:** Never trust code changes without running verification commands. Always execute these.
+
+### Code Quality Verification
+
+```bash
+# TypeScript compilation (finds type errors before runtime)
+npx tsc --noEmit
+
+# Test suite (proves nothing breaks)
+npm test
+
+# App build (proves native compilation succeeds)
+npx expo run:ios
+
+# Git verification (proves changes actually committed)
+git status                    # Should be: "nothing to commit, working tree clean"
+git log -1 --oneline         # Should show your commit
+git show HEAD                # Should show your changes
+```
+
+### Component/UI Verification
+
+```bash
+# For UI positioning fixes:
+# 1. Run: npx expo run:ios
+# 2. Take screenshot of simulator
+# 3. Visually confirm positioning/appearance matches spec
+# 4. Check browser console for errors (tap Debug Overlay)
+
+# For form/input changes:
+# 1. Run app: npx expo run:ios
+# 2. Navigate to screen
+# 3. Try typing/clicking/swiping
+# 4. Verify input registers and saves
+
+# For API/data changes:
+# 1. Use Xcode Console or React DevTools
+# 2. Check network requests in DevTools
+# 3. Verify response data format matches expectations
+```
+
+### Configuration/Store Changes
+
+```bash
+# For store changes:
+grep "firstName\|familyName" src/store/useOnboardingStore.ts  # Check field names
+git show HEAD:src/store/useOnboardingStore.ts | grep "firstName"  # Verify in commit
+
+# For auth changes:
+# 1. npm test  # Runs auth integration tests
+# 2. Manually try signup flow in app
+# 3. Watch browser console for auth errors
+```
+
+### Infrastructure/Deployment
+
+```bash
+# For environment changes:
+grep "EXPO_PUBLIC" .env.development  # List all env vars
+npm test                             # Tests use environment
+npx expo run:ios                     # Verify app loads with env
+
+# For API endpoint changes:
+# 1. npx expo run:ios  # Build app
+# 2. Open DevTools → Network tab
+# 3. Make API call in app
+# 4. Verify request URL is correct
+# 5. Verify response status is not 404/500
+```
+
+### The Definition of Done
+
+✅ **NEVER claim work complete unless:**
+```
+□ TypeScript compiles (npx tsc --noEmit → exit 0)
+□ Tests pass (npm test → all tests PASS)
+□ App builds (npx expo run:ios → "Build Succeeded")
+□ Git is clean (git status → "working tree clean")
+□ Git shows your changes (git log -1 → your commit message)
+□ For UI: Screenshot proves visual correctness
+□ For APIs: Network request/response verified
+□ For stores: Console logs show state saved correctly
+```
+
+---
+
 ## 🔴 CRITICAL: Build Command (Skia/Metro)
 
 ```
