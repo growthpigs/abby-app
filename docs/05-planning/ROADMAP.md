@@ -14,10 +14,10 @@
 | Phase 1: Legal Blockers | Jan 2, 2026 | ✅ COMPLETE | 18+ checkbox, GDPR delete |
 | Phase 2: Profile Submission | Jan 2, 2026 | ✅ COMPLETE | Fix getProfilePayload() call |
 | Phase 3: State Persistence | Jan 2, 2026 | ✅ COMPLETE | Interview + Onboarding recovery |
-| Phase 4: UX Fixes | Jan 2, 2026 | 🚧 IN PROGRESS | ProfileScreen, RevealScreen, ErrorModal |
-| Phase 5: Social Auth | - | ⏳ PENDING | Apple/Google/Facebook buttons |
+| Phase 4: UX Fixes | Jan 2, 2026 | ✅ COMPLETE | ProfileScreen, RevealScreen, ErrorModal (verified 2026-01-14) |
+| Phase 5: Social Auth | - | ⏳ PENDING | Apple/Google/Facebook buttons (blocked: client config) |
 | Phase 6: Design Alignment | - | ⏳ PENDING | Gender options, Nickname, Age slider |
-| Phase 7: API Integration | - | ⏳ PENDING | Matches, Photos, Token refresh |
+| Phase 7: API Integration | - | 🟡 PARTIAL | Auth ✅, Profile ✅, Questions ✅, Voice ✅; Matches/Photos/Payment 🟡 stub |
 | Phase 8: Polish | - | ⏳ PENDING | Accessibility, Error handling |
 
 ---
@@ -89,19 +89,26 @@
 
 ---
 
-## Phase 4: UX Fixes (IN PROGRESS)
+## Phase 4: UX Fixes (✅ COMPLETE)
 
 ### Tasks
 | Task | File | Status | Owner |
 |------|------|--------|-------|
-| 4.1 Create ProfileScreen | ProfileScreen.tsx (new) | ⏳ | Chi |
-| 4.2 Fix post-reveal dead end | RevealScreen.tsx | ✅ DONE | Chi |
-| 4.3 Add network error UI | ErrorModal.tsx (new) | ⏳ | Chi |
+| 4.1 Create ProfileScreen | ProfileScreen.tsx | ✅ DONE | Chi (2026-01-13) |
+| 4.2 Fix post-reveal dead end | RevealScreen.tsx | ✅ DONE | Chi (2026-01-13) |
+| 4.3 Add network error UI | ErrorModal.tsx | ✅ DONE | Chi (2026-01-13) |
 
 ### Acceptance Criteria
-- [ ] Users can edit profile after onboarding
-- [x] RevealScreen has "Message", "More Matches", "View All" buttons
-- [ ] Network errors show retry/dismiss modal
+- [x] Users can edit profile after onboarding (ProfileScreen.tsx 11KB, fully wired to API)
+- [x] RevealScreen has "Message", "More Matches", "View All" buttons + "Meet Coach" with fallback to advance()
+- [x] Network errors show retry/dismiss modal (ErrorModal.tsx with retry/dismiss buttons + haptics)
+
+### Verification (2026-01-14)
+- ✅ ProfileScreen: 11KB implementation with edit fields, API integration to PUT /profile/public
+- ✅ ErrorModal: 3.3KB component with retry/dismiss, BlurView glass effect, haptic feedback
+- ✅ RevealScreen: Callbacks with fallback behavior (onMessage, onFindMoreMatches, onViewAllMatches)
+- ✅ All 461 tests passing (14 test suites, including animation-fixes, ui-stability, demo-flow)
+- ✅ TypeScript: Clean compilation (npx tsc --noEmit)
 
 ---
 
@@ -138,28 +145,36 @@
 
 ---
 
-## Phase 7: API Integration (COMPLETE)
+## Phase 7: API Integration (⚠️ PARTIAL - See Clarification Below)
 
 ### Tasks
-| Task | File | Status | Owner |
-|------|------|--------|-------|
-| 7.1 Integrate Matches API | MatchesScreen.tsx | ✅ DONE | Chi |
-| 7.2 Integrate Photos API | PhotosScreen.tsx | ✅ DONE | Chi |
-| 7.3 Token refresh | secureFetch.ts | ✅ DONE | Chi |
-| 7.4 Centralize API URLs | PhotosScreen, MatchesScreen, ProfileScreen | ✅ DONE | Chi |
+| Task | File | Status | Owner | Notes |
+|------|------|--------|-------|-------|
+| 7.1 Integrate Matches API | MatchesScreen.tsx | 🟡 STUB | Chi | Has API_BASE but uses mock data |
+| 7.2 Integrate Photos API | PhotosScreen.tsx | 🟡 STUB | Chi | Has API_BASE but uses mock data |
+| 7.3 Token refresh | secureFetch.ts | ✅ DONE | Chi | Handles 401 refresh + retry |
+| 7.4 Centralize API URLs | src/config.ts | ✅ DONE | Chi | All endpoints centralized |
+| 7.5 Profile API | ProfileScreen.tsx | ✅ DONE | Chi | PUT /profile/public wired |
+
+### Clarification: What "COMPLETE" Actually Means
+- ✅ **DONE:** Auth (Cognito), Questions (via QuestionsService), Profile (PUT), Voice (demo + real fallback)
+- 🟡 **STUB:** Photos, Matches, Payment (have placeholders/mocks, need real API wiring)
+- ✅ **INFRASTRUCTURE:** Token refresh, API URL centralization, error handling
 
 ### Acceptance Criteria
-- [x] Matches load from `/v1/matches/candidates`
-- [x] Photos upload/delete working
-- [x] 401 errors trigger token refresh + retry
+- [x] Token refresh handles 401 errors with automatic retry
 - [x] All API URLs use `API_CONFIG.API_URL` (no hardcoded strings)
+- [x] ProfileScreen.tsx saves to `/v1/profile/public` ✅
+- [x] QuestionService wired to `/v1/questions/next` and `/v1/answers` ✅
+- [ ] Photos: Real integration to `/v1/photos/*` (PENDING)
+- [ ] Matches: Real integration to `/v1/matches/candidates` (PENDING)
+- [ ] Payment: Real Stripe integration (PENDING)
 
-### Code Quality (2026-01-13)
-- **461 tests passing** (up from 344)
+### Code Quality (2026-01-14)
+- **461 tests passing** (all Phase 7 infrastructure tested)
 - **TypeScript:** Clean compilation
 - **API URLs:** Centralized in `src/config.ts`
-- **Verification:** Runtime tests via browser + curl confirmed endpoints exist
-- **Docs updated:** RUNBOOK.md "API URL Centralization Verification" section
+- **Docs:** Updated with stub status clarification
 
 ---
 
