@@ -352,7 +352,10 @@ export const CoachIntroScreen: React.FC<CoachIntroScreenProps> = ({
               )}
             </ScrollView>
 
-            {/* Chat input - floats at bottom, messages scroll behind */}
+          </View>
+
+          {/* Chat input - positioned absolutely at bottom */}
+          <View style={styles.chatInputContainer}>
             <ChatInput
               onSend={handleSendMessage}
               disabled={!isConnected}
@@ -484,19 +487,22 @@ const styles = StyleSheet.create({
     transform: [{ scale: 0.95 }],
   },
 
-  // Content area
+  // Content area - vertical flexbox with messages above, chat input below
   contentContainer: {
     flex: 1,
-    paddingHorizontal: 20,
+    flexDirection: 'column',
+    paddingHorizontal: 0,
   },
 
-  // Messages container
+  // Messages container (NO flex: 1 - let it grow naturally, ChatInput comes after)
   messagesContainer: {
-    flex: 1,
+    // flex: 1 removed - ScrollView will take available space naturally
+    minHeight: 200, // Minimum height to ensure scrolling works
   },
   messagesContent: {
     paddingTop: 8,
-    paddingBottom: 80, // Space for floating ChatInput (ChatInput is ~60-70px)
+    paddingBottom: 16,
+    paddingHorizontal: 20,
   },
   placeholderText: {
     fontFamily: 'Merriweather_400Regular',
@@ -579,6 +585,14 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: 'rgba(255, 255, 255, 0.5)',
     borderRadius: 8,
+  },
+
+  // Chat input wrapper - positions at bottom of content area
+  chatInputContainer: {
+    paddingHorizontal: 20,
+    paddingVertical: 8,
+    backgroundColor: 'transparent',
+    flexShrink: 0, // Prevent flex shrinking - take only needed space
   },
 });
 
