@@ -28,6 +28,7 @@ import { useVibeController } from '../../store/useVibeController';
 import { VibeColorTheme } from '../../types/vibe';
 import { SHEET_SNAP_POINTS, SHEET_DEFAULT_SNAP } from '../../constants/layout';
 import { TIMEOUTS } from '../../config';
+import { ChatInput } from '../ui/ChatInput';
 
 // Keywords that trigger color changes during conversation
 const VIBE_KEYWORDS: Record<VibeColorTheme, string[]> = {
@@ -82,7 +83,7 @@ export const CoachIntroScreen: React.FC<CoachIntroScreenProps> = ({
   const translateY = useRef(new Animated.Value(SCREEN_HEIGHT)).current;
 
   // Initialize ElevenLabs Agent
-  const { startConversation, endConversation, toggleMute, isSpeaking, isConnected, isMuted } = useAbbyAgent({
+  const { startConversation, endConversation, toggleMute, isSpeaking, isConnected, isMuted, sendTextMessage } = useAbbyAgent({
     enabled: true,
     onAbbyResponse: (text) => {
       addMessage('abby', text);
@@ -236,6 +237,24 @@ export const CoachIntroScreen: React.FC<CoachIntroScreenProps> = ({
     await toggleMute();
   }, [toggleMute]);
 
+  // Handle sending text message to Abby
+  const handleSendMessage = useCallback((text: string) => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    // Add user message to transcript
+    addMessage('user', text);
+    // Send to Abby agent (with error handling)
+    sendTextMessage(text).catch((err) => {
+      if (__DEV__) {
+        console.warn('[CoachIntro] sendTextMessage failed:', err);
+      }
+      // Could add user-visible error feedback here in future
+    });
+    // Scroll to show newest message
+    setTimeout(() => {
+      scrollRef.current?.scrollTo({ y: 0, animated: true });
+    }, TIMEOUTS.UI.SCROLL_DELAY);
+  }, [addMessage, sendTextMessage]);
+
   // Secret navigation handlers
   const handleSecretBack = useCallback(() => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
@@ -333,16 +352,12 @@ export const CoachIntroScreen: React.FC<CoachIntroScreenProps> = ({
               )}
             </ScrollView>
 
-            {/* Start Interview button */}
-            <Pressable
-              onPress={handleStartInterview}
-              style={({ pressed }) => [
-                styles.startButton,
-                pressed && styles.startButtonPressed,
-              ]}
-            >
-              <Text style={styles.buttonText}>Start Interview</Text>
-            </Pressable>
+            {/* Chat input - floats at bottom, messages scroll behind */}
+            <ChatInput
+              onSend={handleSendMessage}
+              disabled={!isConnected}
+              placeholder="Reply to Abby..."
+            />
           </View>
         </BlurView>
       </Animated.View>
@@ -481,7 +496,7 @@ const styles = StyleSheet.create({
   },
   messagesContent: {
     paddingTop: 8,
-    paddingBottom: 16,
+    paddingBottom: 80, // Space for floating ChatInput (ChatInput is ~60-70px)
   },
   placeholderText: {
     fontFamily: 'Merriweather_400Regular',
