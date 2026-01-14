@@ -16,11 +16,13 @@ import {
   TextInput,
   KeyboardAvoidingView,
   Platform,
+  ScrollView,
 } from 'react-native';
 import * as Haptics from 'expo-haptics';
 import { Typography } from '../ui/Typography';
 import { GlassButton } from '../ui/GlassButton';
 import { Checkbox } from '../ui/Checkbox';
+import { useResponsiveLayout } from '../../hooks/useResponsiveLayout';
 
 interface DOBScreenProps {
   onNext?: (dob: { month: number; day: number; year: number }, ageRange: { min: number; max: number }) => void;
@@ -33,6 +35,8 @@ export const DOBScreen: React.FC<DOBScreenProps> = ({
   onSecretBack,
   onSecretForward,
 }) => {
+  const layout = useResponsiveLayout();
+
   // DOB fields
   const [month, setMonth] = useState('');
   const [day, setDay] = useState('');
@@ -162,7 +166,7 @@ export const DOBScreen: React.FC<DOBScreenProps> = ({
       {/* Back button */}
       <Pressable
         onPress={handleSecretBack}
-        style={styles.backButton}
+        style={[styles.backButton, { top: layout.paddingTop }]}
         hitSlop={20}
       >
         <Typography variant="headline" style={styles.backArrow}>
@@ -171,15 +175,27 @@ export const DOBScreen: React.FC<DOBScreenProps> = ({
       </Pressable>
 
       {/* Content */}
-      <View style={styles.content}>
+      <ScrollView
+        style={styles.scrollView}
+        contentContainerStyle={[
+          styles.content,
+          {
+            paddingTop: layout.paddingTop + 40, // Account for back button
+            paddingHorizontal: layout.paddingHorizontal,
+            paddingBottom: layout.paddingBottom + 80, // Account for footer
+          },
+        ]}
+        keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false}
+      >
         {/* Headline */}
-        <Typography variant="headline" style={styles.headline}>
+        <Typography variant="headline" style={[styles.headline, { marginBottom: layout.sectionGap * 1.5 }]}>
           When were you{'\n'}born?
         </Typography>
 
         {/* DOB inputs - MM/DD/YYYY format */}
-        <View style={styles.inputGroup}>
-          <Typography variant="body" style={styles.inputLabel}>
+        <View style={[styles.inputGroup, { marginBottom: layout.sectionGap * 1.5 }]}>
+          <Typography variant="body" style={[styles.inputLabel, { marginBottom: layout.buttonMargin }]}>
             Date of birth
           </Typography>
           <View style={styles.dobRow}>
@@ -230,8 +246,8 @@ export const DOBScreen: React.FC<DOBScreenProps> = ({
         </View>
 
         {/* Age range inputs */}
-        <View style={styles.inputGroup}>
-          <Typography variant="body" style={styles.inputLabel}>
+        <View style={[styles.inputGroup, { marginBottom: layout.sectionGap * 1.5 }]}>
+          <Typography variant="body" style={[styles.inputLabel, { marginBottom: layout.buttonMargin }]}>
             Desired age range for matches
           </Typography>
           <View style={styles.ageRangeRow}>
@@ -268,7 +284,7 @@ export const DOBScreen: React.FC<DOBScreenProps> = ({
         </View>
 
         {/* 18+ Age Confirmation (Legal Requirement) */}
-        <View style={styles.confirmationGroup}>
+        <View style={[styles.confirmationGroup, { marginTop: layout.sectionGap, paddingTop: layout.buttonMargin }]}>
           <Checkbox
             checked={confirmed18}
             onChange={setConfirmed18}
@@ -279,10 +295,10 @@ export const DOBScreen: React.FC<DOBScreenProps> = ({
           />
         </View>
 
-      </View>
+      </ScrollView>
 
       {/* Fixed footer with Continue button */}
-      <View style={styles.footer}>
+      <View style={[styles.footer, { bottom: layout.paddingBottom, left: layout.paddingHorizontal, right: layout.paddingHorizontal }]}>
         <GlassButton
           onPress={handleNext}
           disabled={!isValid}
@@ -319,7 +335,6 @@ const styles = StyleSheet.create({
   },
   backButton: {
     position: 'absolute',
-    top: 60,
     left: 24,
     zIndex: 10,
   },
@@ -327,11 +342,11 @@ const styles = StyleSheet.create({
     fontSize: 32,
     color: 'rgba(255, 255, 255, 0.95)',
   },
-  content: {
+  scrollView: {
     flex: 1,
-    paddingHorizontal: 24,
-    paddingTop: 140,
-    paddingBottom: 48,
+  },
+  content: {
+    flexGrow: 1,
   },
   headline: {
     fontSize: 32,
@@ -339,15 +354,13 @@ const styles = StyleSheet.create({
     color: 'rgba(255, 255, 255, 0.95)',
     lineHeight: 40,
     letterSpacing: -0.5,
-    marginBottom: 32,
   },
   inputGroup: {
-    marginBottom: 32,
+    // marginBottom applied dynamically
   },
   inputLabel: {
     fontSize: 14,
     color: 'rgba(255, 255, 255, 0.7)',
-    marginBottom: 12,
   },
   dobRow: {
     flexDirection: 'row',
@@ -408,16 +421,11 @@ const styles = StyleSheet.create({
     marginHorizontal: 16,
   },
   confirmationGroup: {
-    marginTop: 24,
-    paddingTop: 16,
     borderTopWidth: 1,
     borderTopColor: 'rgba(255, 255, 255, 0.1)',
   },
   footer: {
     position: 'absolute',
-    bottom: 48,
-    left: 24,
-    right: 24,
   },
   secretBackTrigger: {
     position: 'absolute',

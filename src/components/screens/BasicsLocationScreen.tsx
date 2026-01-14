@@ -17,6 +17,7 @@ import * as Haptics from 'expo-haptics';
 import * as Location from 'expo-location';
 import { Typography } from '../ui/Typography';
 import { GlassButton } from '../ui/GlassButton';
+import { useResponsiveLayout } from '../../hooks/useResponsiveLayout';
 
 interface BasicsLocationScreenProps {
   onNext?: (location: { type: 'gps' | 'zip'; value: string | { lat: number; lng: number } }) => void;
@@ -29,6 +30,7 @@ export const BasicsLocationScreen: React.FC<BasicsLocationScreenProps> = ({
   onSecretBack,
   onSecretForward,
 }) => {
+  const layout = useResponsiveLayout();
   const [zipCode, setZipCode] = useState('');
   const [locationStatus, setLocationStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
   const [gpsLocation, setGpsLocation] = useState<{ lat: number; lng: number } | null>(null);
@@ -103,7 +105,7 @@ export const BasicsLocationScreen: React.FC<BasicsLocationScreenProps> = ({
       {/* Back button */}
       <Pressable
         onPress={handleSecretBack}
-        style={styles.backButton}
+        style={[styles.backButton, { top: layout.paddingTop + 20 }]}
         hitSlop={20}
       >
         <Typography variant="headline" style={styles.backArrow}>
@@ -112,7 +114,7 @@ export const BasicsLocationScreen: React.FC<BasicsLocationScreenProps> = ({
       </Pressable>
 
       {/* Content */}
-      <View style={styles.content}>
+      <View style={[styles.content, { paddingTop: layout.paddingTop + 60, paddingBottom: layout.paddingBottom }]}>
         {/* Section label */}
         <Typography variant="body" style={styles.sectionLabel}>
           Basics
@@ -124,12 +126,12 @@ export const BasicsLocationScreen: React.FC<BasicsLocationScreenProps> = ({
         </Typography>
 
         {/* Subtext */}
-        <Typography variant="body" style={styles.subtext}>
+        <Typography variant="body" style={[styles.subtext, { marginBottom: layout.sectionGap + 8 }]}>
           This helps us find matches near you
         </Typography>
 
         {/* Location options */}
-        <View style={styles.optionsContainer}>
+        <View style={[styles.optionsContainer, { gap: layout.sectionGap }]}>
           {/* GPS Button */}
           <GlassButton
             onPress={handleUseGPS}
@@ -173,7 +175,7 @@ export const BasicsLocationScreen: React.FC<BasicsLocationScreenProps> = ({
       </View>
 
       {/* Fixed footer with Continue button */}
-      <View style={styles.footer}>
+      <View style={[styles.footer, { bottom: layout.paddingBottom }]}>
         <GlassButton
           onPress={handleNext}
           disabled={!isValid}
@@ -210,7 +212,6 @@ const styles = StyleSheet.create({
   },
   backButton: {
     position: 'absolute',
-    top: 60,
     left: 24,
     zIndex: 10,
   },
@@ -221,8 +222,6 @@ const styles = StyleSheet.create({
   content: {
     flex: 1,
     paddingHorizontal: 24,
-    paddingTop: 140,
-    paddingBottom: 48,
   },
   sectionLabel: {
     fontSize: 14,
@@ -243,11 +242,8 @@ const styles = StyleSheet.create({
   subtext: {
     fontSize: 16,
     color: 'rgba(255, 255, 255, 0.7)',
-    marginBottom: 32,
   },
-  optionsContainer: {
-    gap: 24,
-  },
+  optionsContainer: {},
   gpsButton: {
     width: '100%',
   },
@@ -288,7 +284,6 @@ const styles = StyleSheet.create({
   },
   footer: {
     position: 'absolute',
-    bottom: 48,
     left: 24,
     right: 24,
   },

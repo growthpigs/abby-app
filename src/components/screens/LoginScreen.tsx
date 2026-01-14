@@ -10,13 +10,14 @@
  * - Secret navigation triggers (44x44 bottom corners)
  */
 
-import React, { useCallback } from 'react';
+import React, { useCallback, useMemo } from 'react';
 import {
   View,
   StyleSheet,
   Pressable,
   useWindowDimensions,
   Alert,
+  ScrollView,
 } from 'react-native';
 import { Typography } from '../ui/Typography';
 import { safeImpact, safeSelection } from '../../utils/haptics';
@@ -42,7 +43,17 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
   onGoogleSignIn,
   onFacebookSignIn,
 }) => {
-  const { height } = useWindowDimensions();
+  const { height, width } = useWindowDimensions();
+
+  // Responsive sizing for smaller screens (iPhone 16 is ~844pt tall)
+  const isSmallScreen = height < 750;
+  const spacing = useMemo(() => ({
+    paddingTop: isSmallScreen ? 50 : 80,
+    logoMargin: isSmallScreen ? 20 : 40,
+    buttonHeight: isSmallScreen ? 44 : 52,
+    buttonMargin: isSmallScreen ? 8 : 12,
+    dividerMargin: isSmallScreen ? 8 : 16,
+  }), [isSmallScreen]);
 
   const showComingSoon = useCallback(() => {
     Alert.alert(
@@ -116,20 +127,21 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
 
   return (
     <View style={styles.container}>
-      {/* Content centered */}
-      <View style={styles.content}>
+      <ScrollView
+        contentContainerStyle={[
+          styles.content,
+          { paddingTop: spacing.paddingTop }
+        ]}
+        showsVerticalScrollIndicator={false}
+        bounces={false}
+      >
         {/* Logo */}
-        <Typography variant="headline" style={styles.logo}>
+        <Typography variant="headline" style={[styles.logo, { marginBottom: spacing.logoMargin }]}>
           ABBY
         </Typography>
 
-        {/* Headline */}
-        <Typography variant="headline" style={styles.headline}>
-          It starts with{'\n'}Abby™
-        </Typography>
-
         {/* Spacer to push buttons down */}
-        <View style={{ flex: 1 }} />
+        <View style={{ flex: 1, minHeight: isSmallScreen ? 20 : 60 }} />
 
         {/* Legal text */}
         <Typography variant="caption" style={styles.legal}>
@@ -154,6 +166,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
           style={({ pressed }) => [
             styles.socialButton,
             styles.appleButton,
+            { height: spacing.buttonHeight, marginBottom: spacing.buttonMargin },
             pressed && styles.buttonPressed,
           ]}
         >
@@ -167,6 +180,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
           style={({ pressed }) => [
             styles.socialButton,
             styles.googleButton,
+            { height: spacing.buttonHeight, marginBottom: spacing.buttonMargin },
             pressed && styles.buttonPressed,
           ]}
         >
@@ -180,6 +194,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
           style={({ pressed }) => [
             styles.socialButton,
             styles.facebookButton,
+            { height: spacing.buttonHeight, marginBottom: spacing.buttonMargin },
             pressed && styles.buttonPressed,
           ]}
         >
@@ -189,7 +204,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
         </Pressable>
 
         {/* Divider */}
-        <View style={styles.divider}>
+        <View style={[styles.divider, { marginVertical: spacing.dividerMargin }]}>
           <View style={styles.dividerLine} />
           <Typography variant="caption" style={styles.dividerText}>or</Typography>
           <View style={styles.dividerLine} />
@@ -200,6 +215,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
           onPress={handleCreateAccount}
           style={({ pressed }) => [
             styles.primaryButton,
+            { height: spacing.buttonHeight + 4, marginBottom: spacing.buttonMargin },
             pressed && styles.buttonPressed,
           ]}
         >
@@ -213,6 +229,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
           onPress={handleSignIn}
           style={({ pressed }) => [
             styles.secondaryButton,
+            { height: spacing.buttonHeight + 4, marginBottom: spacing.buttonMargin },
             pressed && styles.buttonPressed,
           ]}
         >
@@ -222,12 +239,12 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
         </Pressable>
 
         {/* Trouble link */}
-        <Pressable onPress={handleTrouble} style={styles.troubleButton}>
+        <Pressable onPress={handleTrouble} style={[styles.troubleButton, { paddingVertical: isSmallScreen ? 8 : 12 }]}>
           <Typography variant="body" style={styles.troubleText}>
             Trouble signing in?
           </Typography>
         </Pressable>
-      </View>
+      </ScrollView>
 
       {/* Secret navigation triggers (44x44 transparent) */}
       <Pressable
@@ -249,10 +266,9 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   content: {
-    flex: 1,
+    flexGrow: 1,
     paddingHorizontal: 24,
-    paddingTop: 100, // Logo position from top
-    paddingBottom: 48,
+    paddingBottom: 32,
     alignItems: 'center',
   },
   logo: {
@@ -260,15 +276,6 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: 'rgba(255, 255, 255, 0.95)',
     letterSpacing: 2,
-    marginBottom: 60,
-  },
-  headline: {
-    fontSize: 40,
-    fontWeight: '700',
-    color: 'rgba(255, 255, 255, 0.95)',
-    textAlign: 'center',
-    lineHeight: 48,
-    letterSpacing: -0.5,
   },
   legal: {
     fontSize: 11,
@@ -285,21 +292,17 @@ const styles = StyleSheet.create({
   },
   primaryButton: {
     width: '100%',
-    height: 56,
     backgroundColor: 'rgba(255, 255, 255, 0.95)',
     borderRadius: 28,
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 16,
   },
   secondaryButton: {
     width: '100%',
-    height: 56,
     backgroundColor: 'rgba(255, 255, 255, 0.95)',
     borderRadius: 28,
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 16,
   },
   buttonPressed: {
     opacity: 0.8,
@@ -314,7 +317,7 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   troubleButton: {
-    paddingVertical: 12,
+    // Dynamic padding set in component
   },
   troubleText: {
     fontSize: 14,
@@ -324,11 +327,9 @@ const styles = StyleSheet.create({
   // Social auth buttons
   socialButton: {
     width: '100%',
-    height: 52,
     borderRadius: 26,
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 12,
     borderWidth: 1,
   },
   appleButton: {
@@ -362,7 +363,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     width: '100%',
-    marginVertical: 16,
   },
   dividerLine: {
     flex: 1,

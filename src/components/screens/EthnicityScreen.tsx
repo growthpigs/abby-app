@@ -16,6 +16,7 @@ import * as Haptics from 'expo-haptics';
 import { Typography } from '../ui/Typography';
 import { RadioGroup, RadioOption } from '../ui/RadioGroup';
 import { GlassButton } from '../ui/GlassButton';
+import { useResponsiveLayout } from '../../hooks/useResponsiveLayout';
 
 interface EthnicityScreenProps {
   onNext?: (ethnicity: string) => void;
@@ -41,6 +42,7 @@ export const EthnicityScreen: React.FC<EthnicityScreenProps> = ({
   onSecretBack,
   onSecretForward,
 }) => {
+  const layout = useResponsiveLayout();
   const [selectedEthnicity, setSelectedEthnicity] = useState<string | null>(null);
 
   const handleNext = () => {
@@ -65,7 +67,10 @@ export const EthnicityScreen: React.FC<EthnicityScreenProps> = ({
       {/* Back button */}
       <Pressable
         onPress={handleSecretBack}
-        style={styles.backButton}
+        style={[
+          styles.backButton,
+          { top: layout.isSmallScreen ? 40 : 60 },
+        ]}
         hitSlop={20}
       >
         <Typography variant="headline" style={styles.backArrow}>
@@ -74,14 +79,32 @@ export const EthnicityScreen: React.FC<EthnicityScreenProps> = ({
       </Pressable>
 
       {/* Content */}
-      <View style={styles.content}>
+      <View
+        style={[
+          styles.content,
+          {
+            paddingHorizontal: layout.paddingHorizontal,
+            paddingTop: layout.isSmallScreen ? 100 : 140,
+            paddingBottom: layout.isSmallScreen ? 32 : 48,
+          },
+        ]}
+      >
         {/* Section label */}
         <Typography variant="body" style={styles.sectionLabel}>
           About You
         </Typography>
 
         {/* Headline */}
-        <Typography variant="headline" style={styles.headline}>
+        <Typography
+          variant="headline"
+          style={[
+            styles.headline,
+            {
+              fontSize: layout.headlineFontSize,
+              marginBottom: layout.isSmallScreen ? 20 : 32,
+            },
+          ]}
+        >
           What's your{'\n'}ethnicity?
         </Typography>
 
@@ -101,7 +124,16 @@ export const EthnicityScreen: React.FC<EthnicityScreenProps> = ({
       </View>
 
       {/* Fixed footer with Continue button */}
-      <View style={styles.footer}>
+      <View
+        style={[
+          styles.footer,
+          {
+            bottom: layout.isSmallScreen ? 32 : 48,
+            left: layout.paddingHorizontal,
+            right: layout.paddingHorizontal,
+          },
+        ]}
+      >
         <GlassButton
           onPress={handleNext}
           disabled={!selectedEthnicity}

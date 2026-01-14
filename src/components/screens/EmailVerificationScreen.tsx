@@ -16,6 +16,7 @@ import {
 import * as Haptics from 'expo-haptics';
 import { Typography } from '../ui/Typography';
 import { GlassButton } from '../ui/GlassButton';
+import { useResponsiveLayout } from '../../hooks/useResponsiveLayout';
 
 interface EmailVerificationScreenProps {
   email?: string;
@@ -36,6 +37,7 @@ export const EmailVerificationScreen: React.FC<EmailVerificationScreenProps> = (
   isLoading = false,
   error = null,
 }) => {
+  const layout = useResponsiveLayout();
   const [code, setCode] = useState('');
   const [resendMessage, setResendMessage] = useState<string | null>(null);
 
@@ -74,7 +76,7 @@ export const EmailVerificationScreen: React.FC<EmailVerificationScreenProps> = (
       {/* Back button */}
       <Pressable
         onPress={handleSecretBack}
-        style={styles.backButton}
+        style={[styles.backButton, { top: layout.paddingTop + 20 }]}
         hitSlop={20}
       >
         <Typography variant="headline" style={styles.backArrow}>
@@ -83,14 +85,24 @@ export const EmailVerificationScreen: React.FC<EmailVerificationScreenProps> = (
       </Pressable>
 
       {/* Content */}
-      <View style={styles.content}>
+      <View style={[styles.content, {
+        paddingTop: layout.paddingTop + 60,
+        paddingHorizontal: layout.paddingHorizontal,
+        paddingBottom: layout.paddingBottom,
+      }]}>
         {/* Headline */}
-        <Typography variant="headline" style={styles.headline}>
+        <Typography variant="headline" style={[styles.headline, {
+          fontSize: layout.headlineFontSize,
+          marginBottom: layout.sectionGap,
+        }]}>
           Verification code{'\n'}sent to {email}
         </Typography>
 
         {/* Subtext */}
-        <Typography variant="body" style={styles.subtext}>
+        <Typography variant="body" style={[styles.subtext, {
+          fontSize: layout.bodyFontSize,
+          marginBottom: layout.sectionGap * 1.5,
+        }]}>
           Enter the code below
         </Typography>
 
@@ -140,7 +152,11 @@ export const EmailVerificationScreen: React.FC<EmailVerificationScreenProps> = (
       </View>
 
       {/* Fixed footer with Continue button and resend link */}
-      <View style={styles.footer}>
+      <View style={[styles.footer, {
+        bottom: layout.paddingBottom,
+        left: layout.paddingHorizontal,
+        right: layout.paddingHorizontal,
+      }]}>
         <GlassButton
           onPress={handleNext}
           disabled={!isValid || isLoading}
@@ -148,7 +164,7 @@ export const EmailVerificationScreen: React.FC<EmailVerificationScreenProps> = (
         >
           {isLoading ? 'Verifying...' : 'Continue'}
         </GlassButton>
-        <Pressable onPress={handleResend} disabled={isLoading} style={styles.resendButton}>
+        <Pressable onPress={handleResend} disabled={isLoading} style={[styles.resendButton, { paddingVertical: layout.buttonMargin }]}>
           <Typography variant="body" style={[styles.resendText, isLoading && styles.resendTextDisabled]}>
             Didn't receive a code?
           </Typography>
@@ -185,7 +201,6 @@ const styles = StyleSheet.create({
   },
   backButton: {
     position: 'absolute',
-    top: 60,
     left: 24,
     zIndex: 10,
   },
@@ -195,22 +210,15 @@ const styles = StyleSheet.create({
   },
   content: {
     flex: 1,
-    paddingHorizontal: 24,
-    paddingTop: 140,
-    paddingBottom: 48,
   },
   headline: {
-    fontSize: 32,
     fontWeight: '700',
     color: 'rgba(255, 255, 255, 0.95)',
     lineHeight: 40,
     letterSpacing: -0.5,
-    marginBottom: 16,
   },
   subtext: {
-    fontSize: 16,
     color: 'rgba(255, 255, 255, 0.7)',
-    marginBottom: 32,
   },
   codeInput: {
     width: '100%',
@@ -226,12 +234,8 @@ const styles = StyleSheet.create({
   },
   footer: {
     position: 'absolute',
-    bottom: 48,
-    left: 24,
-    right: 24,
   },
   resendButton: {
-    paddingVertical: 12,
     alignItems: 'center',
   },
   resendText: {

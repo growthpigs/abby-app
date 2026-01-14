@@ -18,6 +18,7 @@ import * as Haptics from 'expo-haptics';
 import { Typography } from '../ui/Typography';
 import { RadioGroup, RadioOption } from '../ui/RadioGroup';
 import { GlassButton } from '../ui/GlassButton';
+import { useResponsiveLayout } from '../../hooks/useResponsiveLayout';
 
 interface SmokingScreenProps {
   onNext?: (smokingMe: string, smokingPartner: string) => void;
@@ -43,6 +44,7 @@ export const SmokingScreen: React.FC<SmokingScreenProps> = ({
   onSecretBack,
   onSecretForward,
 }) => {
+  const layout = useResponsiveLayout();
   const [smokingMe, setSmokingMe] = useState<string | null>(null);
   const [smokingPartner, setSmokingPartner] = useState<string | null>(null);
 
@@ -70,7 +72,10 @@ export const SmokingScreen: React.FC<SmokingScreenProps> = ({
       {/* Back button */}
       <Pressable
         onPress={handleSecretBack}
-        style={styles.backButton}
+        style={[
+          styles.backButton,
+          { top: layout.isSmallScreen ? 40 : 60 },
+        ]}
         hitSlop={20}
       >
         <Typography variant="headline" style={styles.backArrow}>
@@ -79,25 +84,53 @@ export const SmokingScreen: React.FC<SmokingScreenProps> = ({
       </Pressable>
 
       {/* Content */}
-      <View style={styles.content}>
+      <View
+        style={[
+          styles.content,
+          {
+            paddingHorizontal: layout.paddingHorizontal,
+            paddingTop: layout.isSmallScreen ? 100 : 140,
+            paddingBottom: layout.paddingBottom,
+          },
+        ]}
+      >
         {/* Section label */}
-        <Typography variant="body" style={styles.sectionLabel}>
+        <Typography
+          variant="body"
+          style={[
+            styles.sectionLabel,
+            { marginBottom: layout.isSmallScreen ? 4 : 8 },
+          ]}
+        >
           Lifestyle
         </Typography>
 
         {/* Headline */}
-        <Typography variant="headline" style={styles.headline}>
+        <Typography
+          variant="headline"
+          style={[
+            styles.headline,
+            {
+              fontSize: layout.headlineFontSize,
+              lineHeight: layout.isSmallScreen ? 34 : 40,
+              marginBottom: layout.isSmallScreen ? 20 : 32,
+            },
+          ]}
+        >
           Smoking{'\n'}preferences
         </Typography>
 
         {/* Options */}
         <ScrollView
           style={styles.scrollView}
-          contentContainerStyle={styles.scrollContent}
+          contentContainerStyle={[
+            styles.scrollContent,
+            { gap: layout.isSmallScreen ? 20 : 32 },
+          ]}
           showsVerticalScrollIndicator={false}
         >
           {/* My smoking */}
-          <View style={styles.questionGroup}>
+          <View style={[styles.questionGroup, { gap: layout.isSmallScreen ? 10 : 16 }]}>
             <Typography variant="body" style={styles.questionLabel}>
               Do you smoke?
             </Typography>
@@ -110,7 +143,7 @@ export const SmokingScreen: React.FC<SmokingScreenProps> = ({
           </View>
 
           {/* Partner's smoking preference */}
-          <View style={styles.questionGroup}>
+          <View style={[styles.questionGroup, { gap: layout.isSmallScreen ? 10 : 16 }]}>
             <Typography variant="body" style={styles.questionLabel}>
               Partner smoking?
             </Typography>
@@ -125,7 +158,16 @@ export const SmokingScreen: React.FC<SmokingScreenProps> = ({
       </View>
 
       {/* Fixed footer with Continue button */}
-      <View style={styles.footer}>
+      <View
+        style={[
+          styles.footer,
+          {
+            bottom: layout.isSmallScreen ? 32 : 48,
+            left: layout.paddingHorizontal,
+            right: layout.paddingHorizontal,
+          },
+        ]}
+      >
         <GlassButton
           onPress={handleNext}
           disabled={!isValid}
@@ -162,7 +204,6 @@ const styles = StyleSheet.create({
   },
   backButton: {
     position: 'absolute',
-    top: 60,
     left: 24,
     zIndex: 10,
   },
@@ -172,9 +213,6 @@ const styles = StyleSheet.create({
   },
   content: {
     flex: 1,
-    paddingHorizontal: 24,
-    paddingTop: 140,
-    paddingBottom: 48,
   },
   sectionLabel: {
     fontSize: 14,
@@ -182,26 +220,19 @@ const styles = StyleSheet.create({
     color: 'rgba(255, 255, 255, 0.5)',
     textTransform: 'uppercase',
     letterSpacing: 1,
-    marginBottom: 8,
   },
   headline: {
-    fontSize: 32,
     fontWeight: '700',
     color: 'rgba(255, 255, 255, 0.95)',
-    lineHeight: 40,
     letterSpacing: -0.5,
-    marginBottom: 32,
   },
   scrollView: {
     flex: 1,
   },
   scrollContent: {
     paddingBottom: 24,
-    gap: 32,
   },
-  questionGroup: {
-    gap: 16,
-  },
+  questionGroup: {},
   questionLabel: {
     fontSize: 18,
     fontWeight: '600',
@@ -209,9 +240,6 @@ const styles = StyleSheet.create({
   },
   footer: {
     position: 'absolute',
-    bottom: 48,
-    left: 24,
-    right: 24,
   },
   secretBackTrigger: {
     position: 'absolute',

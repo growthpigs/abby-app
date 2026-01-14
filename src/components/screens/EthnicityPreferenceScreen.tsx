@@ -17,6 +17,7 @@ import * as Haptics from 'expo-haptics';
 import { Typography } from '../ui/Typography';
 import { Checkbox } from '../ui/Checkbox';
 import { GlassButton } from '../ui/GlassButton';
+import { useResponsiveLayout } from '../../hooks/useResponsiveLayout';
 
 interface EthnicityPreferenceScreenProps {
   onNext?: (ethnicities: string[]) => void;
@@ -43,6 +44,7 @@ export const EthnicityPreferenceScreen: React.FC<EthnicityPreferenceScreenProps>
   onSecretBack,
   onSecretForward,
 }) => {
+  const layout = useResponsiveLayout();
   const [selectedEthnicities, setSelectedEthnicities] = useState<string[]>([]);
 
   const handleToggle = (value: string) => {
@@ -90,7 +92,7 @@ export const EthnicityPreferenceScreen: React.FC<EthnicityPreferenceScreenProps>
       {/* Back button */}
       <Pressable
         onPress={handleSecretBack}
-        style={styles.backButton}
+        style={[styles.backButton, { top: layout.isSmallScreen ? 40 : 60 }]}
         hitSlop={20}
       >
         <Typography variant="headline" style={styles.backArrow}>
@@ -99,26 +101,45 @@ export const EthnicityPreferenceScreen: React.FC<EthnicityPreferenceScreenProps>
       </Pressable>
 
       {/* Content */}
-      <View style={styles.content}>
+      <View style={[
+        styles.content,
+        {
+          paddingTop: layout.isSmallScreen ? 100 : 140,
+          paddingHorizontal: layout.paddingHorizontal,
+          paddingBottom: layout.isSmallScreen ? 32 : 48,
+        }
+      ]}>
         {/* Section label */}
         <Typography variant="body" style={styles.sectionLabel}>
           Preferences
         </Typography>
 
         {/* Headline */}
-        <Typography variant="headline" style={styles.headline}>
+        <Typography variant="headline" style={[
+          styles.headline,
+          {
+            fontSize: layout.isSmallScreen ? 28 : 32,
+            lineHeight: layout.isSmallScreen ? 34 : 40,
+          }
+        ]}>
           Who would you{'\n'}like to meet?
         </Typography>
 
         {/* Subtext */}
-        <Typography variant="body" style={styles.subtext}>
+        <Typography variant="body" style={[
+          styles.subtext,
+          { marginBottom: layout.isSmallScreen ? 16 : 24 }
+        ]}>
           Select all that apply
         </Typography>
 
         {/* Options */}
         <ScrollView
           style={styles.scrollView}
-          contentContainerStyle={styles.scrollContent}
+          contentContainerStyle={[
+            styles.scrollContent,
+            { gap: layout.isSmallScreen ? 12 : 16 }
+          ]}
           showsVerticalScrollIndicator={false}
         >
           {ETHNICITY_OPTIONS.map((option) => (
@@ -134,7 +155,14 @@ export const EthnicityPreferenceScreen: React.FC<EthnicityPreferenceScreenProps>
       </View>
 
       {/* Fixed footer with Continue button */}
-      <View style={styles.footer}>
+      <View style={[
+        styles.footer,
+        {
+          bottom: layout.isSmallScreen ? 32 : 48,
+          left: layout.paddingHorizontal,
+          right: layout.paddingHorizontal,
+        }
+      ]}>
         <GlassButton
           onPress={handleNext}
           disabled={!isValid}
@@ -171,7 +199,6 @@ const styles = StyleSheet.create({
   },
   backButton: {
     position: 'absolute',
-    top: 60,
     left: 24,
     zIndex: 10,
   },
@@ -181,9 +208,6 @@ const styles = StyleSheet.create({
   },
   content: {
     flex: 1,
-    paddingHorizontal: 24,
-    paddingTop: 140,
-    paddingBottom: 48,
   },
   sectionLabel: {
     fontSize: 14,
@@ -211,16 +235,12 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     paddingBottom: 24,
-    gap: 16,
   },
   checkbox: {
     paddingVertical: 4,
   },
   footer: {
     position: 'absolute',
-    bottom: 48,
-    left: 24,
-    right: 24,
   },
   secretBackTrigger: {
     position: 'absolute',

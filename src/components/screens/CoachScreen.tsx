@@ -9,7 +9,7 @@
  * Uses EmotionVibeService to detect emotions from Abby's responses.
  */
 
-import React, { useCallback, useEffect, useState, useRef } from 'react';
+import React, { useCallback, useEffect, useState, useRef, forwardRef, useImperativeHandle } from 'react';
 import {
   View,
   Text,
@@ -29,6 +29,7 @@ import { useDraggableSheet } from '../../hooks/useDraggableSheet';
 import { analyzeTextForVibe } from '../../services/EmotionVibeService';
 import { VibeColorTheme, VibeComplexity } from '../../types/vibe';
 import { SHEET_SNAP_POINTS, SHEET_DEFAULT_SNAP } from '../../constants/layout';
+import { useResponsiveLayout } from '../../hooks/useResponsiveLayout';
 
 const { height: SCREEN_HEIGHT } = Dimensions.get('window');
 
@@ -39,14 +40,22 @@ export interface CoachScreenProps {
   onSecretForward?: () => void;
 }
 
-export const CoachScreen: React.FC<CoachScreenProps> = ({
-  onBackgroundChange,
-  onVibeChange,
-  onSecretBack,
-  onSecretForward,
-}) => {
+export interface CoachScreenRef {
+  expandSheet: () => void;
+}
+
+export const CoachScreen = forwardRef<CoachScreenRef, CoachScreenProps>(
+  ({
+    onBackgroundChange,
+    onVibeChange,
+    onSecretBack,
+    onSecretForward,
+  }, ref) => {
   const scrollRef = useRef<ScrollView>(null);
   const scrollTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Responsive layout for smaller iPhone screens
+  const layout = useResponsiveLayout();
 
   const messages = useDemoStore((state) => state.messages);
   const addMessage = useDemoStore((state) => state.addMessage);
@@ -180,6 +189,14 @@ export const CoachScreen: React.FC<CoachScreenProps> = ({
     snapTo(4);
   }, [snapTo]);
 
+  // Expose expandSheet method to parent for AbbyOrb tap handler
+  useImperativeHandle(ref, () => ({
+    expandSheet: () => {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+      snapTo(4); // Expand to 100%
+    },
+  }), [snapTo]);
+
   // Secret navigation handlers
   const handleSecretBack = useCallback(() => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
@@ -208,13 +225,16 @@ export const CoachScreen: React.FC<CoachScreenProps> = ({
         <BlurView intensity={80} tint="light" style={styles.blurContainer} pointerEvents="box-none">
           {/* DRAGGABLE HEADER - Handle only, no buttons */}
           <View {...panHandlers} style={styles.draggableHeader}>
-            <View style={styles.handleContainer}>
+            <View style={[styles.handleContainer, { paddingTop: layout.isSmallScreen ? 8 : 12 }]}>
               <View style={styles.handle} />
             </View>
           </View>
 
           {/* Status row - OUTSIDE drag zone to prevent accidental taps */}
-          <View style={styles.statusRow}>
+          <View style={[styles.statusRow, {
+            paddingBottom: layout.isSmallScreen ? 8 : 12,
+            paddingHorizontal: layout.paddingHorizontal,
+          }]}>
             <View style={[
               styles.statusDot,
               isConnected ? (isMuted ? styles.statusMuted : styles.statusConnected) : styles.statusDisconnected
@@ -241,19 +261,25 @@ export const CoachScreen: React.FC<CoachScreenProps> = ({
             )}</View>
 
           {/* Content area - pointerEvents auto to capture touches */}
-          <View style={styles.contentContainer} pointerEvents="auto">
+          <View style={[styles.contentContainer, { paddingHorizontal: layout.paddingHorizontal }]} pointerEvents="auto">
             {/* Conversation transcript - newest at top */}
             <ScrollView
               ref={scrollRef}
               style={styles.messagesContainer}
-              contentContainerStyle={[styles.messagesContent, { flexGrow: 1 }]}
+              contentContainerStyle={[styles.messagesContent, {
+                flexGrow: 1,
+                paddingBottom: layout.isSmallScreen ? 12 : 20,
+              }]}
               showsVerticalScrollIndicator={true}
               bounces={true}
               alwaysBounceVertical={true}
               scrollEventThrottle={16}
             >
               {messages.length === 0 ? (
-                <Text style={styles.placeholderText}>
+                <Text style={[styles.placeholderText, {
+                  fontSize: layout.bodyFontSize + 2,
+                  paddingVertical: layout.isSmallScreen ? 12 : 20,
+                }]}>
                   {isConnected ? "Let's talk about your match! I'm here to help you prepare." : "Connecting to Abby..."}
                 </Text>
               ) : (
@@ -262,10 +288,12 @@ export const CoachScreen: React.FC<CoachScreenProps> = ({
                   return (
                     <View key={message.id} style={[
                       styles.messageBubble,
+                      { marginBottom: layout.isSmallScreen ? 10 : 16 },
                       message.speaker === 'user' && styles.messageBubbleUser
                     ]}>
                       <Text style={[
                         styles.messageText,
+                        { fontSize: layout.isSmallScreen ? 15 : 17, lineHeight: layout.isSmallScreen ? 20 : 23 },
                         message.speaker === 'user' && styles.userMessageText
                       ]}>
                         {message.speaker === 'abby' ? '' : 'You: '}{message.text}
@@ -281,10 +309,15 @@ export const CoachScreen: React.FC<CoachScreenProps> = ({
               onPress={handleEndChat}
               style={({ pressed }) => [
                 styles.endButton,
+                {
+                  paddingVertical: layout.isSmallScreen ? 12 : 16,
+                  marginBottom: layout.isSmallScreen ? 28 : 40,
+                  borderRadius: layout.buttonRadius + 4,
+                },
                 pressed && styles.endButtonPressed,
               ]}
             >
-              <Text style={styles.buttonText}>End Chat</Text>
+              <Text style={[styles.buttonText, { fontSize: layout.isSmallScreen ? 14 : 16 }]}>End Chat</Text>
             </Pressable>
           </View>
 
@@ -292,7 +325,7 @@ export const CoachScreen: React.FC<CoachScreenProps> = ({
       </Animated.View>
 
       {/* Chat input - positioned OUTSIDE bottom sheet, relative to screen */}
-      <View style={styles.chatInputContainer}>
+      <View style={[styles.chatInputContainer, { bottom: layout.isSmallScreen ? 10 : 15 }]}>
         <ChatInput
           onSend={handleSendMessage}
           disabled={!isConnected}
@@ -321,7 +354,10 @@ export const CoachScreen: React.FC<CoachScreenProps> = ({
       />
     </View>
   );
-};
+  }
+);
+
+CoachScreen.displayName = 'CoachScreen';
 
 const styles = StyleSheet.create({
   container: {

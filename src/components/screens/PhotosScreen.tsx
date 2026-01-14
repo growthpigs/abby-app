@@ -15,6 +15,7 @@ import {
   ScrollView,
   Alert,
   ActivityIndicator,
+  useWindowDimensions,
 } from 'react-native';
 import { BlurView } from 'expo-blur';
 import * as Haptics from 'expo-haptics';
@@ -24,6 +25,7 @@ import { GlassButton } from '../ui/GlassButton';
 import { TokenManager } from '../../services/TokenManager';
 import { secureFetchJSON } from '../../utils/secureFetch';
 import { API_CONFIG } from '../../config';
+import { useResponsiveLayout } from '../../hooks/useResponsiveLayout';
 
 // Demo photos for when no auth token (demo mode)
 const DEMO_PHOTOS: PhotoItem[] = [
@@ -63,6 +65,15 @@ export const PhotosScreen: React.FC<PhotosScreenProps> = ({
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isDeleting, setIsDeleting] = useState<string | null>(null);
+  const layout = useResponsiveLayout();
+  const { width: screenWidth } = useWindowDimensions();
+
+  // Calculate responsive photo dimensions based on screen width
+  // 3 photos per row with gaps and horizontal padding
+  const photoGap = layout.isSmallScreen ? 8 : 12;
+  const horizontalPadding = layout.paddingHorizontal;
+  const photoWidth = Math.floor((screenWidth - (horizontalPadding * 2) - (photoGap * 2)) / 3);
+  const photoHeight = Math.floor(photoWidth * 1.3); // Maintain 1:1.3 aspect ratio
 
   const fetchPhotos = useCallback(async () => {
     try {
@@ -188,7 +199,7 @@ export const PhotosScreen: React.FC<PhotosScreenProps> = ({
     <View style={styles.container}>
       <BlurView intensity={90} tint="light" style={styles.blurContainer}>
         {/* Header */}
-        <View style={styles.header}>
+        <View style={[styles.header, { paddingTop: layout.paddingTop, paddingHorizontal: horizontalPadding }]}>
           <Caption style={styles.headerTitle}>MY PHOTOS</Caption>
           <Pressable onPress={onClose} style={styles.closeButton}>
             <Body style={styles.closeText}>Done</Body>
@@ -196,7 +207,7 @@ export const PhotosScreen: React.FC<PhotosScreenProps> = ({
         </View>
 
         {/* Photo Grid */}
-        <ScrollView style={styles.content} contentContainerStyle={styles.contentContainer}>
+        <ScrollView style={styles.content} contentContainerStyle={[styles.contentContainer, { paddingVertical: layout.sectionGap + 4, paddingHorizontal: horizontalPadding }]}>
           {isLoading ? (
             <View style={styles.loadingState}>
               <ActivityIndicator size="large" color="#3B82F6" />
@@ -222,11 +233,11 @@ export const PhotosScreen: React.FC<PhotosScreenProps> = ({
             </View>
           ) : (
             <>
-              <Caption style={styles.helpText}>
+              <Caption style={[styles.helpText, { marginBottom: layout.sectionGap }]}>
                 Add up to {MAX_PHOTOS} photos. Tap to set as primary.
               </Caption>
 
-              <View style={styles.photoGrid}>
+              <View style={[styles.photoGrid, { gap: photoGap }]}>
                 {/* Existing Photos */}
                 {photos.map((photo) => (
                   <View key={photo.id} style={styles.photoWrapper}>
@@ -234,6 +245,7 @@ export const PhotosScreen: React.FC<PhotosScreenProps> = ({
                       onPress={() => handleSetPrimary(photo.id)}
                       style={({ pressed }) => [
                         styles.photoItem,
+                        { width: photoWidth, height: photoHeight },
                         photo.isPrimary && styles.photoItemPrimary,
                         pressed && styles.photoItemPressed,
                       ]}
@@ -268,19 +280,20 @@ export const PhotosScreen: React.FC<PhotosScreenProps> = ({
                     onPress={handleAddPhoto}
                     style={({ pressed }) => [
                       styles.photoItem,
+                      { width: photoWidth, height: photoHeight },
                       styles.emptySlot,
                       pressed && styles.emptySlotPressed,
                     ]}
                   >
-                    <Plus size={32} stroke="rgba(0, 0, 0, 0.3)" />
+                    <Plus size={layout.isSmallScreen ? 24 : 32} stroke="rgba(0, 0, 0, 0.3)" />
                   </Pressable>
                 ))}
               </View>
 
               {/* Tips */}
-              <View style={styles.tips}>
-                <Camera size={18} stroke="rgba(0, 0, 0, 0.4)" />
-                <Body style={styles.tipsText}>
+              <View style={[styles.tips, { marginTop: layout.sectionGap * 2, padding: layout.isSmallScreen ? 12 : 16 }]}>
+                <Camera size={layout.isSmallScreen ? 16 : 18} stroke="rgba(0, 0, 0, 0.4)" />
+                <Body style={[styles.tipsText, { fontSize: layout.bodyFontSize - 2 }]}>
                   Photos with good lighting and clear faces get more matches.
                 </Body>
               </View>
@@ -304,9 +317,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingTop: 60,
     paddingBottom: 16,
-    paddingHorizontal: 20,
     borderBottomWidth: 1,
     borderBottomColor: 'rgba(0, 0, 0, 0.08)',
   },
@@ -327,26 +338,24 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   contentContainer: {
-    paddingVertical: 24,
-    paddingHorizontal: 20,
+    // paddingVertical and paddingHorizontal applied dynamically via layout
   },
   helpText: {
     textAlign: 'center',
     color: 'rgba(0, 0, 0, 0.5)',
-    marginBottom: 24,
+    // marginBottom applied dynamically via layout.sectionGap
   },
   photoGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 12,
+    // gap applied dynamically via photoGap
     justifyContent: 'flex-start',
   },
   photoWrapper: {
     position: 'relative',
   },
   photoItem: {
-    width: 100,
-    height: 130,
+    // width and height applied dynamically based on screen width
     borderRadius: 12,
     overflow: 'hidden',
     backgroundColor: 'rgba(0, 0, 0, 0.05)',
@@ -407,14 +416,13 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 12,
-    marginTop: 32,
-    padding: 16,
+    // marginTop and padding applied dynamically via layout
     backgroundColor: 'rgba(0, 0, 0, 0.03)',
     borderRadius: 12,
   },
   tipsText: {
     flex: 1,
-    fontSize: 14,
+    // fontSize applied dynamically via layout.bodyFontSize
     color: 'rgba(0, 0, 0, 0.6)',
     lineHeight: 20,
   },

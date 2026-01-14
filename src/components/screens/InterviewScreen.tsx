@@ -20,6 +20,7 @@ import * as Haptics from 'expo-haptics';
 import Animated, { FadeIn, FadeOut } from 'react-native-reanimated';
 import { useDemoStore } from '../../store/useDemoStore';
 import { useVibeController } from '../../store/useVibeController';
+import { useResponsiveLayout } from '../../hooks/useResponsiveLayout';
 import { ALL_DATA_POINTS } from '../../data/questions-schema';
 import { isValidVibeTheme, VibeColorTheme } from '../../types/vibe';
 import { abbyTTS } from '../../services/AbbyTTSService';
@@ -76,6 +77,7 @@ export const InterviewScreen: React.FC<InterviewScreenProps> = ({
   const setColorTheme = useVibeController((state) => state.setColorTheme);
   const setAudioLevel = useVibeController((state) => state.setAudioLevel);
   const insets = useSafeAreaInsets();
+  const layout = useResponsiveLayout();
 
   // API state
   const [isApiMode, setIsApiMode] = useState(false);
@@ -340,11 +342,13 @@ export const InterviewScreen: React.FC<InterviewScreenProps> = ({
         <View style={styles.topSpacer} />
         <View style={[styles.bottomModal, { bottom: -insets.bottom }]}>
           <BlurView intensity={80} tint="light" style={styles.modalBlur}>
-            <View style={styles.loadingContainer}>
+            <View style={[styles.loadingContainer, { padding: layout.isSmallScreen ? 30 : 40 }]}>
               <ActivityIndicator size="large" color="rgba(0, 0, 0, 0.6)" />
-              <Text style={styles.loadingText}>Loading questions...</Text>
+              <Text style={[styles.loadingText, { fontSize: layout.bodyFontSize }]}>
+                Loading questions...
+              </Text>
             </View>
-            <View style={styles.homeIndicatorPadding} />
+            <View style={{ height: layout.isSmallScreen ? 28 : 34 }} />
           </BlurView>
         </View>
       </View>
@@ -358,8 +362,10 @@ export const InterviewScreen: React.FC<InterviewScreenProps> = ({
         <View style={styles.topSpacer} />
         <View style={[styles.bottomModal, { bottom: -insets.bottom }]}>
           <BlurView intensity={80} tint="light" style={styles.modalBlur}>
-            <View style={styles.loadingContainer}>
-              <Text style={styles.errorText}>Unable to load questions</Text>
+            <View style={[styles.loadingContainer, { padding: layout.isSmallScreen ? 30 : 40 }]}>
+              <Text style={[styles.errorText, { fontSize: layout.bodyFontSize }]}>
+                Unable to load questions
+              </Text>
               <Pressable
                 onPress={() => {
                   setIsApiMode(false);
@@ -367,10 +373,12 @@ export const InterviewScreen: React.FC<InterviewScreenProps> = ({
                 }}
                 style={styles.retryButton}
               >
-                <Text style={styles.retryButtonText}>Use Demo Mode</Text>
+                <Text style={[styles.retryButtonText, { fontSize: layout.bodyFontSize - 2 }]}>
+                  Use Demo Mode
+                </Text>
               </Pressable>
             </View>
-            <View style={styles.homeIndicatorPadding} />
+            <View style={{ height: layout.isSmallScreen ? 28 : 34 }} />
           </BlurView>
         </View>
       </View>
@@ -391,12 +399,20 @@ export const InterviewScreen: React.FC<InterviewScreenProps> = ({
       <View style={[styles.bottomModal, { bottom: -insets.bottom }]}>
         <BlurView intensity={80} tint="light" style={styles.modalBlur}>
           {/* Drag handle */}
-          <View style={styles.handleContainer}>
+          <View style={[styles.handleContainer, { paddingVertical: layout.isSmallScreen ? 6 : 8 }]}>
             <View style={styles.handle} />
           </View>
 
           {/* Progress indicator */}
-          <Text style={styles.progressText}>
+          <Text
+            style={[
+              styles.progressText,
+              {
+                fontSize: layout.captionFontSize,
+                marginTop: layout.isSmallScreen ? 2 : 4,
+              },
+            ]}
+          >
             {displayProgress}
             {isApiMode && <Text style={styles.apiIndicator}> • API</Text>}
           </Text>
@@ -406,9 +422,25 @@ export const InterviewScreen: React.FC<InterviewScreenProps> = ({
             key={currentQuestion.id}
             entering={FadeIn.duration(300)}
             exiting={FadeOut.duration(200)}
-            style={styles.questionContainer}
+            style={[
+              styles.questionContainer,
+              {
+                paddingHorizontal: layout.paddingHorizontal,
+                paddingVertical: layout.isSmallScreen ? 14 : 20,
+              },
+            ]}
           >
-            <Text style={styles.questionText}>{currentQuestion.question}</Text>
+            <Text
+              style={[
+                styles.questionText,
+                {
+                  fontSize: layout.isSmallScreen ? 18 : 20,
+                  lineHeight: layout.isSmallScreen ? 26 : 30,
+                },
+              ]}
+            >
+              {currentQuestion.question}
+            </Text>
           </Animated.View>
 
           {/* Voice error indicator */}
@@ -433,25 +465,48 @@ export const InterviewScreen: React.FC<InterviewScreenProps> = ({
               disabled={isLoading}
               style={({ pressed }) => [
                 styles.nextButton,
+                {
+                  marginHorizontal: layout.paddingHorizontal,
+                  paddingVertical: layout.isSmallScreen ? 12 : 16,
+                },
                 pressed && styles.nextButtonPressed,
                 isLoading && styles.buttonDisabled,
               ]}
             >
-              <Text style={styles.buttonText}>Find My Match</Text>
+              <Text style={[styles.buttonText, { fontSize: layout.bodyFontSize }]}>
+                Find My Match
+              </Text>
             </Pressable>
           ) : (
-            <View style={styles.buttonRow}>
+            <View
+              style={[
+                styles.buttonRow,
+                {
+                  marginHorizontal: layout.paddingHorizontal,
+                  gap: layout.buttonMargin,
+                },
+              ]}
+            >
               <Pressable
                 onPress={() => submitAnswer('No')}
                 disabled={isLoading}
                 style={({ pressed }) => [
                   styles.answerButton,
                   styles.noButton,
+                  { paddingVertical: layout.isSmallScreen ? 12 : 16 },
                   pressed && styles.answerButtonPressed,
                   isLoading && styles.buttonDisabled,
                 ]}
               >
-                <Text style={[styles.answerButtonText, styles.noButtonText]}>No</Text>
+                <Text
+                  style={[
+                    styles.answerButtonText,
+                    styles.noButtonText,
+                    { fontSize: layout.bodyFontSize },
+                  ]}
+                >
+                  No
+                </Text>
               </Pressable>
               <Pressable
                 onPress={() => submitAnswer('Yes')}
@@ -459,17 +514,20 @@ export const InterviewScreen: React.FC<InterviewScreenProps> = ({
                 style={({ pressed }) => [
                   styles.answerButton,
                   styles.yesButton,
+                  { paddingVertical: layout.isSmallScreen ? 12 : 16 },
                   pressed && styles.answerButtonPressed,
                   isLoading && styles.buttonDisabled,
                 ]}
               >
-                <Text style={styles.answerButtonText}>Yes</Text>
+                <Text style={[styles.answerButtonText, { fontSize: layout.bodyFontSize }]}>
+                  Yes
+                </Text>
               </Pressable>
             </View>
           )}
 
           {/* Extra padding for home indicator */}
-          <View style={styles.homeIndicatorPadding} />
+          <View style={{ height: layout.isSmallScreen ? 28 : 34 }} />
         </BlurView>
       </View>
 

@@ -12,9 +12,13 @@ import {
   Pressable,
   TextInput,
   ActivityIndicator,
+  ScrollView,
+  KeyboardAvoidingView,
+  Platform,
 } from 'react-native';
 import * as Haptics from 'expo-haptics';
 import { Typography } from '../ui/Typography';
+import { useResponsiveLayout } from '../../hooks/useResponsiveLayout';
 
 interface PasswordScreenProps {
   mode: 'signup' | 'signin';
@@ -38,6 +42,7 @@ export const PasswordScreen: React.FC<PasswordScreenProps> = ({
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+  const layout = useResponsiveLayout();
 
   const handleNext = () => {
     if (isValid && !isLoading) {
@@ -72,11 +77,14 @@ export const PasswordScreen: React.FC<PasswordScreenProps> = ({
       : passwordValid && password === confirmPassword;
 
   return (
-    <View style={styles.container}>
+    <KeyboardAvoidingView
+      style={styles.container}
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+    >
       {/* Back button */}
       <Pressable
         onPress={handleSecretBack}
-        style={styles.backButton}
+        style={[styles.backButton, { top: layout.paddingTop }]}
         hitSlop={20}
       >
         <Typography variant="headline" style={styles.backArrow}>
@@ -84,20 +92,47 @@ export const PasswordScreen: React.FC<PasswordScreenProps> = ({
         </Typography>
       </Pressable>
 
-      {/* Content */}
-      <View style={styles.content}>
+      {/* Scrollable Content */}
+      <ScrollView
+        style={styles.scrollView}
+        contentContainerStyle={[
+          styles.content,
+          {
+            paddingTop: layout.paddingTop + 60,
+            paddingHorizontal: layout.paddingHorizontal,
+            paddingBottom: layout.isSmallScreen ? 120 : 140,
+          }
+        ]}
+        keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false}
+      >
         {/* Headline */}
-        <Typography variant="headline" style={styles.headline}>
+        <Typography
+          variant="headline"
+          style={[
+            styles.headline,
+            {
+              fontSize: layout.headlineFontSize,
+              marginBottom: layout.buttonMargin,
+            }
+          ]}
+        >
           {mode === 'signup' ? 'Create a\npassword' : 'Enter your\npassword'}
         </Typography>
 
         {/* Email display */}
-        <Typography variant="body" style={styles.emailText}>
+        <Typography
+          variant="body"
+          style={[
+            styles.emailText,
+            { marginBottom: layout.sectionGap }
+          ]}
+        >
           {email}
         </Typography>
 
         {/* Password input with eye toggle */}
-        <View style={styles.inputContainer}>
+        <View style={[styles.inputContainer, { marginBottom: layout.buttonMargin }]}>
           <TextInput
             style={styles.passwordInput}
             value={password}
@@ -126,7 +161,7 @@ export const PasswordScreen: React.FC<PasswordScreenProps> = ({
 
         {/* Confirm password - directly below first input (signup only) */}
         {mode === 'signup' && (
-          <View style={styles.inputContainer}>
+          <View style={[styles.inputContainer, { marginBottom: layout.buttonMargin }]}>
             <TextInput
               style={styles.passwordInput}
               value={confirmPassword}
@@ -146,7 +181,7 @@ export const PasswordScreen: React.FC<PasswordScreenProps> = ({
 
         {/* Password requirements - compact, below inputs (signup only) */}
         {mode === 'signup' && (
-          <View style={styles.requirementsContainer}>
+          <View style={[styles.requirementsContainer, { marginTop: layout.sectionGap }]}>
             <View style={styles.requirementsRow}>
               <Typography
                 variant="caption"
@@ -200,16 +235,25 @@ export const PasswordScreen: React.FC<PasswordScreenProps> = ({
             </Typography>
           </View>
         )}
-
-      </View>
+      </ScrollView>
 
       {/* Fixed footer with Continue button */}
-      <View style={styles.footer}>
+      <View style={[
+        styles.footer,
+        {
+          bottom: layout.paddingBottom,
+          paddingHorizontal: layout.paddingHorizontal,
+        }
+      ]}>
         <Pressable
           onPress={handleNext}
           disabled={!isValid || isLoading}
           style={({ pressed }) => [
             styles.continueButton,
+            {
+              height: layout.buttonHeightLarge,
+              borderRadius: layout.buttonHeightLarge / 2,
+            },
             (!isValid || isLoading) && styles.continueButtonDisabled,
             pressed && styles.buttonPressed,
           ]}
@@ -241,7 +285,7 @@ export const PasswordScreen: React.FC<PasswordScreenProps> = ({
         style={styles.secretForwardTrigger}
         hitSlop={10}
       />
-    </View>
+    </KeyboardAvoidingView>
   );
 };
 
@@ -251,7 +295,6 @@ const styles = StyleSheet.create({
   },
   backButton: {
     position: 'absolute',
-    top: 60,
     left: 24,
     zIndex: 10,
   },
@@ -259,29 +302,25 @@ const styles = StyleSheet.create({
     fontSize: 32,
     color: 'rgba(255, 255, 255, 0.95)',
   },
-  content: {
+  scrollView: {
     flex: 1,
-    paddingHorizontal: 24,
-    paddingTop: 140,
-    paddingBottom: 48,
+  },
+  content: {
+    flexGrow: 1,
   },
   headline: {
-    fontSize: 32,
     fontWeight: '700',
     color: 'rgba(255, 255, 255, 0.95)',
     lineHeight: 40,
     letterSpacing: -0.5,
-    marginBottom: 12,
   },
   emailText: {
     fontSize: 14,
     color: 'rgba(255, 255, 255, 0.6)',
-    marginBottom: 32,
   },
   inputContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 16,
   },
   passwordInput: {
     flex: 1,
@@ -304,7 +343,7 @@ const styles = StyleSheet.create({
     fontSize: 20,
   },
   requirementsContainer: {
-    marginTop: 20,
+    // marginTop now applied dynamically via layout.sectionGap
   },
   requirementsRow: {
     flexDirection: 'row',
@@ -332,15 +371,12 @@ const styles = StyleSheet.create({
   },
   footer: {
     position: 'absolute',
-    bottom: 48,
-    left: 24,
-    right: 24,
+    left: 0,
+    right: 0,
   },
   continueButton: {
     width: '100%',
-    height: 56,
     backgroundColor: 'rgba(255, 255, 255, 0.95)',
-    borderRadius: 28,
     justifyContent: 'center',
     alignItems: 'center',
   },

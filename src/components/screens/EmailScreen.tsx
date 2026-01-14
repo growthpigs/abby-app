@@ -15,6 +15,7 @@ import {
 import * as Haptics from 'expo-haptics';
 import { Typography } from '../ui/Typography';
 import { GlassButton } from '../ui/GlassButton';
+import { useResponsiveLayout } from '../../hooks/useResponsiveLayout';
 
 interface EmailScreenProps {
   onNext?: (email: string) => void;
@@ -28,6 +29,7 @@ export const EmailScreen: React.FC<EmailScreenProps> = ({
   onSecretForward,
 }) => {
   const [email, setEmail] = useState('');
+  const layout = useResponsiveLayout();
 
   const handleNext = () => {
     if (isValid) {
@@ -54,7 +56,7 @@ export const EmailScreen: React.FC<EmailScreenProps> = ({
       {/* Back button */}
       <Pressable
         onPress={handleSecretBack}
-        style={styles.backButton}
+        style={[styles.backButton, { top: layout.paddingTop }]}
         hitSlop={20}
       >
         <Typography variant="headline" style={styles.backArrow}>
@@ -63,15 +65,28 @@ export const EmailScreen: React.FC<EmailScreenProps> = ({
       </Pressable>
 
       {/* Content */}
-      <View style={styles.content}>
+      <View style={[
+        styles.content,
+        {
+          paddingTop: layout.paddingTop + 60,
+          paddingBottom: layout.paddingBottom,
+          paddingHorizontal: layout.paddingHorizontal,
+        }
+      ]}>
         {/* Headline */}
-        <Typography variant="headline" style={styles.headline}>
+        <Typography variant="headline" style={[
+          styles.headline,
+          {
+            fontSize: layout.headlineFontSize,
+            marginBottom: layout.sectionGap * 1.5,
+          }
+        ]}>
           What's your{'\n'}email?
         </Typography>
 
         {/* Email input */}
         <TextInput
-          style={styles.emailInput}
+          style={[styles.emailInput, { height: layout.inputHeight }]}
           value={email}
           onChangeText={setEmail}
           placeholder=""
@@ -86,10 +101,16 @@ export const EmailScreen: React.FC<EmailScreenProps> = ({
         />
 
         {/* Help text */}
-        <View style={styles.helpTextContainer}>
-          <Typography variant="caption" style={styles.helpText}>
+        <View style={[styles.helpTextContainer, { marginTop: layout.sectionGap }]}>
+          <Typography variant="caption" style={[
+            styles.helpText,
+            { fontSize: layout.captionFontSize }
+          ]}>
             We'll send you a verification code to confirm your email.{' '}
-            <Typography variant="caption" style={styles.helpLink}>
+            <Typography variant="caption" style={[
+              styles.helpLink,
+              { fontSize: layout.captionFontSize }
+            ]}>
               Why do we need this?
             </Typography>
           </Typography>
@@ -97,7 +118,14 @@ export const EmailScreen: React.FC<EmailScreenProps> = ({
       </View>
 
       {/* Fixed footer with Continue button */}
-      <View style={styles.footer}>
+      <View style={[
+        styles.footer,
+        {
+          bottom: layout.paddingBottom,
+          left: layout.paddingHorizontal,
+          right: layout.paddingHorizontal,
+        }
+      ]}>
         <GlassButton
           onPress={handleNext}
           disabled={!isValid}
@@ -137,7 +165,6 @@ const styles = StyleSheet.create({
   },
   backButton: {
     position: 'absolute',
-    top: 60,
     left: 24,
     zIndex: 10,
   },
@@ -147,17 +174,12 @@ const styles = StyleSheet.create({
   },
   content: {
     flex: 1,
-    paddingHorizontal: 24,
-    paddingTop: 140,
-    paddingBottom: 48,
   },
   headline: {
-    fontSize: 32,
     fontWeight: '700',
     color: 'rgba(255, 255, 255, 0.95)',
     lineHeight: 40,
     letterSpacing: -0.5,
-    marginBottom: 32,
   },
   emailInput: {
     width: '100%',
@@ -171,24 +193,17 @@ const styles = StyleSheet.create({
     letterSpacing: 0,
     textAlign: 'left',
   },
-  helpTextContainer: {
-    marginTop: 16,
-  },
+  helpTextContainer: {},
   helpText: {
-    fontSize: 12,
     color: 'rgba(255, 255, 255, 0.6)',
     lineHeight: 18,
   },
   helpLink: {
-    fontSize: 12,
     color: 'rgba(255, 255, 255, 0.8)',
     textDecorationLine: 'underline',
   },
   footer: {
     position: 'absolute',
-    bottom: 48,
-    left: 24,
-    right: 24,
   },
   secretBackTrigger: {
     position: 'absolute',

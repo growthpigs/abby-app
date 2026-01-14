@@ -16,6 +16,7 @@ import * as Haptics from 'expo-haptics';
 import { Typography } from '../ui/Typography';
 import { RadioGroup, RadioOption } from '../ui/RadioGroup';
 import { GlassButton } from '../ui/GlassButton';
+import { useResponsiveLayout } from '../../hooks/useResponsiveLayout';
 
 interface BasicsPreferencesScreenProps {
   onNext?: (preference: string) => void;
@@ -51,6 +52,7 @@ export const BasicsPreferencesScreen: React.FC<BasicsPreferencesScreenProps> = (
   onSecretBack,
   onSecretForward,
 }) => {
+  const layout = useResponsiveLayout();
   const [selectedPreference, setSelectedPreference] = useState<string | null>(null);
   const [showAll, setShowAll] = useState(false);
 
@@ -83,7 +85,7 @@ export const BasicsPreferencesScreen: React.FC<BasicsPreferencesScreenProps> = (
       {/* Back button */}
       <Pressable
         onPress={handleSecretBack}
-        style={styles.backButton}
+        style={[styles.backButton, { top: layout.paddingTop }]}
         hitSlop={20}
       >
         <Typography variant="headline" style={styles.backArrow}>
@@ -92,14 +94,24 @@ export const BasicsPreferencesScreen: React.FC<BasicsPreferencesScreenProps> = (
       </Pressable>
 
       {/* Content */}
-      <View style={styles.content}>
+      <View style={[styles.content, {
+        paddingTop: layout.paddingTop + 60,
+        paddingHorizontal: layout.paddingHorizontal,
+        paddingBottom: layout.paddingBottom,
+      }]}>
         {/* Section label */}
-        <Typography variant="body" style={styles.sectionLabel}>
+        <Typography variant="body" style={[styles.sectionLabel, {
+          fontSize: layout.captionFontSize + 2,
+          marginBottom: layout.buttonMargin,
+        }]}>
           Basics
         </Typography>
 
         {/* Headline */}
-        <Typography variant="headline" style={styles.headline}>
+        <Typography variant="headline" style={[styles.headline, {
+          fontSize: layout.headlineFontSize,
+          marginBottom: layout.sectionGap + 8,
+        }]}>
           I want to date...
         </Typography>
 
@@ -118,8 +130,8 @@ export const BasicsPreferencesScreen: React.FC<BasicsPreferencesScreenProps> = (
 
           {/* See All button */}
           {!showAll && (
-            <Pressable onPress={handleSeeAll} style={styles.seeAllButton}>
-              <Typography variant="body" style={styles.seeAllText}>
+            <Pressable onPress={handleSeeAll} style={[styles.seeAllButton, { marginTop: layout.buttonMargin }]}>
+              <Typography variant="body" style={[styles.seeAllText, { fontSize: layout.bodyFontSize }]}>
                 See All Options ▼
               </Typography>
             </Pressable>
@@ -128,7 +140,11 @@ export const BasicsPreferencesScreen: React.FC<BasicsPreferencesScreenProps> = (
       </View>
 
       {/* Fixed footer with Continue button */}
-      <View style={styles.footer}>
+      <View style={[styles.footer, {
+        bottom: layout.paddingBottom,
+        left: layout.paddingHorizontal,
+        right: layout.paddingHorizontal,
+      }]}>
         <GlassButton
           onPress={handleNext}
           disabled={!selectedPreference}

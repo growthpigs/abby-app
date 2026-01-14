@@ -8,7 +8,7 @@
  * Snap points at 35%, 55%, 75%, 90% of screen height.
  */
 
-import React, { useCallback, useEffect, useState, useRef } from 'react';
+import React, { useCallback, useEffect, useState, useRef, forwardRef, useImperativeHandle } from 'react';
 import {
   View,
   Text,
@@ -18,6 +18,7 @@ import {
   ScrollView,
   Animated,
   PanResponder,
+  Alert,
 } from 'react-native';
 import { BlurView } from 'expo-blur';
 import * as Haptics from 'expo-haptics';
@@ -29,6 +30,7 @@ import { VibeColorTheme } from '../../types/vibe';
 import { SHEET_SNAP_POINTS, SHEET_DEFAULT_SNAP } from '../../constants/layout';
 import { TIMEOUTS } from '../../config';
 import { ChatInput } from '../ui/ChatInput';
+import { useResponsiveLayout } from '../../hooks/useResponsiveLayout';
 
 // Keywords that trigger color changes during conversation
 const VIBE_KEYWORDS: Record<VibeColorTheme, string[]> = {
@@ -63,12 +65,18 @@ export interface CoachIntroScreenProps {
   onSecretForward?: () => void;
 }
 
-export const CoachIntroScreen: React.FC<CoachIntroScreenProps> = ({
-  onBackgroundChange,
-  onSecretBack,
-  onSecretForward,
-}) => {
+export interface CoachIntroScreenRef {
+  expandSheet: () => void;
+}
+
+export const CoachIntroScreen = forwardRef<CoachIntroScreenRef, CoachIntroScreenProps>(
+  ({
+    onBackgroundChange,
+    onSecretBack,
+    onSecretForward,
+  }, ref) => {
   const scrollRef = useRef<ScrollView>(null);
+  const layout = useResponsiveLayout();
 
   const messages = useDemoStore((state) => state.messages);
   const addMessage = useDemoStore((state) => state.addMessage);
@@ -77,13 +85,13 @@ export const CoachIntroScreen: React.FC<CoachIntroScreenProps> = ({
   // Vibe controller for color changes
   const setColorTheme = useVibeController((state) => state.setColorTheme);
 
-  const [agentStatus, setAgentStatus] = useState<string>('Connecting...');
+  const [agentStatus, setAgentStatus] = useState<string>('Initializing...');
 
   // Animated value for bottom sheet position
   const translateY = useRef(new Animated.Value(SCREEN_HEIGHT)).current;
 
-  // Initialize ElevenLabs Agent
-  const { startConversation, endConversation, toggleMute, isSpeaking, isConnected, isMuted, sendTextMessage } = useAbbyAgent({
+  // Initialize Abby Agent
+  const { startConversation, endConversation, toggleMute, isSpeaking, isConnected, isMuted, isDemoMode, sendTextMessage } = useAbbyAgent({
     enabled: true,
     onAbbyResponse: (text) => {
       addMessage('abby', text);
@@ -107,17 +115,18 @@ export const CoachIntroScreen: React.FC<CoachIntroScreenProps> = ({
       }, TIMEOUTS.UI.SCROLL_DELAY);
     },
     onConnect: () => {
-      setAgentStatus('Connected');
+      setAgentStatus('Ready');
     },
     onDisconnect: () => {
-      setAgentStatus('Disconnected');
-      // AUTO-ADVANCE: When ElevenLabs conversation ends (via End node in workflow),
-      // automatically transition to interview
-      if (__DEV__) console.log('[CoachIntro] 🚀 ElevenLabs disconnected, advancing to interview');
+      setAgentStatus('Ended');
+      // AUTO-ADVANCE: When conversation ends, transition to interview
+      if (__DEV__) console.log('[CoachIntro] 🚀 Disconnected, advancing to interview');
       advance();
     },
     onError: (error) => {
       setAgentStatus(`Error: ${error.message}`);
+      // Show visible alert so user can see the error in release mode
+      Alert.alert('Connection Issue', error.message, [{ text: 'OK' }]);
     },
   });
 
@@ -137,6 +146,20 @@ export const CoachIntroScreen: React.FC<CoachIntroScreenProps> = ({
 
     return SCREEN_HEIGHT * (1 - closest);
   }, []);
+
+  // Expose expandSheet method to parent for AbbyOrb tap handler
+  useImperativeHandle(ref, () => ({
+    expandSheet: () => {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+      // Expand to 100% (1.0 means fully expanded, so translateY = 0)
+      Animated.spring(translateY, {
+        toValue: 0,
+        useNativeDriver: true,
+        damping: 50,
+        stiffness: 400,
+      }).start();
+    },
+  }), [translateY]);
 
   // Pan responder for draggable header
   const panResponder = useRef(
@@ -247,7 +270,9 @@ export const CoachIntroScreen: React.FC<CoachIntroScreenProps> = ({
       if (__DEV__) {
         console.warn('[CoachIntro] sendTextMessage failed:', err);
       }
-      // Could add user-visible error feedback here in future
+      // Show visible alert for message send failures
+      const errorMsg = err?.message || err?.code || 'Unknown error';
+      Alert.alert('Message Failed', errorMsg, [{ text: 'OK' }]);
     });
     // Scroll to show newest message
     setTimeout(() => {
@@ -283,27 +308,31 @@ export const CoachIntroScreen: React.FC<CoachIntroScreenProps> = ({
         <BlurView intensity={80} tint="light" style={styles.blurContainer} pointerEvents="box-none">
           {/* DRAGGABLE HEADER - Handle only, no buttons */}
           <View {...panResponder.panHandlers} style={styles.draggableHeader}>
-            <View style={styles.handleContainer}>
+            <View style={[styles.handleContainer, { paddingTop: layout.isSmallScreen ? 8 : 12 }]}>
               <View style={styles.handle} />
             </View>
           </View>
 
           {/* Status row - OUTSIDE drag zone to prevent accidental taps */}
-          <View style={styles.statusRow}>
+          <View style={[styles.statusRow, {
+            paddingBottom: layout.isSmallScreen ? 8 : 12,
+            paddingHorizontal: layout.paddingHorizontal,
+          }]}>
             <View style={[
               styles.statusDot,
               isConnected ? (isMuted ? styles.statusMuted : styles.statusConnected) : styles.statusDisconnected
             ]} />
-            <Text style={styles.statusText}>
-              {isMuted ? 'Muted' : (isConnected ? (isSpeaking ? 'Abby is speaking...' : 'Listening') : agentStatus)}
+            <Text style={[styles.statusText, { fontSize: layout.captionFontSize }]}>
+              {isMuted ? 'Muted' : (isConnected ? (isSpeaking ? 'Speaking...' : (isDemoMode ? 'Demo Mode' : 'Connected')) : agentStatus)}
             </Text>
 
-            {/* Mute/Unmute button - 44x44 for iOS HIG compliance */}
+            {/* Mute/Unmute button - responsive size, min 44x44 for iOS HIG compliance */}
             {isConnected && (
               <Pressable
                 onPress={handleToggleMute}
                 style={({ pressed }) => [
                   styles.muteButton,
+                  { width: layout.buttonHeight, height: layout.buttonHeight, borderRadius: layout.buttonHeight / 2 },
                   pressed && styles.muteButtonPressed,
                 ]}
               >
@@ -320,15 +349,22 @@ export const CoachIntroScreen: React.FC<CoachIntroScreenProps> = ({
           <ScrollView
             ref={scrollRef}
             style={styles.messagesContainer}
-            contentContainerStyle={styles.messagesContent}
+            contentContainerStyle={[styles.messagesContent, {
+              paddingBottom: layout.isSmallScreen ? 80 : 100,
+              paddingHorizontal: layout.paddingHorizontal,
+            }]}
             showsVerticalScrollIndicator={true}
             bounces={true}
             alwaysBounceVertical={true}
             scrollEventThrottle={16}
           >
             {messages.length === 0 ? (
-              <Text style={styles.placeholderText}>
-                {isConnected ? "Hi! I'm Abby. Ready to help you find your perfect match?" : "Connecting to Abby..."}
+              <Text style={[styles.placeholderText, { fontSize: layout.isSmallScreen ? 16 : 18, lineHeight: layout.isSmallScreen ? 24 : 28 }]}>
+                {isConnected
+                  ? (isDemoMode
+                      ? "Hi! I'm Abby. I'm in demo mode - type a message to chat!"
+                      : "Hi! I'm Abby. Ready to help you find your perfect match?")
+                  : "Connecting to Abby..."}
               </Text>
             ) : (
               [...messages].reverse().map((message) => {
@@ -336,10 +372,12 @@ export const CoachIntroScreen: React.FC<CoachIntroScreenProps> = ({
                 return (
                   <View key={message.id} style={[
                     styles.messageBubble,
+                    { marginBottom: layout.isSmallScreen ? 12 : 16 },
                     message.speaker === 'user' && styles.messageBubbleUser
                   ]}>
                     <Text style={[
                       styles.messageText,
+                      { fontSize: layout.isSmallScreen ? 15 : 17, lineHeight: layout.isSmallScreen ? 20 : 23 },
                       message.speaker === 'user' && styles.userMessageText
                     ]}>
                       {message.speaker === 'abby' ? '' : 'You: '}{message.text}
@@ -355,7 +393,11 @@ export const CoachIntroScreen: React.FC<CoachIntroScreenProps> = ({
 
       {/* Chat input - OUTSIDE the animated sheet, fixed at actual screen bottom */}
       {/* This ensures it's always visible regardless of sheet translateY position */}
-      <View style={styles.chatInputContainer}>
+      <View style={[styles.chatInputContainer, {
+        bottom: layout.isSmallScreen ? 24 : 34,
+        left: layout.paddingHorizontal,
+        right: layout.paddingHorizontal,
+      }]}>
         <ChatInput
           onSend={handleSendMessage}
           disabled={!isConnected}
@@ -363,28 +405,41 @@ export const CoachIntroScreen: React.FC<CoachIntroScreenProps> = ({
         />
       </View>
 
-      {/* Secret navigation triggers (all 70x70, invisible) */}
+      {/* Secret navigation triggers (responsive size, invisible) */}
       {/* Left = Back */}
       <Pressable
         onPress={handleSecretBack}
-        style={styles.secretBackTrigger}
+        style={[styles.secretBackTrigger, {
+          width: layout.isSmallScreen ? 60 : 70,
+          height: layout.isSmallScreen ? 60 : 70,
+        }]}
         hitSlop={10}
       />
       {/* Middle = Primary action (Start Interview) */}
       <Pressable
         onPress={handleStartInterview}
-        style={styles.secretMiddleTrigger}
+        style={[styles.secretMiddleTrigger, {
+          width: layout.isSmallScreen ? 60 : 70,
+          height: layout.isSmallScreen ? 60 : 70,
+          marginLeft: layout.isSmallScreen ? -30 : -35,
+        }]}
         hitSlop={10}
       />
       {/* Right = Forward */}
       <Pressable
         onPress={handleSecretForward}
-        style={styles.secretForwardTrigger}
+        style={[styles.secretForwardTrigger, {
+          width: layout.isSmallScreen ? 60 : 70,
+          height: layout.isSmallScreen ? 60 : 70,
+        }]}
         hitSlop={10}
       />
     </View>
   );
-};
+  }
+);
+
+CoachIntroScreen.displayName = 'CoachIntroScreen';
 
 const styles = StyleSheet.create({
   container: {

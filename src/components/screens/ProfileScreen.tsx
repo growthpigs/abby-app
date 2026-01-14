@@ -23,6 +23,7 @@ import { useOnboardingStore } from '../../store/useOnboardingStore';
 import { TokenManager } from '../../services/TokenManager';
 import { secureFetchJSON } from '../../utils/secureFetch';
 import { API_CONFIG } from '../../config';
+import { useResponsiveLayout } from '../../hooks/useResponsiveLayout';
 
 export interface ProfileScreenProps {
   onClose?: () => void;
@@ -66,6 +67,7 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
   onClose,
 }) => {
   const store = useOnboardingStore();
+  const layout = useResponsiveLayout();
   const [isSaving, setIsSaving] = useState(false);
 
   // Local state for editing
@@ -169,8 +171,8 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
     <View style={styles.container}>
       <BlurView intensity={90} tint="light" style={styles.blurContainer}>
         {/* Header */}
-        <View style={styles.header}>
-          <Caption style={styles.headerTitle}>MY PROFILE</Caption>
+        <View style={[styles.header, { paddingTop: layout.paddingTop }]}>
+          <Caption style={[styles.headerTitle, { fontSize: layout.captionFontSize }]}>MY PROFILE</Caption>
           <Pressable onPress={onClose} style={styles.closeButton}>
             <Body style={styles.closeText}>Done</Body>
           </Pressable>
@@ -179,7 +181,14 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
         {/* Content */}
         <ScrollView
           style={styles.scrollView}
-          contentContainerStyle={styles.content}
+          contentContainerStyle={[
+            styles.content,
+            {
+              paddingVertical: layout.sectionGap,
+              paddingHorizontal: layout.paddingHorizontal,
+              paddingBottom: layout.isSmallScreen ? 60 : 100,
+            },
+          ]}
           showsVerticalScrollIndicator={false}
         >
           {/* Edit Modal */}
@@ -209,7 +218,7 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
           )}
 
           {/* Profile Sections */}
-          <Headline style={styles.sectionHeading}>Basic Info</Headline>
+          <Headline style={[styles.sectionHeading, { fontSize: layout.titleFontSize, marginTop: layout.sectionGap, marginBottom: layout.buttonMargin }]}>Basic Info</Headline>
 
           <ProfileSection
             icon={<User size={20} stroke="rgba(0, 0, 0, 0.6)" />}
@@ -231,7 +240,7 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
             value={formatGender(store.gender)}
           />
 
-          <Headline style={styles.sectionHeading}>Preferences</Headline>
+          <Headline style={[styles.sectionHeading, { fontSize: layout.titleFontSize, marginTop: layout.sectionGap, marginBottom: layout.buttonMargin }]}>Preferences</Headline>
 
           <ProfileSection
             icon={<Heart size={20} stroke="rgba(0, 0, 0, 0.6)" />}
@@ -258,7 +267,7 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
           />
 
           {/* Save Button */}
-          <View style={styles.saveContainer}>
+          <View style={[styles.saveContainer, { marginTop: layout.isSmallScreen ? 20 : 32 }]}>
             <GlassButton
               onPress={handleSave}
               disabled={isSaving}
@@ -285,7 +294,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingTop: 60,
+    // paddingTop is set dynamically via layout.paddingTop
     paddingBottom: 16,
     paddingHorizontal: 20,
     borderBottomWidth: 1,
@@ -308,15 +317,11 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   content: {
-    paddingVertical: 24,
-    paddingHorizontal: 20,
-    paddingBottom: 100,
+    // paddingVertical, paddingHorizontal, paddingBottom set dynamically via layout
   },
   sectionHeading: {
-    fontSize: 18,
+    // fontSize, marginTop, marginBottom set dynamically via layout
     color: 'rgba(0, 0, 0, 0.85)',
-    marginTop: 16,
-    marginBottom: 12,
   },
   section: {
     flexDirection: 'row',
@@ -401,7 +406,7 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   saveContainer: {
-    marginTop: 32,
+    // marginTop set dynamically via layout
   },
 });
 

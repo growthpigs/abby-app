@@ -11,10 +11,14 @@ import {
   StyleSheet,
   Pressable,
   TextInput,
+  ScrollView,
+  KeyboardAvoidingView,
+  Platform,
 } from 'react-native';
 import * as Haptics from 'expo-haptics';
 import { Typography } from '../ui/Typography';
 import { GlassButton } from '../ui/GlassButton';
+import { useResponsiveLayout } from '../../hooks/useResponsiveLayout';
 
 // Format phone number as XXX-XXX-XXXX
 const formatPhoneNumber = (value: string): string => {
@@ -38,6 +42,7 @@ export const PhoneNumberScreen: React.FC<PhoneNumberScreenProps> = ({
   onSecretBack,
   onSecretForward,
 }) => {
+  const layout = useResponsiveLayout();
   const [countryCode, setCountryCode] = useState('US +1');
   const [phoneNumber, setPhoneNumber] = useState('');
 
@@ -62,11 +67,14 @@ export const PhoneNumberScreen: React.FC<PhoneNumberScreenProps> = ({
   const isValid = phoneNumber.length >= 10 && /^\d+$/.test(phoneNumber);
 
   return (
-    <View style={styles.container}>
+    <KeyboardAvoidingView
+      style={styles.container}
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+    >
       {/* Back button */}
       <Pressable
         onPress={handleSecretBack}
-        style={styles.backButton}
+        style={[styles.backButton, { top: layout.paddingTop }]}
         hitSlop={20}
       >
         <Typography variant="headline" style={styles.backArrow}>
@@ -75,22 +83,43 @@ export const PhoneNumberScreen: React.FC<PhoneNumberScreenProps> = ({
       </Pressable>
 
       {/* Content */}
-      <View style={styles.content}>
+      <ScrollView
+        style={styles.scrollView}
+        contentContainerStyle={[
+          styles.content,
+          {
+            paddingTop: layout.paddingTop + 60,
+            paddingHorizontal: layout.paddingHorizontal,
+            paddingBottom: layout.paddingBottom,
+          }
+        ]}
+        keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false}
+      >
         {/* Headline */}
-        <Typography variant="headline" style={styles.headline}>
+        <Typography
+          variant="headline"
+          style={[
+            styles.headline,
+            {
+              fontSize: layout.headlineFontSize,
+              marginBottom: layout.sectionGap * 1.5,
+            }
+          ]}
+        >
           Can we get{'\n'}your number?
         </Typography>
 
         {/* Country code + phone input row */}
-        <View style={styles.inputRow}>
-          <Pressable style={styles.countryCodeButton}>
+        <View style={[styles.inputRow, { marginBottom: layout.buttonMargin }]}>
+          <Pressable style={[styles.countryCodeButton, { height: layout.inputHeight }]}>
             <Typography variant="bodyLarge" style={styles.countryCodeText}>
               {countryCode}
             </Typography>
           </Pressable>
 
           <TextInput
-            style={styles.phoneInput}
+            style={[styles.phoneInput, { height: layout.inputHeight }]}
             value={formatPhoneNumber(phoneNumber)}
             onChangeText={(text) => setPhoneNumber(getDigitsOnly(text))}
             placeholder="123-456-7890"
@@ -105,17 +134,17 @@ export const PhoneNumberScreen: React.FC<PhoneNumberScreenProps> = ({
 
         {/* Help text */}
         <View style={styles.helpTextContainer}>
-          <Typography variant="caption" style={styles.helpText}>
+          <Typography variant="caption" style={[styles.helpText, { fontSize: layout.captionFontSize }]}>
             We'll text you a code to verify you're really you. Message and data rates may apply.{' '}
-            <Typography variant="caption" style={styles.helpLink}>
+            <Typography variant="caption" style={[styles.helpLink, { fontSize: layout.captionFontSize }]}>
               What happens if your number changes?
             </Typography>
           </Typography>
         </View>
-      </View>
+      </ScrollView>
 
       {/* Fixed footer with Continue button */}
-      <View style={styles.footer}>
+      <View style={[styles.footer, { bottom: layout.paddingBottom, paddingHorizontal: layout.paddingHorizontal }]}>
         <GlassButton
           onPress={handleNext}
           disabled={!isValid}
@@ -145,7 +174,7 @@ export const PhoneNumberScreen: React.FC<PhoneNumberScreenProps> = ({
         style={styles.secretForwardTrigger}
         hitSlop={10}
       />
-    </View>
+    </KeyboardAvoidingView>
   );
 };
 
@@ -155,7 +184,6 @@ const styles = StyleSheet.create({
   },
   backButton: {
     position: 'absolute',
-    top: 60,
     left: 24,
     zIndex: 10,
   },
@@ -163,31 +191,28 @@ const styles = StyleSheet.create({
     fontSize: 32,
     color: 'rgba(255, 255, 255, 0.95)',
   },
-  content: {
+  scrollView: {
     flex: 1,
-    paddingHorizontal: 24,
-    paddingTop: 140,
-    paddingBottom: 48,
+  },
+  content: {
+    flexGrow: 1,
   },
   headline: {
-    fontSize: 32,
     fontWeight: '700',
     color: 'rgba(255, 255, 255, 0.95)',
     lineHeight: 40,
     letterSpacing: -0.5,
-    marginBottom: 32,
   },
   inputRow: {
     flexDirection: 'row',
     gap: 12,
-    marginBottom: 16,
   },
   countryCodeButton: {
-    paddingVertical: 12,
     paddingHorizontal: 16,
     borderBottomWidth: 2,
     borderBottomColor: 'rgba(255, 255, 255, 0.3)',
     minWidth: 90,
+    justifyContent: 'center',
   },
   countryCodeText: {
     color: 'rgba(255, 255, 255, 0.95)',
@@ -195,7 +220,6 @@ const styles = StyleSheet.create({
   },
   phoneInput: {
     flex: 1,
-    paddingVertical: 12,
     paddingHorizontal: 8,
     borderBottomWidth: 2,
     borderBottomColor: 'rgba(255, 255, 255, 0.3)',
@@ -207,20 +231,17 @@ const styles = StyleSheet.create({
     marginTop: 8,
   },
   helpText: {
-    fontSize: 12,
     color: 'rgba(255, 255, 255, 0.6)',
     lineHeight: 18,
   },
   helpLink: {
-    fontSize: 12,
     color: 'rgba(255, 255, 255, 0.8)',
     textDecorationLine: 'underline',
   },
   footer: {
     position: 'absolute',
-    bottom: 48,
-    left: 24,
-    right: 24,
+    left: 0,
+    right: 0,
   },
   nextButton: {
     width: '100%',

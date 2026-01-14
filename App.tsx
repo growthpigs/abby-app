@@ -51,6 +51,8 @@ import { OrbMode } from './src/types/orb';
 import { VibeColorTheme, VibeComplexity } from './src/types/vibe';
 import { useVibeController } from './src/store/useVibeController';
 import { Z_INDEX } from './src/constants/layout';
+import { CoachScreenRef } from './src/components/screens/CoachScreen';
+import { CoachIntroScreenRef } from './src/components/screens/CoachIntroScreen';
 
 // Auth screens (Nathan's API flow)
 import { LoginScreen } from './src/components/screens/LoginScreen';
@@ -231,6 +233,26 @@ function AppContent() {
 
   // Vibe controller ref
   const vibeRef = useRef<VibeMatrixAnimatedRef | null>(null);
+
+  // Screen refs for sheet expansion (from AbbyOrb tap)
+  const coachScreenRef = useRef<CoachScreenRef | null>(null);
+  const coachIntroScreenRef = useRef<CoachIntroScreenRef | null>(null);
+
+  // Handle AbbyOrb tap - expand the current sheet
+  const handleOrbTap = useCallback(() => {
+    if (__DEV__) console.log('[App] AbbyOrb tapped');
+
+    // Expand the appropriate screen's sheet based on current demo state
+    switch (demoState) {
+      case 'COACH_INTRO':
+        coachIntroScreenRef.current?.expandSheet();
+        break;
+      case 'COACH':
+        coachScreenRef.current?.expandSheet();
+        break;
+      // Other states don't need sheet expansion
+    }
+  }, [demoState]);
 
   // Settings
   const settingsLoaded = useSettingsStore((state) => state.isLoaded);
@@ -864,7 +886,7 @@ function AppContent() {
   const renderDemoScreen = () => {
     switch (demoState) {
       case 'COACH_INTRO':
-        return <CoachIntroScreen onBackgroundChange={handleBackgroundChange} onSecretBack={handleSecretBack} onSecretForward={handleSecretForward} />;
+        return <CoachIntroScreen ref={coachIntroScreenRef} onBackgroundChange={handleBackgroundChange} onSecretBack={handleSecretBack} onSecretForward={handleSecretForward} />;
       case 'INTERVIEW':
         return <InterviewScreen onBackgroundChange={handleBackgroundChange} onSecretBack={handleSecretBack} onSecretForward={handleSecretForward} />;
       case 'SEARCHING':
@@ -876,9 +898,9 @@ function AppContent() {
       case 'REVEAL':
         return <RevealScreen onSecretBack={handleSecretBack} onSecretForward={handleSecretForward} />;
       case 'COACH':
-        return <CoachScreen onBackgroundChange={handleBackgroundChange} onVibeChange={handleVibeChange} onSecretBack={handleSecretBack} onSecretForward={handleSecretForward} />;
+        return <CoachScreen ref={coachScreenRef} onBackgroundChange={handleBackgroundChange} onVibeChange={handleVibeChange} onSecretBack={handleSecretBack} onSecretForward={handleSecretForward} />;
       default:
-        return <CoachIntroScreen onBackgroundChange={handleBackgroundChange} onSecretBack={handleSecretBack} onSecretForward={handleSecretForward} />;
+        return <CoachIntroScreen ref={coachIntroScreenRef} onBackgroundChange={handleBackgroundChange} onSecretBack={handleSecretBack} onSecretForward={handleSecretForward} />;
     }
   };
 
@@ -919,7 +941,7 @@ function AppContent() {
       {/* Layer 1: Abby Orb (only in demo mode) */}
       {authState === 'AUTHENTICATED' && (
         <View style={styles.orbLayer}>
-          <AbbyOrb mode={orbMode} />
+          <AbbyOrb mode={orbMode} onTap={handleOrbTap} />
         </View>
       )}
 

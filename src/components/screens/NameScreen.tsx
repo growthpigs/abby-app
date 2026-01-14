@@ -11,10 +11,14 @@ import {
   StyleSheet,
   Pressable,
   TextInput,
+  ScrollView,
+  KeyboardAvoidingView,
+  Platform,
 } from 'react-native';
 import * as Haptics from 'expo-haptics';
 import { Typography } from '../ui/Typography';
 import { GlassButton } from '../ui/GlassButton';
+import { useResponsiveLayout } from '../../hooks/useResponsiveLayout';
 
 interface NameScreenProps {
   onNext?: (firstName: string, familyName: string) => void;
@@ -29,6 +33,7 @@ export const NameScreen: React.FC<NameScreenProps> = ({
 }) => {
   const [firstName, setFirstName] = useState('');
   const [familyName, setFamilyName] = useState('');
+  const layout = useResponsiveLayout();
 
   const handleNext = () => {
     if (isValid) {
@@ -50,12 +55,23 @@ export const NameScreen: React.FC<NameScreenProps> = ({
   // Name validation: both first and family name required, at least 2 characters each
   const isValid = firstName.trim().length >= 2 && familyName.trim().length >= 2;
 
+  // Responsive padding values
+  const contentPaddingTop = layout.isSmallScreen ? 100 : layout.isMediumScreen ? 120 : 140;
+  const headlineMarginBottom = layout.isSmallScreen ? 20 : layout.isMediumScreen ? 26 : 32;
+  const nicknameLabelMarginTop = layout.isSmallScreen ? 20 : layout.isMediumScreen ? 26 : 32;
+  const helpTextMarginTop = layout.isSmallScreen ? 12 : 16;
+  const footerBottom = layout.isSmallScreen ? 32 : 48;
+  const backButtonTop = layout.isSmallScreen ? 44 : 60;
+
   return (
-    <View style={styles.container}>
+    <KeyboardAvoidingView
+      style={styles.container}
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+    >
       {/* Back button */}
       <Pressable
         onPress={handleSecretBack}
-        style={styles.backButton}
+        style={[styles.backButton, { top: backButtonTop }]}
         hitSlop={20}
       >
         <Typography variant="headline" style={styles.backArrow}>
@@ -64,15 +80,30 @@ export const NameScreen: React.FC<NameScreenProps> = ({
       </Pressable>
 
       {/* Content */}
-      <View style={styles.content}>
+      <ScrollView
+        style={styles.scrollView}
+        contentContainerStyle={[
+          styles.content,
+          {
+            paddingTop: contentPaddingTop,
+            paddingHorizontal: layout.paddingHorizontal,
+            paddingBottom: footerBottom + 80, // Space for footer button
+          },
+        ]}
+        keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false}
+      >
         {/* Headline */}
-        <Typography variant="headline" style={styles.headline}>
+        <Typography
+          variant="headline"
+          style={[styles.headline, { marginBottom: headlineMarginBottom }]}
+        >
           What's your{'\n'}first name?
         </Typography>
 
         {/* First name input */}
         <TextInput
-          style={styles.nameInput}
+          style={[styles.nameInput, { height: layout.inputHeight }]}
           value={firstName}
           onChangeText={setFirstName}
           placeholder=""
@@ -85,11 +116,14 @@ export const NameScreen: React.FC<NameScreenProps> = ({
         />
 
         {/* Family name section */}
-        <Typography variant="body" style={styles.nicknameLabel}>
+        <Typography
+          variant="body"
+          style={[styles.nicknameLabel, { marginTop: nicknameLabelMarginTop }]}
+        >
           Family Name
         </Typography>
         <TextInput
-          style={styles.nicknameInput}
+          style={[styles.nicknameInput, { height: layout.inputHeight }]}
           value={familyName}
           onChangeText={setFamilyName}
           placeholder=""
@@ -102,15 +136,23 @@ export const NameScreen: React.FC<NameScreenProps> = ({
         />
 
         {/* Help text */}
-        <View style={styles.helpTextContainer}>
+        <View style={[styles.helpTextContainer, { marginTop: helpTextMarginTop }]}>
           <Typography variant="caption" style={styles.helpText}>
             Both first and last name are required
           </Typography>
         </View>
-      </View>
+      </ScrollView>
 
       {/* Fixed footer with Continue button */}
-      <View style={styles.footer}>
+      <View
+        style={[
+          styles.footer,
+          {
+            bottom: footerBottom,
+            paddingHorizontal: layout.paddingHorizontal,
+          },
+        ]}
+      >
         <GlassButton
           onPress={handleNext}
           disabled={!isValid}
@@ -137,7 +179,7 @@ export const NameScreen: React.FC<NameScreenProps> = ({
         style={styles.secretForwardTrigger}
         hitSlop={10}
       />
-    </View>
+    </KeyboardAvoidingView>
   );
 };
 
@@ -145,9 +187,11 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
+  scrollView: {
+    flex: 1,
+  },
   backButton: {
     position: 'absolute',
-    top: 60,
     left: 24,
     zIndex: 10,
   },
@@ -156,10 +200,7 @@ const styles = StyleSheet.create({
     color: 'rgba(255, 255, 255, 0.95)',
   },
   content: {
-    flex: 1,
-    paddingHorizontal: 24,
-    paddingTop: 140,
-    paddingBottom: 48,
+    flexGrow: 1,
   },
   headline: {
     fontSize: 32,
@@ -167,11 +208,9 @@ const styles = StyleSheet.create({
     color: 'rgba(255, 255, 255, 0.95)',
     lineHeight: 40,
     letterSpacing: -0.5,
-    marginBottom: 32,
   },
   nameInput: {
     width: '100%',
-    paddingVertical: 12,
     paddingHorizontal: 8,
     borderBottomWidth: 2,
     borderBottomColor: 'rgba(255, 255, 255, 0.3)',
@@ -182,14 +221,12 @@ const styles = StyleSheet.create({
     textAlign: 'left',
   },
   nicknameLabel: {
-    marginTop: 32,
     fontSize: 14,
     color: 'rgba(255, 255, 255, 0.7)',
     marginBottom: 8,
   },
   nicknameInput: {
     width: '100%',
-    paddingVertical: 12,
     paddingHorizontal: 8,
     borderBottomWidth: 2,
     borderBottomColor: 'rgba(255, 255, 255, 0.3)',
@@ -199,9 +236,7 @@ const styles = StyleSheet.create({
     letterSpacing: 0,
     textAlign: 'left',
   },
-  helpTextContainer: {
-    marginTop: 16,
-  },
+  helpTextContainer: {},
   helpText: {
     fontSize: 12,
     color: 'rgba(255, 255, 255, 0.6)',
@@ -209,9 +244,8 @@ const styles = StyleSheet.create({
   },
   footer: {
     position: 'absolute',
-    bottom: 48,
-    left: 24,
-    right: 24,
+    left: 0,
+    right: 0,
   },
   secretBackTrigger: {
     position: 'absolute',

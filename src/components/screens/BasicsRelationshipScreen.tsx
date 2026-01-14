@@ -20,6 +20,7 @@ import * as Haptics from 'expo-haptics';
 import { Typography } from '../ui/Typography';
 import { RadioGroup, RadioOption } from '../ui/RadioGroup';
 import { GlassButton } from '../ui/GlassButton';
+import { useResponsiveLayout } from '../../hooks/useResponsiveLayout';
 
 // Enable LayoutAnimation on Android
 if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
@@ -79,6 +80,7 @@ export const BasicsRelationshipScreen: React.FC<BasicsRelationshipScreenProps> =
   onSecretBack,
   onSecretForward,
 }) => {
+  const layout = useResponsiveLayout();
   const [selectedType, setSelectedType] = useState<string | null>(null);
   const [showNonMono, setShowNonMono] = useState(false);
 
@@ -107,12 +109,37 @@ export const BasicsRelationshipScreen: React.FC<BasicsRelationshipScreenProps> =
     setShowNonMono(!showNonMono);
   };
 
+  // Responsive styles
+  const responsiveStyles = {
+    backButton: {
+      top: layout.isSmallScreen ? 44 : 60,
+    },
+    content: {
+      paddingHorizontal: layout.paddingHorizontal,
+      paddingTop: layout.isSmallScreen ? 100 : 140,
+      paddingBottom: layout.isSmallScreen ? 32 : 48,
+    },
+    headline: {
+      fontSize: layout.isSmallScreen ? 28 : 32,
+      lineHeight: layout.isSmallScreen ? 34 : 40,
+      marginBottom: layout.isSmallScreen ? 20 : 32,
+    },
+    sectionLabel: {
+      marginBottom: layout.isSmallScreen ? 4 : 8,
+    },
+    footer: {
+      bottom: layout.isSmallScreen ? 32 : 48,
+      left: layout.paddingHorizontal,
+      right: layout.paddingHorizontal,
+    },
+  };
+
   return (
     <View style={styles.container}>
       {/* Back button */}
       <Pressable
         onPress={handleSecretBack}
-        style={styles.backButton}
+        style={[styles.backButton, responsiveStyles.backButton]}
         hitSlop={20}
       >
         <Typography variant="headline" style={styles.backArrow}>
@@ -121,14 +148,14 @@ export const BasicsRelationshipScreen: React.FC<BasicsRelationshipScreenProps> =
       </Pressable>
 
       {/* Content */}
-      <View style={styles.content}>
+      <View style={[styles.content, responsiveStyles.content]}>
         {/* Section label */}
-        <Typography variant="body" style={styles.sectionLabel}>
+        <Typography variant="body" style={[styles.sectionLabel, responsiveStyles.sectionLabel]}>
           Basics
         </Typography>
 
         {/* Headline */}
-        <Typography variant="headline" style={styles.headline}>
+        <Typography variant="headline" style={[styles.headline, responsiveStyles.headline]}>
           Desired{'\n'}relationship type
         </Typography>
 
@@ -155,7 +182,7 @@ export const BasicsRelationshipScreen: React.FC<BasicsRelationshipScreenProps> =
       </View>
 
       {/* Fixed footer with Continue button */}
-      <View style={styles.footer}>
+      <View style={[styles.footer, responsiveStyles.footer]}>
         <GlassButton
           onPress={handleNext}
           disabled={!selectedType}

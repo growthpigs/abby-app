@@ -15,6 +15,7 @@ import {
 import * as Haptics from 'expo-haptics';
 import { Typography } from '../ui/Typography';
 import { GlassButton } from '../ui/GlassButton';
+import { useResponsiveLayout } from '../../hooks/useResponsiveLayout';
 
 interface VerificationCodeScreenProps {
   phoneNumber?: string;
@@ -32,6 +33,7 @@ export const VerificationCodeScreen: React.FC<VerificationCodeScreenProps> = ({
   onSecretForward,
 }) => {
   const [code, setCode] = useState('');
+  const layout = useResponsiveLayout();
 
   const handleNext = () => {
     if (code.length === 6) {
@@ -62,7 +64,7 @@ export const VerificationCodeScreen: React.FC<VerificationCodeScreenProps> = ({
       {/* Back button */}
       <Pressable
         onPress={handleSecretBack}
-        style={styles.backButton}
+        style={[styles.backButton, { top: layout.paddingTop + 10 }]}
         hitSlop={20}
       >
         <Typography variant="headline" style={styles.backArrow}>
@@ -71,20 +73,46 @@ export const VerificationCodeScreen: React.FC<VerificationCodeScreenProps> = ({
       </Pressable>
 
       {/* Content */}
-      <View style={styles.content}>
+      <View style={[
+        styles.content,
+        {
+          paddingTop: layout.paddingTop + 60,
+          paddingHorizontal: layout.paddingHorizontal,
+          paddingBottom: layout.paddingBottom,
+        }
+      ]}>
         {/* Headline */}
-        <Typography variant="headline" style={styles.headline}>
+        <Typography variant="headline" style={[
+          styles.headline,
+          {
+            fontSize: layout.headlineFontSize,
+            lineHeight: layout.headlineFontSize + 8,
+            marginBottom: layout.sectionGap,
+          }
+        ]}>
           Verification code{'\n'}sent to {phoneNumber}
         </Typography>
 
         {/* Subtext */}
-        <Typography variant="body" style={styles.subtext}>
+        <Typography variant="body" style={[
+          styles.subtext,
+          {
+            fontSize: layout.bodyFontSize,
+            marginBottom: layout.sectionGap * 2,
+          }
+        ]}>
           Enter the code below
         </Typography>
 
         {/* Code input */}
         <TextInput
-          style={styles.codeInput}
+          style={[
+            styles.codeInput,
+            {
+              paddingVertical: layout.isSmallScreen ? 12 : 16,
+              fontSize: layout.isSmallScreen ? 28 : 32,
+            }
+          ]}
           value={code}
           onChangeText={setCode}
           placeholder="000000"
@@ -99,7 +127,14 @@ export const VerificationCodeScreen: React.FC<VerificationCodeScreenProps> = ({
       </View>
 
       {/* Fixed footer with Continue button and resend link */}
-      <View style={styles.footer}>
+      <View style={[
+        styles.footer,
+        {
+          bottom: layout.paddingBottom,
+          left: layout.paddingHorizontal,
+          right: layout.paddingHorizontal,
+        }
+      ]}>
         <GlassButton
           onPress={handleNext}
           disabled={!isValid}
@@ -107,8 +142,8 @@ export const VerificationCodeScreen: React.FC<VerificationCodeScreenProps> = ({
         >
           Continue
         </GlassButton>
-        <Pressable onPress={handleResend} style={styles.resendButton}>
-          <Typography variant="body" style={styles.resendText}>
+        <Pressable onPress={handleResend} style={[styles.resendButton, { paddingVertical: layout.buttonMargin }]}>
+          <Typography variant="body" style={[styles.resendText, { fontSize: layout.captionFontSize + 2 }]}>
             Didn't receive a code?
           </Typography>
         </Pressable>
@@ -144,7 +179,6 @@ const styles = StyleSheet.create({
   },
   backButton: {
     position: 'absolute',
-    top: 60,
     left: 24,
     zIndex: 10,
   },
@@ -154,30 +188,20 @@ const styles = StyleSheet.create({
   },
   content: {
     flex: 1,
-    paddingHorizontal: 24,
-    paddingTop: 140,
-    paddingBottom: 48,
   },
   headline: {
-    fontSize: 32,
     fontWeight: '700',
     color: 'rgba(255, 255, 255, 0.95)',
-    lineHeight: 40,
     letterSpacing: -0.5,
-    marginBottom: 16,
   },
   subtext: {
-    fontSize: 16,
     color: 'rgba(255, 255, 255, 0.7)',
-    marginBottom: 32,
   },
   codeInput: {
     width: '100%',
-    paddingVertical: 16,
     paddingHorizontal: 16,
     borderBottomWidth: 2,
     borderBottomColor: 'rgba(255, 255, 255, 0.3)',
-    fontSize: 32,
     color: 'rgba(255, 255, 255, 0.95)',
     fontWeight: '600',
     letterSpacing: 8,
@@ -185,16 +209,11 @@ const styles = StyleSheet.create({
   },
   footer: {
     position: 'absolute',
-    bottom: 48,
-    left: 24,
-    right: 24,
   },
   resendButton: {
-    paddingVertical: 12,
     alignItems: 'center',
   },
   resendText: {
-    fontSize: 14,
     color: 'rgba(255, 255, 255, 0.8)',
     textDecorationLine: 'underline',
   },

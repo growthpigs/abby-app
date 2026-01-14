@@ -14,10 +14,12 @@ import {
   ActivityIndicator,
   KeyboardAvoidingView,
   Platform,
+  ScrollView,
 } from 'react-native';
 import * as Haptics from 'expo-haptics';
 import { Typography } from '../ui/Typography';
 import { validateEmail, sanitizeEmail } from '../../utils/validation';
+import { useResponsiveLayout } from '../../hooks/useResponsiveLayout';
 
 interface SignInScreenProps {
   onSignIn?: (email: string, password: string) => void;
@@ -34,6 +36,7 @@ export const SignInScreen: React.FC<SignInScreenProps> = ({
   isLoading = false,
   error = null,
 }) => {
+  const layout = useResponsiveLayout();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -73,7 +76,7 @@ export const SignInScreen: React.FC<SignInScreenProps> = ({
       {/* Back button */}
       <Pressable
         onPress={handleBack}
-        style={styles.backButton}
+        style={[styles.backButton, { top: layout.paddingTop + 20 }]}
         hitSlop={20}
       >
         <Typography variant="headline" style={styles.backArrow}>
@@ -82,14 +85,35 @@ export const SignInScreen: React.FC<SignInScreenProps> = ({
       </Pressable>
 
       {/* Content */}
-      <View style={styles.content}>
+      <ScrollView
+        style={styles.scrollView}
+        contentContainerStyle={[
+          styles.content,
+          {
+            paddingTop: layout.paddingTop + 60,
+            paddingHorizontal: layout.paddingHorizontal,
+            paddingBottom: layout.buttonHeightLarge + layout.paddingBottom + 24,
+          },
+        ]}
+        keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false}
+      >
         {/* Headline */}
-        <Typography variant="headline" style={styles.headline}>
+        <Typography
+          variant="headline"
+          style={[
+            styles.headline,
+            {
+              fontSize: layout.headlineFontSize,
+              marginBottom: layout.sectionGap * 2,
+            },
+          ]}
+        >
           Welcome{'\n'}back
         </Typography>
 
         {/* Email input */}
-        <View style={styles.inputContainer}>
+        <View style={[styles.inputContainer, { marginBottom: layout.buttonMargin }]}>
           <TextInput
             style={[styles.input, emailError && styles.inputError]}
             value={email}
@@ -106,13 +130,13 @@ export const SignInScreen: React.FC<SignInScreenProps> = ({
           />
         </View>
         {emailError && (
-          <Typography variant="caption" style={styles.fieldError}>
+          <Typography variant="caption" style={[styles.fieldError, { marginBottom: layout.sectionGap }]}>
             {emailError}
           </Typography>
         )}
 
         {/* Password input */}
-        <View style={styles.inputContainer}>
+        <View style={[styles.inputContainer, { marginBottom: layout.buttonMargin }]}>
           <TextInput
             style={styles.input}
             value={password}
@@ -140,7 +164,7 @@ export const SignInScreen: React.FC<SignInScreenProps> = ({
 
         {/* Error message */}
         {error && (
-          <View style={styles.errorContainer}>
+          <View style={[styles.errorContainer, { marginTop: layout.buttonMargin }]}>
             <Typography variant="caption" style={styles.errorText}>
               {error}
             </Typography>
@@ -148,20 +172,21 @@ export const SignInScreen: React.FC<SignInScreenProps> = ({
         )}
 
         {/* Forgot password */}
-        <Pressable onPress={handleForgotPassword} style={styles.forgotButton}>
+        <Pressable onPress={handleForgotPassword} style={[styles.forgotButton, { marginTop: layout.sectionGap }]}>
           <Typography variant="body" style={styles.forgotText}>
             Forgot password?
           </Typography>
         </Pressable>
-      </View>
+      </ScrollView>
 
       {/* Fixed footer with Sign In button */}
-      <View style={styles.footer}>
+      <View style={[styles.footer, { bottom: layout.paddingBottom, left: layout.paddingHorizontal, right: layout.paddingHorizontal }]}>
         <Pressable
           onPress={handleSignIn}
           disabled={!isValid || isLoading}
           style={({ pressed }) => [
             styles.signInButton,
+            { height: layout.buttonHeightLarge, borderRadius: layout.buttonHeightLarge / 2 },
             (!isValid || isLoading) && styles.signInButtonDisabled,
             pressed && styles.buttonPressed,
           ]}
@@ -185,7 +210,6 @@ const styles = StyleSheet.create({
   },
   backButton: {
     position: 'absolute',
-    top: 60,
     left: 24,
     zIndex: 10,
   },
@@ -193,24 +217,21 @@ const styles = StyleSheet.create({
     fontSize: 32,
     color: 'rgba(255, 255, 255, 0.95)',
   },
-  content: {
+  scrollView: {
     flex: 1,
-    paddingHorizontal: 24,
-    paddingTop: 140,
-    paddingBottom: 48,
+  },
+  content: {
+    flexGrow: 1,
   },
   headline: {
-    fontSize: 32,
     fontWeight: '700',
     color: 'rgba(255, 255, 255, 0.95)',
     lineHeight: 40,
     letterSpacing: -0.5,
-    marginBottom: 40,
   },
   inputContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 8,
   },
   input: {
     flex: 1,
@@ -230,7 +251,6 @@ const styles = StyleSheet.create({
   fieldError: {
     fontSize: 12,
     color: 'rgba(255, 150, 150, 0.95)',
-    marginBottom: 16,
     marginLeft: 8,
   },
   eyeButton: {
@@ -242,7 +262,6 @@ const styles = StyleSheet.create({
     fontSize: 20,
   },
   errorContainer: {
-    marginTop: 8,
     padding: 12,
     backgroundColor: 'rgba(255, 100, 100, 0.2)',
     borderRadius: 8,
@@ -253,7 +272,6 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   forgotButton: {
-    marginTop: 16,
     alignSelf: 'center',
   },
   forgotText: {
@@ -263,15 +281,10 @@ const styles = StyleSheet.create({
   },
   footer: {
     position: 'absolute',
-    bottom: 48,
-    left: 24,
-    right: 24,
   },
   signInButton: {
     width: '100%',
-    height: 56,
     backgroundColor: 'rgba(255, 255, 255, 0.95)',
-    borderRadius: 28,
     justifyContent: 'center',
     alignItems: 'center',
   },

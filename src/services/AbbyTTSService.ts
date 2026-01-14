@@ -30,9 +30,9 @@ export interface TTSRequest {
 }
 
 export interface TTSResponse {
-  audioUrl?: string; // URL to audio file
+  audio_url?: string; // URL to audio file (snake_case from API)
   audioData?: string; // Base64 encoded audio (if inline)
-  duration?: number; // Duration in seconds
+  duration_ms?: number; // Duration in milliseconds (snake_case from API)
 }
 
 type AudioLevelCallback = (level: number) => void;
@@ -91,9 +91,9 @@ class AbbyTTSService {
 
       const data: TTSResponse = await response.json();
 
-      // Play audio
-      if (data.audioUrl) {
-        await this.playAudioFromUrl(data.audioUrl);
+      // Play audio (API returns snake_case: audio_url)
+      if (data.audio_url) {
+        await this.playAudioFromUrl(data.audio_url);
       } else if (data.audioData) {
         await this.playAudioFromBase64(data.audioData);
       } else {

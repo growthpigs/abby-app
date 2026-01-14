@@ -20,6 +20,7 @@ import { Mic, MessageSquare, Trash2 } from 'lucide-react-native';
 import { AuthService } from '../../services/AuthService';
 import { Headline, Body, Caption } from '../ui/Typography';
 import { useSettingsStore, InputMode } from '../../store/useSettingsStore';
+import { useResponsiveLayout } from '../../hooks/useResponsiveLayout';
 
 export interface SettingsScreenProps {
   onClose?: () => void;
@@ -77,6 +78,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
 }) => {
   const inputMode = useSettingsStore((state) => state.inputMode);
   const setInputMode = useSettingsStore((state) => state.setInputMode);
+  const layout = useResponsiveLayout();
 
   const handleSelectMode = useCallback((mode: InputMode) => {
     setInputMode(mode);
@@ -124,7 +126,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
     <View style={styles.container}>
       <BlurView intensity={90} tint="light" style={styles.blurContainer}>
         {/* Header */}
-        <View style={styles.header}>
+        <View style={[styles.header, { paddingTop: layout.paddingTop }]}>
           <Caption style={styles.headerTitle}>SETTINGS</Caption>
           <Pressable onPress={onClose} style={styles.closeButton}>
             <Body style={styles.closeText}>Done</Body>
@@ -132,12 +134,24 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
         </View>
 
         {/* Content */}
-        <View style={styles.content}>
-          <Headline style={styles.questionText}>
+        <View style={[
+          styles.content,
+          {
+            paddingVertical: layout.isSmallScreen ? 20 : 32,
+            paddingHorizontal: layout.paddingHorizontal,
+          },
+        ]}>
+          <Headline style={[
+            styles.questionText,
+            {
+              fontSize: layout.titleFontSize,
+              marginBottom: layout.isSmallScreen ? 20 : 32,
+            },
+          ]}>
             How do you want to talk with Abby?
           </Headline>
 
-          <View style={styles.optionsContainer}>
+          <View style={[styles.optionsContainer, { gap: layout.sectionGap }]}>
             <InputModeOption
               mode="voice_only"
               currentMode={inputMode}
@@ -166,12 +180,21 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
             />
           </View>
 
-          <Caption style={styles.defaultNote}>
+          <Caption style={[
+            styles.defaultNote,
+            { marginTop: layout.isSmallScreen ? 16 : 24 },
+          ]}>
             Default is Voice + Text
           </Caption>
 
           {/* Account Section - GDPR Compliance */}
-          <View style={styles.accountSection}>
+          <View style={[
+            styles.accountSection,
+            {
+              marginTop: layout.isSmallScreen ? 32 : 48,
+              paddingTop: layout.isSmallScreen ? 16 : 24,
+            },
+          ]}>
             <Caption style={styles.sectionTitle}>ACCOUNT</Caption>
             <Pressable
               onPress={handleDeleteData}
@@ -208,7 +231,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingTop: 60,
     paddingBottom: 16,
     paddingHorizontal: 20,
     borderBottomWidth: 1,
@@ -229,18 +251,12 @@ const styles = StyleSheet.create({
   },
   content: {
     flex: 1,
-    paddingVertical: 32,
-    paddingHorizontal: 24,
   },
   questionText: {
-    fontSize: 24,
     textAlign: 'center',
-    marginBottom: 32,
     color: 'rgba(0, 0, 0, 0.85)',
   },
-  optionsContainer: {
-    gap: 12,
-  },
+  optionsContainer: {},
   modeOption: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -302,12 +318,9 @@ const styles = StyleSheet.create({
   },
   defaultNote: {
     textAlign: 'center',
-    marginTop: 24,
     color: 'rgba(0, 0, 0, 0.4)',
   },
   accountSection: {
-    marginTop: 48,
-    paddingTop: 24,
     borderTopWidth: 1,
     borderTopColor: 'rgba(0, 0, 0, 0.1)',
   },

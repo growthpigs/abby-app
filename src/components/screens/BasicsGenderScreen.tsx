@@ -16,6 +16,7 @@ import * as Haptics from 'expo-haptics';
 import { Typography } from '../ui/Typography';
 import { RadioGroup, RadioOption } from '../ui/RadioGroup';
 import { GlassButton } from '../ui/GlassButton';
+import { useResponsiveLayout } from '../../hooks/useResponsiveLayout';
 
 interface BasicsGenderScreenProps {
   onNext?: (gender: string) => void;
@@ -49,6 +50,7 @@ export const BasicsGenderScreen: React.FC<BasicsGenderScreenProps> = ({
   onSecretBack,
   onSecretForward,
 }) => {
+  const layout = useResponsiveLayout();
   const [selectedGender, setSelectedGender] = useState<string | null>(null);
   const [showAll, setShowAll] = useState(false);
 
@@ -81,7 +83,7 @@ export const BasicsGenderScreen: React.FC<BasicsGenderScreenProps> = ({
       {/* Back button */}
       <Pressable
         onPress={handleSecretBack}
-        style={styles.backButton}
+        style={[styles.backButton, { top: layout.paddingTop }]}
         hitSlop={20}
       >
         <Typography variant="headline" style={styles.backArrow}>
@@ -90,14 +92,21 @@ export const BasicsGenderScreen: React.FC<BasicsGenderScreenProps> = ({
       </Pressable>
 
       {/* Content */}
-      <View style={styles.content}>
+      <View style={[
+        styles.content,
+        {
+          paddingTop: layout.paddingTop + 60,
+          paddingBottom: layout.paddingBottom,
+          paddingHorizontal: layout.paddingHorizontal,
+        }
+      ]}>
         {/* Section label */}
         <Typography variant="body" style={styles.sectionLabel}>
           Basics
         </Typography>
 
         {/* Headline */}
-        <Typography variant="headline" style={styles.headline}>
+        <Typography variant="headline" style={[styles.headline, { marginBottom: layout.sectionGap + 8 }]}>
           I am a...
         </Typography>
 
@@ -116,7 +125,7 @@ export const BasicsGenderScreen: React.FC<BasicsGenderScreenProps> = ({
 
           {/* See All button */}
           {!showAll && (
-            <Pressable onPress={handleSeeAll} style={styles.seeAllButton}>
+            <Pressable onPress={handleSeeAll} style={[styles.seeAllButton, { marginTop: layout.buttonMargin }]}>
               <Typography variant="body" style={styles.seeAllText}>
                 See All Options ▼
               </Typography>
@@ -126,7 +135,7 @@ export const BasicsGenderScreen: React.FC<BasicsGenderScreenProps> = ({
       </View>
 
       {/* Fixed footer with Continue button */}
-      <View style={styles.footer}>
+      <View style={[styles.footer, { bottom: layout.paddingBottom + 16, left: layout.paddingHorizontal, right: layout.paddingHorizontal }]}>
         <GlassButton
           onPress={handleNext}
           disabled={!selectedGender}
@@ -163,7 +172,6 @@ const styles = StyleSheet.create({
   },
   backButton: {
     position: 'absolute',
-    top: 60,
     left: 24,
     zIndex: 10,
   },
@@ -173,9 +181,6 @@ const styles = StyleSheet.create({
   },
   content: {
     flex: 1,
-    paddingHorizontal: 24,
-    paddingTop: 140,
-    paddingBottom: 48,
   },
   sectionLabel: {
     fontSize: 14,
@@ -191,7 +196,6 @@ const styles = StyleSheet.create({
     color: 'rgba(255, 255, 255, 0.95)',
     lineHeight: 40,
     letterSpacing: -0.5,
-    marginBottom: 32,
   },
   scrollView: {
     flex: 1,
@@ -200,7 +204,6 @@ const styles = StyleSheet.create({
     paddingBottom: 24,
   },
   seeAllButton: {
-    marginTop: 16,
     paddingVertical: 12,
     alignItems: 'center',
   },
@@ -211,9 +214,6 @@ const styles = StyleSheet.create({
   },
   footer: {
     position: 'absolute',
-    bottom: 48,
-    left: 24,
-    right: 24,
   },
   secretBackTrigger: {
     position: 'absolute',

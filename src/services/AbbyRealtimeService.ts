@@ -22,8 +22,8 @@
 
 import { TokenManager } from './TokenManager';
 import { secureFetch, type SecureFetchError } from '../utils/secureFetch';
-import { TIMEOUTS, API_CONFIG } from '../config';
-import { Platform, NativeModules, Alert } from 'react-native';
+import { TIMEOUTS, API_CONFIG, FEATURE_FLAGS } from '../config';
+import { abbyTTS } from './AbbyTTSService';
 
 const API_BASE_URL = API_CONFIG.API_URL;
 
@@ -72,6 +72,7 @@ export interface ConversationCallbacks {
   onConnect?: () => void;
   onDisconnect?: () => void;
   onError?: (error: Error) => void;
+  onAudioLevel?: (level: number) => void;  // For orb animation during TTS
 }
 
 // ========================================
@@ -90,6 +91,8 @@ export class AbbyRealtimeService {
   private activeTimers: Set<NodeJS.Timeout> = new Set();
   private callbacks: ConversationCallbacks = {};
   private screenType: 'intro' | 'coach' = 'intro';
+  // Conversation history for /v1/chat fallback endpoint
+  private conversationHistory: Array<{ role: 'user' | 'assistant'; content: string }> = [];
 
   constructor(callbacks?: ConversationCallbacks, screenType: 'intro' | 'coach' = 'intro') {
     this.callbacks = callbacks || {};
@@ -125,6 +128,9 @@ export class AbbyRealtimeService {
   async startConversation(): Promise<void> {
     try {
       if (__DEV__) console.log('[AbbyRealtime] Starting conversation...');
+
+      // Clear conversation history for fresh start
+      this.conversationHistory = [];
 
       // Check API availability first
       const isAvailable = await this.checkAvailability();
@@ -169,13 +175,29 @@ export class AbbyRealtimeService {
         return this.startDemoMode();
       }
 
-      const data: RealtimeSessionResponse = await response.json();
-      this.sessionId = data.sessionId;
+      const data: any = await response.json();
+      const receivedFields = Object.keys(data).join(', ') || 'empty';
+
+      // Debug: Log the actual response to see what field the backend is using
+      if (__DEV__) {
+        console.log('[AbbyRealtime] Session response:', JSON.stringify(data, null, 2));
+        console.log('[AbbyRealtime] Available fields:', receivedFields);
+      }
+
+      // Try multiple field names (sessionId, id, session_id, session, uuid, etc.)
+      this.sessionId = data.sessionId || data.id || data.session_id || data.session || data.uuid || null;
+
+      // CRITICAL: If no session ID found, report what fields we got and enter demo mode
+      if (!this.sessionId) {
+        if (__DEV__) console.error('[AbbyRealtime] No session ID found! Got fields:', receivedFields);
+        // Report to user what happened - this will show an Alert
+        this.callbacks.onError?.(new Error(`Session created but no ID found. Fields: ${receivedFields}. Data: ${JSON.stringify(data).substring(0, 100)}`));
+        return this.startDemoMode();
+      }
 
       if (__DEV__) console.log('[AbbyRealtime] ✅ Session created:', this.sessionId);
 
-      // TODO: Establish WebSocket/WebRTC connection
-      // For now, simulate connection
+      // Session valid - mark as connected
       this.isConnectedState = true;
       this.callbacks.onConnect?.();
 
@@ -244,6 +266,12 @@ export class AbbyRealtimeService {
     // Clear ALL tracked timers (demo messages, text message responses, etc.)
     this.clearAllTimers();
 
+    // Stop any playing TTS audio
+    await abbyTTS.stop();
+
+    // Clear conversation history for next session
+    this.conversationHistory = [];
+
     // If in demo mode, just cleanup state
     if (this.isDemoModeState) {
       if (__DEV__) console.log('[AbbyRealtime] Ending demo mode session');
@@ -295,6 +323,11 @@ export class AbbyRealtimeService {
 
   /**
    * Send a text message to Abby
+   *
+   * Uses POST /v1/chat with use_abby_fallback: true for text conversations.
+   * This endpoint returns Abby's response directly via HTTP (unlike the
+   * /abby/realtime/{session_id}/message endpoint which only INJECTS text
+   * into a WebRTC/WebSocket session).
    */
   async sendTextMessage(message: string): Promise<void> {
     // Demo mode - generate a simulated response
@@ -314,20 +347,25 @@ export class AbbyRealtimeService {
       return;
     }
 
-    if (!this.sessionId) {
-      throw new Error('No active session');
-    }
+    // NOTE: We use /v1/chat for text mode, NOT /v1/abby/realtime/{session_id}/message
+    // The realtime/message endpoint only INJECTS text into WebRTC sessions.
+    // The /v1/chat endpoint actually returns Abby's response via HTTP.
 
     try {
-      if (__DEV__) console.log('[AbbyRealtime] Sending message:', message);
+      if (__DEV__) console.log('[AbbyRealtime] 💬 Sending message via /v1/chat:', message);
 
       const token = await TokenManager.getToken();
       if (!token) {
         throw new Error('Not authenticated');
       }
 
+      // Add user message to conversation history
+      this.conversationHistory.push({ role: 'user', content: message });
+
+      // Use POST /v1/chat with use_abby_fallback: true
+      // This is the TEXT FALLBACK endpoint per API docs
       const response = await secureFetch(
-        `${API_BASE_URL}/abby/realtime/${encodeURIComponent(this.sessionId)}/message`,
+        `${API_BASE_URL}/chat`,
         {
           method: 'POST',
           headers: {
@@ -335,8 +373,11 @@ export class AbbyRealtimeService {
             'Authorization': `Bearer ${token}`,
           },
           body: JSON.stringify({
-            message,
-          } as RealtimeMessageRequest),
+            messages: this.conversationHistory,
+            model: 'gpt-4o',
+            temperature: 0.8,
+            use_abby_fallback: true,  // Enable Abby persona, tools, phase logic
+          }),
           timeout: REQUEST_TIMEOUT_MS,
         }
       );
@@ -344,32 +385,56 @@ export class AbbyRealtimeService {
       if (!response.ok) {
         const errorText = await response.text().catch(() => 'no response body');
         if (__DEV__) {
-          console.error('[AbbyRealtime] Message send failed');
+          console.error('[AbbyRealtime] Chat API failed');
           console.error('[AbbyRealtime]   Status:', response.status);
-          console.error('[AbbyRealtime]   Session ID:', this.sessionId);
-          console.error('[AbbyRealtime]   Response:', errorText);
+          console.error('[AbbyRealtime]   Response:', errorText.substring(0, 200));
         }
+        // Remove failed message from history
+        this.conversationHistory.pop();
         const fetchError: SecureFetchError = {
           code: `HTTP_${response.status}`,
-          message: 'Failed to send message',
+          message: `HTTP ${response.status}: ${errorText.substring(0, 150)}`,
           status: response.status,
         };
         throw fetchError;
       }
 
       const data = await response.json();
-      if (__DEV__) console.log('[AbbyRealtime] ✅ Message sent, got response:', data);
+      if (__DEV__) console.log('[AbbyRealtime] ✅ Chat response:', JSON.stringify(data).substring(0, 300));
 
-      // Trigger callback with Abby's response
-      if (data.response) {
-        this.callbacks.onAbbyResponse?.(data.response);
-        // IMPORTANT: Speak the response
-        this.speakText(data.response).catch((err) => {
-          if (__DEV__) console.warn('[AbbyRealtime] Speech failed for backend response:', err);
-        });
+      // Extract Abby's response from OpenAI-style chat completion format
+      // Response format: { choices: [{ message: { role: "assistant", content: "..." } }] }
+      let abbyResponse: string | null = null;
+
+      if (data.choices?.[0]?.message?.content) {
+        // Standard OpenAI chat completion format
+        abbyResponse = data.choices[0].message.content;
+      } else if (data.response) {
+        // Simplified backend format
+        abbyResponse = data.response;
+      } else if (data.content) {
+        // Direct content format
+        abbyResponse = data.content;
       }
 
-      if (__DEV__) console.log('[AbbyRealtime] Message sent, response received');
+      if (abbyResponse) {
+        // Add Abby's response to conversation history
+        this.conversationHistory.push({ role: 'assistant', content: abbyResponse });
+
+        this.callbacks.onAbbyResponse?.(abbyResponse);
+        // IMPORTANT: Speak the response
+        this.speakText(abbyResponse).catch((err) => {
+          if (__DEV__) console.warn('[AbbyRealtime] Speech failed for chat response:', err);
+        });
+        if (__DEV__) console.log('[AbbyRealtime] ✅ Response received and spoken');
+      } else {
+        // Unexpected response format - log for debugging
+        const debugData = JSON.stringify(data, null, 0).substring(0, 300);
+        if (__DEV__) console.error('[AbbyRealtime] Unexpected chat response format:', debugData);
+        // Remove failed message from history
+        this.conversationHistory.pop();
+        this.callbacks.onError?.(new Error(`Unexpected response format: ${debugData}`));
+      }
     } catch (error) {
       if (__DEV__) console.error('[AbbyRealtime] Failed to send message:', error);
       if (error && typeof error === 'object' && 'code' in error) {
@@ -491,105 +556,40 @@ export class AbbyRealtimeService {
   }
 
   /**
-   * Speak text using native platform TTS
+   * Speak text using AbbyTTSService (backend API)
    * Updates isSpeakingState during playback
-   * Respects mute setting
+   * Respects mute setting and feature flag
    */
   private async speakText(text: string): Promise<void> {
-    // Don't speak if muted
+    // 1. CHECK MUTE STATE
     if (this.isMutedState) {
-      if (__DEV__) console.log('[AbbyRealtime] Muted - not speaking:', text.substring(0, 50));
+      if (__DEV__) console.log('[AbbyRealtime] Muted - skipping TTS');
+      return;
+    }
+
+    // 2. CHECK FEATURE FLAG (prevents keyboard issues in simulator)
+    if (!FEATURE_FLAGS.VOICE_ENABLED) {
+      if (__DEV__) console.log('[AbbyRealtime] Voice disabled by feature flag');
       return;
     }
 
     try {
-      // Update speaking state
+      // 3. UPDATE SPEAKING STATE
       this.isSpeakingState = true;
+      if (__DEV__) console.log('[AbbyRealtime] 🔊 Speaking via AbbyTTSService:', text.substring(0, 50));
 
-      if (__DEV__) console.log('[AbbyRealtime] 🔊 Speaking:', text.substring(0, 50));
+      // 4. CALL TTS SERVICE with audio level callback
+      await abbyTTS.speak(text, (level) => {
+        this.callbacks.onAudioLevel?.(level);  // Forward to orb animation
+      });
 
-      // Use native TTS based on platform
-      if (Platform.OS === 'ios') {
-        // iOS: Use native Speech Synthesis
-        await this.speakViaIOS(text);
-      } else if (Platform.OS === 'android') {
-        // Android: Use native TextToSpeech
-        await this.speakViaAndroid(text);
-      }
-
-      // Mark speaking complete
-      this.isSpeakingState = false;
     } catch (error) {
+      // 5. ERROR HANDLING
       if (__DEV__) console.warn('[AbbyRealtime] TTS error:', error);
+    } finally {
+      // 6. ALWAYS CLEAR SPEAKING STATE (even on error)
       this.isSpeakingState = false;
     }
-  }
-
-  /**
-   * iOS Text-to-Speech using native AVSpeechSynthesizer
-   */
-  private async speakViaIOS(text: string): Promise<void> {
-    return new Promise((resolve, reject) => {
-      try {
-        const utteranceId = `utterance-${Date.now()}`;
-
-        // Use native module if available, otherwise use setTimeout simulation
-        if (NativeModules.SpeechModule) {
-          NativeModules.SpeechModule.speak(text, utteranceId)
-            .then(() => {
-              // Estimate speech duration: ~200ms per word
-              const estimatedDuration = Math.max(1000, (text.split(' ').length * 200));
-              setTimeout(resolve, estimatedDuration);
-            })
-            .catch((err: any) => {
-              if (__DEV__) console.warn('[TTS-iOS] Native speech failed:', err);
-              reject(err);
-            });
-        } else {
-          // Fallback: Simulate speech duration (~200ms per word)
-          const estimatedDuration = Math.max(1000, (text.split(' ').length * 200));
-          if (__DEV__) {
-            console.log('[TTS-iOS] No native module - simulating TTS for', estimatedDuration, 'ms');
-          }
-          setTimeout(resolve, estimatedDuration);
-        }
-      } catch (error) {
-        reject(error);
-      }
-    });
-  }
-
-  /**
-   * Android Text-to-Speech using native TextToSpeech
-   */
-  private async speakViaAndroid(text: string): Promise<void> {
-    return new Promise((resolve, reject) => {
-      try {
-        const utteranceId = `utterance-${Date.now()}`;
-
-        if (NativeModules.TextToSpeechModule) {
-          NativeModules.TextToSpeechModule.speak(text, utteranceId)
-            .then(() => {
-              // Estimate speech duration: ~200ms per word
-              const estimatedDuration = Math.max(1000, (text.split(' ').length * 200));
-              setTimeout(resolve, estimatedDuration);
-            })
-            .catch((err: any) => {
-              if (__DEV__) console.warn('[TTS-Android] Native speech failed:', err);
-              reject(err);
-            });
-        } else {
-          // Fallback: Simulate speech duration
-          const estimatedDuration = Math.max(1000, (text.split(' ').length * 200));
-          if (__DEV__) {
-            console.log('[TTS-Android] No native module - simulating TTS for', estimatedDuration, 'ms');
-          }
-          setTimeout(resolve, estimatedDuration);
-        }
-      } catch (error) {
-        reject(error);
-      }
-    });
   }
 }
 
@@ -607,6 +607,7 @@ export interface UseAbbyAgentConfig {
   onConnect?: () => void;
   onDisconnect?: () => void;
   onError?: (error: Error) => void;
+  onAudioLevel?: (level: number) => void;  // For orb animation during TTS
 }
 
 export function useAbbyAgent(config: UseAbbyAgentConfig = {}) {
@@ -625,6 +626,7 @@ export function useAbbyAgent(config: UseAbbyAgentConfig = {}) {
     onConnect: config.onConnect,
     onDisconnect: config.onDisconnect,
     onError: config.onError,
+    onAudioLevel: config.onAudioLevel,
   });
 
   // Keep refs updated with latest callbacks
@@ -635,6 +637,7 @@ export function useAbbyAgent(config: UseAbbyAgentConfig = {}) {
       onConnect: config.onConnect,
       onDisconnect: config.onDisconnect,
       onError: config.onError,
+      onAudioLevel: config.onAudioLevel,
     };
   });
 
@@ -656,6 +659,7 @@ export function useAbbyAgent(config: UseAbbyAgentConfig = {}) {
             callbacksRef.current.onDisconnect?.();
           },
           onError: (error) => callbacksRef.current.onError?.(error),
+          onAudioLevel: (level) => callbacksRef.current.onAudioLevel?.(level),
         },
         config.screenType ?? 'intro'
       );
