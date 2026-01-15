@@ -11,6 +11,7 @@ import {
   StyleSheet,
   Pressable,
   TextInput,
+  Text,
 } from 'react-native';
 import * as Haptics from 'expo-haptics';
 import { Typography } from '../ui/Typography';

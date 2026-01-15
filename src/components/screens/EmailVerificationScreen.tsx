@@ -13,6 +13,7 @@ import {
   StyleSheet,
   Pressable,
   TextInput,
+  Text,
   ActivityIndicator,
 } from 'react-native';
 import * as Haptics from 'expo-haptics';
