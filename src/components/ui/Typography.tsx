@@ -1,14 +1,14 @@
 /**
- * Typography - Clean, modern text components
+ * Typography - Editorial luxury text components
  *
  * Font System:
- * - Barlow: Body text (readable, modern sans-serif)
- * - JetBrains Mono: Labels, headlines, captions (UPPERCASE, technical feel)
+ * - Merriweather: Headlines and body text (elegant serif)
+ * - JetBrains Mono: Labels and captions ONLY (UPPERCASE, technical feel)
  *
  * Usage:
- *   <Headline>MATCH FOUND</Headline>           // JetBrains Mono, uppercase
- *   <Body>Coffee enthusiast, weekend hiker...</Body>  // Barlow, normal case
- *   <Caption>87% COMPATIBLE</Caption>          // JetBrains Mono, uppercase
+ *   <Headline>Verify Your Identity</Headline>  // Merriweather serif
+ *   <Body>Coffee enthusiast, hiker...</Body>   // Merriweather serif
+ *   <Caption>CERTIFICATION</Caption>           // JetBrains Mono UPPERCASE
  */
 
 import React from 'react';
@@ -21,7 +21,7 @@ interface TypographyProps {
   numberOfLines?: number;
 }
 
-// Headers - JetBrains Mono UPPERCASE (technical, bold)
+// Headers - Merriweather serif (elegant, editorial)
 export const Headline: React.FC<TypographyProps> = ({ children, style, color }) => (
   <Text style={[styles.headline, color ? { color } : null, style]}>
     {children}
@@ -40,7 +40,7 @@ export const HeadlineSmall: React.FC<TypographyProps> = ({ children, style, colo
   </Text>
 );
 
-// Body - Barlow (clean, readable)
+// Body - Merriweather serif (readable, elegant)
 export const Body: React.FC<TypographyProps> = ({ children, style, color, numberOfLines }) => (
   <Text style={[styles.body, color ? { color } : null, style]} numberOfLines={numberOfLines}>
     {children}
@@ -59,14 +59,14 @@ export const BodySmall: React.FC<TypographyProps> = ({ children, style, color })
   </Text>
 );
 
-// Caption - JetBrains Mono UPPERCASE (small labels)
+// Caption - JetBrains Mono UPPERCASE (labels only)
 export const Caption: React.FC<TypographyProps> = ({ children, style, color }) => (
   <Text style={[styles.caption, color ? { color } : null, style]}>
     {children}
   </Text>
 );
 
-// Question - Barlow (interview prompts - readable at larger size)
+// Question - Merriweather (interview prompts)
 export const Question: React.FC<TypographyProps> = ({ children, style, color }) => (
   <Text style={[styles.question, color ? { color } : null, style]}>
     {children}
@@ -74,48 +74,44 @@ export const Question: React.FC<TypographyProps> = ({ children, style, color }) 
 );
 
 const styles = StyleSheet.create({
-  // Headers - JetBrains Mono UPPERCASE
+  // Headers - Merriweather serif
   headline: {
-    fontFamily: 'JetBrainsMono_400Regular',
-    fontWeight: '400',
-    lineHeight: 36,
-    letterSpacing: 2,
+    fontFamily: 'Merriweather_700Bold',
+    fontWeight: '700',
+    lineHeight: 32,
+    letterSpacing: -0.5,
     color: '#FFFFFF',
     fontSize: 24,
-    textTransform: 'uppercase',
     // No shadows - clean design
   },
   headlineLarge: {
-    fontSize: 28,
-    lineHeight: 36,
-    letterSpacing: 3,
+    fontSize: 32,
+    lineHeight: 40,
   },
   headlineSmall: {
-    fontSize: 18,
-    lineHeight: 24,
-    letterSpacing: 1.5,
+    fontSize: 20,
+    lineHeight: 26,
   },
 
-  // Body - Barlow (clean, readable)
+  // Body - Merriweather serif (elegant, readable)
   body: {
-    fontFamily: 'Barlow_400Regular',
+    fontFamily: 'Merriweather_400Regular',
     fontWeight: '400',
     letterSpacing: 0.2,
     color: '#E5E5E5',
-    fontSize: 16,
+    fontSize: 15,
     lineHeight: 24,
   },
   bodyLarge: {
-    fontFamily: 'Barlow_500Medium',
-    fontSize: 18,
-    lineHeight: 28,
+    fontSize: 17,
+    lineHeight: 26,
   },
   bodySmall: {
-    fontSize: 14,
+    fontSize: 13,
     lineHeight: 20,
   },
 
-  // Caption - JetBrains Mono UPPERCASE (metadata, labels)
+  // Caption - JetBrains Mono UPPERCASE (labels only)
   caption: {
     fontFamily: 'JetBrainsMono_400Regular',
     fontSize: 11,
@@ -125,12 +121,12 @@ const styles = StyleSheet.create({
     textTransform: 'uppercase',
   },
 
-  // Question - Barlow (interview prompts)
+  // Question - Merriweather (interview prompts)
   question: {
-    fontFamily: 'Barlow_500Medium',
-    fontSize: 23,
-    fontWeight: '500',
-    lineHeight: 29, // 1.25x line height as requested
+    fontFamily: 'Merriweather_400Regular',
+    fontSize: 22,
+    fontWeight: '400',
+    lineHeight: 28, // 1.25x line height
     letterSpacing: 0,
     color: '#FFFFFF',
     textAlign: 'center',

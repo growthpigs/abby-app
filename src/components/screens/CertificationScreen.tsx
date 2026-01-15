@@ -168,7 +168,7 @@ export const CertificationScreen: React.FC<CertificationScreenProps> = ({
       <View style={styles.container}>
         <GlassSheet height={0.8}>
           <View style={styles.loadingContainer}>
-            <ActivityIndicator size="large" color="rgba(255,255,255,0.8)" />
+            <ActivityIndicator size="large" color="#5A5A5A" />
             <Body style={styles.loadingText}>Loading verification status...</Body>
           </View>
         </GlassSheet>
@@ -211,7 +211,7 @@ export const CertificationScreen: React.FC<CertificationScreenProps> = ({
                       <Caption style={styles.checkText}>✓</Caption>
                     </View>
                   ) : verifyingType === item.type ? (
-                    <ActivityIndicator size="small" color="rgba(255,255,255,0.8)" />
+                    <ActivityIndicator size="small" color="#5A5A5A" />
                   ) : null}
                 </View>
                 <Caption style={styles.itemDescription}>{item.description}</Caption>
@@ -269,33 +269,35 @@ const styles = StyleSheet.create({
     gap: 16,
   },
   loadingText: {
-    color: 'rgba(255, 255, 255, 0.7)',
+    color: '#4A4A4A', // Charcoal gray
   },
   label: {
     textAlign: 'center',
-    marginTop: 8,
+    marginTop: 33, // Pushed down 25px from original 8
     marginBottom: 8,
     letterSpacing: 3,
-    fontSize: 12,
-    color: 'rgba(255, 255, 255, 0.6)',
+    fontSize: 11, // Reduced 1pt
+    color: '#6B6B6B', // Charcoal gray
   },
   headline: {
     textAlign: 'center',
     marginBottom: 8,
-    color: 'rgba(255, 255, 255, 0.95)',
+    fontSize: 23, // Reduced 1pt
+    color: '#3A3A3A', // Dark charcoal
   },
   description: {
     textAlign: 'center',
-    color: 'rgba(255, 255, 255, 0.7)',
-    lineHeight: 22,
+    color: '#5A5A5A', // Charcoal gray
+    lineHeight: 21, // Reduced
+    fontSize: 14, // Reduced 1pt
     paddingHorizontal: 16,
     marginBottom: 24,
   },
   errorText: {
-    color: '#F87171',
+    color: '#DC2626',
     textAlign: 'center',
     marginBottom: 16,
-    fontSize: 14,
+    fontSize: 13, // Reduced 1pt
   },
   itemsContainer: {
     paddingHorizontal: 16,
@@ -305,15 +307,15 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    backgroundColor: 'rgba(0, 0, 0, 0.03)',
     borderRadius: 12,
-    padding: 16,
+    padding: 15, // Slightly smaller
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.15)',
+    borderColor: 'rgba(0, 0, 0, 0.08)',
   },
   verificationItemVerified: {
-    backgroundColor: 'rgba(16, 185, 129, 0.2)',
-    borderColor: 'rgba(16, 185, 129, 0.4)',
+    backgroundColor: 'rgba(16, 185, 129, 0.1)',
+    borderColor: 'rgba(16, 185, 129, 0.3)',
   },
   itemContent: {
     flex: 1,
@@ -326,11 +328,12 @@ const styles = StyleSheet.create({
   },
   itemLabel: {
     fontWeight: '600',
-    color: 'rgba(255, 255, 255, 0.95)',
+    fontSize: 15, // Reduced 1pt
+    color: '#3A3A3A', // Dark charcoal
   },
   itemDescription: {
-    color: 'rgba(255, 255, 255, 0.6)',
-    fontSize: 12,
+    color: '#6B6B6B', // Charcoal gray
+    fontSize: 11, // Reduced 1pt
   },
   checkBadge: {
     width: 20,
@@ -346,19 +349,19 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
   },
   verifyButton: {
-    color: 'rgba(255, 255, 255, 0.9)',
+    color: '#3B82F6', // Blue accent for action
     fontWeight: '600',
-    fontSize: 12,
+    fontSize: 11, // Reduced 1pt
     letterSpacing: 1,
   },
   progressContainer: {
     alignItems: 'center',
-    marginTop: 24,
-    marginBottom: 16,
+    marginTop: 20,
+    marginBottom: 14,
   },
   progressText: {
-    color: 'rgba(255, 255, 255, 0.6)',
-    fontSize: 13,
+    color: '#7A7A7A', // Charcoal gray
+    fontSize: 12, // Reduced 1pt
   },
   buttonContainer: {
     alignItems: 'center',
@@ -367,9 +370,10 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
   },
   incompleteText: {
-    color: 'rgba(255, 255, 255, 0.5)',
+    color: '#8A8A8A', // Charcoal gray
     textAlign: 'center',
     fontStyle: 'italic',
+    fontSize: 14, // Reduced 1pt
   },
   closeButton: {
     position: 'absolute',
