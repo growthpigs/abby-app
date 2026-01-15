@@ -182,32 +182,6 @@ export interface AbbyTool {
   parameters: Record<string, unknown>;
 }
 
-export interface AbbyMemoryContext {
-  entries: AbbyMemoryEntry[];
-  summary: string;
-}
-
-export interface AbbyMemoryEntry {
-  type: MemoryEntryType;
-  content: string;
-  timestamp: string;
-  importance?: number;
-}
-
-export type MemoryEntryType = 'user_fact' | 'preference' | 'conversation_topic' | 'relationship_goal';
-
-export interface AbbyToolExecuteRequest {
-  sessionId: string;
-  toolName: string;
-  toolCallId: string;
-  arguments: Record<string, unknown>;
-}
-
-export interface AbbyToolExecuteResponse {
-  result: unknown;
-  error?: string;
-}
-
 export interface AbbyTTSRequest {
   text: string;
   voice?: string;
@@ -218,19 +192,8 @@ export interface AbbyTTSResponse {
   duration: number;
 }
 
-export interface AbbyChatRequest {
-  message: string;
-  conversationId?: string;
-}
-
-export interface AbbyChatResponse {
-  response: string;
-  conversationId: string;
-  suggestedActions?: string[];
-}
-
 // ============================================================
-// MESSAGING
+// MESSAGING (@v2 - Not implemented in MVP)
 // ============================================================
 
 export interface Thread {

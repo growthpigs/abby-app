@@ -163,8 +163,10 @@ export function wrapWithMorph(shaderSource: string): string {
 
   // FRAGILE CODE SAFEGUARD: Warn if morph injection failed
   // The regex patterns above are brittle - if shader format changes, this catches it
-  const morphInjected = finalShader.includes('getMorphAlpha');
-  if (!morphInjected && typeof __DEV__ !== "undefined" && __DEV__) {
+  // NOTE: Check for 'float morphAlpha =' which only appears if a return statement was replaced
+  // (getMorphAlpha function definition is always injected, so can't check for that)
+  const morphCallInjected = finalShader.includes('float morphAlpha = getMorphAlpha');
+  if (!morphCallInjected && typeof __DEV__ !== "undefined" && __DEV__) {
     console.warn(
       '[morphWrapper] MORPH INJECTION FAILED - shader return statement not recognized.\n' +
       'Expected patterns: half4(color, 1.0), half4(half3(color), 1.0), or half4(half3(waterColor), 1.0)\n' +

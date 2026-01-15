@@ -422,7 +422,7 @@ export class AbbyRealtimeService {
       let abbyResponse: string | null = null;
 
       if (data.response) {
-        // Expected format from AbbyChatResponse
+        // Expected format: { response: string, conversationId?: string }
         abbyResponse = data.response;
         // Store conversationId for future messages
         if (data.conversationId && !this.sessionId) {

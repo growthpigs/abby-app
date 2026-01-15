@@ -65,6 +65,20 @@ describe('analyzeQuestionSentiment', () => {
       expect(result.confidence).toBe(0.5);
     });
 
+    test('handles null input gracefully', () => {
+      // @ts-expect-error - testing runtime behavior for unexpected input
+      const result = analyzeQuestionSentiment(null);
+      expect(result.theme).toBe('TRUST');
+      expect(result.confidence).toBe(0.5);
+    });
+
+    test('handles undefined input gracefully', () => {
+      // @ts-expect-error - testing runtime behavior for unexpected input
+      const result = analyzeQuestionSentiment(undefined);
+      expect(result.theme).toBe('TRUST');
+      expect(result.confidence).toBe(0.5);
+    });
+
     test('handles mixed themes (should pick dominant)', () => {
       // "love" (PASSION) + "family" (DEEP) + "work" (TRUST)
       const result = analyzeQuestionSentiment('I love my family and work');

@@ -25,14 +25,15 @@ This document tracks known fragile code patterns identified during the MVP build
 ### 2. useClock Dependency Array Workaround
 **File:** `src/components/layers/VibeMatrixAnimated.tsx:102-113`
 **Issue:** Animation depends on react-native-reanimated bug (GitHub #2640)
-**Safeguard Added:** Pinned `react-native-reanimated` to exact version 4.1.1
+**Safeguard Added:** Pinned `react-native-reanimated` to exact version 4.1.6
 **V2 Fix:** Monitor library releases for proper fix, then remove workaround
 
 ### 3. Dual State Stores (VibeStore vs VibeController)
 **Files:** `src/store/useVibeStore.ts`, `src/store/useVibeController.ts`
 **Issue:** Two stores manage overlapping state with no synchronization
-**Safeguard Added:** Dev warning in useVibeStore, @deprecated JSDoc
-**V2 Fix:** Consolidate into single useVibeController store
+**Status:** **DOWNGRADED** - `useVibeStore` is actually dead code (never imported)
+**Safeguard Added:** Dev warning + @deprecated JSDoc as tripwire if anyone uses it
+**V2 Fix:** Delete `useVibeStore.ts` entirely
 
 ---
 

@@ -100,8 +100,25 @@ export interface SentimentResult {
 
 /**
  * Analyze question text and return visual vibe parameters
+ *
+ * @param questionText - The question to analyze
+ * @returns Sentiment result with theme, complexity, shader, and confidence
+ *
+ * Note: When multiple themes have equal scores, the first in iteration order wins:
+ * TRUST < DEEP < PASSION < GROWTH < CAUTION < ALERT
  */
 export function analyzeQuestionSentiment(questionText: string): SentimentResult {
+  // Guard against null/undefined input - return safe defaults
+  if (typeof questionText !== 'string' || !questionText) {
+    return {
+      theme: 'TRUST',
+      complexity: 'SMOOTHIE',
+      complexityValue: 0.3,
+      shaderId: VIBE_SHADER_GROUPS.TRUST[0],
+      confidence: 0.5,
+    };
+  }
+
   const text = questionText.toLowerCase();
 
   // 1. Score each theme based on keyword matches
