@@ -1,7 +1,7 @@
 # ABBY - Features Index
 
 **Project:** ABBY - The Anti-Dating App
-**Last Updated:** January 2, 2026
+**Last Updated:** January 15, 2026
 
 ---
 
@@ -134,6 +134,40 @@ All core MVP features are implemented. Remaining work is connecting demo mode to
 🚧 **Voice Integration** - Demo Mode (AbbyRealtimeService needs real API connection)
 
 **Next Step**: Connect AbbyRealtimeService to real OpenAI Realtime API via client backend.
+
+---
+
+## 2026-01-15 Update (Match Flow UI Polish - LOCKED IN)
+
+**What was done:**
+- Applied consistent PASSION palette (`#E11D48`) to all match flow screens
+- Redesigned Pass/Like buttons (icons only, glass/pink filled - no red/green borders)
+- Standardized glass card pattern (`rgba(255, 255, 255, 0.15)`, no borders)
+- Changed all match flow section labels to WHITE (#FFFFFF)
+- Documented patterns in 4 living documents to prevent AI regression
+
+**Files modified:**
+- `PhotosScreen.tsx` - Primary badge → PASSION pink, empty slots → subtle white glass
+- `MatchesScreen.tsx` - Pass/Like buttons completely redesigned, cards → glass style
+- `MatchScreen.tsx` - Labels → WHITE, compatibility → PASSION pink
+- `RevealScreen.tsx` - Labels → WHITE, badges → PASSION pink
+- `PaymentScreen.tsx` - Hidden secret nav trigger borders
+
+**Documentation updated (CRITICAL - prevents AI regression):**
+- `docs/DESIGN-SYSTEM.md` - Added "Match Flow Screens" section with all patterns
+- `features/glass-interface-spec.md` - Added "Match Flow Screen Patterns" section
+- `HANDOVER.md` - Added "DO NOT CHANGE" quick reference table
+- `docs/05-planning/ROADMAP.md` - Updated Phase 8 with task 8.3 complete
+
+**Reference screen:** `CertificationScreen.tsx` is the GOLD STANDARD for glass styling.
+
+**Key Rule:** Never use green compatibility badges, red/green bordered buttons, or gray labels in match flow.
+
+**Commits:**
+- `bde257a` - feat(design): white text, Barlow buttons, standardized blur
+- `5324503` - docs: add professional handover for Geraldo + design system updates
+- `447ed44` - docs: add UI Design System section to HANDOVER.md
+- `6ffe23b` - docs: add hotspot mode guidance + update Phase 8 polish status
 
 ---
 

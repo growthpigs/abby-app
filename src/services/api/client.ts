@@ -89,8 +89,12 @@ async function request<T>(endpoint: string, options: RequestOptions = {}): Promi
     headers['Content-Type'] = 'application/json';
   }
 
+  // DEMO LOGGING: Show API calls clearly in Metro console for video demo
   if (__DEV__) {
-    console.log(`[API] ${method} ${endpoint}`);
+    console.log(`\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`);
+    console.log(`🌐 [API] ${method} ${url}`);
+    if (body) console.log(`📤 [REQUEST]`, JSON.stringify(body, null, 2).substring(0, 500));
+    console.log(`━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`);
   }
 
   const controller = new AbortController();
@@ -141,14 +145,18 @@ async function request<T>(endpoint: string, options: RequestOptions = {}): Promi
       if (__DEV__) console.warn(`[API] Unexpected content-type: ${contentType}`);
       // Still try to parse as JSON (some APIs don't set content-type correctly)
       try {
-        return await response.json();
+        const data = await response.json();
+        if (__DEV__) console.log(`✅ [RESPONSE] Status: ${response.status}`, JSON.stringify(data, null, 2).substring(0, 500));
+        return data;
       } catch {
         // If parsing fails, return null
         return null as unknown as T;
       }
     }
 
-    return await response.json();
+    const data = await response.json();
+    if (__DEV__) console.log(`✅ [RESPONSE] Status: ${response.status}`, JSON.stringify(data, null, 2).substring(0, 500));
+    return data;
   } catch (error) {
     clearTimeout(timeoutId);
 

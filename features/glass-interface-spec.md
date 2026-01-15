@@ -445,10 +445,124 @@ accessibilityState={{ disabled }}
 
 ---
 
+## Match Flow Screen Patterns (CRITICAL - DO NOT CHANGE)
+
+> **Added:** 2026-01-15 | **Status:** LOCKED IN | **Reference:** `CertificationScreen.tsx`
+
+### PASSION Palette (Match Flow Primary)
+
+```typescript
+// DO NOT USE OTHER COLORS FOR MATCH FLOW
+const PASSION = {
+  primary: '#E11D48',                    // Main accent
+  tint: 'rgba(225, 29, 72, 0.15)',       // Badges, backgrounds
+  light: 'rgba(225, 29, 72, 0.1)',       // Photo placeholders
+};
+```
+
+### Glass Card Pattern (List Items on Glass)
+
+```typescript
+// CORRECT - Use this pattern
+matchCard: {
+  backgroundColor: 'rgba(255, 255, 255, 0.15)',  // NOT 0.5!
+  borderRadius: 12,
+  // NO border - clean glass design
+}
+
+// WRONG - DO NOT USE
+matchCard: {
+  backgroundColor: 'rgba(255, 255, 255, 0.5)',   // TOO BRIGHT
+  borderWidth: 1,                                 // AVOID BORDERS
+}
+```
+
+### Pass/Like Button Pattern (MatchesScreen)
+
+```typescript
+// PASS BUTTON - Subtle glass, white X icon
+passButton: {
+  width: 72,
+  height: 72,
+  borderRadius: 36,
+  backgroundColor: 'rgba(255, 255, 255, 0.2)',
+  borderWidth: 1,
+  borderColor: 'rgba(255, 255, 255, 0.3)',
+}
+// Icon: <X size={32} stroke="rgba(255, 255, 255, 0.9)" />
+
+// LIKE BUTTON - PASSION pink filled, white heart icon
+likeButton: {
+  width: 72,
+  height: 72,
+  borderRadius: 36,
+  backgroundColor: '#E11D48',  // PASSION pink solid
+  borderWidth: 0,              // NO BORDER
+}
+// Icon: <Heart size={32} stroke="#fff" fill="#fff" />
+
+// DO NOT USE - Old red/green bordered pattern
+// ❌ Red pass button with border
+// ❌ Green like button with border
+// ❌ Text labels on buttons
+```
+
+### Caption/Label Colors
+
+```typescript
+// ALWAYS white for section labels in match flow
+sectionLabel: {
+  fontFamily: 'JetBrainsMono_400Regular',
+  fontSize: 11,
+  letterSpacing: 1,
+  color: '#FFFFFF',        // WHITE - NOT gray!
+  textTransform: 'uppercase',
+}
+```
+
+### Compatibility Badge Pattern
+
+```typescript
+// ALWAYS use PASSION pink, NOT green
+compatibilityBadge: {
+  backgroundColor: 'rgba(225, 29, 72, 0.15)',  // PASSION tint
+  paddingVertical: 6,
+  paddingHorizontal: 16,
+  borderRadius: 20,
+}
+compatibilityLabel: {
+  color: '#E11D48',  // PASSION pink - NOT green!
+  fontSize: 13,
+  fontWeight: '600',
+}
+```
+
+### Loading Indicators
+
+```typescript
+// ALWAYS PASSION pink for match flow spinners
+<ActivityIndicator size="large" color="#E11D48" />
+// NOT blue, NOT gray
+```
+
+### Files Using These Patterns
+
+| Screen | File | Notes |
+|--------|------|-------|
+| PhotosScreen | `src/components/screens/PhotosScreen.tsx` | Primary badge, empty slots |
+| MatchesScreen | `src/components/screens/MatchesScreen.tsx` | Pass/Like buttons, cards |
+| MatchScreen | `src/components/screens/MatchScreen.tsx` | Labels, badges, placeholder |
+| RevealScreen | `src/components/screens/RevealScreen.tsx` | Labels, badges |
+| PaymentScreen | `src/components/screens/PaymentScreen.tsx` | Secret triggers hidden |
+| **CertificationScreen** | `src/components/screens/CertificationScreen.tsx` | **GOLD STANDARD REFERENCE** |
+
+---
+
 ## Changelog
 
 | Date | Change | Author |
 |------|--------|--------|
+| 2026-01-15 | Added Match Flow Screen Patterns (PASSION palette, glass cards, Pass/Like buttons) - LOCKED | Chi |
 | 2024-12-22 | Added ConversationOverlay component specification with 3 height modes | Chi |
 | 2024-12-22 | Added 13pt/5px typography spec for conversation transcript | Chi |
 | 2024-12-22 | Added drag handle gesture requirements | Chi |

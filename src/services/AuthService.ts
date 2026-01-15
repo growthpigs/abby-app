@@ -349,7 +349,11 @@ export const AuthService = {
     return new Promise((resolve, reject) => {
       cognitoUser.authenticateUser(authDetails, {
         onSuccess: async (session: CognitoUserSession) => {
-          if (__DEV__) console.log('[AuthService] Login successful');
+          if (__DEV__) {
+            console.log(`\n🔐🔐🔐🔐🔐🔐🔐🔐🔐🔐🔐🔐🔐🔐🔐🔐🔐🔐🔐🔐`);
+            console.log(`✅ [AUTH] LOGIN SUCCESSFUL - User: ${username}`);
+            console.log(`🔐🔐🔐🔐🔐🔐🔐🔐🔐🔐🔐🔐🔐🔐🔐🔐🔐🔐🔐🔐\n`);
+          }
 
           const accessToken = session.getAccessToken().getJwtToken();
           const idToken = session.getIdToken().getJwtToken();
