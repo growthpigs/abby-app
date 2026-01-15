@@ -132,9 +132,12 @@ export function analyzeQuestionSentiment(questionText: string): SentimentResult 
   };
 
   // Count keyword matches for each theme
+  // Use word boundary matching to avoid false positives (e.g., "helps" matching "help")
   for (const [theme, keywords] of Object.entries(SENTIMENT_KEYWORDS)) {
     for (const keyword of keywords) {
-      if (text.includes(keyword)) {
+      // Create regex with word boundaries for accurate matching
+      const regex = new RegExp(`\\b${keyword.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`, 'i');
+      if (regex.test(text)) {
         scores[theme as VibeColorTheme] += 1;
       }
     }
