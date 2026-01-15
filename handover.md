@@ -212,3 +212,65 @@ Each answer submitted immediately after user responds.
 3. **Start in:** `src/services/AbbyRealtimeService.ts:createSession()`
 4. **API docs:** https://dev.api.myaimatchmaker.ai/docs#/
 5. **Everything else works** - auth, UI, shaders, tests all passing
+
+---
+
+## ⚠️ CRITICAL: UI Touch Handling Rules (DO NOT CHANGE)
+
+These values were carefully calibrated to fix double-tap issues. **DO NOT MODIFY.**
+
+### Secret Navigation Triggers
+The app has invisible 70x70 triggers at top corners for demo navigation:
+- **Position:** `top: 10, left/right: 10, size: 70x70`
+- **Z-Index:** `9999`
+- **End Point:** `y: 80` (top: 10 + height: 70)
+
+### Hamburger Menu Button
+Must be ABOVE secret triggers to work on first tap:
+```typescript
+// src/components/ui/HamburgerMenu.tsx:217-225
+hamburgerButton: {
+  top: 12,
+  left: 16,
+  width: 54,
+  height: 54,
+  zIndex: 10001,  // CRITICAL: Above 9999
+}
+```
+
+### X Close Buttons (All Overlay Screens)
+Must be BELOW secret trigger zone to avoid overlap:
+```typescript
+// src/constants/onboardingLayout.ts:266-275
+closeButton: {
+  top: 85,     // CRITICAL: Below y:80 (end of triggers)
+  right: 16,
+  width: 54,
+  height: 54,
+  zIndex: 10000,  // CRITICAL: Above 9999
+}
+```
+
+### Menu Items (BlurView Touch Fix)
+BlurView on iOS can intercept first touches. These values fix it:
+```typescript
+// src/components/ui/HamburgerMenu.tsx
+menuItems container: pointerEvents="box-none"
+menuItem: {
+  minHeight: 52,      // CRITICAL: Large touch target
+  paddingVertical: 16,
+  paddingHorizontal: 12,
+}
+// Each Pressable has: hitSlop={{ top: 8, bottom: 8, left: 12, right: 12 }}
+```
+
+### Why These Values Matter
+| Value | Reason |
+|-------|--------|
+| `zIndex: 10001` | Hamburger must beat secret triggers (9999) |
+| `top: 85` | Close buttons must be below trigger zone (ends at y:80) |
+| `minHeight: 52` | iOS recommends 44px minimum, 52px is safe |
+| `pointerEvents: "box-none"` | Allows touches to pass through container to children |
+| `hitSlop` | Extends tap area without changing visual size |
+
+**If taps require double-tap again, someone broke these values.**

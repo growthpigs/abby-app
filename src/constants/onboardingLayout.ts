@@ -16,10 +16,11 @@ import { StyleSheet } from 'react-native';
  */
 export const LAYOUT = {
   // Back Arrow - ALWAYS same position
+  // Arrow tip aligns flush with content text (both at left: 24)
   backArrow: {
     top: 60,
     left: 24,
-    size: 28,
+    size: 42, // 50% larger than original 28
     touchTarget: 44,
     hitSlop: 20,
   },
@@ -180,13 +181,14 @@ export const sharedStyles = StyleSheet.create({
   },
 
   // Back Arrow Button - FIXED POSITION
+  // Arrow tip flush with content text left edge
   backButton: {
     position: 'absolute',
     top: LAYOUT.backArrow.top,
     left: LAYOUT.backArrow.left,
     width: LAYOUT.backArrow.touchTarget,
     height: LAYOUT.backArrow.touchTarget,
-    alignItems: 'center',
+    alignItems: 'flex-start', // Tip aligns with left edge
     justifyContent: 'center',
     zIndex: 10,
   },

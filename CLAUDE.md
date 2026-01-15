@@ -332,6 +332,22 @@ src/
 
 ---
 
+## ⛔ DO NOT CHANGE - Touch Handling Values
+
+These values fix double-tap issues. Changing them will break tap responsiveness.
+
+| Location | Value | Why |
+|----------|-------|-----|
+| `HamburgerMenu.tsx:225` | `zIndex: 10001` | Above secret triggers (9999) |
+| `onboardingLayout.ts:268` | `top: 85` | Below secret trigger zone (ends y:80) |
+| `onboardingLayout.ts:274` | `zIndex: 10000` | Above secret triggers |
+| `HamburgerMenu.tsx:292` | `minHeight: 52` | iOS needs 44px+ touch targets |
+| `HamburgerMenu.tsx:132` | `pointerEvents="box-none"` | Fixes BlurView touch interception |
+
+**Full documentation:** See `HANDOVER.md` section "CRITICAL: UI Touch Handling Rules"
+
+---
+
 ## Vibe Color Quick Reference
 
 ```typescript
