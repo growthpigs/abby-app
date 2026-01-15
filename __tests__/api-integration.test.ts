@@ -177,16 +177,23 @@ describe('Photo Upload - App.tsx', () => {
     expect(photoUploadSection).not.toContain("'Content-Type': 'multipart/form-data'");
   });
 
-  test('Photo upload has comment explaining why Content-Type is not set', () => {
+  test('Photo upload uses presigned URL 3-step flow', () => {
     const source = readFile('App.tsx');
-    expect(source).toContain('DO NOT set Content-Type for FormData');
-    expect(source).toContain('fetch() will set it automatically with proper boundary');
+    // Step 1: Get presigned URL
+    expect(source).toContain('Step 1: Get presigned upload URL from backend');
+    expect(source).toContain('/v1/photos/presign');
+    // Step 2: Upload to S3
+    expect(source).toContain('Step 2: Upload file directly to S3 using presigned URL');
+    // Step 3: Register with backend
+    expect(source).toContain('Step 3: Register photo with backend');
   });
 
-  test('Photo upload uses FormData', () => {
+  test('Photo upload uses snake_case for API fields', () => {
     const source = readFile('App.tsx');
-    expect(source).toContain('new FormData()');
-    expect(source).toContain("formData.append('file'");
+    expect(source).toContain('file_name: filename');
+    expect(source).toContain('content_type: contentType');
+    expect(source).toContain('file_key: fileKey');
+    expect(source).toContain('is_primary: false');
   });
 
   test('Photo upload uses Authorization header with Bearer token', () => {
