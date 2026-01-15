@@ -129,7 +129,7 @@ const DEMO_ORDER: DemoState[] = [
   'MATCH',
   'PAYMENT',
   'REVEAL',
-  'COACH',
+  // COACH removed - demo ends at reveal. Post-reveal actions go to MatchesScreen.
 ];
 
 // ===========================================

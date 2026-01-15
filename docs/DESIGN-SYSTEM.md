@@ -342,6 +342,129 @@ Every onboarding screen should follow this structure:
 
 ---
 
+## Match Flow Screens (Non-Onboarding)
+
+> **Added: 2026-01-15** - UI Polish patterns for PhotosScreen, MatchesScreen, MatchScreen, RevealScreen, PaymentScreen
+
+### PASSION Palette (Match Flow Primary)
+
+```
+PASSION PINK
+├── Primary: #E11D48
+├── Tint: rgba(225, 29, 72, 0.15)  // For badges, backgrounds
+├── Light: rgba(225, 29, 72, 0.1)  // For photo placeholders
+
+CHARCOAL (Text on Glass)
+├── Headlines: #3A3A3A
+├── Body: #5A5A5A
+├── Subtle: #7A7A7A
+```
+
+### Glass Card Pattern (CertificationScreen Reference)
+
+```tsx
+// STANDARD GLASS CARD - use for all list items on glass backgrounds
+matchCard: {
+  backgroundColor: 'rgba(255, 255, 255, 0.15)',  // NOT 0.5!
+  borderRadius: 12,
+  // NO border - clean glass design
+}
+
+// PRESSED STATE
+matchCardPressed: {
+  backgroundColor: 'rgba(255, 255, 255, 0.25)',  // Subtle highlight
+}
+```
+
+### Pass/Like Button Pattern (MatchesScreen)
+
+```tsx
+// PASS BUTTON - Subtle glass, white X icon
+passButton: {
+  width: 72,
+  height: 72,
+  borderRadius: 36,
+  backgroundColor: 'rgba(255, 255, 255, 0.2)',
+  borderWidth: 1,
+  borderColor: 'rgba(255, 255, 255, 0.3)',
+}
+// Icon: <X size={32} stroke="rgba(255, 255, 255, 0.9)" />
+
+// LIKE BUTTON - PASSION pink filled, white heart icon
+likeButton: {
+  width: 72,
+  height: 72,
+  borderRadius: 36,
+  backgroundColor: '#E11D48',  // PASSION pink
+  borderWidth: 0,
+}
+// Icon: <Heart size={32} stroke="#fff" fill="#fff" />
+```
+
+### Compatibility Badge Pattern
+
+```tsx
+// ALWAYS use PASSION pink, NOT green
+compatibilityBadge: {
+  backgroundColor: 'rgba(225, 29, 72, 0.15)',  // PASSION tint
+  paddingVertical: 6,
+  paddingHorizontal: 16,
+  borderRadius: 20,
+}
+compatibilityLabel: {
+  color: '#E11D48',  // PASSION pink
+  fontSize: 13,
+  fontWeight: '600',
+}
+```
+
+### Photo Placeholder Pattern
+
+```tsx
+// Blurred/hidden photo state
+photoPlaceholder: {
+  backgroundColor: 'rgba(225, 29, 72, 0.1)',  // PASSION light tint
+  // NO border - clean design
+}
+photoHint: {
+  color: 'rgba(255, 255, 255, 0.6)',  // Subtle white
+  fontSize: 11,
+}
+```
+
+### Caption/Label Colors (Match Flow)
+
+```
+Section Labels (CERTIFICATION, MATCH FOUND, YOUR MATCH, etc):
+├── Font: JetBrains Mono
+├── Color: #FFFFFF  // ALWAYS white
+├── Size: 11px
+├── Letter Spacing: 1px
+├── Transform: UPPERCASE
+```
+
+### Loading Indicators
+
+```tsx
+// ALWAYS use PASSION pink for loading spinners in match flow
+<ActivityIndicator size="large" color="#E11D48" />
+```
+
+### Secret Navigation Triggers
+
+```tsx
+// ALWAYS invisible (for demo navigation only)
+secretTrigger: {
+  position: 'absolute',
+  width: 70,
+  height: 70,
+  zIndex: 9999,
+  // NO borderWidth, NO borderColor - truly invisible
+}
+```
+
+---
+
 ## File References
 
 | Component | File |
@@ -350,3 +473,9 @@ Every onboarding screen should follow this structure:
 | GlassButton | `src/components/ui/GlassButton.tsx` |
 | Layout Constants | `src/constants/onboardingLayout.ts` |
 | Design System Doc | `docs/DESIGN-SYSTEM.md` (this file) |
+| **PhotosScreen** | `src/components/screens/PhotosScreen.tsx` |
+| **MatchesScreen** | `src/components/screens/MatchesScreen.tsx` |
+| **MatchScreen** | `src/components/screens/MatchScreen.tsx` |
+| **RevealScreen** | `src/components/screens/RevealScreen.tsx` |
+| **PaymentScreen** | `src/components/screens/PaymentScreen.tsx` |
+| **CertificationScreen** | `src/components/screens/CertificationScreen.tsx` (reference) |

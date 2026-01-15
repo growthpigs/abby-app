@@ -209,7 +209,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
   },
 
-  // Secret navigation triggers
+  // Secret navigation triggers (invisible - for demo navigation)
   secretBackTrigger: {
     position: 'absolute',
     top: 10,
@@ -217,9 +217,7 @@ const styles = StyleSheet.create({
     width: 70,
     height: 70,
     zIndex: 9999,
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.5)',
-    borderRadius: 8,
+    // No visible border - truly invisible
   },
   secretMiddleTrigger: {
     position: 'absolute',
@@ -229,9 +227,7 @@ const styles = StyleSheet.create({
     width: 70,
     height: 70,
     zIndex: 9999,
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.5)',
-    borderRadius: 8,
+    // No visible border - truly invisible
   },
   secretForwardTrigger: {
     position: 'absolute',
@@ -240,9 +236,7 @@ const styles = StyleSheet.create({
     width: 70,
     height: 70,
     zIndex: 9999,
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.5)',
-    borderRadius: 8,
+    // No visible border - truly invisible
   },
 });
 

@@ -194,9 +194,9 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginTop: 8,
     marginBottom: 20,
-    letterSpacing: 4,
-    fontSize: 12,
-    color: 'rgba(0, 0, 0, 0.5)',
+    letterSpacing: 1,
+    fontSize: 11,
+    color: '#FFFFFF', // WHITE like CertificationScreen labels
   },
   photoContainer: {
     alignSelf: 'center',
@@ -229,25 +229,27 @@ const styles = StyleSheet.create({
   name: {
     textAlign: 'center',
     marginBottom: 12,
-    color: 'rgba(0, 0, 0, 0.85)',
+    fontSize: 23,
+    color: '#3A3A3A', // Charcoal like CertificationScreen
   },
   compatibilityBadge: {
-    backgroundColor: 'rgba(16, 185, 129, 0.15)',
+    backgroundColor: 'rgba(225, 29, 72, 0.15)', // PASSION pink tint
     paddingVertical: 6,
     paddingHorizontal: 16,
     borderRadius: 20,
     marginBottom: 16,
   },
   compatibilityLabel: {
-    color: '#059669',
+    color: '#E11D48', // PASSION pink
     fontSize: 13,
     fontWeight: '600',
     letterSpacing: 0.5,
   },
   bio: {
     textAlign: 'center',
-    lineHeight: 22,
-    color: 'rgba(0, 0, 0, 0.7)',
+    lineHeight: 21,
+    fontSize: 14,
+    color: '#5A5A5A', // Charcoal gray
     paddingHorizontal: 16,
   },
   buttonContainer: {
@@ -261,12 +263,12 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
   },
   viewAllText: {
-    color: '#3B82F6',
-    fontSize: 14,
+    color: 'rgba(255, 255, 255, 0.7)', // Subtle white on glass
+    fontSize: 13,
     fontWeight: '500',
   },
 
-  // Secret navigation triggers
+  // Secret navigation triggers (invisible - for demo navigation)
   secretBackTrigger: {
     position: 'absolute',
     top: 10,
@@ -274,9 +276,7 @@ const styles = StyleSheet.create({
     width: 70,
     height: 70,
     zIndex: 9999,
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.5)',
-    borderRadius: 8,
+    // No visible border - truly invisible
   },
   secretMiddleTrigger: {
     position: 'absolute',
@@ -286,9 +286,7 @@ const styles = StyleSheet.create({
     width: 70,
     height: 70,
     zIndex: 9999,
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.5)',
-    borderRadius: 8,
+    // No visible border - truly invisible
   },
   secretForwardTrigger: {
     position: 'absolute',
@@ -297,9 +295,7 @@ const styles = StyleSheet.create({
     width: 70,
     height: 70,
     zIndex: 9999,
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.5)',
-    borderRadius: 8,
+    // No visible border - truly invisible
   },
 });
 

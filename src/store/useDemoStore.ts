@@ -105,6 +105,7 @@ const DEMO_TO_APP_STATE: Record<DemoState, AppState> = {
 
 // State flow order - SINGLE SOURCE OF TRUTH
 // When adding/removing states, update this array AND the DemoState type above
+// NOTE: COACH removed from demo flow - demo ends at REVEAL. "Message Alex" should go to MatchesScreen.
 const STATE_ORDER: readonly DemoState[] = [
   'COACH_INTRO',
   'INTERVIEW',
@@ -112,12 +113,11 @@ const STATE_ORDER: readonly DemoState[] = [
   'MATCH',
   'PAYMENT',
   'REVEAL',
-  'COACH',
 ] as const;
 
 // Validate STATE_ORDER matches DemoState type at runtime (dev only)
 if (__DEV__) {
-  const expectedStates: DemoState[] = ['COACH_INTRO', 'INTERVIEW', 'SEARCHING', 'MATCH', 'PAYMENT', 'REVEAL', 'COACH'];
+  const expectedStates: DemoState[] = ['COACH_INTRO', 'INTERVIEW', 'SEARCHING', 'MATCH', 'PAYMENT', 'REVEAL'];
   const missingStates = expectedStates.filter(s => !STATE_ORDER.includes(s));
   if (missingStates.length > 0) {
     console.error('[DemoStore] STATE_ORDER missing states:', missingStates);
