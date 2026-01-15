@@ -15,7 +15,7 @@ import { create } from 'zustand';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { questionsService } from '../services/QuestionsService';
 import { ONBOARDING_QUESTION_IDS } from '../constants/onboardingQuestions';
-import { getApiService } from '../services/api';
+import { api } from '../services/api';
 
 // Storage key and version
 const ONBOARDING_KEY = '@abby/onboarding';
@@ -460,8 +460,7 @@ export const useOnboardingStore = create<OnboardingStore>((set, get) => ({
     // Age preferences go to private settings (not public profile or answers)
     if (state.ageRangeMin && state.ageRangeMax) {
       try {
-        const apiService = getApiService();
-        await apiService.updatePrivateSettings({
+        await api.updatePrivateSettings({
           ageMin: state.ageRangeMin,
           ageMax: state.ageRangeMax,
         });
