@@ -71,12 +71,16 @@ export const HamburgerMenu: React.FC<HamburgerMenuProps> = ({
 
   const handleMenuItemPress = useCallback((action?: () => void) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    // Execute action immediately, then close menu
+    // Close menu IMMEDIATELY first (no animation), then execute action
+    // This prevents the Modal from blocking overlay screens like CertificationScreen
+    setIsOpen(false);
+    slideAnim.setValue(-MENU_WIDTH);
+    // Execute action after modal is dismissed
     if (action) {
-      action();
+      // Small delay to ensure modal is fully unmounted
+      setTimeout(() => action(), 50);
     }
-    closeMenu();
-  }, [closeMenu]);
+  }, [slideAnim]);
 
   return (
     <>
