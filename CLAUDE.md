@@ -111,7 +111,7 @@ Region:       us-east-1
 
 **Flow:** SignUp → Email Verification → SignIn → Get Tokens
 
-### Voice: OpenAI Realtime API (NOT ElevenLabs!)
+### Voice: OpenAI Realtime API
 
 | Endpoint | Method | Purpose |
 |----------|--------|---------|
@@ -426,7 +426,7 @@ initializes and intercepts keyboard input events in iOS Simulator. This causes:
 
 - **Backend:** Client's Nathan Negreiro is building `dev.api.myaimatchmaker.ai` API
 - **Authentication:** AWS Cognito with ID token pattern (documented in ADR)
-- **Voice:** OpenAI Realtime API via client's backend (NOT ElevenLabs)
+- **Voice:** OpenAI Realtime API via client's backend
 - **Matching Engine:** Backend-driven (we send answers, get candidates back)
 - **TestFlight:** Used for client demos
 - **Battery Optimization:** Low Power Mode - replace shaders with static images when battery < 20%

@@ -418,8 +418,10 @@ export class AbbyRealtimeService {
    * - Removes control characters
    */
   private sanitizeMessage(message: string): string {
+    // Guard against null/undefined at runtime (TypeScript doesn't guarantee runtime safety)
+    if (message == null) return '';
     const MAX_MESSAGE_LENGTH = 2000;
-    return message
+    return String(message) // Coerce to string in case of non-string input
       .trim()
       .slice(0, MAX_MESSAGE_LENGTH)
       .replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g, ''); // Remove control chars except newline/tab

@@ -66,7 +66,7 @@ The Frontend team was contracted to deliver an MVP iOS app with:
 | **Token Management** | Automatic refresh, session persistence, secure storage | ✅ Complete |
 | **Demo Mode** | Graceful fallbacks when API unavailable | ✅ Complete |
 | **State Management** | Zustand stores with persistence | ✅ Complete |
-| **Voice Framework** | OpenAI Realtime API integration (upgraded from ElevenLabs) | ✅ Complete |
+| **Voice Framework** | OpenAI Realtime API integration | ✅ Complete |
 
 ### Services Built: 7 Total
 

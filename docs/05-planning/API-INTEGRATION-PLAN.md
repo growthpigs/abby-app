@@ -136,7 +136,7 @@
 ### Interview Flow (EXISTS - Needs API Integration)
 12. **InterviewScreen.tsx** - Already built
    - Need to integrate with `/v1/questions/next`, `/v1/answers`
-   - Already has voice integration (ElevenLabs) - need to swap for `/v1/abby/realtime/session`
+   - Voice integration uses `/v1/abby/realtime/session`
 
 ### Match Flow (PARTIALLY EXISTS)
 13. **SearchingScreen.tsx** - Already built (searching animation)
@@ -235,7 +235,7 @@
 ### Phase 3: Interview API Swap (Day 5)
 1. Replace local question JSON with `/v1/questions/next`
 2. POST answers to `/v1/answers`
-3. Replace ElevenLabs with `/v1/abby/realtime/session` (WebRTC or WebSocket)
+3. Use `/v1/abby/realtime/session` for voice (WebRTC)
 4. Handle tool calls via `/v1/abby/tools/execute`
 
 ### Phase 4: Matching (Day 6)
@@ -272,7 +272,7 @@
 ## High-Risk Areas
 
 ### 1. Voice Integration Swap
-**Risk:** Their OpenAI Realtime API might not match ElevenLabs behavior
+**Risk:** Voice API integration complexity
 **Mitigation:** Test early, have fallback to text-only
 
 ### 2. AWS Cognito Client-Side
@@ -309,7 +309,7 @@
 |--------|-----|---------|------------|
 | Screens | 7 | 24 | **3.4x** |
 | API Endpoints | 0 | 40+ | **∞** |
-| 3rd Party SDKs | 1 (ElevenLabs) | 4 (Cognito, Stripe, S3, OpenAI) | **4x** |
+| 3rd Party SDKs | 1 | 4 (Cognito, Stripe, S3, OpenAI) | **4x** |
 | Days | 7-14 | 7-14 | **1x** |
 | Budget | $5K | $5K | **1x** |
 

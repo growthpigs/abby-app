@@ -1,12 +1,25 @@
 # ABBY Active Tasks
 
-**Last Updated:** 2026-01-13
-**Branch:** `client-api-integration`
+**Last Updated:** 2026-01-15
+**Branch:** `test-jan2-animation`
 **Technical Debt Score:** 9/10 → Target: 9/10 ✅ ACHIEVED
 
 ---
 
 ## IMMEDIATE PRIORITY - ALL FIXED ✅
+
+### 0b. Code Audit Anti-Patterns Fix - COMPLETED ✅ (2026-01-15)
+- [x] **Task:** Comprehensive codebase audit for antipatterns, code smells, and technical debt
+- [x] **Discovery:** Multi-agent environment caused stale audit reports (fixes already in HEAD)
+- [x] **NEW Issue Found:** 3 unguarded `console.warn` in QuestionsService.ts (lines 180, 254, 260)
+- [x] **Fix Applied:** Added `__DEV__` guards to all 3 console.warn statements
+- [x] **Commit:** Fix committed to `test-jan2-animation`
+- [x] **Red Team Validation:** Verified with `git show HEAD` before/after each fix
+- [x] **PAI Documentation Phase:**
+  - EP-087 added to `~/.claude/troubleshooting/error-patterns.md` (Code Audit Cache Fallacy)
+  - Code Audit Pre-Check Verification section added to `docs/06-reference/RUNBOOK.md`
+  - Lesson committed to mem0 (multi-agent audit verification pattern)
+- [x] **Key Learning:** In multi-agent environments, always verify git state with `git show HEAD:<file>` before and after edits
 
 ### 0. Text Chat API Fix - COMPLETED ✅ (2026-01-14)
 - [x] **Root Cause:** Using wrong endpoint (`/abby/realtime/{session_id}/message` only INJECTS into WebRTC)

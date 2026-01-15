@@ -67,7 +67,7 @@
 
 #### Voice Integration (OpenAI Realtime)
 - **Status**: 🚧 Demo Mode
-- **Description**: OpenAI Realtime API via client backend (replaced ElevenLabs)
+- **Description**: OpenAI Realtime API via client backend
 - **Key Components**: AbbyRealtimeService, AbbyTTSService
 - **Dependencies**: Client backend API (dev.api.myaimatchmaker.ai)
 
@@ -147,7 +147,7 @@ All core MVP features are implemented. Remaining work is connecting demo mode to
 - Timer leak fixes verified with runtime tests (398 tests pass)
 
 **Files changed:**
-- `App.tsx` - fixed PhotosScreen props, deleted App.abby.tsx (legacy ElevenLabs)
+- `App.tsx` - fixed PhotosScreen props, deleted legacy App.abby.tsx
 - `src/components/ui/Typography.tsx` - added numberOfLines prop
 - `src/components/screens/RevealScreen.tsx` - added handleMeetCoach method
 - `src/services/AbbyRealtimeService.ts` - timer tracking + cleanup logging
@@ -177,7 +177,7 @@ All core MVP features are implemented. Remaining work is connecting demo mode to
 - All changes pushed to client-api-integration, main, staging, production
 
 **Architecture changes:**
-- Voice integration now uses OpenAI Realtime API (client backend), NOT ElevenLabs
+- Voice integration uses OpenAI Realtime API (client backend)
 - Authentication uses AWS Cognito (email/password), NOT phone verification
 - AbbyRealtimeService replaces AbbyAgent for voice
 
@@ -199,7 +199,7 @@ All core MVP features are implemented. Remaining work is connecting demo mode to
 
 **What was done:**
 - Added Settings feature spec (input mode selection)
-- Updated voice-integration-spec.md to Voice I/O Only strategy (ElevenLabs TTS + @react-native-voice/voice STT)
+- Updated voice-integration-spec.md to Voice I/O Only strategy
 - Updated question-flow-spec.md to 150 questions for MVP
 - Added ConversationOverlay component to glass-interface-spec.md
 - Added 2 new user stories to PRD.md (US-011, US-012)
@@ -215,8 +215,8 @@ All core MVP features are implemented. Remaining work is connecting demo mode to
 
 **Key Decisions:**
 - 150 questions approved (all from questions-schema.ts)
-- Voice I/O Only: ElevenLabs TTS + @react-native-voice/voice STT
-- Client controls question flow (not ElevenLabs agent)
+- Voice I/O Only: TTS + @react-native-voice/voice STT
+- Client controls question flow
 - 3 input modes: voice only, text only, voice+text
 - ConversationOverlay with drag handle
 
@@ -227,13 +227,13 @@ All core MVP features are implemented. Remaining work is connecting demo mode to
 **What was done:**
 - Completed glass-interface-spec.md with comprehensive glassmorphic UI system
 - Completed onboarding-auth-spec.md with multi-provider authentication flows
-- Completed voice-integration-spec.md with ElevenLabs conversational agent integration
+- Completed voice-integration-spec.md with conversational agent integration
 - All MVP features now have complete SpecKit specifications
 
 **Files created:**
 - docs/features/glass-interface-spec.md - Complete glass UI component system
 - docs/features/onboarding-auth-spec.md - Authentication and profile setup flows
-- docs/features/voice-integration-spec.md - ElevenLabs voice conversation system
+- docs/features/voice-integration-spec.md - Voice conversation system
 
 **Status:** ✅ Complete - All MVP Features Specced
 
@@ -241,21 +241,20 @@ All core MVP features are implemented. Remaining work is connecting demo mode to
 - Begin implementation phase starting with highest priority dependencies
 - Glass Interface system should be implemented first (Layer 2 foundation)
 - Onboarding & Auth needed before user data persistence
-- Voice Integration requires ElevenLabs credentials from client
+- Voice Integration requires client backend API
 
 ---
 
 ## Legacy/Deprecated Files (Do Not Use)
 
-> **Note:** Historical changelog entries below reference "ElevenLabs" - this was the original voice plan.
-> Voice now uses **OpenAI Realtime API** via client backend. See `voice-integration-spec.md`.
+> Voice uses **OpenAI Realtime API** via client backend. See `voice-integration-spec.md`.
 
 The following files are legacy documentation and should NOT be referenced.
 
 | File | Status | Notes |
 |------|--------|-------|
-| `abbyorb-spec.md` | DELETED | Had 22 ElevenLabs refs, superseded |
-| `abbyagent.md` | DELETED | Legacy ElevenLabs agent doc |
+| `abbyorb-spec.md` | DELETED | Legacy spec, superseded |
+| `abbyagent.md` | DELETED | Legacy agent doc |
 | `abby-agent.md` | Deprecated | Design doc, superseded by AbbyRealtimeService |
 | `vibematrix.md` | Deprecated | Use `vibematrix-spec.md` instead |
 | `cognito-auth.md` | Deprecated | Use `onboarding-auth-spec.md` instead |

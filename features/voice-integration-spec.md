@@ -5,7 +5,7 @@
 **Why:** Core differentiator - creates intimate, natural conversations that feel like talking to a real matchmaker
 **Status:** 🚧 Demo Mode (API integration ready, needs real API connection)
 
-> **Architecture Decision (2026-01-02):** Using OpenAI Realtime API via client backend (dev.api.myaimatchmaker.ai). This replaced the original ElevenLabs plan. The client controls the API and AI model.
+> **Architecture Decision (2026-01-02):** Using OpenAI Realtime API via client backend (dev.api.myaimatchmaker.ai). The client controls the API and AI model.
 
 ---
 
@@ -126,7 +126,7 @@ const DEMO_INTRO_MESSAGES = [
 
 - [x] AbbyRealtimeService class with full API integration
 - [x] Demo mode fallback with realistic simulation
-- [x] useAbbyAgent React hook (drop-in replacement for old ElevenLabs hook)
+- [x] useAbbyAgent React hook
 - [x] Token management integration (TokenManager)
 - [x] Secure fetch with timeouts (secureFetch)
 - [x] Error handling and graceful degradation
@@ -243,8 +243,8 @@ curl -X POST https://dev.api.myaimatchmaker.ai/v1/abby/realtime/session \
 |------|--------|--------|
 | 2026-01-02 | **MAJOR:** Rewrote spec to match actual implementation (OpenAI Realtime API) | Chi |
 | 2026-01-02 | Documented demo mode fallback and current API endpoints | Chi |
-| 2024-12-22 | Changed to Voice I/O Only strategy (ElevenLabs TTS + react-native-voice STT) | Chi |
-| 2024-12-20 | Initial SpecKit specification (ElevenLabs conversational agent) | Chi |
+| 2024-12-22 | Changed to Voice I/O Only strategy | Chi |
+| 2024-12-20 | Initial SpecKit specification | Chi |
 
 ---
 

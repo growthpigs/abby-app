@@ -385,7 +385,7 @@ The following endpoints were in the original spec (Nathan's backend) but are NOT
 ❌ POST /auth/phone/verify
 ❌ POST /auth/social
 ❌ POST /voice/transcribe
-❌ POST /voice/conversation (ElevenLabs - replaced by OpenAI)
+❌ POST /voice/conversation (legacy - use OpenAI Realtime)
 ❌ POST /interview/start
 ❌ POST /interview/answer
 ❌ POST /interview/skip

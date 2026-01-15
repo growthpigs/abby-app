@@ -280,10 +280,10 @@ export const PermissionsScreen: React.FC<PermissionsScreenProps> = ({
               onChange={() => handlePermissionTap(permission.id)}
               label={permission.label}
               description={permission.description}
-              style={[
-                styles.permissionItem,
-                { paddingVertical: layout.isSmallScreen ? 4 : 8 }
-              ]}
+              style={{
+                ...styles.permissionItem,
+                paddingVertical: layout.isSmallScreen ? 4 : 8
+              }}
             />
           ))}
 
@@ -297,10 +297,10 @@ export const PermissionsScreen: React.FC<PermissionsScreenProps> = ({
               onChange={setTermsAccepted}
               label="I agree to the Terms & Conditions"
               description="By continuing, you agree to our Terms of Service and Privacy Policy"
-              style={[
-                styles.permissionItem,
-                { paddingVertical: layout.isSmallScreen ? 4 : 8 }
-              ]}
+              style={{
+                ...styles.permissionItem,
+                paddingVertical: layout.isSmallScreen ? 4 : 8
+              }}
             />
           </View>
         </ScrollView>

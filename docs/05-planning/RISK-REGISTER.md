@@ -19,9 +19,9 @@
 
 ## High Risks
 
-### RISK-001: ElevenLabs Credentials Not Received
+### RISK-001: Voice API Integration (RESOLVED)
 
-**Description:** Voice AI integration depends on ElevenLabs agent credentials. Without them, core "talk to Abby" experience cannot be tested or demonstrated.
+**Description:** Voice AI integration requires client backend API. Core "talk to Abby" experience in demo mode until API fully connected.
 
 **Likelihood:** Medium
 **Impact:** High
@@ -107,14 +107,14 @@
 
 ### RISK-005: Voice Latency During Conversation
 
-**Description:** ElevenLabs response latency may exceed 500ms target, breaking conversational flow with Abby.
+**Description:** Voice API response latency may exceed 500ms target, breaking conversational flow with Abby.
 
 **Likelihood:** Medium
 **Impact:** Medium
 **Category:** Technical
 
 **Mitigation:**
-- ElevenLabs agent already built and tested by client
+- Voice integration tested with demo mode
 - Optimize audio buffering and streaming
 - Show "thinking" animation during latency
 
@@ -204,7 +204,7 @@
 
 These assumptions underpin our plan. If they change, risks increase:
 
-1. ElevenLabs agent is functional and tested (built by client)
+1. Voice API (OpenAI Realtime) is functional via client backend
 2. Apple Developer account access will be provided within 2-3 days
 3. Nathan's backend can be mocked for MVP demo
 4. Client accepts phased delivery (core first, polish second)
@@ -217,7 +217,7 @@ These assumptions underpin our plan. If they change, risks increase:
 
 | Dependency | Owner | Status | Risk if Delayed |
 |------------|-------|--------|-----------------|
-| ElevenLabs credentials | Manuel/Nathan | Pending | Blocks voice demo |
+| Voice API access | Client backend | Ready | Demo mode available |
 | Apple Developer invite | Manuel | Pending | Blocks TestFlight |
 | Nathan API contracts | Nathan | Can mock | Delays real data |
 | MVP question list | Manuel | Pending | Scope uncertainty |

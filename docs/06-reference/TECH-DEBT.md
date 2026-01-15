@@ -67,7 +67,7 @@
 ### To Add Post-MVP
 
 1. `@testing-library/react-native` setup
-2. Mock ElevenLabs SDK
+2. Mock Voice SDK
 3. Mock Zustand stores
 4. Component render tests
 5. Hook behavior tests

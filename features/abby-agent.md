@@ -103,7 +103,7 @@ Now Q10 (food preferences), Q15 (domestic habits), Q21 (health consciousness) ar
 | Database | **Supabase** | Postgres + Auth + Realtime + Storage in one |
 | Memory | **Mem0** | Conversational context across sessions |
 | Vectors | **pgvector** (in Supabase) | No need for Pinecone at this scale |
-| Voice | TBD (Fal.ai current, ElevenLabs planned) | Abby speaks |
+| Voice | OpenAI Realtime API (via client backend) | Abby speaks |
 
 **Why not Neon?** It's just a database. Supabase gives auth (phone/SMS), realtime (notifications), storage (photos), and edge functions (agent logic) - all things ABBY needs anyway.
 

@@ -146,7 +146,7 @@ User speaks → WebRTC to OpenAI Realtime API (via client backend)
 - Use `atan(y, x)` not `atan2`
 - Use integer division not `%` operator
 
-### (LEGACY) ElevenLabs SDK API change (2024-12-23) - NO LONGER APPLICABLE
+### (LEGACY) Voice SDK API change (2024-12-23) - NO LONGER APPLICABLE
 > Note: This was fixed before migration to OpenAI Realtime API. Kept for historical reference only.
 > Voice now uses OpenAI Realtime API via client backend - see AbbyRealtimeService.ts
 

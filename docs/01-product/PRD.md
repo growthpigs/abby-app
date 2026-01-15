@@ -78,7 +78,7 @@ Acceptance Criteria:
 **US-004: Voice Conversation with Abby**
 As a user meeting Abby, I want to have a natural voice conversation so that it feels like talking to a real matchmaker.
 
-> **Implementation Note (2026-01-02):** Using OpenAI Realtime API via client backend (dev.api.myaimatchmaker.ai), NOT ElevenLabs. Currently in demo mode - falls back to simulated responses when API unavailable.
+> **Implementation Note (2026-01-02):** Using OpenAI Realtime API via client backend (dev.api.myaimatchmaker.ai). Currently in demo mode - falls back to simulated responses when API unavailable.
 
 Acceptance Criteria:
 - [x] User can activate voice mode (CoachIntroScreen, CoachScreen)
@@ -251,7 +251,7 @@ Acceptance Criteria:
 | @shopify/react-native-skia | External | ✅ Stable | Low |
 | Expo SDK 50+ | External | ✅ Stable | Low |
 
-> **Note (2026-01-02):** ElevenLabs was replaced with OpenAI Realtime API via client backend. Nathan's API has been replaced by client's own API at dev.api.myaimatchmaker.ai.
+> **Note (2026-01-02):** Voice uses OpenAI Realtime API via client backend at dev.api.myaimatchmaker.ai.
 
 ---
 

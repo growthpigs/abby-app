@@ -166,7 +166,7 @@ interface ChatInputProps {
 ```
 User types → sanitizeInput() → handleSend() →
 addMessage() → sendTextMessage() →
-ElevenLabs SDK → onUserTranscript (dedup)
+AbbyRealtimeService → onUserTranscript (dedup)
 ```
 
 ### Layer Position
@@ -250,7 +250,7 @@ const sanitizeInput = (text: string): string => {
 
 - **expo-blur**: BlurView component
 - **lucide-react-native**: Send icon
-- **@elevenlabs/react-native**: conversation.sendUserMessage()
+- **AbbyRealtimeService**: sendTextMessage()
 - **react-native-reanimated**: Future animations
 
 ---

@@ -228,7 +228,7 @@ pwd | grep -q "abby-client-api" && echo "✅ Correct" || echo "❌ Go to /abby-c
 
 | Worktree | Branch | VibeMatrix Animation | Purpose |
 |----------|--------|----------------------|---------|
-| `/abby` | `main` | ❌ LEGACY | Old ElevenLabs version |
+| `/abby` | `main` | ❌ LEGACY | Old version - DO NOT USE |
 | `/abby-client-api` | `test-jan2-animation` | ✅ WORKING | Reference branch |
 | `/abby-client-api` | `client-api-integration` | ✅ FIXED (2026-01-13) | **USE THIS for demos + dev** |
 
@@ -1020,15 +1020,6 @@ curl -X GET https://dev.api.myaimatchmaker.ai/v1/abby/realtime/available \
 
 ---
 
-### 4b. Legacy: ElevenLabs Issues (ONLY /abby worktree)
-
-> **Note:** These issues only apply to the LEGACY `/abby` worktree (main branch).
-> The active `/abby-client-api` worktree uses OpenAI Realtime API, not ElevenLabs.
-
-**Historical reference only.** If you're seeing ElevenLabs errors, you're in the wrong worktree.
-
----
-
 ### 5. Xcode Database Locked
 
 **Symptom:** `error: unable to attach DB: error: accessing build database ... database is locked`
@@ -1369,4 +1360,86 @@ Menu screens accessible from hamburger menu now have demo mode fallbacks:
 
 ---
 
-*Last Updated: 2026-01-13*
+---
+
+## Code Audit Pre-Check Verification (2026-01-15)
+
+**CRITICAL:** In multi-agent environments, verify git state BEFORE attempting audit fixes.
+
+### Pre-Audit Checklist
+
+```bash
+# 1. Refresh git state (catches changes from other agents)
+git fetch origin
+git status
+
+# 2. Check recent commits (see what other agents did)
+git log --oneline -10
+
+# 3. BEFORE fixing any issue, verify it exists in HEAD
+git show HEAD:src/services/MyService.ts | grep -n "<issue pattern>"
+# If empty → issue was already fixed!
+
+# 4. Check for unguarded console statements (the issue we fixed)
+grep -rn "console\.\(log\|error\|warn\)" src/services/ --include="*.ts" | \
+  grep -v "__DEV__" | grep -v "// "
+# Each result needs manual verification (may be on different line than guard)
+
+# 5. After editing, verify git sees change
+git diff --stat
+# If empty → your edit was a no-op (file already had the fix)
+```
+
+### Commands Used in 2026-01-15 Audit
+
+**TypeScript compilation check:**
+```bash
+npx tsc --noEmit 2>&1 | grep -i "<filename>" || echo "NO ERRORS"
+```
+
+**Test suite:**
+```bash
+npm test -- --passWithNoTests 2>&1 | tail -5
+# Expected: 485 passed, 485 total
+```
+
+**Verify __DEV__ guards in specific files:**
+```bash
+# Check QuestionsService.ts has proper guards
+sed -n '178,186p' src/services/QuestionsService.ts  # Should show if (__DEV__) wrapper
+sed -n '254,266p' src/services/QuestionsService.ts  # Should show && __DEV__ in condition
+```
+
+**Verify type interfaces exist:**
+```bash
+grep -n "interface RawSessionResponseData" src/services/AbbyRealtimeService.ts
+grep -n "AVPlaybackStatus" src/services/AbbyTTSService.ts
+grep -n "sanitizeInput" src/store/useOnboardingStore.ts
+```
+
+### Multi-Agent Race Condition Detection
+
+**Symptoms:**
+- `git status` shows "working tree clean" after you made edits
+- `git diff` returns empty for file you just edited
+- Your "fix" matches what's already in the file
+
+**Resolution:**
+```bash
+# Check if another agent committed while you were working
+git log --oneline -5 -- <file>
+
+# Compare your intended change vs current HEAD
+git show HEAD:<file> | grep "<your fix pattern>"
+# If present → another agent already applied the fix
+```
+
+### Key Lesson (2026-01-15)
+
+> "In multi-agent environments, audit reports are point-in-time snapshots. Verify git state before AND after edits. If git shows no changes after your edit, check if another agent already committed the fix."
+
+**Related:** EP-087 in `~/.claude/troubleshooting/error-patterns.md`
+
+---
+
+*Last Updated: 2026-01-15*

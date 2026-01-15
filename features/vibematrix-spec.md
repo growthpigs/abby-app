@@ -274,7 +274,7 @@ interface AppState {
 ### Voice Integration
 - Orb breathing syncs with voice activity via alpha-glow blending
 - Conversation emotional tone triggers vibe state changes
-- ElevenLabs emotion responses map to specific transitions
+- Voice emotion responses map to specific transitions
 
 ### Interview Flow
 - Question progression automatically cycles through BG1-BG10
