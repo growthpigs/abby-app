@@ -101,9 +101,7 @@ export const EthnicityPreferenceScreen: React.FC<EthnicityPreferenceScreenProps>
         style={sharedStyles.backButton}
         hitSlop={LAYOUT.backArrow.hitSlop}
       >
-        <Typography variant="headline" style={styles.backArrow}>
-          ←
-        </Typography>
+        <Text style={styles.backArrow}>←</Text>
       </Pressable>
 
       {/* Content - paddingTop: 170 (with section label) */}

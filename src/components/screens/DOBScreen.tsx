@@ -11,6 +11,7 @@
 import React, { useState, useRef } from 'react';
 import {
   View,
+  Text,
   StyleSheet,
   Pressable,
   TextInput,
@@ -173,9 +174,7 @@ export const DOBScreen: React.FC<DOBScreenProps> = ({
         style={sharedStyles.backButton}
         hitSlop={LAYOUT.backArrow.hitSlop}
       >
-        <Typography variant="headline" style={styles.backArrow}>
-          ←
-        </Typography>
+        <Text style={styles.backArrow}>←</Text>
       </Pressable>
 
       {/* Content */}

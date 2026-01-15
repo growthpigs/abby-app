@@ -16,6 +16,7 @@
 import React, { useState, useEffect } from 'react';
 import {
   View,
+  Text,
   StyleSheet,
   Pressable,
   ScrollView,
@@ -230,9 +231,7 @@ export const PermissionsScreen: React.FC<PermissionsScreenProps> = ({
         style={sharedStyles.backButton}
         hitSlop={LAYOUT.backArrow.hitSlop}
       >
-        <Typography variant="headline" style={styles.backArrow}>
-          ←
-        </Typography>
+        <Text style={styles.backArrow}>←</Text>
       </Pressable>
 
       {/* Content */}

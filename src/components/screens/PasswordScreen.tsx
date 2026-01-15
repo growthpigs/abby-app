@@ -10,6 +10,7 @@
 import React, { useState } from 'react';
 import {
   View,
+  Text,
   StyleSheet,
   Pressable,
   TextInput,
@@ -93,9 +94,7 @@ export const PasswordScreen: React.FC<PasswordScreenProps> = ({
         style={sharedStyles.backButton}
         hitSlop={LAYOUT.backArrow.hitSlop}
       >
-        <Typography variant="headline" style={styles.backArrow}>
-          ←
-        </Typography>
+        <Text style={styles.backArrow}>←</Text>
       </Pressable>
 
       {/* Scrollable Content - uses sharedStyles.content (paddingTop: 140) */}
