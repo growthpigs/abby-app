@@ -425,17 +425,13 @@ export interface IApiService {
   passUser(userId: string): Promise<void>;
   getMatches(): Promise<Match[]>;
 
-  // Abby Voice
+  // Abby Voice (OpenAI Realtime API via WebRTC)
   createRealtimeSession(): Promise<AbbyRealtimeSession>;
   endSession(sessionId: string): Promise<void>;
-  getMemoryContext(): Promise<AbbyMemoryContext>;
-  injectMessage(sessionId: string, message: string): Promise<void>;
-  executeToolCall(request: AbbyToolExecuteRequest): Promise<AbbyToolExecuteResponse>;
   textToSpeech(request: AbbyTTSRequest): Promise<AbbyTTSResponse>;
   checkRealtimeAvailability(): Promise<boolean>;
-  sendChatMessage(request: AbbyChatRequest): Promise<AbbyChatResponse>;
 
-  // Messaging
+  // Messaging (@v2 - Not implemented in MVP)
   getThreads(): Promise<Thread[]>;
   getMessages(threadId: string, params?: PaginationParams): Promise<Message[]>;
   sendMessage(threadId: string, request: SendMessageRequest): Promise<Message>;
@@ -445,16 +441,16 @@ export interface IApiService {
   registerPhoto(request: RegisterPhotoRequest): Promise<Photo>;
   deletePhoto(photoId: string): Promise<void>;
 
-  // Safety
+  // Safety (@v2 - Not implemented in MVP)
   blockUser(request: BlockUserRequest): Promise<void>;
   reportUser(request: ReportUserRequest): Promise<void>;
   recordConsent(type: ConsentType, counterpartUserId: string): Promise<void>;
   revokeConsent(type: ConsentType, counterpartUserId: string): Promise<void>;
 
-  // Verification
+  // Verification (@v2 - Not implemented in MVP)
   getVerificationStatus(): Promise<VerificationStatus>;
   startVerification(request: StartVerificationRequest): Promise<void>;
 
-  // Payments
+  // Payments (@v2 - Not implemented in MVP)
   createPayment(request: PaymentRequest): Promise<PaymentResponse>;
 }

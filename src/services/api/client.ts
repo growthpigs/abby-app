@@ -23,13 +23,8 @@ import {
   Match,
   LikeResponse,
   AbbyRealtimeSession,
-  AbbyMemoryContext,
-  AbbyToolExecuteRequest,
-  AbbyToolExecuteResponse,
   AbbyTTSRequest,
   AbbyTTSResponse,
-  AbbyChatRequest,
-  AbbyChatResponse,
   Thread,
   Message,
   SendMessageRequest,
@@ -249,8 +244,11 @@ export const RealApiService: IApiService = {
   },
 
   // ----------------------------------------------------------
-  // ABBY VOICE
+  // ABBY VOICE (OpenAI Realtime API via WebRTC)
   // ----------------------------------------------------------
+  // NOTE: The backend uses WebRTC for voice conversations.
+  // Text chat goes through AbbyRealtimeService.sendTextMessage()
+  // which calls /abby/realtime/{session_id}/message endpoint.
 
   async createRealtimeSession(): Promise<AbbyRealtimeSession> {
     return request<AbbyRealtimeSession>('/abby/realtime/session', {
@@ -261,24 +259,6 @@ export const RealApiService: IApiService = {
   async endSession(sessionId: string): Promise<void> {
     await request<void>(`/abby/session/${sessionId}/end`, {
       method: 'POST',
-    });
-  },
-
-  async getMemoryContext(): Promise<AbbyMemoryContext> {
-    return request<AbbyMemoryContext>('/abby/memory/context');
-  },
-
-  async injectMessage(sessionId: string, message: string): Promise<void> {
-    await request<void>(`/abby/realtime/${sessionId}/message`, {
-      method: 'POST',
-      body: { message },
-    });
-  },
-
-  async executeToolCall(req: AbbyToolExecuteRequest): Promise<AbbyToolExecuteResponse> {
-    return request<AbbyToolExecuteResponse>('/abby/tools/execute', {
-      method: 'POST',
-      body: req,
     });
   },
 
@@ -298,15 +278,8 @@ export const RealApiService: IApiService = {
     }
   },
 
-  async sendChatMessage(req: AbbyChatRequest): Promise<AbbyChatResponse> {
-    return request<AbbyChatResponse>('/chat', {
-      method: 'POST',
-      body: req,
-    });
-  },
-
   // ----------------------------------------------------------
-  // MESSAGING
+  // MESSAGING (@v2 - Not implemented in MVP)
   // ----------------------------------------------------------
 
   async getThreads(): Promise<Thread[]> {
@@ -353,7 +326,7 @@ export const RealApiService: IApiService = {
   },
 
   // ----------------------------------------------------------
-  // SAFETY
+  // SAFETY (@v2 - Not implemented in MVP)
   // ----------------------------------------------------------
 
   async blockUser(req: BlockUserRequest): Promise<void> {
@@ -370,10 +343,6 @@ export const RealApiService: IApiService = {
     });
   },
 
-  /**
-   * Record consent to share info with a matched user
-   * Used for: photo_exchange, phone_exchange, payment_agreement, private_photos
-   */
   async recordConsent(type: ConsentType, counterpartUserId: string): Promise<void> {
     await request<void>('/consents', {
       method: 'POST',
@@ -384,9 +353,6 @@ export const RealApiService: IApiService = {
     });
   },
 
-  /**
-   * Revoke consent to share info with a matched user
-   */
   async revokeConsent(type: ConsentType, counterpartUserId: string): Promise<void> {
     await request<void>('/consents', {
       method: 'DELETE',
@@ -398,7 +364,7 @@ export const RealApiService: IApiService = {
   },
 
   // ----------------------------------------------------------
-  // VERIFICATION
+  // VERIFICATION (@v2 - Not implemented in MVP)
   // ----------------------------------------------------------
 
   async getVerificationStatus(): Promise<VerificationStatus> {
@@ -413,7 +379,7 @@ export const RealApiService: IApiService = {
   },
 
   // ----------------------------------------------------------
-  // PAYMENTS
+  // PAYMENTS (@v2 - Not implemented in MVP)
   // ----------------------------------------------------------
 
   async createPayment(req: PaymentRequest): Promise<PaymentResponse> {

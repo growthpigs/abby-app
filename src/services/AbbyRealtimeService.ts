@@ -357,9 +357,11 @@ export class AbbyRealtimeService {
 
     try {
       // Per Geraldo: Use /v1/abby/realtime/{session_id}/message, NOT /v1/chat
-      console.log('[AbbyRealtime] 💬 Sending message via realtime endpoint:', message);
-      console.log('[AbbyRealtime] 🎭 isDemoMode:', this.isDemoModeState);
-      console.log('[AbbyRealtime] 📍 sessionId:', this.sessionId);
+      if (__DEV__) {
+        console.log('[AbbyRealtime] 💬 Sending message via realtime endpoint:', message);
+        console.log('[AbbyRealtime] 🎭 isDemoMode:', this.isDemoModeState);
+        console.log('[AbbyRealtime] 📍 sessionId:', this.sessionId);
+      }
 
       const token = await TokenManager.getToken();
       if (!token) {
@@ -372,7 +374,7 @@ export class AbbyRealtimeService {
       }
 
       const endpoint = `${API_BASE_URL}/abby/realtime/${this.sessionId}/message`;
-      console.log('[AbbyRealtime] 📍 Full URL:', endpoint);
+      if (__DEV__) console.log('[AbbyRealtime] 📍 Full URL:', endpoint);
 
       // Use POST /v1/abby/realtime/{session_id}/message
       const response = await secureFetch(
@@ -392,10 +394,11 @@ export class AbbyRealtimeService {
 
       if (!response.ok) {
         const errorText = await response.text().catch(() => 'no response body');
-        // ALWAYS log errors for debugging - remove after fixing
-        console.error('[AbbyRealtime] ❌ Chat API failed');
-        console.error('[AbbyRealtime]   Status:', response.status);
-        console.error('[AbbyRealtime]   Full response:', errorText);
+        if (__DEV__) {
+          console.error('[AbbyRealtime] ❌ Chat API failed');
+          console.error('[AbbyRealtime]   Status:', response.status);
+          console.error('[AbbyRealtime]   Full response:', errorText);
+        }
         const fetchError: SecureFetchError = {
           code: `HTTP_${response.status}`,
           message: `HTTP ${response.status}: ${errorText.substring(0, 150)}`,

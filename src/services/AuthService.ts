@@ -178,17 +178,17 @@ export const AuthService = {
 
     // DETAILED DEBUG LOGGING - see exactly what we're sending
     if (__DEV__) {
-      if (__DEV__) console.log('=== COGNITO SIGNUP DEBUG ===');
-      if (__DEV__) console.log('Input email:', JSON.stringify(email));
-      if (__DEV__) console.log('Input firstName:', JSON.stringify(firstName));
-      if (__DEV__) console.log('Input familyName:', JSON.stringify(familyName));
-      if (__DEV__) console.log('Generated username:', username);
-      if (__DEV__) console.log('Password length:', password?.length);
-      if (__DEV__) console.log('Attributes count:', attributes.length);
+      console.log('=== COGNITO SIGNUP DEBUG ===');
+      console.log('Input email:', JSON.stringify(email));
+      console.log('Input firstName:', JSON.stringify(firstName));
+      console.log('Input familyName:', JSON.stringify(familyName));
+      console.log('Generated username:', username);
+      console.log('Password length:', password?.length);
+      console.log('Attributes count:', attributes.length);
       attributes.forEach((attr, i) => {
-        if (__DEV__) console.log(`  Attr[${i}]: ${attr.getName()} = "${attr.getValue()}"`);
+        console.log(`  Attr[${i}]: ${attr.getName()} = "${attr.getValue()}"`);
       });
-      if (__DEV__) console.log('=== END DEBUG ===');
+      console.log('=== END DEBUG ===');
     }
 
     return new Promise((resolve, reject) => {
@@ -218,8 +218,8 @@ export const AuthService = {
         }
 
         if (__DEV__) {
-          if (__DEV__) console.log('[AuthService] Signup successful');
-          if (__DEV__) console.log('[AuthService] UserSub:', result.userSub);
+          console.log('[AuthService] Signup successful');
+          console.log('[AuthService] UserSub:', result.userSub);
         }
 
         resolve({

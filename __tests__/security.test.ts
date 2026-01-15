@@ -265,10 +265,7 @@ describe('Screen Input Handling', () => {
     expect(source).toContain("replace(/[^0-9]/g, '')");
   });
 
-  test('PhoneNumberScreen sanitizes phone inputs', () => {
-    const source = readFile('src/components/screens/PhoneNumberScreen.tsx');
-    expect(source).toContain("replace(/\\D/g, '')");
-  });
+  // PhoneNumberScreen test removed - file deleted as dead code (2026-01-15)
 
   test('EmailScreen validates email format', () => {
     const source = readFile('src/components/screens/EmailScreen.tsx');
