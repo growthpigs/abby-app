@@ -24,11 +24,12 @@ import { useResponsiveLayout } from '../../hooks/useResponsiveLayout';
 import { ALL_DATA_POINTS } from '../../data/questions-schema';
 import { isValidVibeTheme, VibeColorTheme } from '../../types/vibe';
 import { abbyTTS } from '../../services/AbbyTTSService';
-import { getShaderForVibe, DEFAULT_VIBE_SHADERS } from '../../constants/vibeShaderMap';
+import { getShaderForVibe, DEFAULT_VIBE_SHADERS, VIBE_SHADER_GROUPS } from '../../constants/vibeShaderMap';
 import { questionsService, type Question, type NextQuestionResponse } from '../../services/QuestionsService';
 import { TokenManager } from '../../services/TokenManager';
 import { type VibeShift } from '../../data/questions-schema';
 import { FEATURE_FLAGS } from '../../config';
+import { analyzeQuestionSentiment } from '../../utils/questionSentiment';
 
 // Use the full 150 questions for demo/fallback mode
 const DEMO_QUESTIONS = ALL_DATA_POINTS;
@@ -75,6 +76,7 @@ export const InterviewScreen: React.FC<InterviewScreenProps> = ({
   const addMessage = useDemoStore((state) => state.addMessage);
 
   const setColorTheme = useVibeController((state) => state.setColorTheme);
+  const setComplexity = useVibeController((state) => state.setComplexity);
   const setAudioLevel = useVibeController((state) => state.setAudioLevel);
   const insets = useSafeAreaInsets();
   const layout = useResponsiveLayout();
@@ -301,15 +303,43 @@ export const InterviewScreen: React.FC<InterviewScreenProps> = ({
 
     setVoiceError(false);
 
-    // Trigger vibe_shift BEFORE speaking the question
-    if (currentQuestion.vibe_shift && isValidVibeTheme(currentQuestion.vibe_shift)) {
-      const newVibe = currentQuestion.vibe_shift as VibeColorTheme;
-      setColorTheme(newVibe);
+    // Determine vibe from manual vibe_shift OR sentiment analysis
+    let newVibe: VibeColorTheme;
+    let newShaderId: number | undefined;
 
-      if (newVibe !== currentVibe) {
-        setCurrentVibe(newVibe);
-        setVibeChangeCount((prev) => prev + 1);
+    if (currentQuestion.vibe_shift && isValidVibeTheme(currentQuestion.vibe_shift)) {
+      // Manual vibe_shift takes precedence
+      newVibe = currentQuestion.vibe_shift as VibeColorTheme;
+    } else {
+      // No manual vibe_shift - use sentiment analysis
+      const sentiment = analyzeQuestionSentiment(currentQuestion.question);
+      newVibe = sentiment.theme;
+      newShaderId = sentiment.shaderId;
+
+      // Set complexity based on sentiment intensity
+      setComplexity(sentiment.complexity);
+
+      if (__DEV__) {
+        console.log('[Interview] Sentiment:', {
+          theme: sentiment.theme,
+          complexity: sentiment.complexity,
+          shaderId: sentiment.shaderId,
+          confidence: sentiment.confidence.toFixed(2),
+        });
       }
+    }
+
+    // Apply color theme
+    setColorTheme(newVibe);
+
+    if (newVibe !== currentVibe) {
+      setCurrentVibe(newVibe);
+      setVibeChangeCount((prev) => prev + 1);
+    }
+
+    // If sentiment provided a specific shader, apply it directly
+    if (newShaderId !== undefined && onBackgroundChange) {
+      onBackgroundChange(newShaderId);
     }
 
     addMessage('abby', currentQuestion.question);
@@ -333,7 +363,7 @@ export const InterviewScreen: React.FC<InterviewScreenProps> = ({
         abbyTTS.stop();
       }
     };
-  }, [currentQuestion?.id, isLoading, setColorTheme, currentVibe]);
+  }, [currentQuestion?.id, isLoading, setColorTheme, setComplexity, currentVibe, onBackgroundChange]);
 
   // Loading state
   if (isLoading && !currentQuestion) {
