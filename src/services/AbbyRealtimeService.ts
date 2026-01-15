@@ -505,42 +505,6 @@ export class AbbyRealtimeService {
     }
   }
 
-  /**
-   * Get conversation context/memory
-   */
-  async getContext(): Promise<any> {
-    try {
-      const token = await TokenManager.getToken();
-      if (!token) {
-        throw new Error('Not authenticated');
-      }
-
-      const response = await secureFetch(`${API_BASE_URL}/abby/memory/context`, {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-        },
-        timeout: REQUEST_TIMEOUT_MS,
-      });
-
-      if (!response.ok) {
-        const fetchError: SecureFetchError = {
-          code: `HTTP_${response.status}`,
-          message: 'Failed to get context',
-          status: response.status,
-        };
-        throw fetchError;
-      }
-
-      return await response.json();
-    } catch (error) {
-      if (__DEV__) console.error('[AbbyRealtime] Failed to get context:', error);
-      if (error && typeof error === 'object' && 'code' in error) {
-        throw error;
-      }
-      throw { code: 'REQUEST_FAILED', message: 'Failed to get context' };
-    }
-  }
-
   // Getters for state
   get isConnected(): boolean {
     return this.isConnectedState;
@@ -556,11 +520,6 @@ export class AbbyRealtimeService {
 
   get isDemoMode(): boolean {
     return this.isDemoModeState;
-  }
-
-  // Update speaking state (would be triggered by WebRTC events)
-  setSpeaking(speaking: boolean): void {
-    this.isSpeakingState = speaking;
   }
 
   /**

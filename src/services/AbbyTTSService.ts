@@ -92,13 +92,10 @@ class AbbyTTSService {
       const data: TTSResponse = await response.json();
 
       // Play audio (API returns snake_case: audio_url)
-      if (data.audio_url) {
-        await this.playAudioFromUrl(data.audio_url);
-      } else if (data.audioData) {
-        await this.playAudioFromBase64(data.audioData);
-      } else {
-        throw new Error('No audio data in TTS response');
+      if (!data.audio_url) {
+        throw new Error('No audio_url in TTS response');
       }
+      await this.playAudioFromUrl(data.audio_url);
 
       if (__DEV__) console.log('[AbbyTTS] Audio playback completed');
     } catch (error) {
@@ -162,15 +159,6 @@ class AbbyTTSService {
       if (__DEV__) console.error('[AbbyTTS] Playback failed:', error);
       throw error;
     }
-  }
-
-  /**
-   * Play audio from base64 data
-   */
-  private async playAudioFromBase64(base64: string): Promise<void> {
-    // TODO: Implement base64 audio playback
-    // This requires decoding base64 and creating a blob URL
-    throw new Error('Base64 audio playback not yet implemented');
   }
 
   /**
