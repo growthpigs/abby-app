@@ -1062,6 +1062,13 @@ function AppContent() {
               const fileKey = presignData.file_key || presignData.fileKey;
               if (__DEV__) console.log('[App] Got presigned URL, fileKey:', fileKey);
 
+              // Defensive check: ensure we have required data from presign
+              if (!uploadUrl || !fileKey) {
+                if (__DEV__) console.error('[App] Presign response missing required fields:', { uploadUrl, fileKey });
+                Alert.alert('Upload Failed', 'Invalid presign response from server');
+                return;
+              }
+
               // Step 2: Upload file directly to S3 using presigned URL
               const imageUri = Platform.OS === 'ios' ? image.uri.replace('file://', '') : image.uri;
               const imageBlob = await fetch(imageUri).then(r => r.blob());
