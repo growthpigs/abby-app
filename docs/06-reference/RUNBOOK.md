@@ -1442,4 +1442,56 @@ git show HEAD:<file> | grep "<your fix pattern>"
 
 ---
 
+### Cleanup Verification Commands (2026-01-15)
+
+**Run these to verify deprecated code/patterns have been COMPLETELY removed:**
+
+```bash
+# 1. COMPLETE CLEANUP VERIFICATION (all files)
+grep -rni "<deprecated-pattern>" . --include="*.ts" --include="*.tsx" --include="*.md" | wc -l
+# Expected: 0
+# If not 0: cleanup incomplete - references still exist
+
+# 2. Source code only
+grep -rni "<deprecated-pattern>" src/ --include="*.ts" --include="*.tsx" | wc -l
+# Expected: 0
+
+# 3. Documentation only
+grep -rni "<deprecated-pattern>" docs/ features/ --include="*.md" | wc -l
+# Expected: 0 (docs often forgotten during cleanup!)
+
+# 4. Show all remaining references (for manual review)
+grep -rni "<deprecated-pattern>" . --include="*.ts" --include="*.tsx" --include="*.md"
+# Expected: no output
+
+# 5. Test suite passes (runtime verification)
+npm test
+# Expected: All tests PASS
+
+# 6. TypeScript compiles (catches import errors)
+npx tsc --noEmit
+# Expected: No errors
+```
+
+**Example: ElevenLabs Cleanup (2026-01-15)**
+```bash
+# Verify ElevenLabs completely removed (should be 0)
+grep -rni "elevenlabs" . --include="*.ts" --include="*.tsx" --include="*.md" | wc -l
+# Expected: 0 (was 72 before cleanup)
+
+# Common gotchas that still reference deprecated code:
+# - "replaced by X" comments (still mentions X)
+# - "NOT using X" comments (still mentions X)
+# - "X → Y migration" notes (still mentions X)
+# - Mock files in __mocks__/ directory
+# - Jest config moduleNameMapper entries
+```
+
+**Key Lesson:**
+> "Complete cleanup means 0 references. 'Replaced by ElevenLabs' still mentions ElevenLabs. Clean the docs, clean the code, clean the comments, clean everything."
+
+**Related:** Error pattern in `~/.claude/troubleshooting/error-patterns.md` (Complete Cleanup Verification)
+
+---
+
 *Last Updated: 2026-01-15*

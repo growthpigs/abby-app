@@ -21,6 +21,23 @@
   - Lesson committed to mem0 (multi-agent audit verification pattern)
 - [x] **Key Learning:** In multi-agent environments, always verify git state with `git show HEAD:<file>` before and after edits
 
+### 0c. ElevenLabs Complete Cleanup - COMPLETED ✅ (2026-01-15)
+- [x] **Task:** Complete removal of all ElevenLabs references from codebase and documentation
+- [x] **Discovery:** Voice system uses OpenAI Realtime API, not ElevenLabs - all ElevenLabs code was dead/unused
+- [x] **Initial Count:** 72 references across source code and documentation
+- [x] **Files Cleaned:**
+  - Source: App.tsx (removed wrapper), jest.config.js (removed mock mapping)
+  - Deleted: `__mocks__/@elevenlabs/` directory
+  - Docs: 13 markdown files cleaned (CLAUDE.md, voice-integration-spec.md, abbyorb.md, etc.)
+- [x] **Fix Applied:** TypeScript ViewStyle error in PermissionsScreen.tsx (array → spread syntax)
+- [x] **Final Count:** 0 references (verified via `grep -rni "elevenlabs" . | wc -l`)
+- [x] **Tests:** 485/485 passing, TypeScript 0 errors
+- [x] **PAI Documentation Phase:**
+  - "Complete Cleanup Verification" pattern added to `~/.claude/troubleshooting/error-patterns.md`
+  - Cleanup Verification Commands section added to `docs/06-reference/RUNBOOK.md`
+  - Lesson committed to mem0 (runtime testing vs file checks)
+- [x] **Key Learning:** "Complete cleanup" = grep returns 0. "Replaced by X" or "NOT X" still mentions X.
+
 ### 0. Text Chat API Fix - COMPLETED ✅ (2026-01-14)
 - [x] **Root Cause:** Using wrong endpoint (`/abby/realtime/{session_id}/message` only INJECTS into WebRTC)
 - [x] **Discovery:** Verified via Claude in Chrome + Swagger docs that responses flow through WebRTC, not HTTP
