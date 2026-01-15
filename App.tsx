@@ -1098,7 +1098,12 @@ function AppContent() {
         />
       )}
 
-      {/* Hamburger Menu - rendered LAST to ensure it's above all overlay screens */}
+      {/* Layer 2: UI (auth or demo screens) */}
+      <View style={styles.uiLayer} pointerEvents="box-none">
+        {authState !== 'AUTHENTICATED' ? renderAuthScreen() : renderDemoScreen()}
+      </View>
+
+      {/* Hamburger Menu - MUST be rendered LAST (after uiLayer) for correct z-index */}
       {authState === 'AUTHENTICATED' && (
         <HamburgerMenu
           onProfilePress={() => {
@@ -1118,16 +1123,13 @@ function AppContent() {
           }}
           onLogoutPress={() => {
             // Logout and return to login screen
+            if (__DEV__) console.log('[App] Logout pressed');
             AuthService.logout();
             setAuthState('LOGIN');
+            setMenuScreen('none'); // Clear any open menu screen
           }}
         />
       )}
-
-      {/* Layer 2: UI (auth or demo screens) */}
-      <View style={styles.uiLayer}>
-        {authState !== 'AUTHENTICATED' ? renderAuthScreen() : renderDemoScreen()}
-      </View>
     </View>
   );
 }

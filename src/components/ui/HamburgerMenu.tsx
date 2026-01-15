@@ -16,7 +16,6 @@ import {
   View,
   StyleSheet,
   Pressable,
-  TouchableOpacity,
   Modal,
   Animated,
   Dimensions,
@@ -129,71 +128,65 @@ export const HamburgerMenu: React.FC<HamburgerMenuProps> = ({
               </Pressable>
             </View>
 
-            {/* Menu Items - TouchableOpacity for reliable iOS touch handling */}
-            <View style={styles.menuItems}>
+            {/* Menu Items - Pressable for reliable touch handling */}
+            <View style={styles.menuItems} pointerEvents="box-none">
               {/* My Profile - /v1/me */}
-              <TouchableOpacity
+              <Pressable
                 onPress={() => handleMenuItemPress(onProfilePress)}
-                style={styles.menuItem}
-                activeOpacity={0.7}
+                style={({ pressed }) => [styles.menuItem, pressed && styles.menuItemPressed]}
               >
                 <User size={22} stroke="#FFFFFF" />
                 <Body style={styles.menuItemText}>My Profile</Body>
-              </TouchableOpacity>
+              </Pressable>
 
               {/* My Photos - /v1/photos/* */}
-              <TouchableOpacity
+              <Pressable
                 onPress={() => handleMenuItemPress(onPhotosPress)}
-                style={styles.menuItem}
-                activeOpacity={0.7}
+                style={({ pressed }) => [styles.menuItem, pressed && styles.menuItemPressed]}
               >
                 <Camera size={22} stroke="#FFFFFF" />
                 <Body style={styles.menuItemText}>My Photos</Body>
-              </TouchableOpacity>
+              </Pressable>
 
               {/* Matches - /v1/matches/candidates */}
-              <TouchableOpacity
+              <Pressable
                 onPress={() => handleMenuItemPress(onMatchesPress)}
-                style={styles.menuItem}
-                activeOpacity={0.7}
+                style={({ pressed }) => [styles.menuItem, pressed && styles.menuItemPressed]}
               >
                 <Heart size={22} stroke="#FFFFFF" />
                 <Body style={styles.menuItemText}>Interested in You</Body>
-              </TouchableOpacity>
+              </Pressable>
 
               {/* Settings - Input mode only */}
-              <TouchableOpacity
+              <Pressable
                 onPress={() => handleMenuItemPress(onSettingsPress)}
-                style={styles.menuItem}
-                activeOpacity={0.7}
+                style={({ pressed }) => [styles.menuItem, pressed && styles.menuItemPressed]}
               >
                 <Settings size={22} stroke="#FFFFFF" />
                 <Body style={styles.menuItemText}>Settings</Body>
-              </TouchableOpacity>
+              </Pressable>
 
               {/* Certification - /v1/verification */}
-              <TouchableOpacity
+              <Pressable
                 onPress={() => handleMenuItemPress(onCertificationPress)}
-                style={styles.menuItem}
-                activeOpacity={0.7}
+                style={({ pressed }) => [styles.menuItem, pressed && styles.menuItemPressed]}
               >
                 <ShieldCheck size={22} stroke="#FFFFFF" />
                 <Body style={styles.menuItemText}>Certification</Body>
-              </TouchableOpacity>
+              </Pressable>
 
               <View style={styles.divider} />
 
               {/* Log Out */}
-              <TouchableOpacity
+              <Pressable
                 onPress={() => handleMenuItemPress(onLogoutPress)}
-                style={styles.menuItem}
-                activeOpacity={0.7}
+                style={({ pressed }) => [styles.menuItem, pressed && styles.menuItemPressed]}
               >
                 <LogOut size={22} stroke="rgba(250, 128, 114, 0.9)" />
                 <Body style={[styles.menuItemText, styles.logoutText]}>
                   Log Out
                 </Body>
-              </TouchableOpacity>
+              </Pressable>
             </View>
           </BlurView>
         </Animated.View>
@@ -273,6 +266,10 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     borderRadius: 10,
     minHeight: 52, // Ensure minimum 52px touch target (Apple HIG)
+  },
+  menuItemPressed: {
+    backgroundColor: 'rgba(255, 255, 255, 0.15)',
+    opacity: 0.8,
   },
   menuItemText: {
     fontSize: 17,
