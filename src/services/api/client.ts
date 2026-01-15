@@ -213,6 +213,18 @@ export const RealApiService: IApiService = {
     });
   },
 
+  async updateMatchPreferences(data: {
+    age_min?: number;
+    age_max?: number;
+    distance_km?: number;
+    gender_preferences?: string[];
+  }): Promise<void> {
+    await request<void>('/preferences', {
+      method: 'PUT',
+      body: data,
+    });
+  },
+
   // ----------------------------------------------------------
   // QUESTIONS
   // ----------------------------------------------------------

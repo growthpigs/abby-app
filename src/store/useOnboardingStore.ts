@@ -462,17 +462,17 @@ export const useOnboardingStore = create<OnboardingStore>((set, get) => ({
       }
     }
 
-    // === SUBMIT AGE RANGE via /v1/profile/private ===
-    // Age preferences go to private settings (not public profile or answers)
+    // === SUBMIT AGE RANGE via /v1/preferences ===
+    // Age preferences go to /preferences endpoint (snake_case fields)
     if (state.ageRangeMin && state.ageRangeMax) {
       try {
-        await api.updatePrivateSettings({
-          ageMin: state.ageRangeMin,
-          ageMax: state.ageRangeMax,
+        await api.updateMatchPreferences({
+          age_min: state.ageRangeMin,
+          age_max: state.ageRangeMax,
         });
         if (__DEV__) {
           console.log('🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢');
-          console.log(`📅 [AGE RANGE TO DATABASE] ageMin=${state.ageRangeMin}, ageMax=${state.ageRangeMax}`);
+          console.log(`📅 [AGE RANGE TO DATABASE] age_min=${state.ageRangeMin}, age_max=${state.ageRangeMax}`);
           console.log('🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢');
         }
       } catch (error) {

@@ -217,12 +217,12 @@ const styles = StyleSheet.create({
   hamburgerButton: {
     position: 'absolute',
     top: 12,
-    left: 20,
-    width: 44,
-    height: 44,
+    left: 16,
+    width: 54,
+    height: 54,
     alignItems: 'center',
     justifyContent: 'center',
-    zIndex: 1000,
+    zIndex: 10001, // Above secret triggers (9999)
   },
   hamburgerButtonPressed: {
     opacity: 0.7,

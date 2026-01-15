@@ -371,6 +371,12 @@ export interface IApiService {
   getMe(): Promise<UserProfile>;
   updatePublicProfile(data: Partial<UserProfile>): Promise<UserProfile>;
   updatePrivateSettings(data: Partial<MatchPreferences>): Promise<void>;
+  updateMatchPreferences(data: {
+    age_min?: number;
+    age_max?: number;
+    distance_km?: number;
+    gender_preferences?: string[];
+  }): Promise<void>;
 
   // Questions
   getCategories(): Promise<QuestionCategory[]>;

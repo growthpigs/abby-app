@@ -262,15 +262,16 @@ export const sharedStyles = StyleSheet.create({
   },
 
   // Close Button (for modals)
+  // Position BELOW secret triggers (which end at y:80) to avoid overlap
   closeButton: {
     position: 'absolute',
-    top: 60,
-    right: 20,
-    width: 44,
-    height: 44,
+    top: 85,
+    right: 16,
+    width: 54,
+    height: 54,
     alignItems: 'center',
     justifyContent: 'center',
-    zIndex: 9999,
+    zIndex: 10000, // Above secret triggers
   },
 
   // Secret triggers (dev mode)

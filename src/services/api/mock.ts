@@ -188,6 +188,18 @@ export const MockApiService: IApiService = {
     Object.assign(MOCK_USER_PROFILE.preferences, data);
   },
 
+  async updateMatchPreferences(data: {
+    age_min?: number;
+    age_max?: number;
+    distance_km?: number;
+    gender_preferences?: string[];
+  }): Promise<void> {
+    if (__DEV__) console.log('[MockAPI] updateMatchPreferences()', data);
+    await delay(300);
+    if (data.age_min !== undefined) MOCK_USER_PROFILE.preferences.ageMin = data.age_min;
+    if (data.age_max !== undefined) MOCK_USER_PROFILE.preferences.ageMax = data.age_max;
+  },
+
   // ----------------------------------------------------------
   // QUESTIONS
   // ----------------------------------------------------------

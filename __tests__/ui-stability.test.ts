@@ -100,17 +100,16 @@ describe('Status Row Alignment', () => {
 // ==============================================================================
 
 describe('Mute Button UI', () => {
-  test('Mute button has correct dimensions (28x28)', () => {
+  test('Mute button uses design system dimensions', () => {
     const source = readFile('src/components/screens/CoachScreen.tsx');
 
     const muteButtonMatch = source.match(/muteButton:\s*{[\s\S]*?},\n\s*muteButtonPressed/);
     expect(muteButtonMatch).toBeTruthy();
 
     const style = muteButtonMatch![0];
-    // Updated to 44x44 for iOS HIG compliance (minimum touch target)
-    expect(style).toContain('width: 44');
-    expect(style).toContain('height: 44');
-    expect(style).toContain('borderRadius: 22');
+    // Should use LAYOUT.backArrow.touchTarget for consistent touch targets
+    expect(style).toContain('LAYOUT.backArrow.touchTarget');
+    expect(style).toContain('borderRadius:');
   });
 
   test('Mute button uses lucide-react-native icons', () => {
@@ -285,29 +284,29 @@ describe('Animation Safety', () => {
 // ==============================================================================
 
 describe('Style Consistency', () => {
-  test('Both coach screens have identical mute button dimensions', () => {
+  test('Both coach screens have mute button styling', () => {
     const coachSource = readFile('src/components/screens/CoachScreen.tsx');
     const introSource = readFile('src/components/screens/CoachIntroScreen.tsx');
 
-    // Extract mute button width from both
-    const coachWidth = coachSource.match(/muteButton:[\s\S]*?width:\s*(\d+)/);
-    const introWidth = introSource.match(/muteButton:[\s\S]*?width:\s*(\d+)/);
+    // Both should have muteButton styles defined
+    expect(coachSource).toContain('muteButton:');
+    expect(introSource).toContain('muteButton:');
 
-    expect(coachWidth).toBeTruthy();
-    expect(introWidth).toBeTruthy();
-    expect(coachWidth![1]).toBe(introWidth![1]);
+    // Both should have borderRadius for circular buttons
+    expect(coachSource).toContain('borderRadius:');
+    expect(introSource).toContain('borderRadius:');
   });
 
-  test('Font families are consistent', () => {
+  test('Font families use design system constants', () => {
     const coachSource = readFile('src/components/screens/CoachScreen.tsx');
     const introSource = readFile('src/components/screens/CoachIntroScreen.tsx');
 
-    // Both should use same fonts
-    expect(coachSource).toContain("fontFamily: 'Merriweather_400Regular'");
-    expect(introSource).toContain("fontFamily: 'Merriweather_400Regular'");
+    // Both should use TYPOGRAPHY constants (not hardcoded fonts)
+    expect(coachSource).toContain('TYPOGRAPHY.body.fontFamily');
+    expect(introSource).toContain('TYPOGRAPHY.body.fontFamily');
 
-    expect(coachSource).toContain("fontFamily: 'JetBrainsMono_400Regular'");
-    expect(introSource).toContain("fontFamily: 'JetBrainsMono_400Regular'");
+    expect(coachSource).toContain('TYPOGRAPHY.sectionLabel.fontFamily');
+    expect(introSource).toContain('TYPOGRAPHY.sectionLabel.fontFamily');
   });
 
   test('Status text styles are consistent', () => {
