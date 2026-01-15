@@ -30,6 +30,7 @@ import {
   withTiming,
   runOnJS,
   SharedValue,
+  Easing,
 } from 'react-native-reanimated';
 import { getShaderById } from '../../shaders/factory/registryV2';
 import { VIBE_COLORS, COMPLEXITY_VALUES } from '../../constants/colors';
@@ -49,6 +50,10 @@ const FALLBACK_COLORS = {
 const SHADER_ACCENT_COLORS = {
   pink: [0.88, 0.11, 0.28] as [number, number, number], // PASSION theme accent
 } as const;
+
+// Smooth easing for color transitions - prevents "snap" feeling
+// Uses bezier curve that starts slow, accelerates, then slows down
+const COLOR_TRANSITION_EASING = Easing.bezier(0.25, 0.1, 0.25, 1.0); // CSS ease equivalent
 
 // Ref interface for external control
 export interface VibeMatrixAnimatedRef {
@@ -150,7 +155,7 @@ export const VibeMatrixAnimated = forwardRef<VibeMatrixAnimatedRef, VibeMatrixAn
     {
       initialTheme = 'TRUST',
       initialComplexity = 'FLOW',
-      transitionDuration = 1000,
+      transitionDuration = 1500, // 1.5s morph - noticeable but not sluggish
       shaderSource: propShaderSource,
     },
     ref
@@ -241,37 +246,41 @@ export const VibeMatrixAnimated = forwardRef<VibeMatrixAnimatedRef, VibeMatrixAn
       };
     }, []);
 
+    // Animation config for smooth color morphing (not snapping)
+    const colorAnimConfig = { duration: transitionDuration, easing: COLOR_TRANSITION_EASING };
+    const complexityAnimConfig = { duration: transitionDuration * 0.8, easing: COLOR_TRANSITION_EASING };
+
     // Expose methods via ref
     useImperativeHandle(ref, () => ({
       setVibe: (theme: VibeColorTheme) => {
         const palette = VIBE_COLORS[theme];
-        colorA_r.value = withTiming(palette.primary[0], { duration: transitionDuration });
-        colorA_g.value = withTiming(palette.primary[1], { duration: transitionDuration });
-        colorA_b.value = withTiming(palette.primary[2], { duration: transitionDuration });
+        colorA_r.value = withTiming(palette.primary[0], colorAnimConfig);
+        colorA_g.value = withTiming(palette.primary[1], colorAnimConfig);
+        colorA_b.value = withTiming(palette.primary[2], colorAnimConfig);
 
-        colorB_r.value = withTiming(palette.secondary[0], { duration: transitionDuration });
-        colorB_g.value = withTiming(palette.secondary[1], { duration: transitionDuration });
-        colorB_b.value = withTiming(palette.secondary[2], { duration: transitionDuration });
+        colorB_r.value = withTiming(palette.secondary[0], colorAnimConfig);
+        colorB_g.value = withTiming(palette.secondary[1], colorAnimConfig);
+        colorB_b.value = withTiming(palette.secondary[2], colorAnimConfig);
       },
 
       setComplexity: (level: VibeComplexity) => {
         const value = COMPLEXITY_VALUES[level];
-        complexity.value = withTiming(value, { duration: transitionDuration * 0.8 });
+        complexity.value = withTiming(value, complexityAnimConfig);
       },
 
       setVibeAndComplexity: (theme: VibeColorTheme, level: VibeComplexity) => {
         const palette = VIBE_COLORS[theme];
         const complexityValue = COMPLEXITY_VALUES[level];
 
-        colorA_r.value = withTiming(palette.primary[0], { duration: transitionDuration });
-        colorA_g.value = withTiming(palette.primary[1], { duration: transitionDuration });
-        colorA_b.value = withTiming(palette.primary[2], { duration: transitionDuration });
+        colorA_r.value = withTiming(palette.primary[0], colorAnimConfig);
+        colorA_g.value = withTiming(palette.primary[1], colorAnimConfig);
+        colorA_b.value = withTiming(palette.primary[2], colorAnimConfig);
 
-        colorB_r.value = withTiming(palette.secondary[0], { duration: transitionDuration });
-        colorB_g.value = withTiming(palette.secondary[1], { duration: transitionDuration });
-        colorB_b.value = withTiming(palette.secondary[2], { duration: transitionDuration });
+        colorB_r.value = withTiming(palette.secondary[0], colorAnimConfig);
+        colorB_g.value = withTiming(palette.secondary[1], colorAnimConfig);
+        colorB_b.value = withTiming(palette.secondary[2], colorAnimConfig);
 
-        complexity.value = withTiming(complexityValue, { duration: transitionDuration * 0.8 });
+        complexity.value = withTiming(complexityValue, complexityAnimConfig);
       },
 
       setShader: (newShaderSource: string) => {
