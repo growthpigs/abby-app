@@ -935,32 +935,6 @@ function AppContent() {
         </View>
       )}
 
-      {/* Hamburger Menu (only when authenticated) */}
-      {authState === 'AUTHENTICATED' && (
-        <HamburgerMenu
-          onProfilePress={() => {
-            setMenuScreen('profile');
-          }}
-          onPhotosPress={() => {
-            setMenuScreen('photos');
-          }}
-          onMatchesPress={() => {
-            setMenuScreen('matches');
-          }}
-          onSettingsPress={() => {
-            setMenuScreen('settings');
-          }}
-          onCertificationPress={() => {
-            setMenuScreen('certification');
-          }}
-          onLogoutPress={() => {
-            // Logout and return to login screen
-            AuthService.logout();
-            setAuthState('LOGIN');
-          }}
-        />
-      )}
-
       {/* Settings Screen Overlay (Input Mode only per settings-spec.md) */}
       {menuScreen === 'settings' && (
         <SettingsScreen
@@ -1120,6 +1094,32 @@ function AppContent() {
               if (__DEV__) console.error('[App] Photo upload error:', error);
               Alert.alert('Upload Error', 'Something went wrong uploading your photo.');
             }
+          }}
+        />
+      )}
+
+      {/* Hamburger Menu - rendered LAST to ensure it's above all overlay screens */}
+      {authState === 'AUTHENTICATED' && (
+        <HamburgerMenu
+          onProfilePress={() => {
+            setMenuScreen('profile');
+          }}
+          onPhotosPress={() => {
+            setMenuScreen('photos');
+          }}
+          onMatchesPress={() => {
+            setMenuScreen('matches');
+          }}
+          onSettingsPress={() => {
+            setMenuScreen('settings');
+          }}
+          onCertificationPress={() => {
+            setMenuScreen('certification');
+          }}
+          onLogoutPress={() => {
+            // Logout and return to login screen
+            AuthService.logout();
+            setAuthState('LOGIN');
           }}
         />
       )}

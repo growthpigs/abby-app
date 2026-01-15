@@ -277,7 +277,7 @@ const styles = StyleSheet.create({
     marginBottom: 8,
     letterSpacing: 1,
     fontSize: 11,
-    color: '#FFFFFF', // WHITE - JetBrains Mono
+    color: '#6A6A6A', // Mid-gray - better contrast on light backgrounds
   },
   headline: {
     textAlign: 'center',
@@ -333,7 +333,7 @@ const styles = StyleSheet.create({
     color: '#3A3A3A', // Charcoal gray
   },
   itemDescription: {
-    color: '#FFFFFF', // White - as per design system
+    color: '#5A5A5A', // Charcoal gray - better contrast on light backgrounds
     fontSize: 11,
   },
   checkBadge: {
@@ -373,7 +373,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
   },
   incompleteText: {
-    color: '#FFFFFF', // White
+    color: '#5A5A5A', // Charcoal gray - better contrast
     textAlign: 'center',
     fontStyle: 'italic',
     fontSize: 14,

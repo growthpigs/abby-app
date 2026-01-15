@@ -16,6 +16,7 @@ import {
   View,
   StyleSheet,
   Pressable,
+  TouchableOpacity,
   Modal,
   Animated,
   Dimensions,
@@ -115,7 +116,7 @@ export const HamburgerMenu: React.FC<HamburgerMenuProps> = ({
             { transform: [{ translateX: slideAnim }] },
           ]}
         >
-          <BlurView intensity={80} tint="light" style={styles.menuContent}>
+          <BlurView intensity={80} tint="light" style={styles.menuContent} pointerEvents="box-none">
             {/* Header */}
             <View style={styles.menuHeader}>
               <Caption style={styles.menuTitle}>MENU</Caption>
@@ -128,89 +129,71 @@ export const HamburgerMenu: React.FC<HamburgerMenuProps> = ({
               </Pressable>
             </View>
 
-            {/* Menu Items - pointerEvents box-none allows touches to pass through container */}
-            <View style={styles.menuItems} pointerEvents="box-none">
+            {/* Menu Items - TouchableOpacity for reliable iOS touch handling */}
+            <View style={styles.menuItems}>
               {/* My Profile - /v1/me */}
-              <Pressable
+              <TouchableOpacity
                 onPress={() => handleMenuItemPress(onProfilePress)}
-                style={({ pressed }) => [
-                  styles.menuItem,
-                  pressed && styles.menuItemPressed,
-                ]}
-                hitSlop={{ top: 8, bottom: 8, left: 12, right: 12 }}
+                style={styles.menuItem}
+                activeOpacity={0.7}
               >
                 <User size={22} stroke="#FFFFFF" />
                 <Body style={styles.menuItemText}>My Profile</Body>
-              </Pressable>
+              </TouchableOpacity>
 
               {/* My Photos - /v1/photos/* */}
-              <Pressable
+              <TouchableOpacity
                 onPress={() => handleMenuItemPress(onPhotosPress)}
-                style={({ pressed }) => [
-                  styles.menuItem,
-                  pressed && styles.menuItemPressed,
-                ]}
-                hitSlop={{ top: 8, bottom: 8, left: 12, right: 12 }}
+                style={styles.menuItem}
+                activeOpacity={0.7}
               >
                 <Camera size={22} stroke="#FFFFFF" />
                 <Body style={styles.menuItemText}>My Photos</Body>
-              </Pressable>
+              </TouchableOpacity>
 
               {/* Matches - /v1/matches/candidates */}
-              <Pressable
+              <TouchableOpacity
                 onPress={() => handleMenuItemPress(onMatchesPress)}
-                style={({ pressed }) => [
-                  styles.menuItem,
-                  pressed && styles.menuItemPressed,
-                ]}
-                hitSlop={{ top: 8, bottom: 8, left: 12, right: 12 }}
+                style={styles.menuItem}
+                activeOpacity={0.7}
               >
                 <Heart size={22} stroke="#FFFFFF" />
                 <Body style={styles.menuItemText}>Interested in You</Body>
-              </Pressable>
+              </TouchableOpacity>
 
               {/* Settings - Input mode only */}
-              <Pressable
+              <TouchableOpacity
                 onPress={() => handleMenuItemPress(onSettingsPress)}
-                style={({ pressed }) => [
-                  styles.menuItem,
-                  pressed && styles.menuItemPressed,
-                ]}
-                hitSlop={{ top: 8, bottom: 8, left: 12, right: 12 }}
+                style={styles.menuItem}
+                activeOpacity={0.7}
               >
                 <Settings size={22} stroke="#FFFFFF" />
                 <Body style={styles.menuItemText}>Settings</Body>
-              </Pressable>
+              </TouchableOpacity>
 
               {/* Certification - /v1/verification */}
-              <Pressable
+              <TouchableOpacity
                 onPress={() => handleMenuItemPress(onCertificationPress)}
-                style={({ pressed }) => [
-                  styles.menuItem,
-                  pressed && styles.menuItemPressed,
-                ]}
-                hitSlop={{ top: 8, bottom: 8, left: 12, right: 12 }}
+                style={styles.menuItem}
+                activeOpacity={0.7}
               >
                 <ShieldCheck size={22} stroke="#FFFFFF" />
                 <Body style={styles.menuItemText}>Certification</Body>
-              </Pressable>
+              </TouchableOpacity>
 
               <View style={styles.divider} />
 
               {/* Log Out */}
-              <Pressable
+              <TouchableOpacity
                 onPress={() => handleMenuItemPress(onLogoutPress)}
-                style={({ pressed }) => [
-                  styles.menuItem,
-                  pressed && styles.menuItemPressed,
-                ]}
-                hitSlop={{ top: 8, bottom: 8, left: 12, right: 12 }}
+                style={styles.menuItem}
+                activeOpacity={0.7}
               >
-                <LogOut size={22} stroke="rgba(239, 68, 68, 0.8)" />
+                <LogOut size={22} stroke="rgba(250, 128, 114, 0.9)" />
                 <Body style={[styles.menuItemText, styles.logoutText]}>
                   Log Out
                 </Body>
-              </Pressable>
+              </TouchableOpacity>
             </View>
           </BlurView>
         </Animated.View>
@@ -280,26 +263,23 @@ const styles = StyleSheet.create({
   },
 
   menuItems: {
-    gap: 2, // Reduced gap since items have more padding now
+    gap: 8, // Adequate spacing between 52px tall items
   },
   menuItem: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 14,
-    paddingVertical: 16, // Increased for better touch target (was 12)
-    paddingHorizontal: 12, // Increased for better touch target (was 8)
+    paddingVertical: 16,
+    paddingHorizontal: 12,
     borderRadius: 10,
-    minHeight: 52, // Ensure minimum 52px touch target
-  },
-  menuItemPressed: {
-    backgroundColor: 'rgba(0, 0, 0, 0.05)',
+    minHeight: 52, // Ensure minimum 52px touch target (Apple HIG)
   },
   menuItemText: {
     fontSize: 17,
     color: '#FFFFFF', // White
   },
   logoutText: {
-    color: 'rgba(239, 68, 68, 0.9)',
+    color: 'rgba(250, 128, 114, 0.9)', // Salmon - lighter than red, blends with background
   },
 
   divider: {
