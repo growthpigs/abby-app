@@ -294,7 +294,7 @@ export const MatchesScreen: React.FC<MatchesScreenProps> = ({
   if (selectedMatch) {
     return (
       <View style={styles.container}>
-        <BlurView intensity={90} tint="light" style={styles.blurContainer}>
+        <BlurView intensity={80} tint="light" style={styles.blurContainer}>
           {/* Detail Header */}
           <View style={styles.header}>
             <Pressable onPress={handleBackToList} style={styles.backButton}>
@@ -384,7 +384,7 @@ export const MatchesScreen: React.FC<MatchesScreenProps> = ({
   // List View
   return (
     <View style={styles.container}>
-      <BlurView intensity={90} tint="light" style={styles.blurContainer}>
+      <BlurView intensity={80} tint="light" style={styles.blurContainer}>
         {/* Header */}
         <View style={styles.header}>
           <Caption style={styles.headerTitle}>INTERESTED IN YOU</Caption>

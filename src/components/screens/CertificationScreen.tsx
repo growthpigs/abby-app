@@ -168,7 +168,7 @@ export const CertificationScreen: React.FC<CertificationScreenProps> = ({
       <View style={styles.container}>
         <GlassSheet height={0.8}>
           <View style={styles.loadingContainer}>
-            <ActivityIndicator size="large" color="#5A5A5A" />
+            <ActivityIndicator size="large" color="rgba(255,255,255,0.8)" />
             <Body style={styles.loadingText}>Loading verification status...</Body>
           </View>
         </GlassSheet>
@@ -211,7 +211,7 @@ export const CertificationScreen: React.FC<CertificationScreenProps> = ({
                       <Caption style={styles.checkText}>✓</Caption>
                     </View>
                   ) : verifyingType === item.type ? (
-                    <ActivityIndicator size="small" color="#5A5A5A" />
+                    <ActivityIndicator size="small" color="rgba(255,255,255,0.8)" />
                   ) : null}
                 </View>
                 <Caption style={styles.itemDescription}>{item.description}</Caption>
@@ -269,27 +269,27 @@ const styles = StyleSheet.create({
     gap: 16,
   },
   loadingText: {
-    color: '#4A4A4A', // Charcoal gray
+    color: '#FFFFFF', // White
   },
   label: {
     textAlign: 'center',
     marginTop: 33, // Pushed down 25px from original 8
     marginBottom: 8,
-    letterSpacing: 3,
-    fontSize: 11, // Reduced 1pt
-    color: '#6B6B6B', // Charcoal gray
+    letterSpacing: 1, // Reduced
+    fontSize: 11,
+    color: '#FFFFFF', // White
   },
   headline: {
     textAlign: 'center',
     marginBottom: 8,
-    fontSize: 23, // Reduced 1pt
-    color: '#3A3A3A', // Dark charcoal
+    fontSize: 23,
+    color: '#FFFFFF', // White
   },
   description: {
     textAlign: 'center',
-    color: '#5A5A5A', // Charcoal gray
-    lineHeight: 21, // Reduced
-    fontSize: 14, // Reduced 1pt
+    color: 'rgba(255, 255, 255, 0.8)', // White with slight transparency
+    lineHeight: 21,
+    fontSize: 14,
     paddingHorizontal: 16,
     marginBottom: 24,
   },
@@ -307,15 +307,15 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    backgroundColor: 'rgba(0, 0, 0, 0.03)',
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
     borderRadius: 12,
-    padding: 15, // Slightly smaller
+    padding: 15,
     borderWidth: 1,
-    borderColor: 'rgba(0, 0, 0, 0.08)',
+    borderColor: 'rgba(255, 255, 255, 0.2)',
   },
   verificationItemVerified: {
-    backgroundColor: 'rgba(16, 185, 129, 0.1)',
-    borderColor: 'rgba(16, 185, 129, 0.3)',
+    backgroundColor: 'rgba(16, 185, 129, 0.2)',
+    borderColor: 'rgba(16, 185, 129, 0.4)',
   },
   itemContent: {
     flex: 1,
@@ -328,12 +328,12 @@ const styles = StyleSheet.create({
   },
   itemLabel: {
     fontWeight: '600',
-    fontSize: 15, // Reduced 1pt
-    color: '#3A3A3A', // Dark charcoal
+    fontSize: 15,
+    color: '#FFFFFF', // White
   },
   itemDescription: {
-    color: '#6B6B6B', // Charcoal gray
-    fontSize: 11, // Reduced 1pt
+    color: 'rgba(255, 255, 255, 0.7)', // White with transparency
+    fontSize: 11,
   },
   checkBadge: {
     width: 20,
@@ -349,10 +349,12 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
   },
   verifyButton: {
-    color: '#3B82F6', // Blue accent for action
+    fontFamily: 'Barlow_600SemiBold', // Barlow for buttons
+    color: '#FFFFFF', // White
     fontWeight: '600',
-    fontSize: 11, // Reduced 1pt
-    letterSpacing: 1,
+    fontSize: 12,
+    letterSpacing: 0.5,
+    textTransform: 'uppercase',
   },
   progressContainer: {
     alignItems: 'center',
@@ -360,8 +362,8 @@ const styles = StyleSheet.create({
     marginBottom: 14,
   },
   progressText: {
-    color: '#7A7A7A', // Charcoal gray
-    fontSize: 12, // Reduced 1pt
+    color: '#FFFFFF', // White
+    fontSize: 12,
   },
   buttonContainer: {
     alignItems: 'center',

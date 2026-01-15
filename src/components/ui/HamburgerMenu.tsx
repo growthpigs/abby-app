@@ -115,7 +115,7 @@ export const HamburgerMenu: React.FC<HamburgerMenuProps> = ({
             { transform: [{ translateX: slideAnim }] },
           ]}
         >
-          <BlurView intensity={90} tint="light" style={styles.menuContent}>
+          <BlurView intensity={80} tint="light" style={styles.menuContent}>
             {/* Header */}
             <View style={styles.menuHeader}>
               <Caption style={styles.menuTitle}>MENU</Caption>
