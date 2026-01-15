@@ -197,7 +197,7 @@ export const PhotosScreen: React.FC<PhotosScreenProps> = ({
 
   return (
     <View style={styles.container}>
-      <BlurView intensity={90} tint="light" style={styles.blurContainer}>
+      <BlurView intensity={80} tint="light" style={styles.blurContainer}>
         {/* Header */}
         <View style={[styles.header, { paddingTop: layout.paddingTop, paddingHorizontal: horizontalPadding }]}>
           <Caption style={styles.headerTitle}>MY PHOTOS</Caption>

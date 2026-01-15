@@ -116,8 +116,8 @@ const styles = StyleSheet.create({
     fontFamily: 'JetBrainsMono_400Regular',
     fontSize: 11,
     fontWeight: '400',
-    letterSpacing: 2,
-    color: 'rgba(255, 255, 255, 0.6)',
+    letterSpacing: 1, // Reduced from 2
+    color: '#FFFFFF', // White
     textTransform: 'uppercase',
   },
 

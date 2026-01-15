@@ -370,10 +370,10 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
   },
   incompleteText: {
-    color: '#8A8A8A', // Charcoal gray
+    color: '#FFFFFF', // White
     textAlign: 'center',
     fontStyle: 'italic',
-    fontSize: 14, // Reduced 1pt
+    fontSize: 14,
   },
   closeButton: {
     position: 'absolute',

@@ -124,7 +124,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
 
   return (
     <View style={styles.container}>
-      <BlurView intensity={90} tint="light" style={styles.blurContainer}>
+      <BlurView intensity={80} tint="light" style={styles.blurContainer}>
         {/* Header */}
         <View style={[styles.header, { paddingTop: layout.paddingTop }]}>
           <Caption style={styles.headerTitle}>SETTINGS</Caption>
