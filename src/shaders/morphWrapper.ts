@@ -161,6 +161,17 @@ export function wrapWithMorph(shaderSource: string): string {
   return half4(half3(waterColor), half(morphAlpha));`
   );
 
+  // FRAGILE CODE SAFEGUARD: Warn if morph injection failed
+  // The regex patterns above are brittle - if shader format changes, this catches it
+  const morphInjected = finalShader.includes('getMorphAlpha');
+  if (!morphInjected && typeof __DEV__ !== "undefined" && __DEV__) {
+    console.warn(
+      '[morphWrapper] MORPH INJECTION FAILED - shader return statement not recognized.\n' +
+      'Expected patterns: half4(color, 1.0), half4(half3(color), 1.0), or half4(half3(waterColor), 1.0)\n' +
+      'Transitions will NOT work. Check shader source format.'
+    );
+  }
+
   return finalShader;
 }
 

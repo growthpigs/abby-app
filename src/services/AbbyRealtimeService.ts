@@ -2,7 +2,7 @@
  * AbbyRealtimeService - OpenAI Realtime API Integration
  *
  * Handles real-time voice conversations with Abby using the client's backend.
- * Replaces ElevenLabs integration with client's OpenAI Realtime API.
+ * Uses OpenAI Realtime API (WebRTC architecture handled by backend).
  *
  * API Endpoints:
  * - POST /v1/abby/realtime/session - Create WebRTC/WebSocket session
@@ -59,6 +59,23 @@ export interface RealtimeSessionResponse {
   wsUrl?: string; // WebSocket URL if provided
   rtcConfig?: RTCConfiguration; // WebRTC config if provided
   expiresAt: string;
+}
+
+/**
+ * Raw session response from backend - may use different field names
+ * Backend may return sessionId, id, session_id, etc.
+ */
+interface RawSessionResponseData {
+  sessionId?: string;
+  id?: string;
+  session_id?: string;
+  session?: string;
+  uuid?: string;
+  client_secret?: string;
+  wsUrl?: string;
+  rtcConfig?: RTCConfiguration;
+  expiresAt?: string;
+  [key: string]: unknown; // Allow additional fields
 }
 
 export interface RealtimeMessageRequest {
@@ -158,7 +175,8 @@ export class AbbyRealtimeService {
           'Authorization': `Bearer ${token}`,
         },
         body: JSON.stringify({
-          // TODO: Add session config if needed
+          // Session config intentionally empty - backend handles defaults
+          // Add fields here when Nathan/Geraldo specify them (e.g., voice_id, language)
         }),
         timeout: REQUEST_TIMEOUT_MS,
       });
@@ -175,7 +193,7 @@ export class AbbyRealtimeService {
         return this.startDemoMode();
       }
 
-      const data: any = await response.json();
+      const data = await response.json() as RawSessionResponseData;
       const receivedFields = Object.keys(data).join(', ') || 'empty';
 
       // Debug: Log the actual response to see what field the backend is using
@@ -324,10 +342,9 @@ export class AbbyRealtimeService {
   /**
    * Send a text message to Abby
    *
-   * Uses POST /v1/chat with use_abby_fallback: true for text conversations.
-   * This endpoint returns Abby's response directly via HTTP (unlike the
-   * /abby/realtime/{session_id}/message endpoint which only INJECTS text
-   * into a WebRTC/WebSocket session).
+   * Uses POST /v1/abby/realtime/{session_id}/message endpoint.
+   * NOTE: Full WebRTC integration is handled by Geraldo (backend).
+   * This method sends text and attempts to parse response from HTTP.
    */
   async sendTextMessage(message: string): Promise<void> {
     // Demo mode - generate a simulated response
@@ -347,16 +364,7 @@ export class AbbyRealtimeService {
       return;
     }
 
-    // NOTE: We use /v1/chat for text mode, NOT /v1/abby/realtime/{session_id}/message
-    // The realtime/message endpoint only INJECTS text into WebRTC sessions.
-    // The /v1/chat endpoint actually returns Abby's response via HTTP.
-    //
-    // API Contract (from types.ts):
-    //   Request:  { message: string, conversationId?: string }
-    //   Response: { response: string, conversationId: string, suggestedActions?: string[] }
-
     try {
-      // Per Geraldo: Use /v1/abby/realtime/{session_id}/message, NOT /v1/chat
       if (__DEV__) {
         console.log('[AbbyRealtime] 💬 Sending message via realtime endpoint:', message);
         console.log('[AbbyRealtime] 🎭 isDemoMode:', this.isDemoModeState);
@@ -489,7 +497,9 @@ export class AbbyRealtimeService {
     this.isMutedState = !this.isMutedState;
     if (__DEV__) console.log('[AbbyRealtime] Muted:', this.isMutedState);
 
-    // TODO: Implement actual mute/unmute logic with WebRTC
+    // NOTE: WebRTC mute requires mediaStream.getAudioTracks()[0].enabled = false
+    // Blocked on: Geraldo's WebRTC integration (sets up RTCPeerConnection)
+    // For now, mute state is tracked but doesn't affect audio stream
   }
 
   /**
@@ -565,7 +575,7 @@ export class AbbyRealtimeService {
 
 /**
  * React hook wrapper for AbbyRealtimeService
- * Maintains same interface as useAbbyAgent (ElevenLabs) for drop-in replacement
+ * Provides conversation state management for screens.
  */
 import { useState, useCallback, useRef, useEffect } from 'react';
 

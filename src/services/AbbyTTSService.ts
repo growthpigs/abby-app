@@ -13,7 +13,7 @@
  */
 
 import { TokenManager } from './TokenManager';
-import { Audio } from 'expo-av';
+import { Audio, AVPlaybackStatus } from 'expo-av';
 import { API_CONFIG } from '../config';
 
 const API_BASE_URL = API_CONFIG.API_URL;
@@ -164,8 +164,8 @@ class AbbyTTSService {
   /**
    * Handle playback status updates
    */
-  private onPlaybackStatusUpdate(status: any): void {
-    if (status.didJustFinish) {
+  private onPlaybackStatusUpdate(status: AVPlaybackStatus): void {
+    if (status.isLoaded && status.didJustFinish) {
       this.stop();
     }
   }

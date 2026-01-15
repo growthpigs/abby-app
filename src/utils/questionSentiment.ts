@@ -176,8 +176,9 @@ export function analyzeQuestionSentiment(questionText: string): SentimentResult 
   const shaderIndex = Math.floor(intensity * (shaderGroup.length - 0.01));
   const shaderId = shaderGroup[shaderIndex] ?? shaderGroup[0];
 
-  // 6. Calculate confidence
-  const confidence = totalScore > 0 ? Math.min(1, maxScore / Math.max(totalScore, 1)) : 0.5;
+  // 6. Calculate confidence (how dominant the winning theme is)
+  // If no keywords matched, default to 0.5 (neutral confidence)
+  const confidence = totalScore > 0 ? Math.min(1, maxScore / totalScore) : 0.5;
 
   return {
     theme: winningTheme,

@@ -1,5 +1,5 @@
 /**
- * CoachIntroScreen - Abby greets user with ElevenLabs Agent
+ * CoachIntroScreen - Abby greets user via OpenAI Realtime API
  *
  * First screen in the demo flow. Abby initiates conversation.
  * User can tap "Start Interview" to advance to questions.

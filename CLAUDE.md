@@ -197,6 +197,7 @@ ABBY is a high-end matchmaking app where users interact with an AI entity (Abby)
 | PRD | `docs/PRD.md` | Product requirements, user stories, success metrics |
 | FSD | `docs/FSD.md` | Technical spec, state machine, shader logic |
 | Design System | `docs/DESIGN-SYSTEM.md` | Colors, typography, components, motion |
+| Tech Debt | `docs/TECH-DEBT.md` | Fragile patterns, V2 refactoring queue |
 
 ### Feature Docs
 

@@ -45,6 +45,11 @@ const FALLBACK_COLORS = {
   secondary: 'rgb(96, 165, 250)', // Lighter blue
 };
 
+// Shader accent colors (RGB normalized 0-1)
+const SHADER_ACCENT_COLORS = {
+  pink: [0.88, 0.11, 0.28] as [number, number, number], // PASSION theme accent
+} as const;
+
 // Ref interface for external control
 export interface VibeMatrixAnimatedRef {
   setVibe: (theme: VibeColorTheme) => void;
@@ -83,7 +88,6 @@ const ShaderLayer = React.memo(({
 }) => {
   const { width, height } = useWindowDimensions();
   const clock = useClock();
-  const pinkAccent: [number, number, number] = [0.88, 0.11, 0.28];
 
   // Wrap shader with morph capability and compile
   const shader = useMemo(() => {
@@ -106,7 +110,7 @@ const ShaderLayer = React.memo(({
       u_complexity: complexity.value,
       u_colorA: [colors.colorA_r.value, colors.colorA_g.value, colors.colorA_b.value],
       u_colorB: [colors.colorB_r.value, colors.colorB_g.value, colors.colorB_b.value],
-      u_colorC: pinkAccent,
+      u_colorC: SHADER_ACCENT_COLORS.pink,
       u_morphProgress: morphProgress.value,
       u_morphDirection: morphDirection,
     };

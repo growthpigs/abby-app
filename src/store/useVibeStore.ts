@@ -4,7 +4,20 @@
  * Controls the visual state of Abby's background.
  * Other components subscribe to this store to know
  * what color/complexity to render.
+ *
+ * @deprecated FRAGILE: This store overlaps with useVibeController.
+ * Prefer useVibeController for new code. See TECH-DEBT.md for details.
+ * TODO(V2): Consolidate into single vibe state store.
  */
+
+// DEV WARNING: Alert developers about dual-store fragility
+if (typeof __DEV__ !== 'undefined' && __DEV__) {
+  console.warn(
+    '[useVibeStore] DUAL STORE WARNING: This store overlaps with useVibeController.\n' +
+    'Both manage colorTheme/complexity but do NOT sync.\n' +
+    'Prefer useVibeController for new features. See TECH-DEBT.md.'
+  );
+}
 
 import { create } from 'zustand';
 import {

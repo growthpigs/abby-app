@@ -57,10 +57,7 @@ export const COGNITO_CONFIG = {
 
 export const VOICE_CONFIG = {
   /**
-   * Voice provider: 'openai_realtime' (backend) or 'elevenlabs' (legacy)
-   *
-   * The real backend uses OpenAI Realtime API via WebRTC.
-   * ElevenLabs code exists for demo branch only.
+   * Voice provider: OpenAI Realtime API via backend WebRTC.
    */
   PROVIDER: 'openai_realtime' as const,
 

@@ -276,6 +276,7 @@ export async function secureFetchJSON<T = unknown>(
       response = await secureFetch(url, {
         ...fetchOptions,
         headers,
+        skipTokenRefresh: true, // Prevent infinite refresh loop
       });
     }
   }

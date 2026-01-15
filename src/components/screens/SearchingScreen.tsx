@@ -65,7 +65,7 @@ export const SearchingScreen: React.FC<SearchingScreenProps> = ({
   // Set orb to engaged state during search
   useEffect(() => {
     setOrbEnergy('ENGAGED');
-  }, []);
+  }, [setOrbEnergy]);
 
   // Secret navigation handlers
   const handleSecretBack = useCallback(() => {
@@ -90,7 +90,7 @@ export const SearchingScreen: React.FC<SearchingScreenProps> = ({
 
       return () => clearTimeout(advanceTimer);
     }
-  }, [statusIndex]);
+  }, [statusIndex, setMatchData, setFromAppState, setOrbEnergy, advance]);
 
   return (
     <View style={styles.container}>
@@ -196,7 +196,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
 
-  // Secret navigation triggers
+  // Secret navigation triggers (borders only visible in dev)
   secretBackTrigger: {
     position: 'absolute',
     top: 10,
@@ -204,8 +204,10 @@ const styles = StyleSheet.create({
     width: 70,
     height: 70,
     zIndex: 9999,
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.5)',
+    ...(typeof __DEV__ !== 'undefined' && __DEV__ ? {
+      borderWidth: 1,
+      borderColor: 'rgba(255, 255, 255, 0.5)',
+    } : {}),
     borderRadius: 8,
   },
   secretMiddleTrigger: {
@@ -216,8 +218,10 @@ const styles = StyleSheet.create({
     width: 70,
     height: 70,
     zIndex: 9999,
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.5)',
+    ...(typeof __DEV__ !== 'undefined' && __DEV__ ? {
+      borderWidth: 1,
+      borderColor: 'rgba(255, 255, 255, 0.5)',
+    } : {}),
     borderRadius: 8,
   },
   secretForwardTrigger: {
@@ -227,8 +231,10 @@ const styles = StyleSheet.create({
     width: 70,
     height: 70,
     zIndex: 9999,
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.5)',
+    ...(typeof __DEV__ !== 'undefined' && __DEV__ ? {
+      borderWidth: 1,
+      borderColor: 'rgba(255, 255, 255, 0.5)',
+    } : {}),
     borderRadius: 8,
   },
 });

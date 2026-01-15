@@ -23,6 +23,23 @@ const ONBOARDING_VERSION = 2; // Bumped for screen identifier migration
 // Session timeout: 30 days
 const ONBOARDING_TIMEOUT_MS = 30 * 24 * 60 * 60 * 1000;
 
+// Input validation limits
+const MAX_DISPLAY_NAME_LENGTH = 100;
+const MAX_GENDER_LENGTH = 50;
+
+/**
+ * Sanitize user input for API submission
+ * - Trims whitespace
+ * - Enforces length limit
+ * - Returns empty string if input is invalid
+ */
+function sanitizeInput(input: string | undefined | null, maxLength: number): string {
+  if (!input || typeof input !== 'string') return '';
+  const trimmed = input.trim();
+  if (trimmed.length === 0) return '';
+  return trimmed.length > maxLength ? trimmed.substring(0, maxLength) : trimmed;
+}
+
 /**
  * Screen identifiers - resilient to screen reordering
  * Using string identifiers instead of indices prevents recovery bugs
@@ -294,9 +311,10 @@ export const useOnboardingStore = create<OnboardingStore>((set, get) => ({
 
     // === FIELDS ACCEPTED BY /v1/profile/public ===
 
-    // display_name (with input sanitization)
-    if (state.nickname?.trim()) {
-      payload.display_name = state.nickname.trim();
+    // display_name (sanitized with length limit)
+    const sanitizedName = sanitizeInput(state.nickname, MAX_DISPLAY_NAME_LENGTH);
+    if (sanitizedName) {
+      payload.display_name = sanitizedName;
     }
 
     // birthday (YYYY-MM-DD format)
@@ -304,9 +322,10 @@ export const useOnboardingStore = create<OnboardingStore>((set, get) => ({
       payload.birthday = state.dateOfBirth.toISOString().split('T')[0];
     }
 
-    // gender (with input sanitization)
-    if (state.gender?.trim()) {
-      payload.gender = state.gender.trim();
+    // gender (sanitized with length limit)
+    const sanitizedGender = sanitizeInput(state.gender, MAX_GENDER_LENGTH);
+    if (sanitizedGender) {
+      payload.gender = sanitizedGender;
     }
 
     // === FIELDS REJECTED BY API (DO NOT SEND) ===

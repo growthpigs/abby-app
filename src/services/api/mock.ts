@@ -20,13 +20,8 @@ import {
   Match,
   LikeResponse,
   AbbyRealtimeSession,
-  AbbyMemoryContext,
-  AbbyToolExecuteRequest,
-  AbbyToolExecuteResponse,
   AbbyTTSRequest,
   AbbyTTSResponse,
-  AbbyChatRequest,
-  AbbyChatResponse,
   Thread,
   Message,
   SendMessageRequest,
@@ -316,7 +311,7 @@ export const MockApiService: IApiService = {
   },
 
   // ----------------------------------------------------------
-  // ABBY VOICE
+  // ABBY VOICE (OpenAI Realtime API via WebRTC)
   // ----------------------------------------------------------
 
   async createRealtimeSession(): Promise<AbbyRealtimeSession> {
@@ -335,34 +330,6 @@ export const MockApiService: IApiService = {
     await delay(200);
   },
 
-  async getMemoryContext(): Promise<AbbyMemoryContext> {
-    if (__DEV__) console.log('[MockAPI] getMemoryContext()');
-    await delay(400);
-    return {
-      entries: [
-        {
-          type: 'user_fact',
-          content: 'Looking for a meaningful connection',
-          timestamp: new Date().toISOString(),
-        },
-      ],
-      summary: 'New user just starting their journey',
-    };
-  },
-
-  async injectMessage(sessionId: string, message: string): Promise<void> {
-    if (__DEV__) console.log('[MockAPI] injectMessage()', sessionId, message);
-    await delay(200);
-  },
-
-  async executeToolCall(request: AbbyToolExecuteRequest): Promise<AbbyToolExecuteResponse> {
-    if (__DEV__) console.log('[MockAPI] executeToolCall()', request);
-    await delay(300);
-    return {
-      result: { success: true },
-    };
-  },
-
   async textToSpeech(request: AbbyTTSRequest): Promise<AbbyTTSResponse> {
     if (__DEV__) console.log('[MockAPI] textToSpeech()', request);
     await delay(500);
@@ -379,25 +346,8 @@ export const MockApiService: IApiService = {
     return false;
   },
 
-  async sendChatMessage(request: AbbyChatRequest): Promise<AbbyChatResponse> {
-    if (__DEV__) console.log('[MockAPI] sendChatMessage()', request);
-    await delay(800);
-
-    // Simple mock responses
-    const responses = [
-      "That's a thoughtful answer. Tell me more about what matters to you.",
-      "I appreciate you sharing that with me. What else would you like to explore?",
-      "Interesting! Let's dig a little deeper into that.",
-    ];
-
-    return {
-      response: responses[Math.floor(Math.random() * responses.length)],
-      conversationId: request.conversationId || generateId('conv'),
-    };
-  },
-
   // ----------------------------------------------------------
-  // MESSAGING
+  // MESSAGING (@v2 - Not implemented in MVP)
   // ----------------------------------------------------------
 
   async getThreads(): Promise<Thread[]> {
@@ -471,7 +421,7 @@ export const MockApiService: IApiService = {
   },
 
   // ----------------------------------------------------------
-  // SAFETY
+  // SAFETY (@v2 - Not implemented in MVP)
   // ----------------------------------------------------------
 
   async blockUser(request: BlockUserRequest): Promise<void> {
@@ -495,7 +445,7 @@ export const MockApiService: IApiService = {
   },
 
   // ----------------------------------------------------------
-  // VERIFICATION
+  // VERIFICATION (@v2 - Not implemented in MVP)
   // ----------------------------------------------------------
 
   async getVerificationStatus(): Promise<VerificationStatus> {
@@ -515,7 +465,7 @@ export const MockApiService: IApiService = {
   },
 
   // ----------------------------------------------------------
-  // PAYMENTS
+  // PAYMENTS (@v2 - Not implemented in MVP)
   // ----------------------------------------------------------
 
   async createPayment(request: PaymentRequest): Promise<PaymentResponse> {
