@@ -195,13 +195,18 @@ export const InterviewScreen: React.FC<InterviewScreenProps> = ({
   ).current;
 
   // Animate sheet in on mount (to 50%)
+  // Small delay ensures component is fully mounted before animation starts
   useEffect(() => {
-    Animated.spring(translateY, {
-      toValue: SCREEN_HEIGHT * (1 - DEFAULT_SNAP),
-      useNativeDriver: true,
-      damping: 50,
-      stiffness: 400,
-    }).start();
+    const timer = setTimeout(() => {
+      Animated.spring(translateY, {
+        toValue: SCREEN_HEIGHT * (1 - DEFAULT_SNAP),
+        useNativeDriver: true,
+        damping: 50,
+        stiffness: 400,
+      }).start();
+    }, 100);
+
+    return () => clearTimeout(timer);
   }, []);
 
   // Initialize: Check auth and load first question

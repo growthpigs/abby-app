@@ -211,7 +211,7 @@ export const PhotosScreen: React.FC<PhotosScreenProps> = ({
           style={sharedStyles.closeButton}
           hitSlop={10}
         >
-          <X size={24} stroke={COLORS.white[95]} />
+          <X size={24} stroke={COLORS.charcoal.medium} />
         </Pressable>
 
         {/* Photo Grid */}

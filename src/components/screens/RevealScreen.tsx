@@ -119,7 +119,7 @@ export const RevealScreen: React.FC<RevealScreenProps> = ({
 
   return (
     <View style={styles.container}>
-      <GlassSheet height={0.75}>
+      <GlassSheet height={1}>
         {/* Celebration header */}
         <Caption style={styles.celebration}>YOUR MATCH</Caption>
 

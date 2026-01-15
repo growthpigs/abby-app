@@ -166,7 +166,7 @@ export const CertificationScreen: React.FC<CertificationScreenProps> = ({
   if (isLoading && !status) {
     return (
       <View style={styles.container}>
-        <GlassSheet height={0.8}>
+        <GlassSheet height={1}>
           <View style={styles.loadingContainer}>
             <ActivityIndicator size="large" color="#5A5A5A" />
             <Body style={styles.loadingText}>Loading verification status...</Body>
@@ -178,7 +178,7 @@ export const CertificationScreen: React.FC<CertificationScreenProps> = ({
 
   return (
     <View style={styles.container}>
-      <GlassSheet height={0.85}>
+      <GlassSheet height={1}>
         {/* Header */}
         <Caption style={styles.label}>CERTIFICATION</Caption>
         <Headline style={styles.headline}>Verify Your Identity</Headline>

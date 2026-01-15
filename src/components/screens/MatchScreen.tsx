@@ -40,7 +40,7 @@ export const MatchScreen: React.FC<MatchScreenProps> = ({
 
   return (
     <View style={styles.container}>
-      <GlassSheet height={0.67}>
+      <GlassSheet height={1}>
         {/* Match found announcement */}
         <Caption style={styles.announcement}>MATCH FOUND</Caption>
 

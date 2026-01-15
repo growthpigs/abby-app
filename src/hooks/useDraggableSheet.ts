@@ -163,13 +163,16 @@ export function useDraggableSheet(config?: DraggableSheetConfig): DraggableSheet
   ).current;
 
   // Animate sheet in to default snap point
+  // Small delay ensures component is fully mounted before animation starts
   const animateIn = useCallback(() => {
-    Animated.spring(translateY, {
-      toValue: SCREEN_HEIGHT * (1 - defaultSnap),
-      useNativeDriver: true,
-      damping: springConfig.damping ?? DEFAULT_SPRING_CONFIG.damping,
-      stiffness: springConfig.stiffness ?? DEFAULT_SPRING_CONFIG.stiffness,
-    }).start();
+    setTimeout(() => {
+      Animated.spring(translateY, {
+        toValue: SCREEN_HEIGHT * (1 - defaultSnap),
+        useNativeDriver: true,
+        damping: springConfig.damping ?? DEFAULT_SPRING_CONFIG.damping,
+        stiffness: springConfig.stiffness ?? DEFAULT_SPRING_CONFIG.stiffness,
+      }).start();
+    }, 100);
   }, [translateY, defaultSnap, springConfig]);
 
   // Animate to specific snap point
