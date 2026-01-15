@@ -118,6 +118,24 @@ EXPO_PUBLIC_API_BASE_URL=https://dev.api.myaimatchmaker.ai
 
 ---
 
+## UI Design System (2026-01-15 Update)
+
+### Match Flow Screens - PASSION Palette
+
+The match flow screens (Photos, Matches, Match, Reveal, Payment) now use a consistent PASSION-themed design. **See `docs/DESIGN-SYSTEM.md` for full documentation.**
+
+| Pattern | Style | DO NOT CHANGE |
+|---------|-------|---------------|
+| Glass cards | `rgba(255, 255, 255, 0.15)`, no border | `rgba(255, 255, 255, 0.5)` looks wrong |
+| Caption labels | WHITE (#FFFFFF), JetBrains Mono | NOT gray |
+| Compatibility badges | PASSION pink (`#E11D48`), pink tint | NOT green |
+| Loading spinners | PASSION pink (#E11D48) | NOT blue |
+| Pass/Like buttons | Pass=glass, Like=pink filled | NOT red/green bordered |
+
+**Reference screen:** `CertificationScreen.tsx` - use this as the gold standard for glass styling.
+
+---
+
 ## Known Issues / Technical Debt
 
 See `docs/TECH-DEBT.md` for full list. Key items:
