@@ -228,21 +228,21 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
           <Headline style={[styles.sectionHeading, { fontSize: TYPOGRAPHY.headline.fontSize, marginTop: LAYOUT.spacing.large, marginBottom: LAYOUT.spacing.default }]}>Basic Info</Headline>
 
           <ProfileSection
-            icon={<User size={20} stroke={COLORS.white[70]} />}
+            icon={<User size={20} stroke="#5A5A5A" />}
             title="Full Name"
             value={store.firstName && store.familyName ? `${store.firstName} ${store.familyName}` : store.firstName || store.familyName || ''}
             onPress={() => startEditing('fullName', store.firstName || '')}
           />
 
           <ProfileSection
-            icon={<User size={20} stroke={COLORS.white[70]} />}
+            icon={<User size={20} stroke="#5A5A5A" />}
             title="Nickname"
             value={store.nickname}
             onPress={() => startEditing('nickname', store.nickname)}
           />
 
           <ProfileSection
-            icon={<User size={20} stroke={COLORS.white[70]} />}
+            icon={<User size={20} stroke="#5A5A5A" />}
             title="Gender"
             value={formatGender(store.gender)}
           />
@@ -250,25 +250,25 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
           <Headline style={[styles.sectionHeading, { fontSize: TYPOGRAPHY.headline.fontSize, marginTop: LAYOUT.spacing.large, marginBottom: LAYOUT.spacing.default }]}>Preferences</Headline>
 
           <ProfileSection
-            icon={<Heart size={20} stroke={COLORS.white[70]} />}
+            icon={<Heart size={20} stroke="#5A5A5A" />}
             title="Looking For"
             value={formatPreference(store.datingPreference)}
           />
 
           <ProfileSection
-            icon={<Users size={20} stroke={COLORS.white[70]} />}
+            icon={<Users size={20} stroke="#5A5A5A" />}
             title="Relationship Type"
             value={formatRelationship(store.relationshipType)}
           />
 
           <ProfileSection
-            icon={<Cigarette size={20} stroke={COLORS.white[70]} />}
+            icon={<Cigarette size={20} stroke="#5A5A5A" />}
             title="Smoking"
             value={formatSmoking(store.smokingMe, store.smokingPartner)}
           />
 
           <ProfileSection
-            icon={<MapPin size={20} stroke={COLORS.white[70]} />}
+            icon={<MapPin size={20} stroke="#5A5A5A" />}
             title="Location"
             value={formatLocation()}
           />
@@ -310,7 +310,7 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: TYPOGRAPHY.sectionLabel.fontSize,
     letterSpacing: TYPOGRAPHY.sectionLabel.letterSpacing,
-    color: COLORS.white[50],
+    color: '#5A5A5A', // Medium GRAY for readability on pale blur
     textTransform: 'uppercase',
   },
   // closeButton removed - using sharedStyles.closeButton instead
@@ -322,7 +322,7 @@ const styles = StyleSheet.create({
   },
   sectionHeading: {
     // fontSize, marginTop, marginBottom set dynamically via LAYOUT/TYPOGRAPHY constants
-    color: COLORS.white[85],
+    color: '#3A3A3A', // Dark GRAY for headings on pale blur
   },
   section: {
     flexDirection: 'row',
@@ -352,12 +352,12 @@ const styles = StyleSheet.create({
   },
   sectionTitle: {
     fontSize: TYPOGRAPHY.helpText.fontSize,
-    color: COLORS.white[50],
+    color: '#5A5A5A', // Medium GRAY for labels on pale blur
     marginBottom: 2,
   },
   sectionValue: {
     fontSize: LAYOUT.spacing.default,
-    color: COLORS.white[85],
+    color: '#3A3A3A', // Dark GRAY for values on pale blur
   },
   editIndicator: {
     fontSize: 14,

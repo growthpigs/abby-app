@@ -489,6 +489,8 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
     // No shadows - clean design
     elevation: 0,
+    // Light tint for glassmorphic effect - BlurView handles the blur
+    backgroundColor: 'rgba(255, 255, 255, 0.15)',
   },
 
   blurContainer: {

@@ -449,7 +449,7 @@ export const InterviewScreen: React.FC<InterviewScreenProps> = ({
           },
         ]}
       >
-        <BlurView intensity={80} tint="light" style={styles.blurContainer} pointerEvents="box-none">
+        <BlurView intensity={60} tint="light" style={styles.blurContainer} pointerEvents="box-none">
           {/* DRAGGABLE HEADER */}
           <View {...panResponder.panHandlers} style={styles.draggableHeader}>
             <View style={styles.handleContainer}>
@@ -547,6 +547,7 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
     // No shadows - clean design
     elevation: 0,
+    // No backgroundColor - BlurView handles the glassmorphic effect
   },
 
   blurContainer: {
@@ -588,17 +589,17 @@ const styles = StyleSheet.create({
     fontSize: 10,
   },
 
-  // Question - pushed up 20px from center (Merriweather per design system)
+  // Question - pushed down 30px for better visual balance
   questionContainer: {
     paddingHorizontal: LAYOUT.content.paddingHorizontal,
-    paddingTop: LAYOUT.spacing.micro,
+    paddingTop: 30,
     paddingBottom: LAYOUT.spacing.large,
   },
   questionText: {
     fontFamily: TYPOGRAPHY.body.fontFamily, // Merriweather_400Regular
     fontSize: 23,
     lineHeight: 29,
-    color: COLORS.charcoal.dark,
+    color: 'rgba(90, 90, 90, 0.85)', // Lighter gray for better glassmorphic feel
     textAlign: 'center',
   },
   voiceErrorText: {
