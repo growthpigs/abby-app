@@ -58,6 +58,54 @@ REACT_NATIVE_PACKAGER_HOSTNAME=172.20.10.13 npx expo start --port 8081 --dev-cli
 
 ---
 
+## 📋 PARTNER COMMUNICATIONS LOG
+
+### 2026-01-15: WebRTC Ownership Clarification
+
+**Morning (09:11-09:14) - WhatsApp with Geraldo:**
+| Time | Who | Said |
+|------|-----|------|
+| 09:11 | Geraldo | "I'll sort it out, what would be very useful is if I can get the frontend files to help out with the piping" |
+| 09:12 | Geraldo | "no no, I do have" (confirming he has WebRTC sorted) |
+| 09:12 | Geraldo | "yes, don't worry yourself with Abby connection" |
+| 09:13 | Roderic | "Okay, cool. I'm going to work on the synchronization of the vibes to the questions" |
+| 09:14 | Geraldo | "if you can you can upload your project on a github repo (private)" |
+
+**Conclusion:** Geraldo explicitly took ownership of WebRTC/Abby connection.
+
+**Evening (20:20) - Brent message:**
+> "Geraldo is making it sound like the Abby chat APIs should be working. Can you test that next?"
+
+**Test Result:** HTTP 500 error on `/v1/abby/realtime/{session_id}/message`
+
+**Status:** Awaiting clarification from Geraldo. Either:
+1. His changes haven't been deployed yet
+2. There's a miscommunication about what "working" means
+3. Frontend needs to do something different
+
+**Response sent to Geraldo:**
+> Hey Geraldo - Brent just pinged me saying you mentioned the Abby chat APIs should be working and asked me to test. I just tested and still getting HTTP 500 on the `/message` endpoint. Maybe I'm misunderstanding - this morning you said "don't worry yourself with Abby connection" and that you'd sort it out. Has something changed, or is there something specific you need from my side first?
+
+---
+
+### If Frontend WebRTC IS Required (Scope Reference)
+
+**What we'd need to implement:**
+1. Install `react-native-webrtc` package (requires native rebuild)
+2. Create `RTCPeerConnection` + data channel ("oai-events")
+3. Get microphone access via `getUserMedia`
+4. Generate SDP offer, send to OpenAI with `client_secret` from backend
+5. Handle SDP answer
+6. Route all messages through data channel
+
+**Estimated effort:** 1-2 days
+
+**References:**
+- [OpenAI Realtime WebRTC Guide](https://platform.openai.com/docs/guides/realtime-webrtc)
+- [WebRTC Hacks Implementation Guide](https://webrtchacks.com/the-unofficial-guide-to-openai-realtime-webrtc-api/)
+
+---
+
 ## ✅ VIBEMATRIX ANIMATION - FIXED (2026-01-13)
 
 ```
