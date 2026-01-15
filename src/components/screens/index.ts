@@ -45,3 +45,6 @@ export { SettingsScreen } from './SettingsScreen';
 export { ProfileScreen } from './ProfileScreen';
 export { PhotosScreen } from './PhotosScreen';
 export { MatchesScreen } from './MatchesScreen';
+
+// Certification (verification flow)
+export { CertificationScreen } from './CertificationScreen';

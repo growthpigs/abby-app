@@ -28,6 +28,36 @@ REACT_NATIVE_PACKAGER_HOSTNAME=172.20.10.13 npx expo start --port 8081 --dev-cli
 
 ---
 
+## 🎯 VOICE INTEGRATION STATUS (2026-01-15)
+
+```
+╔══════════════════════════════════════════════════════════════════════════════╗
+║  FRONTEND: COMPLETE ✅                                                        ║
+║  WEBRTC:   GERALDO'S RESPONSIBILITY                                          ║
+╠══════════════════════════════════════════════════════════════════════════════╣
+║                                                                              ║
+║  Architecture (confirmed by Geraldo):                                        ║
+║  1. POST /v1/abby/realtime/session → get client_secret                      ║
+║  2. Frontend connects DIRECTLY to OpenAI Realtime API via WebRTC            ║
+║  3. Messages flow through WebRTC data channels, NOT HTTP                    ║
+║                                                                              ║
+║  What Geraldo is building:                                                   ║
+║  - RTCPeerConnection to OpenAI Realtime API                                 ║
+║  - Data channel routing for messages/transcripts                            ║
+║  - Integration with our frontend hooks                                      ║
+║                                                                              ║
+║  Our frontend files handed off:                                             ║
+║  - AbbyRealtimeService.ts (session management, message handling)            ║
+║  - AbbyTTSService.ts (text-to-speech fallback)                             ║
+║  - useAbbyAgent.ts hook (React integration)                                 ║
+║                                                                              ║
+║  WE DO NOT NEED TO: Configure OpenAI API keys (backend infrastructure)      ║
+║                                                                              ║
+╚══════════════════════════════════════════════════════════════════════════════╝
+```
+
+---
+
 ## ✅ VIBEMATRIX ANIMATION - FIXED (2026-01-13)
 
 ```

@@ -1,14 +1,15 @@
 /**
  * PaymentScreen - "Unlock Photo" pay gate
  *
- * Clean payment UI with glassmorphism. Auto-approves for demo.
+ * Calls backend /v1/payments API then advances demo flow.
  */
 
-import React, { useCallback } from 'react';
-import { View, StyleSheet, Pressable } from 'react-native';
+import React, { useCallback, useState } from 'react';
+import { View, StyleSheet, Pressable, ActivityIndicator } from 'react-native';
 import * as Haptics from 'expo-haptics';
 import { GlassSheet, GlassButton, Headline, Body, Caption } from '../ui';
 import { useDemoStore } from '../../store/useDemoStore';
+import { api } from '../../services/api';
 
 export interface PaymentScreenProps {
   onSecretBack?: () => void;
@@ -21,10 +22,37 @@ export const PaymentScreen: React.FC<PaymentScreenProps> = ({
 }) => {
   const advance = useDemoStore((state) => state.advance);
   const matchData = useDemoStore((state) => state.matchData);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  const handlePay = () => {
-    // Auto-approve for demo
-    advance();
+  const handlePay = async () => {
+    setIsLoading(true);
+    setError(null);
+
+    try {
+      // Call backend payment API
+      const response = await api.createPayment({
+        amount: 999, // $9.99 in cents
+        currency: 'usd',
+        productId: 'photo_unlock',
+      });
+
+      if (__DEV__) {
+        console.log('[PaymentScreen] Payment created:', response.paymentId, response.status);
+      }
+
+      // Payment succeeded - advance the flow
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      advance();
+    } catch (err) {
+      if (__DEV__) {
+        console.error('[PaymentScreen] Payment failed:', err);
+      }
+      setError('Payment failed. Please try again.');
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   // Secret navigation handlers
@@ -65,10 +93,19 @@ export const PaymentScreen: React.FC<PaymentScreenProps> = ({
           <Caption style={styles.priceNote}>One-time unlock</Caption>
         </View>
 
+        {/* Error message */}
+        {error && (
+          <Caption style={styles.errorText}>{error}</Caption>
+        )}
+
         {/* Action button */}
         <View style={styles.buttonContainer}>
-          <GlassButton onPress={handlePay}>
-            Unlock Photo
+          <GlassButton onPress={handlePay} disabled={isLoading}>
+            {isLoading ? (
+              <ActivityIndicator size="small" color="rgba(0,0,0,0.6)" />
+            ) : (
+              'Unlock Photo'
+            )}
           </GlassButton>
         </View>
       </GlassSheet>
@@ -146,6 +183,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginTop: 'auto',
     paddingBottom: 32,
+  },
+  errorText: {
+    color: '#E11D48',
+    textAlign: 'center',
+    marginBottom: 16,
+    fontSize: 14,
   },
 
   // Secret navigation triggers
