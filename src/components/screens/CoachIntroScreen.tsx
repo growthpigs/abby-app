@@ -31,6 +31,7 @@ import { SHEET_SNAP_POINTS, SHEET_DEFAULT_SNAP } from '../../constants/layout';
 import { TIMEOUTS } from '../../config';
 import { ChatInput } from '../ui/ChatInput';
 import { useResponsiveLayout } from '../../hooks/useResponsiveLayout';
+import { sharedStyles, LAYOUT, TYPOGRAPHY, COLORS } from '../../constants/onboardingLayout';
 
 // Keywords that trigger color changes during conversation
 const VIBE_KEYWORDS: Record<VibeColorTheme, string[]> = {
@@ -488,8 +489,8 @@ const styles = StyleSheet.create({
   },
 
   handleContainer: {
-    paddingTop: 12,
-    paddingBottom: 8,
+    paddingTop: LAYOUT.spacing.medium,
+    paddingBottom: LAYOUT.spacing.small,
     alignItems: 'center',
   },
   handle: {
@@ -505,10 +506,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'flex-start',
     paddingTop: 0,
-    paddingBottom: 12,
+    paddingBottom: LAYOUT.spacing.medium,
     marginTop: -15,
-    paddingHorizontal: 20,
-    gap: 8,
+    paddingHorizontal: LAYOUT.content.paddingHorizontal,
+    gap: LAYOUT.spacing.small,
   },
   statusDot: {
     width: 8,
@@ -525,11 +526,11 @@ const styles = StyleSheet.create({
     backgroundColor: '#F59E0B',
   },
   statusText: {
-    fontFamily: 'JetBrainsMono_400Regular',
-    fontSize: 12,
+    fontFamily: TYPOGRAPHY.sectionLabel.fontFamily,
+    fontSize: TYPOGRAPHY.sectionLabel.fontSize,
     color: 'rgba(0, 0, 0, 0.5)',
     textTransform: 'uppercase',
-    letterSpacing: 0.5,
+    letterSpacing: TYPOGRAPHY.sectionLabel.letterSpacing,
   },
 
   // Mute button - 44x44 for iOS HIG compliance
@@ -559,9 +560,9 @@ const styles = StyleSheet.create({
     minHeight: 100,   // Minimum to ensure scrolling works
   },
   messagesContent: {
-    paddingTop: 8,
+    paddingTop: LAYOUT.spacing.small,
     paddingBottom: 100, // Extra space so messages don't hide behind fixed input at screen bottom
-    paddingHorizontal: 20,
+    paddingHorizontal: LAYOUT.content.paddingHorizontal,
   },
   placeholderText: {
     fontFamily: 'Merriweather_400Regular',
@@ -572,11 +573,11 @@ const styles = StyleSheet.create({
     paddingVertical: 20,
   },
   messageBubble: {
-    marginBottom: 16,
+    marginBottom: LAYOUT.spacing.default,
   },
   messageBubbleUser: {
-    marginBottom: 8,
-    marginTop: -4,
+    marginBottom: LAYOUT.spacing.small,
+    marginTop: -LAYOUT.spacing.micro,
   },
   messageText: {
     fontFamily: 'Merriweather_400Regular',
@@ -594,8 +595,8 @@ const styles = StyleSheet.create({
   startButton: {
     backgroundColor: 'rgba(0, 0, 0, 0.85)',
     borderRadius: 30,
-    paddingVertical: 16,
-    marginHorizontal: 4,
+    paddingVertical: LAYOUT.spacing.default,
+    marginHorizontal: LAYOUT.spacing.micro,
     marginBottom: 40,
     alignItems: 'center',
   },
@@ -610,18 +611,18 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
 
-  // Skip button - visible in top-right
+  // Skip button - visible in top-right (aligned with back arrow top position)
   skipButton: {
     position: 'absolute',
-    top: 60,
-    right: 20,
+    top: LAYOUT.backArrow.top,
+    right: LAYOUT.content.paddingHorizontal,
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'rgba(0, 0, 0, 0.3)',
-    paddingHorizontal: 16,
+    backgroundColor: COLORS.white[30],
+    paddingHorizontal: LAYOUT.spacing.default,
     paddingVertical: 10,
     borderRadius: 20,
-    gap: 4,
+    gap: LAYOUT.spacing.micro,
     zIndex: 1000,
   },
   skipButtonPressed: {
@@ -635,40 +636,24 @@ const styles = StyleSheet.create({
     fontWeight: '500',
   },
 
-  // Secret navigation triggers
+  // Secret navigation triggers - use shared styles with debug border
   secretBackTrigger: {
-    position: 'absolute',
-    top: 10,
-    left: 10,
-    width: 70,
-    height: 70,
-    zIndex: 9999,
+    ...sharedStyles.secretBackTrigger,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.5)',
-    borderRadius: 8,
+    borderColor: COLORS.white[50],
+    borderRadius: LAYOUT.spacing.small,
   },
   secretMiddleTrigger: {
-    position: 'absolute',
-    top: 10,
-    left: '50%',
-    marginLeft: -35,
-    width: 70,
-    height: 70,
-    zIndex: 9999,
+    ...sharedStyles.secretMiddleTrigger,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.5)',
-    borderRadius: 8,
+    borderColor: COLORS.white[50],
+    borderRadius: LAYOUT.spacing.small,
   },
   secretForwardTrigger: {
-    position: 'absolute',
-    top: 10,
-    right: 10,
-    width: 70,
-    height: 70,
-    zIndex: 9999,
+    ...sharedStyles.secretForwardTrigger,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.5)',
-    borderRadius: 8,
+    borderColor: COLORS.white[50],
+    borderRadius: LAYOUT.spacing.small,
   },
 
   // Chat input wrapper - FLOATING PILL at screen bottom
@@ -677,8 +662,8 @@ const styles = StyleSheet.create({
   chatInputContainer: {
     position: 'absolute',
     bottom: 34, // Safe area for home indicator
-    left: 20,
-    right: 20,
+    left: LAYOUT.content.paddingHorizontal,
+    right: LAYOUT.content.paddingHorizontal,
     // NO background - ChatInput component has its own glassmorphic blur
     zIndex: 200, // Above everything including sheet
   },

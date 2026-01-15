@@ -132,20 +132,21 @@ const styles = StyleSheet.create({
     borderColor: 'rgba(255, 255, 255, 0.3)',
   },
   blur: {
-    paddingVertical: 16,
-    paddingHorizontal: 32,
+    paddingVertical: 18,
+    paddingHorizontal: 36,
     alignItems: 'center',
     justifyContent: 'center',
   },
   text: {
+    fontFamily: 'Barlow_600SemiBold',
     fontSize: 18,
     fontWeight: '600',
     color: '#FFFFFF',
     letterSpacing: 0.5,
   },
-  // Primary variant - subtle glass
+  // Primary variant - enhanced glass effect
   primaryContainer: {
-    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    backgroundColor: 'rgba(255, 255, 255, 0.15)',
   },
   primaryText: {
     color: '#FFFFFF',

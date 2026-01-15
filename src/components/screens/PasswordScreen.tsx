@@ -3,6 +3,8 @@
  *
  * Follows Cognito auth flow requirements.
  * Full-screen glass overlay on VibeMatrix
+ *
+ * Uses shared design system constants from onboardingLayout
  */
 
 import React, { useState } from 'react';
@@ -18,7 +20,12 @@ import {
 } from 'react-native';
 import * as Haptics from 'expo-haptics';
 import { Typography } from '../ui/Typography';
-import { useResponsiveLayout } from '../../hooks/useResponsiveLayout';
+import {
+  sharedStyles,
+  LAYOUT,
+  TYPOGRAPHY,
+  COLORS,
+} from '../../constants/onboardingLayout';
 
 interface PasswordScreenProps {
   mode: 'signup' | 'signin';
@@ -42,7 +49,6 @@ export const PasswordScreen: React.FC<PasswordScreenProps> = ({
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
-  const layout = useResponsiveLayout();
 
   const handleNext = () => {
     if (isValid && !isLoading) {
@@ -81,60 +87,54 @@ export const PasswordScreen: React.FC<PasswordScreenProps> = ({
       style={styles.container}
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
     >
-      {/* Back button */}
+      {/* Back button - uses sharedStyles.backButton (top: 60, left: 24) */}
       <Pressable
         onPress={handleSecretBack}
-        style={[styles.backButton, { top: layout.paddingTop }]}
-        hitSlop={20}
+        style={sharedStyles.backButton}
+        hitSlop={LAYOUT.backArrow.hitSlop}
       >
         <Typography variant="headline" style={styles.backArrow}>
           ←
         </Typography>
       </Pressable>
 
-      {/* Scrollable Content */}
+      {/* Scrollable Content - uses sharedStyles.content (paddingTop: 140) */}
       <ScrollView
         style={styles.scrollView}
         contentContainerStyle={[
-          styles.content,
+          styles.scrollContent,
           {
-            paddingTop: layout.paddingTop + 60,
-            paddingHorizontal: layout.paddingHorizontal,
-            paddingBottom: layout.isSmallScreen ? 120 : 140,
+            paddingTop: LAYOUT.content.paddingTop,
+            paddingHorizontal: LAYOUT.content.paddingHorizontal,
+            paddingBottom: LAYOUT.content.paddingBottom,
           }
         ]}
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
       >
-        {/* Headline */}
+        {/* Headline - uses sharedStyles.headline (Merriweather_700Bold, fontSize 32) */}
         <Typography
           variant="headline"
-          style={[
-            styles.headline,
-            {
-              fontSize: layout.headlineFontSize,
-              marginBottom: layout.buttonMargin,
-            }
-          ]}
+          style={sharedStyles.headline}
         >
           {mode === 'signup' ? 'Create a\npassword' : 'Enter your\npassword'}
         </Typography>
 
-        {/* Email display */}
+        {/* Email display - uses sharedStyles.helpText */}
         <Typography
           variant="body"
           style={[
-            styles.emailText,
-            { marginBottom: layout.sectionGap }
+            sharedStyles.helpText,
+            { marginTop: 0, marginBottom: LAYOUT.spacing.large }
           ]}
         >
           {email}
         </Typography>
 
-        {/* Password input with eye toggle */}
-        <View style={[styles.inputContainer, { marginBottom: layout.buttonMargin }]}>
+        {/* Password input with eye toggle - uses sharedStyles.textInput */}
+        <View style={[styles.inputContainer, { marginBottom: LAYOUT.spacing.large }]}>
           <TextInput
-            style={styles.passwordInput}
+            style={[sharedStyles.textInput, styles.passwordInputExtra]}
             value={password}
             onChangeText={setPassword}
             placeholder="Password"
@@ -144,7 +144,7 @@ export const PasswordScreen: React.FC<PasswordScreenProps> = ({
             autoFocus={true}
             returnKeyType={mode === 'signup' ? 'next' : 'done'}
             onSubmitEditing={mode === 'signin' ? handleNext : undefined}
-            placeholderTextColor="rgba(255, 255, 255, 0.3)"
+            placeholderTextColor={COLORS.white[30]}
             editable={!isLoading}
             maxLength={128}
           />
@@ -161,9 +161,9 @@ export const PasswordScreen: React.FC<PasswordScreenProps> = ({
 
         {/* Confirm password - directly below first input (signup only) */}
         {mode === 'signup' && (
-          <View style={[styles.inputContainer, { marginBottom: layout.buttonMargin }]}>
+          <View style={[styles.inputContainer, { marginBottom: LAYOUT.spacing.large }]}>
             <TextInput
-              style={styles.passwordInput}
+              style={[sharedStyles.textInput, styles.passwordInputExtra]}
               value={confirmPassword}
               onChangeText={setConfirmPassword}
               placeholder="Confirm password"
@@ -172,7 +172,7 @@ export const PasswordScreen: React.FC<PasswordScreenProps> = ({
               autoCorrect={false}
               returnKeyType="done"
               onSubmitEditing={handleNext}
-              placeholderTextColor="rgba(255, 255, 255, 0.3)"
+              placeholderTextColor={COLORS.white[30]}
               editable={!isLoading}
               maxLength={128}
             />
@@ -181,7 +181,7 @@ export const PasswordScreen: React.FC<PasswordScreenProps> = ({
 
         {/* Password requirements - compact, below inputs (signup only) */}
         {mode === 'signup' && (
-          <View style={[styles.requirementsContainer, { marginTop: layout.sectionGap }]}>
+          <View style={[styles.requirementsContainer, { marginTop: LAYOUT.spacing.default }]}>
             <View style={styles.requirementsRow}>
               <Typography
                 variant="caption"
@@ -237,23 +237,13 @@ export const PasswordScreen: React.FC<PasswordScreenProps> = ({
         )}
       </ScrollView>
 
-      {/* Fixed footer with Continue button */}
-      <View style={[
-        styles.footer,
-        {
-          bottom: layout.paddingBottom,
-          paddingHorizontal: layout.paddingHorizontal,
-        }
-      ]}>
+      {/* Fixed footer with Continue button - uses sharedStyles.footer (bottom: 48) */}
+      <View style={sharedStyles.footer}>
         <Pressable
           onPress={handleNext}
           disabled={!isValid || isLoading}
           style={({ pressed }) => [
             styles.continueButton,
-            {
-              height: layout.buttonHeightLarge,
-              borderRadius: layout.buttonHeightLarge / 2,
-            },
             (!isValid || isLoading) && styles.continueButtonDisabled,
             pressed && styles.buttonPressed,
           ]}
@@ -268,21 +258,21 @@ export const PasswordScreen: React.FC<PasswordScreenProps> = ({
         </Pressable>
       </View>
 
-      {/* Secret navigation triggers */}
+      {/* Secret navigation triggers - uses sharedStyles */}
       <Pressable
         onPress={handleSecretBack}
-        style={styles.secretBackTrigger}
+        style={sharedStyles.secretBackTrigger}
         hitSlop={10}
       />
       <Pressable
         onPress={handleNext}
         disabled={!isValid || isLoading}
-        style={styles.secretMiddleTrigger}
+        style={sharedStyles.secretMiddleTrigger}
         hitSlop={10}
       />
       <Pressable
         onPress={handleSecretForward}
-        style={styles.secretForwardTrigger}
+        style={sharedStyles.secretForwardTrigger}
         hitSlop={10}
       />
     </KeyboardAvoidingView>
@@ -293,43 +283,23 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
-  backButton: {
-    position: 'absolute',
-    left: 24,
-    zIndex: 10,
-  },
   backArrow: {
-    fontSize: 32,
-    color: 'rgba(255, 255, 255, 0.95)',
+    fontSize: LAYOUT.backArrow.size,
+    color: COLORS.white[95],
   },
   scrollView: {
     flex: 1,
   },
-  content: {
+  scrollContent: {
     flexGrow: 1,
-  },
-  headline: {
-    fontWeight: '700',
-    color: 'rgba(255, 255, 255, 0.95)',
-    lineHeight: 40,
-    letterSpacing: -0.5,
-  },
-  emailText: {
-    fontSize: 14,
-    color: 'rgba(255, 255, 255, 0.6)',
   },
   inputContainer: {
     flexDirection: 'row',
     alignItems: 'center',
   },
-  passwordInput: {
+  passwordInputExtra: {
+    // Extra styles for password input (extends sharedStyles.textInput)
     flex: 1,
-    paddingVertical: 12,
-    paddingHorizontal: 8,
-    borderBottomWidth: 2,
-    borderBottomColor: 'rgba(255, 255, 255, 0.3)',
-    fontSize: 18,
-    color: 'rgba(255, 255, 255, 0.95)',
     fontWeight: '400',
     letterSpacing: 0,
     textAlign: 'left',
@@ -343,87 +313,50 @@ const styles = StyleSheet.create({
     fontSize: 20,
   },
   requirementsContainer: {
-    // marginTop now applied dynamically via layout.sectionGap
+    // marginTop applied dynamically via LAYOUT.spacing
   },
   requirementsRow: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 16,
-    marginBottom: 8,
+    gap: LAYOUT.spacing.default,
+    marginBottom: LAYOUT.spacing.small,
   },
   requirement: {
     fontSize: 11,
-    color: 'rgba(255, 255, 255, 0.4)',
+    color: COLORS.white[50],
   },
   requirementMet: {
-    color: 'rgba(100, 255, 150, 0.9)',
+    color: COLORS.green.primary,
   },
   errorContainer: {
-    marginTop: 16,
-    padding: 12,
-    backgroundColor: 'rgba(255, 100, 100, 0.2)',
+    marginTop: LAYOUT.spacing.default,
+    padding: LAYOUT.spacing.medium,
+    backgroundColor: COLORS.red.background,
     borderRadius: 8,
   },
   errorText: {
-    fontSize: 14,
-    color: 'rgba(255, 150, 150, 0.95)',
+    fontSize: TYPOGRAPHY.helpText.fontSize,
+    color: COLORS.red.primary,
     textAlign: 'center',
-  },
-  footer: {
-    position: 'absolute',
-    left: 0,
-    right: 0,
   },
   continueButton: {
     width: '100%',
-    backgroundColor: 'rgba(255, 255, 255, 0.95)',
+    height: 56,
+    borderRadius: 28,
+    backgroundColor: COLORS.white[95],
     justifyContent: 'center',
     alignItems: 'center',
   },
   continueButtonDisabled: {
-    backgroundColor: 'rgba(255, 255, 255, 0.3)',
+    backgroundColor: COLORS.white[30],
   },
   buttonPressed: {
     opacity: 0.8,
     transform: [{ scale: 0.98 }],
   },
   continueButtonText: {
-    color: '#1a1a1a',
+    color: COLORS.charcoal.dark,
     fontWeight: '600',
-  },
-  secretBackTrigger: {
-    position: 'absolute',
-    top: 10,
-    left: 10,
-    width: 70,
-    height: 70,
-    zIndex: 9999,
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.2)',
-    borderRadius: 8,
-  },
-  secretMiddleTrigger: {
-    position: 'absolute',
-    top: 10,
-    left: '50%',
-    marginLeft: -35,
-    width: 70,
-    height: 70,
-    zIndex: 9999,
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.2)',
-    borderRadius: 8,
-  },
-  secretForwardTrigger: {
-    position: 'absolute',
-    top: 10,
-    right: 10,
-    width: 70,
-    height: 70,
-    zIndex: 9999,
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.2)',
-    borderRadius: 8,
   },
 });
 

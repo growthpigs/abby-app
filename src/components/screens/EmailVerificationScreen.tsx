@@ -3,6 +3,8 @@
  *
  * Exact copy of Tinder's email verification screen
  * Full-screen glass overlay on VibeMatrix
+ *
+ * DESIGN SYSTEM: Uses shared constants from onboardingLayout.ts
  */
 
 import React, { useState } from 'react';
@@ -16,7 +18,12 @@ import {
 import * as Haptics from 'expo-haptics';
 import { Typography } from '../ui/Typography';
 import { GlassButton } from '../ui/GlassButton';
-import { useResponsiveLayout } from '../../hooks/useResponsiveLayout';
+import {
+  sharedStyles,
+  LAYOUT,
+  TYPOGRAPHY,
+  COLORS,
+} from '../../constants/onboardingLayout';
 
 interface EmailVerificationScreenProps {
   email?: string;
@@ -37,7 +44,6 @@ export const EmailVerificationScreen: React.FC<EmailVerificationScreenProps> = (
   isLoading = false,
   error = null,
 }) => {
-  const layout = useResponsiveLayout();
   const [code, setCode] = useState('');
   const [resendMessage, setResendMessage] = useState<string | null>(null);
 
@@ -72,12 +78,12 @@ export const EmailVerificationScreen: React.FC<EmailVerificationScreenProps> = (
   const isValid = code.length === 6;
 
   return (
-    <View style={styles.container}>
+    <View style={sharedStyles.container}>
       {/* Back button */}
       <Pressable
         onPress={handleSecretBack}
-        style={[styles.backButton, { top: layout.paddingTop + 20 }]}
-        hitSlop={20}
+        style={sharedStyles.backButton}
+        hitSlop={LAYOUT.backArrow.hitSlop}
       >
         <Typography variant="headline" style={styles.backArrow}>
           ←
@@ -85,24 +91,14 @@ export const EmailVerificationScreen: React.FC<EmailVerificationScreenProps> = (
       </Pressable>
 
       {/* Content */}
-      <View style={[styles.content, {
-        paddingTop: layout.paddingTop + 60,
-        paddingHorizontal: layout.paddingHorizontal,
-        paddingBottom: layout.paddingBottom,
-      }]}>
+      <View style={sharedStyles.content}>
         {/* Headline */}
-        <Typography variant="headline" style={[styles.headline, {
-          fontSize: layout.headlineFontSize,
-          marginBottom: layout.sectionGap,
-        }]}>
+        <Typography variant="headline" style={sharedStyles.headline}>
           Verification code{'\n'}sent to {email}
         </Typography>
 
         {/* Subtext */}
-        <Typography variant="body" style={[styles.subtext, {
-          fontSize: layout.bodyFontSize,
-          marginBottom: layout.sectionGap * 1.5,
-        }]}>
+        <Typography variant="body" style={styles.subtext}>
           Enter the code below
         </Typography>
 
@@ -117,14 +113,14 @@ export const EmailVerificationScreen: React.FC<EmailVerificationScreenProps> = (
           maxLength={6}
           returnKeyType="done"
           onSubmitEditing={handleNext}
-          placeholderTextColor="rgba(255, 255, 255, 0.3)"
+          placeholderTextColor={COLORS.white[30]}
           editable={!isLoading}
         />
 
         {/* Loading indicator */}
         {isLoading && (
           <View style={styles.loadingContainer}>
-            <ActivityIndicator color="rgba(255, 255, 255, 0.9)" />
+            <ActivityIndicator color={COLORS.white[95]} />
             <Typography variant="body" style={styles.loadingText}>
               Verifying...
             </Typography>
@@ -152,11 +148,7 @@ export const EmailVerificationScreen: React.FC<EmailVerificationScreenProps> = (
       </View>
 
       {/* Fixed footer with Continue button and resend link */}
-      <View style={[styles.footer, {
-        bottom: layout.paddingBottom,
-        left: layout.paddingHorizontal,
-        right: layout.paddingHorizontal,
-      }]}>
+      <View style={sharedStyles.footer}>
         <GlassButton
           onPress={handleNext}
           disabled={!isValid || isLoading}
@@ -164,7 +156,7 @@ export const EmailVerificationScreen: React.FC<EmailVerificationScreenProps> = (
         >
           {isLoading ? 'Verifying...' : 'Continue'}
         </GlassButton>
-        <Pressable onPress={handleResend} disabled={isLoading} style={[styles.resendButton, { paddingVertical: layout.buttonMargin }]}>
+        <Pressable onPress={handleResend} disabled={isLoading} style={styles.resendButton}>
           <Typography variant="body" style={[styles.resendText, isLoading && styles.resendTextDisabled]}>
             Didn't receive a code?
           </Typography>
@@ -175,143 +167,102 @@ export const EmailVerificationScreen: React.FC<EmailVerificationScreenProps> = (
       {/* Left = Back */}
       <Pressable
         onPress={handleSecretBack}
-        style={styles.secretBackTrigger}
+        style={sharedStyles.secretBackTrigger}
         hitSlop={10}
       />
       {/* Middle = Primary action (Next/Done/OK) */}
       <Pressable
         onPress={handleNext}
         disabled={!isValid || isLoading}
-        style={styles.secretMiddleTrigger}
+        style={sharedStyles.secretMiddleTrigger}
         hitSlop={10}
       />
       {/* Right = Forward */}
       <Pressable
         onPress={handleSecretForward}
-        style={styles.secretForwardTrigger}
+        style={sharedStyles.secretForwardTrigger}
         hitSlop={10}
       />
     </View>
   );
 };
 
+/**
+ * Screen-specific styles
+ * Shared styles (backButton, headline, content, footer, secretTriggers) come from sharedStyles
+ */
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-  backButton: {
-    position: 'absolute',
-    left: 24,
-    zIndex: 10,
-  },
+  // Back arrow icon style
   backArrow: {
-    fontSize: 32,
-    color: 'rgba(255, 255, 255, 0.95)',
+    fontSize: LAYOUT.backArrow.size,
+    color: COLORS.white[95],
   },
-  content: {
-    flex: 1,
-  },
-  headline: {
-    fontWeight: '700',
-    color: 'rgba(255, 255, 255, 0.95)',
-    lineHeight: 40,
-    letterSpacing: -0.5,
-  },
+  // Subtext below headline
   subtext: {
-    color: 'rgba(255, 255, 255, 0.7)',
+    color: COLORS.white[70],
+    marginBottom: LAYOUT.spacing.large,
   },
+  // Verification code input - specialized for 6-digit entry
   codeInput: {
     width: '100%',
-    paddingVertical: 16,
-    paddingHorizontal: 16,
+    paddingVertical: LAYOUT.spacing.default,
+    paddingHorizontal: LAYOUT.spacing.default,
     borderBottomWidth: 2,
-    borderBottomColor: 'rgba(255, 255, 255, 0.3)',
+    borderBottomColor: COLORS.white[30],
     fontSize: 32,
-    color: 'rgba(255, 255, 255, 0.95)',
+    color: COLORS.white[95],
     fontWeight: '600',
     letterSpacing: 8,
     textAlign: 'center',
   },
-  footer: {
-    position: 'absolute',
-  },
+  // Resend code button
   resendButton: {
     alignItems: 'center',
+    paddingVertical: LAYOUT.spacing.default,
   },
   resendText: {
-    fontSize: 14,
-    color: 'rgba(255, 255, 255, 0.8)',
+    fontSize: TYPOGRAPHY.helpText.fontSize,
+    color: COLORS.white[85],
     textDecorationLine: 'underline',
   },
   resendTextDisabled: {
-    color: 'rgba(255, 255, 255, 0.4)',
+    color: COLORS.white[50],
   },
+  // Loading state
   loadingContainer: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    marginTop: 24,
-    gap: 12,
+    marginTop: LAYOUT.spacing.large,
+    gap: LAYOUT.spacing.medium,
   },
   loadingText: {
-    color: 'rgba(255, 255, 255, 0.7)',
-    fontSize: 14,
+    color: COLORS.white[70],
+    fontSize: TYPOGRAPHY.helpText.fontSize,
   },
+  // Error message
   errorContainer: {
-    marginTop: 16,
-    padding: 12,
-    backgroundColor: 'rgba(255, 100, 100, 0.2)',
+    marginTop: LAYOUT.spacing.default,
+    padding: LAYOUT.spacing.medium,
+    backgroundColor: COLORS.red.background,
     borderRadius: 8,
   },
   errorText: {
-    fontSize: 14,
-    color: 'rgba(255, 150, 150, 0.95)',
+    fontSize: TYPOGRAPHY.helpText.fontSize,
+    color: COLORS.red.primary,
     textAlign: 'center',
   },
+  // Success message after resend
   resendMessageContainer: {
-    marginTop: 16,
-    padding: 12,
-    backgroundColor: 'rgba(100, 255, 150, 0.15)',
+    marginTop: LAYOUT.spacing.default,
+    padding: LAYOUT.spacing.medium,
+    backgroundColor: COLORS.green.background,
     borderRadius: 8,
   },
   resendMessageText: {
-    fontSize: 14,
-    color: 'rgba(150, 255, 180, 0.95)',
+    fontSize: TYPOGRAPHY.helpText.fontSize,
+    color: COLORS.green.primary,
     textAlign: 'center',
-  },
-  secretBackTrigger: {
-    position: 'absolute',
-    top: 10, // TOP corner (avoids keyboard)
-    left: 10,
-    width: 70,
-    height: 70,
-    zIndex: 9999,
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.2)',
-    borderRadius: 8,
-  },
-  secretMiddleTrigger: {
-    position: 'absolute',
-    top: 10, // TOP center (avoids keyboard)
-    left: '50%',
-    marginLeft: -35,
-    width: 70,
-    height: 70,
-    zIndex: 9999,
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.2)',
-    borderRadius: 8,
-  },
-  secretForwardTrigger: {
-    position: 'absolute',
-    top: 10, // TOP corner (avoids keyboard)
-    right: 10,
-    width: 70,
-    height: 70,
-    zIndex: 9999,
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.2)',
-    borderRadius: 8,
   },
 });
 

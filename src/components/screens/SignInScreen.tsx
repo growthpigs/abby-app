@@ -3,6 +3,8 @@
  *
  * Standard sign-in pattern: one form, one submit.
  * Full-screen glass overlay on VibeMatrix
+ *
+ * Uses shared design system constants from onboardingLayout
  */
 
 import React, { useState, useMemo } from 'react';
@@ -19,7 +21,12 @@ import {
 import * as Haptics from 'expo-haptics';
 import { Typography } from '../ui/Typography';
 import { validateEmail, sanitizeEmail } from '../../utils/validation';
-import { useResponsiveLayout } from '../../hooks/useResponsiveLayout';
+import {
+  sharedStyles,
+  LAYOUT,
+  TYPOGRAPHY,
+  COLORS,
+} from '../../constants/onboardingLayout';
 
 interface SignInScreenProps {
   onSignIn?: (email: string, password: string) => void;
@@ -36,7 +43,6 @@ export const SignInScreen: React.FC<SignInScreenProps> = ({
   isLoading = false,
   error = null,
 }) => {
-  const layout = useResponsiveLayout();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -70,52 +76,39 @@ export const SignInScreen: React.FC<SignInScreenProps> = ({
 
   return (
     <KeyboardAvoidingView
-      style={styles.container}
+      style={sharedStyles.container}
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
     >
-      {/* Back button */}
+      {/* Back button - uses sharedStyles.backButton (top: 60, left: 24) */}
       <Pressable
         onPress={handleBack}
-        style={[styles.backButton, { top: layout.paddingTop + 20 }]}
-        hitSlop={20}
+        style={sharedStyles.backButton}
+        hitSlop={LAYOUT.backArrow.hitSlop}
       >
         <Typography variant="headline" style={styles.backArrow}>
           ←
         </Typography>
       </Pressable>
 
-      {/* Content */}
+      {/* Content - uses sharedStyles.content (paddingTop: 140) */}
       <ScrollView
         style={styles.scrollView}
-        contentContainerStyle={[
-          styles.content,
-          {
-            paddingTop: layout.paddingTop + 60,
-            paddingHorizontal: layout.paddingHorizontal,
-            paddingBottom: layout.buttonHeightLarge + layout.paddingBottom + 24,
-          },
-        ]}
+        contentContainerStyle={styles.scrollContent}
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
       >
-        {/* Headline */}
+        {/* Headline - uses sharedStyles.headline (Merriweather_700Bold, fontSize: 32) */}
         <Typography
           variant="headline"
-          style={[
-            styles.headline,
-            {
-              fontSize: layout.headlineFontSize,
-              marginBottom: layout.sectionGap * 2,
-            },
-          ]}
+          style={sharedStyles.headline}
         >
           Welcome{'\n'}back
         </Typography>
 
         {/* Email input */}
-        <View style={[styles.inputContainer, { marginBottom: layout.buttonMargin }]}>
+        <View style={styles.inputContainer}>
           <TextInput
-            style={[styles.input, emailError && styles.inputError]}
+            style={[sharedStyles.textInput, emailError && styles.inputError]}
             value={email}
             onChangeText={setEmail}
             placeholder="Email"
@@ -124,21 +117,21 @@ export const SignInScreen: React.FC<SignInScreenProps> = ({
             autoCorrect={false}
             autoFocus={true}
             returnKeyType="next"
-            placeholderTextColor="rgba(255, 255, 255, 0.3)"
+            placeholderTextColor={COLORS.white[30]}
             editable={!isLoading}
             maxLength={254}
           />
         </View>
         {emailError && (
-          <Typography variant="caption" style={[styles.fieldError, { marginBottom: layout.sectionGap }]}>
+          <Typography variant="caption" style={styles.fieldError}>
             {emailError}
           </Typography>
         )}
 
         {/* Password input */}
-        <View style={[styles.inputContainer, { marginBottom: layout.buttonMargin }]}>
+        <View style={styles.inputContainer}>
           <TextInput
-            style={styles.input}
+            style={sharedStyles.textInput}
             value={password}
             onChangeText={setPassword}
             placeholder="Password"
@@ -147,7 +140,7 @@ export const SignInScreen: React.FC<SignInScreenProps> = ({
             autoCorrect={false}
             returnKeyType="done"
             onSubmitEditing={handleSignIn}
-            placeholderTextColor="rgba(255, 255, 255, 0.3)"
+            placeholderTextColor={COLORS.white[30]}
             editable={!isLoading}
             maxLength={128}
           />
@@ -164,7 +157,7 @@ export const SignInScreen: React.FC<SignInScreenProps> = ({
 
         {/* Error message */}
         {error && (
-          <View style={[styles.errorContainer, { marginTop: layout.buttonMargin }]}>
+          <View style={styles.errorContainer}>
             <Typography variant="caption" style={styles.errorText}>
               {error}
             </Typography>
@@ -172,21 +165,20 @@ export const SignInScreen: React.FC<SignInScreenProps> = ({
         )}
 
         {/* Forgot password */}
-        <Pressable onPress={handleForgotPassword} style={[styles.forgotButton, { marginTop: layout.sectionGap }]}>
+        <Pressable onPress={handleForgotPassword} style={styles.forgotButton}>
           <Typography variant="body" style={styles.forgotText}>
             Forgot password?
           </Typography>
         </Pressable>
       </ScrollView>
 
-      {/* Fixed footer with Sign In button */}
-      <View style={[styles.footer, { bottom: layout.paddingBottom, left: layout.paddingHorizontal, right: layout.paddingHorizontal }]}>
+      {/* Fixed footer with Sign In button - uses sharedStyles.footer (bottom: 48) */}
+      <View style={sharedStyles.footer}>
         <Pressable
           onPress={handleSignIn}
           disabled={!isValid || isLoading}
           style={({ pressed }) => [
             styles.signInButton,
-            { height: layout.buttonHeightLarge, borderRadius: layout.buttonHeightLarge / 2 },
             (!isValid || isLoading) && styles.signInButtonDisabled,
             pressed && styles.buttonPressed,
           ]}
@@ -205,56 +197,37 @@ export const SignInScreen: React.FC<SignInScreenProps> = ({
 };
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-  backButton: {
-    position: 'absolute',
-    left: 24,
-    zIndex: 10,
-  },
+  // Back arrow icon styling (position from sharedStyles.backButton)
   backArrow: {
-    fontSize: 32,
-    color: 'rgba(255, 255, 255, 0.95)',
+    fontSize: LAYOUT.backArrow.size,
+    color: COLORS.white[95],
   },
   scrollView: {
     flex: 1,
   },
-  content: {
+  // ScrollView content container - uses LAYOUT constants
+  scrollContent: {
     flexGrow: 1,
-  },
-  headline: {
-    fontWeight: '700',
-    color: 'rgba(255, 255, 255, 0.95)',
-    lineHeight: 40,
-    letterSpacing: -0.5,
+    paddingTop: LAYOUT.content.paddingTop,
+    paddingHorizontal: LAYOUT.content.paddingHorizontal,
+    paddingBottom: LAYOUT.content.paddingBottom,
   },
   inputContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-  },
-  input: {
-    flex: 1,
-    paddingVertical: 12,
-    paddingHorizontal: 8,
-    borderBottomWidth: 2,
-    borderBottomColor: 'rgba(255, 255, 255, 0.3)',
-    fontSize: 18,
-    color: 'rgba(255, 255, 255, 0.95)',
-    fontWeight: '400',
-    letterSpacing: 0,
-    textAlign: 'left',
+    marginBottom: LAYOUT.spacing.default,
   },
   inputError: {
     borderBottomColor: 'rgba(255, 100, 100, 0.7)',
   },
   fieldError: {
-    fontSize: 12,
+    fontSize: TYPOGRAPHY.helpText.fontSize,
     color: 'rgba(255, 150, 150, 0.95)',
-    marginLeft: 8,
+    marginLeft: LAYOUT.spacing.small,
+    marginBottom: LAYOUT.spacing.medium,
   },
   eyeButton: {
-    padding: 12,
+    padding: LAYOUT.spacing.medium,
     position: 'absolute',
     right: 0,
   },
@@ -262,9 +235,10 @@ const styles = StyleSheet.create({
     fontSize: 20,
   },
   errorContainer: {
-    padding: 12,
+    padding: LAYOUT.spacing.medium,
     backgroundColor: 'rgba(255, 100, 100, 0.2)',
     borderRadius: 8,
+    marginTop: LAYOUT.spacing.default,
   },
   errorText: {
     fontSize: 14,
@@ -273,23 +247,23 @@ const styles = StyleSheet.create({
   },
   forgotButton: {
     alignSelf: 'center',
+    marginTop: LAYOUT.spacing.default,
   },
   forgotText: {
     fontSize: 14,
-    color: 'rgba(255, 255, 255, 0.6)',
+    color: COLORS.white[50],
     textDecorationLine: 'underline',
-  },
-  footer: {
-    position: 'absolute',
   },
   signInButton: {
     width: '100%',
-    backgroundColor: 'rgba(255, 255, 255, 0.95)',
+    height: 56,
+    borderRadius: 28,
+    backgroundColor: COLORS.white[95],
     justifyContent: 'center',
     alignItems: 'center',
   },
   signInButtonDisabled: {
-    backgroundColor: 'rgba(255, 255, 255, 0.3)',
+    backgroundColor: COLORS.white[30],
   },
   buttonPressed: {
     opacity: 0.8,

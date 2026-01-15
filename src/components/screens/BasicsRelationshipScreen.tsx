@@ -15,12 +15,17 @@ import {
   LayoutAnimation,
   Platform,
   UIManager,
+  Text,
 } from 'react-native';
 import * as Haptics from 'expo-haptics';
-import { Typography } from '../ui/Typography';
 import { RadioGroup, RadioOption } from '../ui/RadioGroup';
 import { GlassButton } from '../ui/GlassButton';
-import { useResponsiveLayout } from '../../hooks/useResponsiveLayout';
+import {
+  sharedStyles,
+  LAYOUT,
+  TYPOGRAPHY,
+  COLORS,
+} from '../../constants/onboardingLayout';
 
 // Enable LayoutAnimation on Android
 if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
@@ -80,7 +85,6 @@ export const BasicsRelationshipScreen: React.FC<BasicsRelationshipScreenProps> =
   onSecretBack,
   onSecretForward,
 }) => {
-  const layout = useResponsiveLayout();
   const [selectedType, setSelectedType] = useState<string | null>(null);
   const [showNonMono, setShowNonMono] = useState(false);
 
@@ -109,55 +113,26 @@ export const BasicsRelationshipScreen: React.FC<BasicsRelationshipScreenProps> =
     setShowNonMono(!showNonMono);
   };
 
-  // Responsive styles
-  const responsiveStyles = {
-    backButton: {
-      top: layout.isSmallScreen ? 44 : 60,
-    },
-    content: {
-      paddingHorizontal: layout.paddingHorizontal,
-      paddingTop: layout.isSmallScreen ? 100 : 140,
-      paddingBottom: layout.isSmallScreen ? 32 : 48,
-    },
-    headline: {
-      fontSize: layout.isSmallScreen ? 28 : 32,
-      lineHeight: layout.isSmallScreen ? 34 : 40,
-      marginBottom: layout.isSmallScreen ? 20 : 32,
-    },
-    sectionLabel: {
-      marginBottom: layout.isSmallScreen ? 4 : 8,
-    },
-    footer: {
-      bottom: layout.isSmallScreen ? 32 : 48,
-      left: layout.paddingHorizontal,
-      right: layout.paddingHorizontal,
-    },
-  };
-
   return (
-    <View style={styles.container}>
-      {/* Back button */}
+    <View style={sharedStyles.container}>
+      {/* Back button - uses shared positioning: top: 60, left: 24 */}
       <Pressable
         onPress={handleSecretBack}
-        style={[styles.backButton, responsiveStyles.backButton]}
-        hitSlop={20}
+        style={sharedStyles.backButton}
+        hitSlop={LAYOUT.backArrow.hitSlop}
       >
-        <Typography variant="headline" style={styles.backArrow}>
-          ←
-        </Typography>
+        <Text style={styles.backArrow}>←</Text>
       </Pressable>
 
-      {/* Content */}
-      <View style={[styles.content, responsiveStyles.content]}>
-        {/* Section label */}
-        <Typography variant="body" style={[styles.sectionLabel, responsiveStyles.sectionLabel]}>
-          Basics
-        </Typography>
+      {/* Content - paddingTop: 170 (with section label) */}
+      <View style={sharedStyles.contentWithSection}>
+        {/* Section label - JetBrains Mono, WHITE, UPPERCASE */}
+        <Text style={sharedStyles.sectionLabel}>Basics</Text>
 
-        {/* Headline */}
-        <Typography variant="headline" style={[styles.headline, responsiveStyles.headline]}>
+        {/* Headline - Merriweather_700Bold, fontSize 32 */}
+        <Text style={sharedStyles.headline}>
           Desired{'\n'}relationship type
-        </Typography>
+        </Text>
 
         {/* Options */}
         <ScrollView
@@ -174,15 +149,15 @@ export const BasicsRelationshipScreen: React.FC<BasicsRelationshipScreenProps> =
 
           {/* Non-Monogamous toggle */}
           <Pressable onPress={handleToggleNonMono} style={styles.toggleButton}>
-            <Typography variant="body" style={styles.toggleText}>
+            <Text style={styles.toggleText}>
               {showNonMono ? 'Hide Non-Monogamous Options ▲' : 'See Non-Monogamous Options ▼'}
-            </Typography>
+            </Text>
           </Pressable>
         </ScrollView>
       </View>
 
-      {/* Fixed footer with Continue button */}
-      <View style={[styles.footer, responsiveStyles.footer]}>
+      {/* Fixed footer - bottom: 48 */}
+      <View style={sharedStyles.footer}>
         <GlassButton
           onPress={handleNext}
           disabled={!selectedType}
@@ -195,18 +170,18 @@ export const BasicsRelationshipScreen: React.FC<BasicsRelationshipScreenProps> =
       {/* Secret navigation triggers */}
       <Pressable
         onPress={handleSecretBack}
-        style={styles.secretBackTrigger}
+        style={sharedStyles.secretBackTrigger}
         hitSlop={10}
       />
       <Pressable
         onPress={handleNext}
         disabled={!selectedType}
-        style={styles.secretMiddleTrigger}
+        style={sharedStyles.secretMiddleTrigger}
         hitSlop={10}
       />
       <Pressable
         onPress={handleSecretForward}
-        style={styles.secretForwardTrigger}
+        style={sharedStyles.secretForwardTrigger}
         hitSlop={10}
       />
     </View>
@@ -214,96 +189,26 @@ export const BasicsRelationshipScreen: React.FC<BasicsRelationshipScreenProps> =
 };
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-  backButton: {
-    position: 'absolute',
-    top: 60,
-    left: 24,
-    zIndex: 10,
-  },
   backArrow: {
-    fontSize: 32,
-    color: 'rgba(255, 255, 255, 0.95)',
-  },
-  content: {
-    flex: 1,
-    paddingHorizontal: 24,
-    paddingTop: 140,
-    paddingBottom: 48,
-  },
-  sectionLabel: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: 'rgba(255, 255, 255, 0.5)',
-    textTransform: 'uppercase',
-    letterSpacing: 1,
-    marginBottom: 8,
-  },
-  headline: {
-    fontSize: 32,
-    fontWeight: '700',
-    color: 'rgba(255, 255, 255, 0.95)',
-    lineHeight: 40,
-    letterSpacing: -0.5,
-    marginBottom: 32,
+    fontSize: LAYOUT.backArrow.size,
+    color: COLORS.white[95],
   },
   scrollView: {
     flex: 1,
   },
   scrollContent: {
-    paddingBottom: 24,
+    paddingBottom: LAYOUT.spacing.large,
   },
   toggleButton: {
-    marginTop: 16,
-    paddingVertical: 12,
+    marginTop: LAYOUT.spacing.default,
+    paddingVertical: LAYOUT.spacing.medium,
     alignItems: 'center',
   },
   toggleText: {
-    fontSize: 16,
-    color: 'rgba(255, 255, 255, 0.8)',
+    fontFamily: TYPOGRAPHY.body.fontFamily,
+    fontSize: LAYOUT.spacing.default,
+    color: COLORS.white[85],
     textDecorationLine: 'underline',
-  },
-  footer: {
-    position: 'absolute',
-    bottom: 48,
-    left: 24,
-    right: 24,
-  },
-  secretBackTrigger: {
-    position: 'absolute',
-    top: 10,
-    left: 10,
-    width: 70,
-    height: 70,
-    zIndex: 9999,
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.2)',
-    borderRadius: 8,
-  },
-  secretMiddleTrigger: {
-    position: 'absolute',
-    top: 10,
-    left: '50%',
-    marginLeft: -35,
-    width: 70,
-    height: 70,
-    zIndex: 9999,
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.2)',
-    borderRadius: 8,
-  },
-  secretForwardTrigger: {
-    position: 'absolute',
-    top: 10,
-    right: 10,
-    width: 70,
-    height: 70,
-    zIndex: 9999,
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.2)',
-    borderRadius: 8,
   },
 });
 

@@ -138,7 +138,7 @@ export const HamburgerMenu: React.FC<HamburgerMenuProps> = ({
                   pressed && styles.menuItemPressed,
                 ]}
               >
-                <User size={22} stroke="rgba(0, 0, 0, 0.7)" />
+                <User size={22} stroke="#FFFFFF" />
                 <Body style={styles.menuItemText}>My Profile</Body>
               </Pressable>
 
@@ -150,7 +150,7 @@ export const HamburgerMenu: React.FC<HamburgerMenuProps> = ({
                   pressed && styles.menuItemPressed,
                 ]}
               >
-                <Camera size={22} stroke="rgba(0, 0, 0, 0.7)" />
+                <Camera size={22} stroke="#FFFFFF" />
                 <Body style={styles.menuItemText}>My Photos</Body>
               </Pressable>
 
@@ -162,7 +162,7 @@ export const HamburgerMenu: React.FC<HamburgerMenuProps> = ({
                   pressed && styles.menuItemPressed,
                 ]}
               >
-                <Heart size={22} stroke="rgba(0, 0, 0, 0.7)" />
+                <Heart size={22} stroke="#FFFFFF" />
                 <Body style={styles.menuItemText}>Interested in You</Body>
               </Pressable>
 
@@ -174,7 +174,7 @@ export const HamburgerMenu: React.FC<HamburgerMenuProps> = ({
                   pressed && styles.menuItemPressed,
                 ]}
               >
-                <Settings size={22} stroke="rgba(0, 0, 0, 0.7)" />
+                <Settings size={22} stroke="#FFFFFF" />
                 <Body style={styles.menuItemText}>Settings</Body>
               </Pressable>
 
@@ -186,7 +186,7 @@ export const HamburgerMenu: React.FC<HamburgerMenuProps> = ({
                   pressed && styles.menuItemPressed,
                 ]}
               >
-                <ShieldCheck size={22} stroke="rgba(0, 0, 0, 0.7)" />
+                <ShieldCheck size={22} stroke="#FFFFFF" />
                 <Body style={styles.menuItemText}>Certification</Body>
               </Pressable>
 
@@ -289,7 +289,7 @@ const styles = StyleSheet.create({
   },
   menuItemText: {
     fontSize: 17,
-    color: 'rgba(0, 0, 0, 0.8)',
+    color: '#FFFFFF', // White
   },
   logoutText: {
     color: 'rgba(239, 68, 68, 0.9)',

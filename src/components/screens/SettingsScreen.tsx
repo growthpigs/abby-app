@@ -16,11 +16,12 @@ import {
 } from 'react-native';
 import { BlurView } from 'expo-blur';
 import * as Haptics from 'expo-haptics';
-import { Mic, MessageSquare, Trash2 } from 'lucide-react-native';
+import { Mic, MessageSquare, Trash2, X } from 'lucide-react-native';
 import { AuthService } from '../../services/AuthService';
 import { Headline, Body, Caption } from '../ui/Typography';
 import { useSettingsStore, InputMode } from '../../store/useSettingsStore';
 import { useResponsiveLayout } from '../../hooks/useResponsiveLayout';
+import { sharedStyles, LAYOUT, TYPOGRAPHY, COLORS } from '../../constants/onboardingLayout';
 
 export interface SettingsScreenProps {
   onClose?: () => void;
@@ -128,30 +129,36 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
         {/* Header */}
         <View style={[styles.header, { paddingTop: layout.paddingTop }]}>
           <Caption style={styles.headerTitle}>SETTINGS</Caption>
-          <Pressable onPress={onClose} style={styles.closeButton}>
-            <Body style={styles.closeText}>Done</Body>
-          </Pressable>
         </View>
+
+        {/* Close button - absolute positioned using shared design system */}
+        <Pressable
+          onPress={onClose}
+          style={sharedStyles.closeButton}
+          hitSlop={LAYOUT.backArrow.hitSlop}
+        >
+          <X size={24} stroke={COLORS.white[95]} />
+        </Pressable>
 
         {/* Content */}
         <View style={[
           styles.content,
           {
-            paddingVertical: layout.isSmallScreen ? 20 : 32,
-            paddingHorizontal: layout.paddingHorizontal,
+            paddingVertical: layout.isSmallScreen ? LAYOUT.spacing.large : LAYOUT.spacing.xl,
+            paddingHorizontal: LAYOUT.content.paddingHorizontal,
           },
         ]}>
           <Headline style={[
             styles.questionText,
             {
-              fontSize: layout.titleFontSize,
-              marginBottom: layout.isSmallScreen ? 20 : 32,
+              fontSize: layout.isSmallScreen ? TYPOGRAPHY.headline.fontSize - 4 : TYPOGRAPHY.headline.fontSize,
+              marginBottom: layout.isSmallScreen ? LAYOUT.spacing.large : LAYOUT.spacing.xl,
             },
           ]}>
             How do you want to talk with Abby?
           </Headline>
 
-          <View style={[styles.optionsContainer, { gap: layout.sectionGap }]}>
+          <View style={[styles.optionsContainer, { gap: layout.isSmallScreen ? LAYOUT.spacing.medium : LAYOUT.spacing.default }]}>
             <InputModeOption
               mode="voice_only"
               currentMode={inputMode}
@@ -182,7 +189,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
 
           <Caption style={[
             styles.defaultNote,
-            { marginTop: layout.isSmallScreen ? 16 : 24 },
+            { marginTop: layout.isSmallScreen ? LAYOUT.spacing.default : LAYOUT.spacing.large },
           ]}>
             Default is Voice + Text
           </Caption>
@@ -191,8 +198,8 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
           <View style={[
             styles.accountSection,
             {
-              marginTop: layout.isSmallScreen ? 32 : 48,
-              paddingTop: layout.isSmallScreen ? 16 : 24,
+              marginTop: layout.isSmallScreen ? LAYOUT.spacing.xl : LAYOUT.spacing.xxl,
+              paddingTop: layout.isSmallScreen ? LAYOUT.spacing.default : LAYOUT.spacing.large,
             },
           ]}>
             <Caption style={styles.sectionTitle}>ACCOUNT</Caption>
@@ -231,66 +238,59 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingBottom: 16,
-    paddingHorizontal: 20,
+    paddingBottom: LAYOUT.spacing.default,
+    paddingHorizontal: LAYOUT.content.paddingHorizontal - 4, // 20px
     borderBottomWidth: 1,
     borderBottomColor: 'rgba(0, 0, 0, 0.08)',
   },
   headerTitle: {
-    fontSize: 12,
+    fontSize: TYPOGRAPHY.sectionLabel.fontSize,
     letterSpacing: 3,
-    color: 'rgba(0, 0, 0, 0.5)',
+    color: COLORS.charcoal.light,
   },
-  closeButton: {
-    paddingVertical: 8,
-    paddingHorizontal: 16,
-  },
-  closeText: {
-    color: '#3B82F6',
-    fontWeight: '600',
-  },
+  // closeButton now uses sharedStyles.closeButton from onboardingLayout
   content: {
     flex: 1,
   },
   questionText: {
     textAlign: 'center',
-    color: 'rgba(0, 0, 0, 0.85)',
+    color: COLORS.charcoal.dark,
   },
   optionsContainer: {},
   modeOption: {
     flexDirection: 'row',
     alignItems: 'center',
-    padding: 16,
-    backgroundColor: 'rgba(255, 255, 255, 0.5)',
-    borderRadius: 16,
+    padding: LAYOUT.spacing.default,
+    backgroundColor: COLORS.white[50],
+    borderRadius: LAYOUT.spacing.default,
     borderWidth: 2,
-    borderColor: 'rgba(0, 0, 0, 0.1)',
-    gap: 12,
+    borderColor: COLORS.white[10],
+    gap: LAYOUT.spacing.medium,
   },
   modeOptionSelected: {
-    borderColor: '#3B82F6',
-    backgroundColor: 'rgba(59, 130, 246, 0.08)',
+    borderColor: COLORS.blue.primary,
+    backgroundColor: COLORS.blue.selected,
   },
   modeOptionPressed: {
     opacity: 0.8,
   },
   radioOuter: {
-    width: 24,
-    height: 24,
-    borderRadius: 12,
+    width: LAYOUT.spacing.large,
+    height: LAYOUT.spacing.large,
+    borderRadius: LAYOUT.spacing.medium,
     borderWidth: 2,
-    borderColor: 'rgba(0, 0, 0, 0.3)',
+    borderColor: COLORS.white[30],
     alignItems: 'center',
     justifyContent: 'center',
   },
   radioOuterSelected: {
-    borderColor: '#3B82F6',
+    borderColor: COLORS.blue.primary,
   },
   radioInner: {
-    width: 12,
-    height: 12,
-    borderRadius: 6,
-    backgroundColor: '#3B82F6',
+    width: LAYOUT.spacing.medium,
+    height: LAYOUT.spacing.medium,
+    borderRadius: LAYOUT.spacing.small - 2,
+    backgroundColor: COLORS.blue.primary,
   },
   modeIcon: {
     width: 40,
@@ -304,54 +304,54 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   modeTitle: {
-    fontSize: 17,
-    color: 'rgba(0, 0, 0, 0.85)',
+    fontSize: TYPOGRAPHY.answerOption.fontSize,
+    color: COLORS.charcoal.dark,
     marginBottom: 2,
   },
   modeTitleSelected: {
-    color: '#3B82F6',
+    color: COLORS.blue.primary,
     fontWeight: '600',
   },
   modeDescription: {
     fontSize: 13,
-    color: 'rgba(0, 0, 0, 0.5)',
+    color: COLORS.charcoal.light,
   },
   defaultNote: {
     textAlign: 'center',
-    color: 'rgba(0, 0, 0, 0.4)',
+    color: COLORS.charcoal.light,
   },
   accountSection: {
     borderTopWidth: 1,
-    borderTopColor: 'rgba(0, 0, 0, 0.1)',
+    borderTopColor: COLORS.white[10],
   },
   sectionTitle: {
-    fontSize: 12,
+    fontSize: TYPOGRAPHY.sectionLabel.fontSize,
     letterSpacing: 2,
-    color: 'rgba(0, 0, 0, 0.5)',
-    marginBottom: 16,
+    color: COLORS.charcoal.light,
+    marginBottom: LAYOUT.spacing.default,
   },
   deleteButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    padding: 16,
-    backgroundColor: 'rgba(220, 38, 38, 0.08)',
-    borderRadius: 12,
+    padding: LAYOUT.spacing.default,
+    backgroundColor: COLORS.red.background,
+    borderRadius: LAYOUT.spacing.medium,
     borderWidth: 1,
     borderColor: 'rgba(220, 38, 38, 0.2)',
-    gap: 12,
+    gap: LAYOUT.spacing.medium,
   },
   deleteButtonPressed: {
     opacity: 0.7,
     backgroundColor: 'rgba(220, 38, 38, 0.15)',
   },
   deleteButtonText: {
-    color: '#DC2626',
+    color: COLORS.red.primary,
     fontWeight: '600',
   },
   deleteWarning: {
     textAlign: 'center',
-    marginTop: 12,
-    color: 'rgba(0, 0, 0, 0.4)',
+    marginTop: LAYOUT.spacing.medium,
+    color: COLORS.charcoal.light,
     fontSize: 11,
   },
 });

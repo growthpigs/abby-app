@@ -11,12 +11,17 @@ import {
   StyleSheet,
   Pressable,
   ScrollView,
+  Text,
 } from 'react-native';
 import * as Haptics from 'expo-haptics';
-import { Typography } from '../ui/Typography';
 import { RadioGroup, RadioOption } from '../ui/RadioGroup';
 import { GlassButton } from '../ui/GlassButton';
-import { useResponsiveLayout } from '../../hooks/useResponsiveLayout';
+import {
+  sharedStyles,
+  LAYOUT,
+  TYPOGRAPHY,
+  COLORS,
+} from '../../constants/onboardingLayout';
 
 interface BasicsPreferencesScreenProps {
   onNext?: (preference: string) => void;
@@ -52,7 +57,6 @@ export const BasicsPreferencesScreen: React.FC<BasicsPreferencesScreenProps> = (
   onSecretBack,
   onSecretForward,
 }) => {
-  const layout = useResponsiveLayout();
   const [selectedPreference, setSelectedPreference] = useState<string | null>(null);
   const [showAll, setShowAll] = useState(false);
 
@@ -81,39 +85,23 @@ export const BasicsPreferencesScreen: React.FC<BasicsPreferencesScreenProps> = (
   };
 
   return (
-    <View style={styles.container}>
-      {/* Back button */}
+    <View style={sharedStyles.container}>
+      {/* Back button - FIXED: top: 60, left: 24 */}
       <Pressable
         onPress={handleSecretBack}
-        style={[styles.backButton, { top: layout.paddingTop }]}
-        hitSlop={20}
+        style={sharedStyles.backButton}
+        hitSlop={LAYOUT.backArrow.hitSlop}
       >
-        <Typography variant="headline" style={styles.backArrow}>
-          ←
-        </Typography>
+        <Text style={styles.backArrow}>←</Text>
       </Pressable>
 
-      {/* Content */}
-      <View style={[styles.content, {
-        paddingTop: layout.paddingTop + 60,
-        paddingHorizontal: layout.paddingHorizontal,
-        paddingBottom: layout.paddingBottom,
-      }]}>
-        {/* Section label */}
-        <Typography variant="body" style={[styles.sectionLabel, {
-          fontSize: layout.captionFontSize + 2,
-          marginBottom: layout.buttonMargin,
-        }]}>
-          Basics
-        </Typography>
+      {/* Content - paddingTop: 170 (with section label) */}
+      <View style={sharedStyles.contentWithSection}>
+        {/* Section label - JetBrains Mono, WHITE, UPPERCASE */}
+        <Text style={sharedStyles.sectionLabel}>Basics</Text>
 
-        {/* Headline */}
-        <Typography variant="headline" style={[styles.headline, {
-          fontSize: layout.headlineFontSize,
-          marginBottom: layout.sectionGap + 8,
-        }]}>
-          I want to date...
-        </Typography>
+        {/* Headline - Merriweather_700Bold, fontSize 32 */}
+        <Text style={sharedStyles.headline}>I want to date...</Text>
 
         {/* Options */}
         <ScrollView
@@ -130,21 +118,15 @@ export const BasicsPreferencesScreen: React.FC<BasicsPreferencesScreenProps> = (
 
           {/* See All button */}
           {!showAll && (
-            <Pressable onPress={handleSeeAll} style={[styles.seeAllButton, { marginTop: layout.buttonMargin }]}>
-              <Typography variant="body" style={[styles.seeAllText, { fontSize: layout.bodyFontSize }]}>
-                See All Options ▼
-              </Typography>
+            <Pressable onPress={handleSeeAll} style={styles.seeAllButton}>
+              <Text style={styles.seeAllText}>See All Options ▼</Text>
             </Pressable>
           )}
         </ScrollView>
       </View>
 
-      {/* Fixed footer with Continue button */}
-      <View style={[styles.footer, {
-        bottom: layout.paddingBottom,
-        left: layout.paddingHorizontal,
-        right: layout.paddingHorizontal,
-      }]}>
+      {/* Fixed footer - bottom: 48 */}
+      <View style={sharedStyles.footer}>
         <GlassButton
           onPress={handleNext}
           disabled={!selectedPreference}
@@ -157,18 +139,18 @@ export const BasicsPreferencesScreen: React.FC<BasicsPreferencesScreenProps> = (
       {/* Secret navigation triggers */}
       <Pressable
         onPress={handleSecretBack}
-        style={styles.secretBackTrigger}
+        style={sharedStyles.secretBackTrigger}
         hitSlop={10}
       />
       <Pressable
         onPress={handleNext}
         disabled={!selectedPreference}
-        style={styles.secretMiddleTrigger}
+        style={sharedStyles.secretMiddleTrigger}
         hitSlop={10}
       />
       <Pressable
         onPress={handleSecretForward}
-        style={styles.secretForwardTrigger}
+        style={sharedStyles.secretForwardTrigger}
         hitSlop={10}
       />
     </View>
@@ -176,96 +158,26 @@ export const BasicsPreferencesScreen: React.FC<BasicsPreferencesScreenProps> = (
 };
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-  backButton: {
-    position: 'absolute',
-    top: 60,
-    left: 24,
-    zIndex: 10,
-  },
   backArrow: {
-    fontSize: 32,
-    color: 'rgba(255, 255, 255, 0.95)',
-  },
-  content: {
-    flex: 1,
-    paddingHorizontal: 24,
-    paddingTop: 140,
-    paddingBottom: 48,
-  },
-  sectionLabel: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: 'rgba(255, 255, 255, 0.5)',
-    textTransform: 'uppercase',
-    letterSpacing: 1,
-    marginBottom: 8,
-  },
-  headline: {
-    fontSize: 32,
-    fontWeight: '700',
-    color: 'rgba(255, 255, 255, 0.95)',
-    lineHeight: 40,
-    letterSpacing: -0.5,
-    marginBottom: 32,
+    fontSize: LAYOUT.backArrow.size,
+    color: COLORS.white[95],
   },
   scrollView: {
     flex: 1,
   },
   scrollContent: {
-    paddingBottom: 24,
+    paddingBottom: LAYOUT.spacing.large,
   },
   seeAllButton: {
-    marginTop: 16,
-    paddingVertical: 12,
+    marginTop: LAYOUT.spacing.default,
+    paddingVertical: LAYOUT.spacing.medium,
     alignItems: 'center',
   },
   seeAllText: {
-    fontSize: 16,
-    color: 'rgba(255, 255, 255, 0.8)',
+    fontFamily: TYPOGRAPHY.body.fontFamily,
+    fontSize: TYPOGRAPHY.body.fontSize,
+    color: COLORS.white[85],
     textDecorationLine: 'underline',
-  },
-  footer: {
-    position: 'absolute',
-    bottom: 48,
-    left: 24,
-    right: 24,
-  },
-  secretBackTrigger: {
-    position: 'absolute',
-    top: 10,
-    left: 10,
-    width: 70,
-    height: 70,
-    zIndex: 9999,
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.2)',
-    borderRadius: 8,
-  },
-  secretMiddleTrigger: {
-    position: 'absolute',
-    top: 10,
-    left: '50%',
-    marginLeft: -35,
-    width: 70,
-    height: 70,
-    zIndex: 9999,
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.2)',
-    borderRadius: 8,
-  },
-  secretForwardTrigger: {
-    position: 'absolute',
-    top: 10,
-    right: 10,
-    width: 70,
-    height: 70,
-    zIndex: 9999,
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.2)',
-    borderRadius: 8,
   },
 });
 

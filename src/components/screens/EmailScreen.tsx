@@ -15,7 +15,11 @@ import {
 import * as Haptics from 'expo-haptics';
 import { Typography } from '../ui/Typography';
 import { GlassButton } from '../ui/GlassButton';
-import { useResponsiveLayout } from '../../hooks/useResponsiveLayout';
+import {
+  sharedStyles,
+  LAYOUT,
+  COLORS,
+} from '../../constants/onboardingLayout';
 
 interface EmailScreenProps {
   onNext?: (email: string) => void;
@@ -29,7 +33,6 @@ export const EmailScreen: React.FC<EmailScreenProps> = ({
   onSecretForward,
 }) => {
   const [email, setEmail] = useState('');
-  const layout = useResponsiveLayout();
 
   const handleNext = () => {
     if (isValid) {
@@ -52,12 +55,12 @@ export const EmailScreen: React.FC<EmailScreenProps> = ({
   const isValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 
   return (
-    <View style={styles.container}>
+    <View style={sharedStyles.container}>
       {/* Back button */}
       <Pressable
         onPress={handleSecretBack}
-        style={[styles.backButton, { top: layout.paddingTop }]}
-        hitSlop={20}
+        style={sharedStyles.backButton}
+        hitSlop={LAYOUT.backArrow.hitSlop}
       >
         <Typography variant="headline" style={styles.backArrow}>
           ←
@@ -65,28 +68,15 @@ export const EmailScreen: React.FC<EmailScreenProps> = ({
       </Pressable>
 
       {/* Content */}
-      <View style={[
-        styles.content,
-        {
-          paddingTop: layout.paddingTop + 60,
-          paddingBottom: layout.paddingBottom,
-          paddingHorizontal: layout.paddingHorizontal,
-        }
-      ]}>
+      <View style={sharedStyles.content}>
         {/* Headline */}
-        <Typography variant="headline" style={[
-          styles.headline,
-          {
-            fontSize: layout.headlineFontSize,
-            marginBottom: layout.sectionGap * 1.5,
-          }
-        ]}>
+        <Typography variant="headline" style={sharedStyles.headline}>
           What's your{'\n'}email?
         </Typography>
 
         {/* Email input */}
         <TextInput
-          style={[styles.emailInput, { height: layout.inputHeight }]}
+          style={sharedStyles.textInput}
           value={email}
           onChangeText={setEmail}
           placeholder=""
@@ -96,21 +86,15 @@ export const EmailScreen: React.FC<EmailScreenProps> = ({
           autoFocus={true}
           returnKeyType="done"
           onSubmitEditing={handleNext}
-          placeholderTextColor="rgba(255, 255, 255, 0.3)"
+          placeholderTextColor={COLORS.white[30]}
           maxLength={254}
         />
 
         {/* Help text */}
-        <View style={[styles.helpTextContainer, { marginTop: layout.sectionGap }]}>
-          <Typography variant="caption" style={[
-            styles.helpText,
-            { fontSize: layout.captionFontSize }
-          ]}>
+        <View>
+          <Typography variant="caption" style={sharedStyles.helpText}>
             We'll send you a verification code to confirm your email.{' '}
-            <Typography variant="caption" style={[
-              styles.helpLink,
-              { fontSize: layout.captionFontSize }
-            ]}>
+            <Typography variant="caption" style={styles.helpLink}>
               Why do we need this?
             </Typography>
           </Typography>
@@ -118,14 +102,7 @@ export const EmailScreen: React.FC<EmailScreenProps> = ({
       </View>
 
       {/* Fixed footer with Continue button */}
-      <View style={[
-        styles.footer,
-        {
-          bottom: layout.paddingBottom,
-          left: layout.paddingHorizontal,
-          right: layout.paddingHorizontal,
-        }
-      ]}>
+      <View style={sharedStyles.footer}>
         <GlassButton
           onPress={handleNext}
           disabled={!isValid}
@@ -139,20 +116,20 @@ export const EmailScreen: React.FC<EmailScreenProps> = ({
       {/* Left = Back */}
       <Pressable
         onPress={handleSecretBack}
-        style={styles.secretBackTrigger}
+        style={sharedStyles.secretBackTrigger}
         hitSlop={10}
       />
       {/* Middle = Primary action (Next/Done/OK) */}
       <Pressable
         onPress={handleNext}
         disabled={!isValid}
-        style={styles.secretMiddleTrigger}
+        style={sharedStyles.secretMiddleTrigger}
         hitSlop={10}
       />
       {/* Right = Forward */}
       <Pressable
         onPress={handleSecretForward}
-        style={styles.secretForwardTrigger}
+        style={sharedStyles.secretForwardTrigger}
         hitSlop={10}
       />
     </View>
@@ -160,84 +137,13 @@ export const EmailScreen: React.FC<EmailScreenProps> = ({
 };
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-  backButton: {
-    position: 'absolute',
-    left: 24,
-    zIndex: 10,
-  },
   backArrow: {
-    fontSize: 32,
-    color: 'rgba(255, 255, 255, 0.95)',
-  },
-  content: {
-    flex: 1,
-  },
-  headline: {
-    fontWeight: '700',
-    color: 'rgba(255, 255, 255, 0.95)',
-    lineHeight: 40,
-    letterSpacing: -0.5,
-  },
-  emailInput: {
-    width: '100%',
-    paddingVertical: 12,
-    paddingHorizontal: 8,
-    borderBottomWidth: 2,
-    borderBottomColor: 'rgba(255, 255, 255, 0.3)',
-    fontSize: 18,
-    color: 'rgba(255, 255, 255, 0.95)',
-    fontWeight: '400',
-    letterSpacing: 0,
-    textAlign: 'left',
-  },
-  helpTextContainer: {},
-  helpText: {
-    color: 'rgba(255, 255, 255, 0.6)',
-    lineHeight: 18,
+    fontSize: LAYOUT.backArrow.size,
+    color: COLORS.white[95],
   },
   helpLink: {
-    color: 'rgba(255, 255, 255, 0.8)',
+    color: COLORS.white[70],
     textDecorationLine: 'underline',
-  },
-  footer: {
-    position: 'absolute',
-  },
-  secretBackTrigger: {
-    position: 'absolute',
-    top: 10, // TOP corner (avoids keyboard)
-    left: 10,
-    width: 70,
-    height: 70,
-    zIndex: 9999,
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.2)',
-    borderRadius: 8,
-  },
-  secretMiddleTrigger: {
-    position: 'absolute',
-    top: 10, // TOP center (avoids keyboard)
-    left: '50%',
-    marginLeft: -35,
-    width: 70,
-    height: 70,
-    zIndex: 9999,
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.2)',
-    borderRadius: 8,
-  },
-  secretForwardTrigger: {
-    position: 'absolute',
-    top: 10, // TOP corner (avoids keyboard)
-    right: 10,
-    width: 70,
-    height: 70,
-    zIndex: 9999,
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.2)',
-    borderRadius: 8,
   },
 });
 

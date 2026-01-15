@@ -12,12 +12,17 @@ import {
   Pressable,
   TextInput,
   Alert,
+  Text,
 } from 'react-native';
 import * as Haptics from 'expo-haptics';
 import * as Location from 'expo-location';
-import { Typography } from '../ui/Typography';
 import { GlassButton } from '../ui/GlassButton';
-import { useResponsiveLayout } from '../../hooks/useResponsiveLayout';
+import {
+  sharedStyles,
+  LAYOUT,
+  TYPOGRAPHY,
+  COLORS,
+} from '../../constants/onboardingLayout';
 
 interface BasicsLocationScreenProps {
   onNext?: (location: { type: 'gps' | 'zip'; value: string | { lat: number; lng: number } }) => void;
@@ -30,7 +35,6 @@ export const BasicsLocationScreen: React.FC<BasicsLocationScreenProps> = ({
   onSecretBack,
   onSecretForward,
 }) => {
-  const layout = useResponsiveLayout();
   const [zipCode, setZipCode] = useState('');
   const [locationStatus, setLocationStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
   const [gpsLocation, setGpsLocation] = useState<{ lat: number; lng: number } | null>(null);
@@ -92,7 +96,7 @@ export const BasicsLocationScreen: React.FC<BasicsLocationScreenProps> = ({
       case 'loading':
         return 'Getting Location...';
       case 'success':
-        return 'Location Captured ✓';
+        return 'Location Captured';
       case 'error':
         return 'Try Again';
       default:
@@ -101,37 +105,33 @@ export const BasicsLocationScreen: React.FC<BasicsLocationScreenProps> = ({
   };
 
   return (
-    <View style={styles.container}>
-      {/* Back button */}
+    <View style={sharedStyles.container}>
+      {/* Back button - FIXED at top: 60, left: 24 */}
       <Pressable
         onPress={handleSecretBack}
-        style={[styles.backButton, { top: layout.paddingTop + 20 }]}
-        hitSlop={20}
+        style={sharedStyles.backButton}
+        hitSlop={LAYOUT.backArrow.hitSlop}
       >
-        <Typography variant="headline" style={styles.backArrow}>
-          ←
-        </Typography>
+        <Text style={styles.backArrow}>←</Text>
       </Pressable>
 
-      {/* Content */}
-      <View style={[styles.content, { paddingTop: layout.paddingTop + 60, paddingBottom: layout.paddingBottom }]}>
-        {/* Section label */}
-        <Typography variant="body" style={styles.sectionLabel}>
-          Basics
-        </Typography>
+      {/* Content - paddingTop: 170 (with section label) */}
+      <View style={sharedStyles.contentWithSection}>
+        {/* Section label - JetBrains Mono, WHITE, UPPERCASE */}
+        <Text style={sharedStyles.sectionLabel}>Basics</Text>
 
-        {/* Headline */}
-        <Typography variant="headline" style={styles.headline}>
+        {/* Headline - Merriweather_700Bold, fontSize 32 */}
+        <Text style={sharedStyles.headline}>
           Please let us know{'\n'}where you live
-        </Typography>
+        </Text>
 
         {/* Subtext */}
-        <Typography variant="body" style={[styles.subtext, { marginBottom: layout.sectionGap + 8 }]}>
+        <Text style={styles.subtext}>
           This helps us find matches near you
-        </Typography>
+        </Text>
 
         {/* Location options */}
-        <View style={[styles.optionsContainer, { gap: layout.sectionGap }]}>
+        <View style={styles.optionsContainer}>
           {/* GPS Button */}
           <GlassButton
             onPress={handleUseGPS}
@@ -145,15 +145,15 @@ export const BasicsLocationScreen: React.FC<BasicsLocationScreenProps> = ({
           {/* Divider */}
           <View style={styles.divider}>
             <View style={styles.dividerLine} />
-            <Typography variant="body" style={styles.dividerText}>or</Typography>
+            <Text style={styles.dividerText}>or</Text>
             <View style={styles.dividerLine} />
           </View>
 
           {/* Zip Code input */}
           <View style={styles.zipContainer}>
-            <Typography variant="body" style={styles.zipLabel}>
+            <Text style={styles.zipLabel}>
               Enter your zip code
-            </Typography>
+            </Text>
             <TextInput
               style={styles.zipInput}
               value={zipCode}
@@ -167,15 +167,15 @@ export const BasicsLocationScreen: React.FC<BasicsLocationScreenProps> = ({
               placeholder="00000"
               keyboardType="number-pad"
               maxLength={10}
-              placeholderTextColor="rgba(255, 255, 255, 0.3)"
+              placeholderTextColor={COLORS.white[30]}
             />
           </View>
         </View>
 
       </View>
 
-      {/* Fixed footer with Continue button */}
-      <View style={[styles.footer, { bottom: layout.paddingBottom }]}>
+      {/* Fixed footer - bottom: 48 */}
+      <View style={sharedStyles.footer}>
         <GlassButton
           onPress={handleNext}
           disabled={!isValid}
@@ -188,18 +188,18 @@ export const BasicsLocationScreen: React.FC<BasicsLocationScreenProps> = ({
       {/* Secret navigation triggers */}
       <Pressable
         onPress={handleSecretBack}
-        style={styles.secretBackTrigger}
+        style={sharedStyles.secretBackTrigger}
         hitSlop={10}
       />
       <Pressable
         onPress={handleNext}
         disabled={!isValid}
-        style={styles.secretMiddleTrigger}
+        style={sharedStyles.secretMiddleTrigger}
         hitSlop={10}
       />
       <Pressable
         onPress={handleSecretForward}
-        style={styles.secretForwardTrigger}
+        style={sharedStyles.secretForwardTrigger}
         hitSlop={10}
       />
     </View>
@@ -207,119 +207,57 @@ export const BasicsLocationScreen: React.FC<BasicsLocationScreenProps> = ({
 };
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-  backButton: {
-    position: 'absolute',
-    left: 24,
-    zIndex: 10,
-  },
   backArrow: {
-    fontSize: 32,
-    color: 'rgba(255, 255, 255, 0.95)',
-  },
-  content: {
-    flex: 1,
-    paddingHorizontal: 24,
-  },
-  sectionLabel: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: 'rgba(255, 255, 255, 0.5)',
-    textTransform: 'uppercase',
-    letterSpacing: 1,
-    marginBottom: 8,
-  },
-  headline: {
-    fontSize: 32,
-    fontWeight: '700',
-    color: 'rgba(255, 255, 255, 0.95)',
-    lineHeight: 40,
-    letterSpacing: -0.5,
-    marginBottom: 12,
+    fontSize: LAYOUT.backArrow.size,
+    color: COLORS.white[95],
   },
   subtext: {
-    fontSize: 16,
-    color: 'rgba(255, 255, 255, 0.7)',
+    fontFamily: TYPOGRAPHY.body.fontFamily,
+    fontSize: TYPOGRAPHY.body.fontSize,
+    lineHeight: TYPOGRAPHY.body.lineHeight,
+    color: COLORS.white[70],
+    marginBottom: LAYOUT.spacing.large,
   },
-  optionsContainer: {},
+  optionsContainer: {
+    gap: LAYOUT.spacing.large,
+  },
   gpsButton: {
     width: '100%',
   },
   divider: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 16,
+    gap: LAYOUT.spacing.default,
   },
   dividerLine: {
     flex: 1,
     height: 1,
-    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    backgroundColor: COLORS.white[30],
   },
   dividerText: {
     fontSize: 14,
-    color: 'rgba(255, 255, 255, 0.5)',
+    color: COLORS.white[50],
   },
   zipContainer: {
-    gap: 8,
+    gap: LAYOUT.spacing.small,
   },
   zipLabel: {
-    fontSize: 14,
-    color: 'rgba(255, 255, 255, 0.7)',
+    fontSize: TYPOGRAPHY.inputLabel.fontSize,
+    color: TYPOGRAPHY.inputLabel.color,
   },
   zipInput: {
     width: '100%',
-    paddingVertical: 16,
-    paddingHorizontal: 16,
+    paddingVertical: LAYOUT.spacing.default,
+    paddingHorizontal: LAYOUT.spacing.default,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.3)',
+    borderColor: COLORS.white[30],
     borderRadius: 12,
     fontSize: 24,
-    color: 'rgba(255, 255, 255, 0.95)',
+    color: COLORS.white[95],
     fontWeight: '600',
     letterSpacing: 4,
     textAlign: 'center',
-    backgroundColor: 'rgba(255, 255, 255, 0.05)',
-  },
-  footer: {
-    position: 'absolute',
-    left: 24,
-    right: 24,
-  },
-  secretBackTrigger: {
-    position: 'absolute',
-    top: 10,
-    left: 10,
-    width: 70,
-    height: 70,
-    zIndex: 9999,
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.2)',
-    borderRadius: 8,
-  },
-  secretMiddleTrigger: {
-    position: 'absolute',
-    top: 10,
-    left: '50%',
-    marginLeft: -35,
-    width: 70,
-    height: 70,
-    zIndex: 9999,
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.2)',
-    borderRadius: 8,
-  },
-  secretForwardTrigger: {
-    position: 'absolute',
-    top: 10,
-    right: 10,
-    width: 70,
-    height: 70,
-    zIndex: 9999,
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.2)',
-    borderRadius: 8,
+    backgroundColor: COLORS.white[10],
   },
 });
 

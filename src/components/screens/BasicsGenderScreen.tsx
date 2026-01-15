@@ -11,12 +11,18 @@ import {
   StyleSheet,
   Pressable,
   ScrollView,
+  Text,
 } from 'react-native';
 import * as Haptics from 'expo-haptics';
-import { Typography } from '../ui/Typography';
 import { RadioGroup, RadioOption } from '../ui/RadioGroup';
 import { GlassButton } from '../ui/GlassButton';
-import { useResponsiveLayout } from '../../hooks/useResponsiveLayout';
+import {
+  sharedStyles,
+  answerStyles,
+  LAYOUT,
+  TYPOGRAPHY,
+  COLORS,
+} from '../../constants/onboardingLayout';
 
 interface BasicsGenderScreenProps {
   onNext?: (gender: string) => void;
@@ -50,7 +56,6 @@ export const BasicsGenderScreen: React.FC<BasicsGenderScreenProps> = ({
   onSecretBack,
   onSecretForward,
 }) => {
-  const layout = useResponsiveLayout();
   const [selectedGender, setSelectedGender] = useState<string | null>(null);
   const [showAll, setShowAll] = useState(false);
 
@@ -79,36 +84,23 @@ export const BasicsGenderScreen: React.FC<BasicsGenderScreenProps> = ({
   };
 
   return (
-    <View style={styles.container}>
-      {/* Back button */}
+    <View style={sharedStyles.container}>
+      {/* Back button - FIXED at top: 60, left: 24 */}
       <Pressable
         onPress={handleSecretBack}
-        style={[styles.backButton, { top: layout.paddingTop }]}
-        hitSlop={20}
+        style={sharedStyles.backButton}
+        hitSlop={LAYOUT.backArrow.hitSlop}
       >
-        <Typography variant="headline" style={styles.backArrow}>
-          ←
-        </Typography>
+        <Text style={styles.backArrow}>←</Text>
       </Pressable>
 
-      {/* Content */}
-      <View style={[
-        styles.content,
-        {
-          paddingTop: layout.paddingTop + 60,
-          paddingBottom: layout.paddingBottom,
-          paddingHorizontal: layout.paddingHorizontal,
-        }
-      ]}>
-        {/* Section label */}
-        <Typography variant="body" style={styles.sectionLabel}>
-          Basics
-        </Typography>
+      {/* Content - paddingTop: 170 (with section label) */}
+      <View style={sharedStyles.contentWithSection}>
+        {/* Section label - JetBrains Mono, WHITE, UPPERCASE */}
+        <Text style={sharedStyles.sectionLabel}>Basics</Text>
 
-        {/* Headline */}
-        <Typography variant="headline" style={[styles.headline, { marginBottom: layout.sectionGap + 8 }]}>
-          I am a...
-        </Typography>
+        {/* Headline - Merriweather Bold, fontSize 32 */}
+        <Text style={sharedStyles.headline}>I am a...</Text>
 
         {/* Options */}
         <ScrollView
@@ -125,17 +117,15 @@ export const BasicsGenderScreen: React.FC<BasicsGenderScreenProps> = ({
 
           {/* See All button */}
           {!showAll && (
-            <Pressable onPress={handleSeeAll} style={[styles.seeAllButton, { marginTop: layout.buttonMargin }]}>
-              <Typography variant="body" style={styles.seeAllText}>
-                See All Options ▼
-              </Typography>
+            <Pressable onPress={handleSeeAll} style={styles.seeAllButton}>
+              <Text style={styles.seeAllText}>See All Options ▼</Text>
             </Pressable>
           )}
         </ScrollView>
       </View>
 
-      {/* Fixed footer with Continue button */}
-      <View style={[styles.footer, { bottom: layout.paddingBottom + 16, left: layout.paddingHorizontal, right: layout.paddingHorizontal }]}>
+      {/* Fixed footer - bottom: 48 */}
+      <View style={sharedStyles.footer}>
         <GlassButton
           onPress={handleNext}
           disabled={!selectedGender}
@@ -148,18 +138,18 @@ export const BasicsGenderScreen: React.FC<BasicsGenderScreenProps> = ({
       {/* Secret navigation triggers */}
       <Pressable
         onPress={handleSecretBack}
-        style={styles.secretBackTrigger}
+        style={sharedStyles.secretBackTrigger}
         hitSlop={10}
       />
       <Pressable
         onPress={handleNext}
         disabled={!selectedGender}
-        style={styles.secretMiddleTrigger}
+        style={sharedStyles.secretMiddleTrigger}
         hitSlop={10}
       />
       <Pressable
         onPress={handleSecretForward}
-        style={styles.secretForwardTrigger}
+        style={sharedStyles.secretForwardTrigger}
         hitSlop={10}
       />
     </View>
@@ -167,87 +157,26 @@ export const BasicsGenderScreen: React.FC<BasicsGenderScreenProps> = ({
 };
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-  backButton: {
-    position: 'absolute',
-    left: 24,
-    zIndex: 10,
-  },
   backArrow: {
-    fontSize: 32,
-    color: 'rgba(255, 255, 255, 0.95)',
-  },
-  content: {
-    flex: 1,
-  },
-  sectionLabel: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: 'rgba(255, 255, 255, 0.5)',
-    textTransform: 'uppercase',
-    letterSpacing: 1,
-    marginBottom: 8,
-  },
-  headline: {
-    fontSize: 32,
-    fontWeight: '700',
-    color: 'rgba(255, 255, 255, 0.95)',
-    lineHeight: 40,
-    letterSpacing: -0.5,
+    fontSize: LAYOUT.backArrow.size,
+    color: COLORS.white[95],
   },
   scrollView: {
     flex: 1,
   },
   scrollContent: {
-    paddingBottom: 24,
+    paddingBottom: LAYOUT.spacing.large,
   },
   seeAllButton: {
-    paddingVertical: 12,
+    paddingVertical: LAYOUT.spacing.medium,
     alignItems: 'center',
+    marginTop: LAYOUT.spacing.default,
   },
   seeAllText: {
-    fontSize: 16,
-    color: 'rgba(255, 255, 255, 0.8)',
+    fontFamily: TYPOGRAPHY.answerOption.fontFamily,
+    fontSize: TYPOGRAPHY.answerOption.fontSize,
+    color: COLORS.white[85],
     textDecorationLine: 'underline',
-  },
-  footer: {
-    position: 'absolute',
-  },
-  secretBackTrigger: {
-    position: 'absolute',
-    top: 10,
-    left: 10,
-    width: 70,
-    height: 70,
-    zIndex: 9999,
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.2)',
-    borderRadius: 8,
-  },
-  secretMiddleTrigger: {
-    position: 'absolute',
-    top: 10,
-    left: '50%',
-    marginLeft: -35,
-    width: 70,
-    height: 70,
-    zIndex: 9999,
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.2)',
-    borderRadius: 8,
-  },
-  secretForwardTrigger: {
-    position: 'absolute',
-    top: 10,
-    right: 10,
-    width: 70,
-    height: 70,
-    zIndex: 9999,
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.2)',
-    borderRadius: 8,
   },
 });
 

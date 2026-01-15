@@ -13,12 +13,19 @@ import {
   StyleSheet,
   Pressable,
   ScrollView,
+  Text,
 } from 'react-native';
 import * as Haptics from 'expo-haptics';
 import { Typography } from '../ui/Typography';
 import { RadioGroup, RadioOption } from '../ui/RadioGroup';
 import { GlassButton } from '../ui/GlassButton';
-import { useResponsiveLayout } from '../../hooks/useResponsiveLayout';
+import {
+  sharedStyles,
+  answerStyles,
+  LAYOUT,
+  TYPOGRAPHY,
+  COLORS,
+} from '../../constants/onboardingLayout';
 
 interface SmokingScreenProps {
   onNext?: (smokingMe: string, smokingPartner: string) => void;
@@ -44,7 +51,6 @@ export const SmokingScreen: React.FC<SmokingScreenProps> = ({
   onSecretBack,
   onSecretForward,
 }) => {
-  const layout = useResponsiveLayout();
   const [smokingMe, setSmokingMe] = useState<string | null>(null);
   const [smokingPartner, setSmokingPartner] = useState<string | null>(null);
 
@@ -68,72 +74,35 @@ export const SmokingScreen: React.FC<SmokingScreenProps> = ({
   const isValid = smokingMe !== null && smokingPartner !== null;
 
   return (
-    <View style={styles.container}>
-      {/* Back button */}
+    <View style={sharedStyles.container}>
+      {/* Back button - FIXED at top: 60, left: 24 */}
       <Pressable
         onPress={handleSecretBack}
-        style={[
-          styles.backButton,
-          { top: layout.isSmallScreen ? 40 : 60 },
-        ]}
-        hitSlop={20}
+        style={sharedStyles.backButton}
+        hitSlop={LAYOUT.backArrow.hitSlop}
       >
-        <Typography variant="headline" style={styles.backArrow}>
-          ←
-        </Typography>
+        <Text style={styles.backArrow}>←</Text>
       </Pressable>
 
-      {/* Content */}
-      <View
-        style={[
-          styles.content,
-          {
-            paddingHorizontal: layout.paddingHorizontal,
-            paddingTop: layout.isSmallScreen ? 100 : 140,
-            paddingBottom: layout.paddingBottom,
-          },
-        ]}
-      >
-        {/* Section label */}
-        <Typography
-          variant="body"
-          style={[
-            styles.sectionLabel,
-            { marginBottom: layout.isSmallScreen ? 4 : 8 },
-          ]}
-        >
-          Lifestyle
-        </Typography>
+      {/* Content - paddingTop: 170 (with section label) */}
+      <View style={sharedStyles.contentWithSection}>
+        {/* Section label - JetBrains Mono, WHITE, UPPERCASE */}
+        <Text style={sharedStyles.sectionLabel}>Lifestyle</Text>
 
-        {/* Headline */}
-        <Typography
-          variant="headline"
-          style={[
-            styles.headline,
-            {
-              fontSize: layout.headlineFontSize,
-              lineHeight: layout.isSmallScreen ? 34 : 40,
-              marginBottom: layout.isSmallScreen ? 20 : 32,
-            },
-          ]}
-        >
+        {/* Headline - Merriweather_700Bold, fontSize 32 */}
+        <Text style={sharedStyles.headline}>
           Smoking{'\n'}preferences
-        </Typography>
+        </Text>
 
         {/* Options */}
         <ScrollView
           style={styles.scrollView}
-          contentContainerStyle={[
-            styles.scrollContent,
-            { gap: layout.isSmallScreen ? 20 : 32 },
-          ]}
+          contentContainerStyle={styles.scrollContent}
           showsVerticalScrollIndicator={false}
         >
           {/* My smoking */}
-          <View style={[styles.questionGroup, { gap: layout.isSmallScreen ? 10 : 16 }]}>
-            <Typography variant="body" style={styles.questionLabel}>
-              Do you smoke?
-            </Typography>
+          <View style={styles.questionGroup}>
+            <Text style={styles.questionLabel}>Do you smoke?</Text>
             <RadioGroup
               options={MY_SMOKING_OPTIONS}
               value={smokingMe}
@@ -143,10 +112,8 @@ export const SmokingScreen: React.FC<SmokingScreenProps> = ({
           </View>
 
           {/* Partner's smoking preference */}
-          <View style={[styles.questionGroup, { gap: layout.isSmallScreen ? 10 : 16 }]}>
-            <Typography variant="body" style={styles.questionLabel}>
-              Partner smoking?
-            </Typography>
+          <View style={styles.questionGroup}>
+            <Text style={styles.questionLabel}>Partner smoking?</Text>
             <RadioGroup
               options={PARTNER_SMOKING_OPTIONS}
               value={smokingPartner}
@@ -157,17 +124,8 @@ export const SmokingScreen: React.FC<SmokingScreenProps> = ({
         </ScrollView>
       </View>
 
-      {/* Fixed footer with Continue button */}
-      <View
-        style={[
-          styles.footer,
-          {
-            bottom: layout.isSmallScreen ? 32 : 48,
-            left: layout.paddingHorizontal,
-            right: layout.paddingHorizontal,
-          },
-        ]}
-      >
+      {/* Fixed footer - bottom: 48 */}
+      <View style={sharedStyles.footer}>
         <GlassButton
           onPress={handleNext}
           disabled={!isValid}
@@ -180,18 +138,18 @@ export const SmokingScreen: React.FC<SmokingScreenProps> = ({
       {/* Secret navigation triggers */}
       <Pressable
         onPress={handleSecretBack}
-        style={styles.secretBackTrigger}
+        style={sharedStyles.secretBackTrigger}
         hitSlop={10}
       />
       <Pressable
         onPress={handleNext}
         disabled={!isValid}
-        style={styles.secretMiddleTrigger}
+        style={sharedStyles.secretMiddleTrigger}
         hitSlop={10}
       />
       <Pressable
         onPress={handleSecretForward}
-        style={styles.secretForwardTrigger}
+        style={sharedStyles.secretForwardTrigger}
         hitSlop={10}
       />
     </View>
@@ -199,72 +157,25 @@ export const SmokingScreen: React.FC<SmokingScreenProps> = ({
 };
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-  backButton: {
-    position: 'absolute',
-    left: 24,
-    zIndex: 10,
-  },
   backArrow: {
-    fontSize: 32,
-    color: 'rgba(255, 255, 255, 0.95)',
-  },
-  content: {
-    flex: 1,
-  },
-  sectionLabel: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: 'rgba(255, 255, 255, 0.5)',
-    textTransform: 'uppercase',
-    letterSpacing: 1,
-  },
-  headline: {
-    fontWeight: '700',
-    color: 'rgba(255, 255, 255, 0.95)',
-    letterSpacing: -0.5,
+    fontSize: LAYOUT.backArrow.size,
+    color: COLORS.white[95],
   },
   scrollView: {
     flex: 1,
   },
   scrollContent: {
-    paddingBottom: 24,
+    paddingBottom: LAYOUT.spacing.large,
+    gap: LAYOUT.spacing.xl,
   },
-  questionGroup: {},
+  questionGroup: {
+    gap: LAYOUT.spacing.default,
+  },
   questionLabel: {
+    fontFamily: TYPOGRAPHY.answerOption.fontFamily,
     fontSize: 18,
     fontWeight: '600',
-    color: 'rgba(255, 255, 255, 0.9)',
-  },
-  footer: {
-    position: 'absolute',
-  },
-  secretBackTrigger: {
-    position: 'absolute',
-    top: 10,
-    left: 10,
-    width: 70,
-    height: 70,
-    zIndex: 9999,
-  },
-  secretMiddleTrigger: {
-    position: 'absolute',
-    top: 10,
-    left: '50%',
-    marginLeft: -35,
-    width: 70,
-    height: 70,
-    zIndex: 9999,
-  },
-  secretForwardTrigger: {
-    position: 'absolute',
-    top: 10,
-    right: 10,
-    width: 70,
-    height: 70,
-    zIndex: 9999,
+    color: COLORS.white[95],
   },
 });
 

@@ -9,6 +9,8 @@
  * API Integration:
  * - When authenticated: Uses /v1/questions/* API via QuestionsService
  * - Demo mode: Falls back to local ALL_DATA_POINTS
+ *
+ * DESIGN SYSTEM: Uses shared constants from onboardingLayout.ts
  */
 
 import React, { useCallback, useEffect, useRef, useState } from 'react';
@@ -22,6 +24,12 @@ import {
   Animated,
   PanResponder,
 } from 'react-native';
+import {
+  sharedStyles,
+  LAYOUT,
+  TYPOGRAPHY,
+  COLORS,
+} from '../../constants/onboardingLayout';
 import { BlurView } from 'expo-blur';
 import * as Haptics from 'expo-haptics';
 import AnimatedRN, { FadeIn, FadeOut } from 'react-native-reanimated';
@@ -520,9 +528,8 @@ export const InterviewScreen: React.FC<InterviewScreenProps> = ({
 };
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
+  // Use shared container style
+  container: sharedStyles.container,
 
   backdrop: {
     ...StyleSheet.absoluteFillObject,
@@ -548,65 +555,65 @@ const styles = StyleSheet.create({
 
   // Draggable header area
   draggableHeader: {
-    paddingTop: 12,
+    paddingTop: LAYOUT.spacing.medium,
   },
 
   handleContainer: {
-    paddingBottom: 8,
+    paddingBottom: LAYOUT.spacing.small,
     alignItems: 'center',
   },
   handle: {
     width: 40,
     height: 5,
     borderRadius: 3,
-    backgroundColor: 'rgba(0, 0, 0, 0.2)',
+    backgroundColor: COLORS.charcoal.light,
   },
 
-  // Progress indicator - top right corner
+  // Progress indicator - top right corner (JetBrains Mono, uppercase per design system)
   progressContainer: {
     position: 'absolute',
-    top: 16,
-    right: 20,
+    top: LAYOUT.spacing.default,
+    right: LAYOUT.spacing.large,
     zIndex: 10,
   },
   progressText: {
-    fontFamily: 'JetBrainsMono_400Regular',
+    fontFamily: TYPOGRAPHY.sectionLabel.fontFamily, // JetBrains Mono
     fontSize: 11,
-    color: 'rgba(0, 0, 0, 0.5)',
+    color: COLORS.charcoal.light,
     textTransform: 'uppercase',
-    letterSpacing: 0.5,
+    letterSpacing: TYPOGRAPHY.sectionLabel.letterSpacing,
   },
   apiIndicator: {
-    color: 'rgba(59, 130, 246, 0.7)',
+    color: COLORS.blue.primary,
     fontSize: 10,
   },
 
-  // Question - pushed up 20px from center
+  // Question - pushed up 20px from center (Merriweather per design system)
   questionContainer: {
-    paddingHorizontal: 24,
-    paddingTop: 4,
-    paddingBottom: 20,
+    paddingHorizontal: LAYOUT.content.paddingHorizontal,
+    paddingTop: LAYOUT.spacing.micro,
+    paddingBottom: LAYOUT.spacing.large,
   },
   questionText: {
-    fontFamily: 'Merriweather_400Regular',
+    fontFamily: TYPOGRAPHY.body.fontFamily, // Merriweather_400Regular
     fontSize: 23,
     lineHeight: 29,
-    color: 'rgba(0, 0, 0, 0.85)',
+    color: COLORS.charcoal.dark,
     textAlign: 'center',
   },
   voiceErrorText: {
-    fontFamily: 'Merriweather_400Regular',
-    fontSize: 12,
+    fontFamily: TYPOGRAPHY.body.fontFamily,
+    fontSize: TYPOGRAPHY.helpText.fontSize,
     color: 'rgba(180, 100, 0, 0.9)',
     textAlign: 'center',
-    marginBottom: 12,
+    marginBottom: LAYOUT.spacing.medium,
   },
   apiErrorText: {
-    fontFamily: 'JetBrainsMono_400Regular',
+    fontFamily: TYPOGRAPHY.sectionLabel.fontFamily, // JetBrains Mono
     fontSize: 11,
     color: 'rgba(180, 100, 0, 0.8)',
     textAlign: 'center',
-    marginBottom: 8,
+    marginBottom: LAYOUT.spacing.small,
   },
 
   // Loading
@@ -614,62 +621,46 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    gap: 16,
+    gap: LAYOUT.spacing.default,
   },
   loadingText: {
-    fontFamily: 'Merriweather_400Regular',
+    fontFamily: TYPOGRAPHY.body.fontFamily, // Merriweather
     fontSize: 16,
-    color: 'rgba(255, 255, 255, 0.8)',
+    color: COLORS.white[85],
   },
   loadingOverlay: {
     position: 'absolute',
-    top: 16,
-    left: 20,
+    top: LAYOUT.spacing.default,
+    left: LAYOUT.spacing.large,
   },
 
   // Chat input wrapper - FLOATING PILL at screen bottom
   chatInputContainer: {
     position: 'absolute',
     bottom: 34,
-    left: 20,
-    right: 20,
+    left: LAYOUT.spacing.large,
+    right: LAYOUT.spacing.large,
     zIndex: 200,
   },
 
-  // Secret navigation triggers
+  // Secret navigation triggers - use shared styles with debug border
   secretBackTrigger: {
-    position: 'absolute',
-    top: 10,
-    left: 10,
-    width: 70,
-    height: 70,
-    zIndex: 9999,
+    ...sharedStyles.secretBackTrigger,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.5)',
-    borderRadius: 8,
+    borderColor: COLORS.white[50],
+    borderRadius: LAYOUT.spacing.small,
   },
   secretMiddleTrigger: {
-    position: 'absolute',
-    top: 10,
-    left: '50%',
-    marginLeft: -35,
-    width: 70,
-    height: 70,
-    zIndex: 9999,
+    ...sharedStyles.secretMiddleTrigger,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.5)',
-    borderRadius: 8,
+    borderColor: COLORS.white[50],
+    borderRadius: LAYOUT.spacing.small,
   },
   secretForwardTrigger: {
-    position: 'absolute',
-    top: 10,
-    right: 10,
-    width: 70,
-    height: 70,
-    zIndex: 9999,
+    ...sharedStyles.secretForwardTrigger,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.5)',
-    borderRadius: 8,
+    borderColor: COLORS.white[50],
+    borderRadius: LAYOUT.spacing.small,
   },
 });
 

@@ -22,7 +22,12 @@ import * as Haptics from 'expo-haptics';
 import { Typography } from '../ui/Typography';
 import { GlassButton } from '../ui/GlassButton';
 import { Checkbox } from '../ui/Checkbox';
-import { useResponsiveLayout } from '../../hooks/useResponsiveLayout';
+import {
+  sharedStyles,
+  LAYOUT,
+  TYPOGRAPHY,
+  COLORS,
+} from '../../constants/onboardingLayout';
 
 interface DOBScreenProps {
   onNext?: (dob: { month: number; day: number; year: number }, ageRange: { min: number; max: number }) => void;
@@ -35,7 +40,6 @@ export const DOBScreen: React.FC<DOBScreenProps> = ({
   onSecretBack,
   onSecretForward,
 }) => {
-  const layout = useResponsiveLayout();
 
   // DOB fields
   const [month, setMonth] = useState('');
@@ -160,14 +164,14 @@ export const DOBScreen: React.FC<DOBScreenProps> = ({
 
   return (
     <KeyboardAvoidingView
-      style={styles.container}
+      style={sharedStyles.container}
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
     >
       {/* Back button */}
       <Pressable
         onPress={handleSecretBack}
-        style={[styles.backButton, { top: layout.paddingTop }]}
-        hitSlop={20}
+        style={sharedStyles.backButton}
+        hitSlop={LAYOUT.backArrow.hitSlop}
       >
         <Typography variant="headline" style={styles.backArrow}>
           ←
@@ -177,25 +181,18 @@ export const DOBScreen: React.FC<DOBScreenProps> = ({
       {/* Content */}
       <ScrollView
         style={styles.scrollView}
-        contentContainerStyle={[
-          styles.content,
-          {
-            paddingTop: layout.paddingTop + 40, // Account for back button
-            paddingHorizontal: layout.paddingHorizontal,
-            paddingBottom: layout.paddingBottom + 80, // Account for footer
-          },
-        ]}
+        contentContainerStyle={styles.scrollContent}
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
       >
         {/* Headline */}
-        <Typography variant="headline" style={[styles.headline, { marginBottom: layout.sectionGap * 1.5 }]}>
+        <Typography variant="headline" style={sharedStyles.headline}>
           When were you{'\n'}born?
         </Typography>
 
         {/* DOB inputs - MM/DD/YYYY format */}
-        <View style={[styles.inputGroup, { marginBottom: layout.sectionGap * 1.5 }]}>
-          <Typography variant="body" style={[styles.inputLabel, { marginBottom: layout.buttonMargin }]}>
+        <View style={styles.inputGroup}>
+          <Typography variant="body" style={sharedStyles.inputLabel}>
             Date of birth
           </Typography>
           <View style={styles.dobRow}>
@@ -246,8 +243,8 @@ export const DOBScreen: React.FC<DOBScreenProps> = ({
         </View>
 
         {/* Age range inputs */}
-        <View style={[styles.inputGroup, { marginBottom: layout.sectionGap * 1.5 }]}>
-          <Typography variant="body" style={[styles.inputLabel, { marginBottom: layout.buttonMargin }]}>
+        <View style={styles.inputGroup}>
+          <Typography variant="body" style={sharedStyles.inputLabel}>
             Desired age range for matches
           </Typography>
           <View style={styles.ageRangeRow}>
@@ -284,7 +281,7 @@ export const DOBScreen: React.FC<DOBScreenProps> = ({
         </View>
 
         {/* 18+ Age Confirmation (Legal Requirement) */}
-        <View style={[styles.confirmationGroup, { marginTop: layout.sectionGap, paddingTop: layout.buttonMargin }]}>
+        <View style={styles.confirmationGroup}>
           <Checkbox
             checked={confirmed18}
             onChange={setConfirmed18}
@@ -298,7 +295,7 @@ export const DOBScreen: React.FC<DOBScreenProps> = ({
       </ScrollView>
 
       {/* Fixed footer with Continue button */}
-      <View style={[styles.footer, { bottom: layout.paddingBottom, left: layout.paddingHorizontal, right: layout.paddingHorizontal }]}>
+      <View style={sharedStyles.footer}>
         <GlassButton
           onPress={handleNext}
           disabled={!isValid}
@@ -311,18 +308,18 @@ export const DOBScreen: React.FC<DOBScreenProps> = ({
       {/* Secret navigation triggers */}
       <Pressable
         onPress={handleSecretBack}
-        style={styles.secretBackTrigger}
+        style={sharedStyles.secretBackTrigger}
         hitSlop={10}
       />
       <Pressable
         onPress={handleNext}
         disabled={!isValid}
-        style={styles.secretMiddleTrigger}
+        style={sharedStyles.secretMiddleTrigger}
         hitSlop={10}
       />
       <Pressable
         onPress={handleSecretForward}
-        style={styles.secretForwardTrigger}
+        style={sharedStyles.secretForwardTrigger}
         hitSlop={10}
       />
     </KeyboardAvoidingView>
@@ -330,37 +327,21 @@ export const DOBScreen: React.FC<DOBScreenProps> = ({
 };
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-  backButton: {
-    position: 'absolute',
-    left: 24,
-    zIndex: 10,
-  },
-  backArrow: {
-    fontSize: 32,
-    color: 'rgba(255, 255, 255, 0.95)',
-  },
   scrollView: {
     flex: 1,
   },
-  content: {
+  scrollContent: {
     flexGrow: 1,
+    paddingTop: LAYOUT.content.paddingTop,
+    paddingHorizontal: LAYOUT.content.paddingHorizontal,
+    paddingBottom: LAYOUT.content.paddingBottom,
   },
-  headline: {
-    fontSize: 32,
-    fontWeight: '700',
-    color: 'rgba(255, 255, 255, 0.95)',
-    lineHeight: 40,
-    letterSpacing: -0.5,
+  backArrow: {
+    fontSize: LAYOUT.backArrow.size,
+    color: COLORS.white[95],
   },
   inputGroup: {
-    // marginBottom applied dynamically
-  },
-  inputLabel: {
-    fontSize: 14,
-    color: 'rgba(255, 255, 255, 0.7)',
+    marginBottom: LAYOUT.spacing.xl,
   },
   dobRow: {
     flexDirection: 'row',
@@ -376,21 +357,20 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     paddingHorizontal: 8,
     borderBottomWidth: 2,
-    borderBottomColor: 'rgba(255, 255, 255, 0.3)',
-    fontSize: 20,
-    color: 'rgba(255, 255, 255, 0.95)',
-    fontWeight: '400',
+    borderBottomColor: COLORS.white[30],
+    fontSize: TYPOGRAPHY.input.fontSize,
+    color: TYPOGRAPHY.input.color,
     textAlign: 'center',
   },
   dobSeparator: {
     fontSize: 24,
-    color: 'rgba(255, 255, 255, 0.5)',
-    marginHorizontal: 8,
+    color: COLORS.white[50],
+    marginHorizontal: LAYOUT.spacing.small,
   },
   ageDisplay: {
-    fontSize: 14,
-    color: 'rgba(255, 255, 255, 0.6)',
-    marginTop: 12,
+    fontSize: TYPOGRAPHY.helpText.fontSize,
+    color: COLORS.white[70],
+    marginTop: LAYOUT.spacing.medium,
   },
   ageRangeRow: {
     flexDirection: 'row',
@@ -404,53 +384,26 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     paddingHorizontal: 8,
     borderBottomWidth: 2,
-    borderBottomColor: 'rgba(255, 255, 255, 0.3)',
-    fontSize: 20,
-    color: 'rgba(255, 255, 255, 0.95)',
-    fontWeight: '400',
+    borderBottomColor: COLORS.white[30],
+    fontSize: TYPOGRAPHY.input.fontSize,
+    color: TYPOGRAPHY.input.color,
     textAlign: 'center',
   },
   ageLabel: {
-    fontSize: 12,
-    color: 'rgba(255, 255, 255, 0.5)',
-    marginTop: 4,
+    fontSize: TYPOGRAPHY.helpText.fontSize,
+    color: COLORS.white[50],
+    marginTop: LAYOUT.spacing.micro,
   },
   ageSeparator: {
     fontSize: 20,
-    color: 'rgba(255, 255, 255, 0.5)',
-    marginHorizontal: 16,
+    color: COLORS.white[50],
+    marginHorizontal: LAYOUT.spacing.default,
   },
   confirmationGroup: {
+    marginTop: LAYOUT.spacing.large,
+    paddingTop: LAYOUT.spacing.medium,
     borderTopWidth: 1,
-    borderTopColor: 'rgba(255, 255, 255, 0.1)',
-  },
-  footer: {
-    position: 'absolute',
-  },
-  secretBackTrigger: {
-    position: 'absolute',
-    top: 10,
-    left: 10,
-    width: 70,
-    height: 70,
-    zIndex: 9999,
-  },
-  secretMiddleTrigger: {
-    position: 'absolute',
-    top: 10,
-    left: '50%',
-    marginLeft: -35,
-    width: 70,
-    height: 70,
-    zIndex: 9999,
-  },
-  secretForwardTrigger: {
-    position: 'absolute',
-    top: 10,
-    right: 10,
-    width: 70,
-    height: 70,
-    zIndex: 9999,
+    borderTopColor: COLORS.white[10],
   },
 });
 

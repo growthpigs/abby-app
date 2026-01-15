@@ -12,12 +12,19 @@ import {
   StyleSheet,
   Pressable,
   ScrollView,
+  Text,
 } from 'react-native';
 import * as Haptics from 'expo-haptics';
 import { Typography } from '../ui/Typography';
 import { Checkbox } from '../ui/Checkbox';
 import { GlassButton } from '../ui/GlassButton';
-import { useResponsiveLayout } from '../../hooks/useResponsiveLayout';
+import {
+  sharedStyles,
+  answerStyles,
+  LAYOUT,
+  TYPOGRAPHY,
+  COLORS,
+} from '../../constants/onboardingLayout';
 
 interface EthnicityPreferenceScreenProps {
   onNext?: (ethnicities: string[]) => void;
@@ -44,7 +51,6 @@ export const EthnicityPreferenceScreen: React.FC<EthnicityPreferenceScreenProps>
   onSecretBack,
   onSecretForward,
 }) => {
-  const layout = useResponsiveLayout();
   const [selectedEthnicities, setSelectedEthnicities] = useState<string[]>([]);
 
   const handleToggle = (value: string) => {
@@ -88,58 +94,39 @@ export const EthnicityPreferenceScreen: React.FC<EthnicityPreferenceScreenProps>
   const isValid = selectedEthnicities.length > 0;
 
   return (
-    <View style={styles.container}>
-      {/* Back button */}
+    <View style={sharedStyles.container}>
+      {/* Back button - FIXED: top: 60, left: 24 */}
       <Pressable
         onPress={handleSecretBack}
-        style={[styles.backButton, { top: layout.isSmallScreen ? 40 : 60 }]}
-        hitSlop={20}
+        style={sharedStyles.backButton}
+        hitSlop={LAYOUT.backArrow.hitSlop}
       >
         <Typography variant="headline" style={styles.backArrow}>
           ←
         </Typography>
       </Pressable>
 
-      {/* Content */}
-      <View style={[
-        styles.content,
-        {
-          paddingTop: layout.isSmallScreen ? 100 : 140,
-          paddingHorizontal: layout.paddingHorizontal,
-          paddingBottom: layout.isSmallScreen ? 32 : 48,
-        }
-      ]}>
-        {/* Section label */}
-        <Typography variant="body" style={styles.sectionLabel}>
+      {/* Content - paddingTop: 170 (with section label) */}
+      <View style={sharedStyles.contentWithSection}>
+        {/* Section label - JetBrains Mono, WHITE, UPPERCASE */}
+        <Text style={sharedStyles.sectionLabel}>
           Preferences
-        </Typography>
+        </Text>
 
-        {/* Headline */}
-        <Typography variant="headline" style={[
-          styles.headline,
-          {
-            fontSize: layout.isSmallScreen ? 28 : 32,
-            lineHeight: layout.isSmallScreen ? 34 : 40,
-          }
-        ]}>
+        {/* Headline - Merriweather_700Bold, fontSize 32 */}
+        <Text style={sharedStyles.headline}>
           Who would you{'\n'}like to meet?
-        </Typography>
+        </Text>
 
         {/* Subtext */}
-        <Typography variant="body" style={[
-          styles.subtext,
-          { marginBottom: layout.isSmallScreen ? 16 : 24 }
-        ]}>
+        <Text style={styles.subtext}>
           Select all that apply
-        </Typography>
+        </Text>
 
         {/* Options */}
         <ScrollView
           style={styles.scrollView}
-          contentContainerStyle={[
-            styles.scrollContent,
-            { gap: layout.isSmallScreen ? 12 : 16 }
-          ]}
+          contentContainerStyle={styles.scrollContent}
           showsVerticalScrollIndicator={false}
         >
           {ETHNICITY_OPTIONS.map((option) => (
@@ -154,15 +141,8 @@ export const EthnicityPreferenceScreen: React.FC<EthnicityPreferenceScreenProps>
         </ScrollView>
       </View>
 
-      {/* Fixed footer with Continue button */}
-      <View style={[
-        styles.footer,
-        {
-          bottom: layout.isSmallScreen ? 32 : 48,
-          left: layout.paddingHorizontal,
-          right: layout.paddingHorizontal,
-        }
-      ]}>
+      {/* Fixed footer - bottom: 48 */}
+      <View style={sharedStyles.footer}>
         <GlassButton
           onPress={handleNext}
           disabled={!isValid}
@@ -175,18 +155,18 @@ export const EthnicityPreferenceScreen: React.FC<EthnicityPreferenceScreenProps>
       {/* Secret navigation triggers */}
       <Pressable
         onPress={handleSecretBack}
-        style={styles.secretBackTrigger}
+        style={sharedStyles.secretBackTrigger}
         hitSlop={10}
       />
       <Pressable
         onPress={handleNext}
         disabled={!isValid}
-        style={styles.secretMiddleTrigger}
+        style={sharedStyles.secretMiddleTrigger}
         hitSlop={10}
       />
       <Pressable
         onPress={handleSecretForward}
-        style={styles.secretForwardTrigger}
+        style={sharedStyles.secretForwardTrigger}
         hitSlop={10}
       />
     </View>
@@ -194,78 +174,25 @@ export const EthnicityPreferenceScreen: React.FC<EthnicityPreferenceScreenProps>
 };
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-  backButton: {
-    position: 'absolute',
-    left: 24,
-    zIndex: 10,
-  },
   backArrow: {
-    fontSize: 32,
-    color: 'rgba(255, 255, 255, 0.95)',
-  },
-  content: {
-    flex: 1,
-  },
-  sectionLabel: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: 'rgba(255, 255, 255, 0.5)',
-    textTransform: 'uppercase',
-    letterSpacing: 1,
-    marginBottom: 8,
-  },
-  headline: {
-    fontSize: 32,
-    fontWeight: '700',
-    color: 'rgba(255, 255, 255, 0.95)',
-    lineHeight: 40,
-    letterSpacing: -0.5,
-    marginBottom: 8,
+    fontSize: LAYOUT.backArrow.size,
+    color: COLORS.white[95],
   },
   subtext: {
+    fontFamily: TYPOGRAPHY.body.fontFamily,
     fontSize: 14,
-    color: 'rgba(255, 255, 255, 0.6)',
-    marginBottom: 24,
+    color: COLORS.white[50],
+    marginBottom: LAYOUT.spacing.large,
   },
   scrollView: {
     flex: 1,
   },
   scrollContent: {
-    paddingBottom: 24,
+    paddingBottom: LAYOUT.spacing.large,
+    gap: LAYOUT.spacing.default,
   },
   checkbox: {
-    paddingVertical: 4,
-  },
-  footer: {
-    position: 'absolute',
-  },
-  secretBackTrigger: {
-    position: 'absolute',
-    top: 10,
-    left: 10,
-    width: 70,
-    height: 70,
-    zIndex: 9999,
-  },
-  secretMiddleTrigger: {
-    position: 'absolute',
-    top: 10,
-    left: '50%',
-    marginLeft: -35,
-    width: 70,
-    height: 70,
-    zIndex: 9999,
-  },
-  secretForwardTrigger: {
-    position: 'absolute',
-    top: 10,
-    right: 10,
-    width: 70,
-    height: 70,
-    zIndex: 9999,
+    paddingVertical: LAYOUT.spacing.micro,
   },
 });
 

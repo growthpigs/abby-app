@@ -301,10 +301,16 @@ export const MatchesScreen: React.FC<MatchesScreenProps> = ({
               <ChevronLeft size={24} stroke="rgba(0, 0, 0, 0.7)" />
               <Body style={styles.backText}>Back</Body>
             </Pressable>
-            <Pressable onPress={onClose} style={styles.closeButton}>
-              <Body style={styles.closeText}>Done</Body>
-            </Pressable>
           </View>
+
+          {/* Close button - absolute positioned */}
+          <Pressable
+            onPress={onClose}
+            style={styles.closeButton}
+            hitSlop={10}
+          >
+            <X size={24} stroke="rgba(255, 255, 255, 0.9)" />
+          </Pressable>
 
           {/* Detail Content */}
           <ScrollView style={styles.content} contentContainerStyle={styles.detailContainer}>
@@ -345,7 +351,7 @@ export const MatchesScreen: React.FC<MatchesScreenProps> = ({
               </View>
             )}
 
-            {/* Action Buttons - Like/Pass */}
+            {/* Action Buttons - Like/Pass (Elegant glass style) */}
             <View style={styles.detailActions}>
               <Pressable
                 onPress={() => handlePass(selectedMatch.id)}
@@ -357,8 +363,7 @@ export const MatchesScreen: React.FC<MatchesScreenProps> = ({
                   isActioning && styles.actionButtonDisabled,
                 ]}
               >
-                <X size={28} stroke={isActioning ? 'rgba(220, 38, 38, 0.4)' : '#DC2626'} strokeWidth={2.5} />
-                <Body style={[styles.passButtonText, isActioning && styles.buttonTextDisabled]}>Pass</Body>
+                <X size={32} stroke={isActioning ? 'rgba(255, 255, 255, 0.3)' : 'rgba(255, 255, 255, 0.9)'} strokeWidth={2} />
               </Pressable>
 
               <Pressable
@@ -371,8 +376,7 @@ export const MatchesScreen: React.FC<MatchesScreenProps> = ({
                   isActioning && styles.actionButtonDisabled,
                 ]}
               >
-                <Check size={28} stroke={isActioning ? 'rgba(16, 185, 129, 0.4)' : '#10B981'} strokeWidth={2.5} />
-                <Body style={[styles.likeButtonText, isActioning && styles.buttonTextDisabled]}>Like</Body>
+                <Heart size={32} stroke="#fff" fill={isActioning ? 'rgba(255, 255, 255, 0.3)' : '#fff'} />
               </Pressable>
             </View>
           </ScrollView>
@@ -388,10 +392,16 @@ export const MatchesScreen: React.FC<MatchesScreenProps> = ({
         {/* Header */}
         <View style={styles.header}>
           <Caption style={styles.headerTitle}>INTERESTED IN YOU</Caption>
-          <Pressable onPress={onClose} style={styles.closeButton}>
-            <Body style={styles.closeText}>Done</Body>
-          </Pressable>
         </View>
+
+        {/* Close button - absolute positioned */}
+        <Pressable
+          onPress={onClose}
+          style={styles.closeButton}
+          hitSlop={10}
+        >
+          <X size={24} stroke="rgba(255, 255, 255, 0.9)" />
+        </Pressable>
 
         {/* Content */}
         <ScrollView
@@ -407,7 +417,7 @@ export const MatchesScreen: React.FC<MatchesScreenProps> = ({
         >
           {isLoading ? (
             <View style={styles.loadingState}>
-              <ActivityIndicator size="large" color="#3B82F6" />
+              <ActivityIndicator size="large" color="#E11D48" />
               <Body style={styles.loadingText}>Finding your matches...</Body>
             </View>
           ) : error ? (
@@ -499,17 +509,19 @@ const styles = StyleSheet.create({
     borderBottomColor: 'rgba(0, 0, 0, 0.08)',
   },
   headerTitle: {
-    fontSize: 12,
-    letterSpacing: 3,
-    color: 'rgba(0, 0, 0, 0.5)',
+    fontSize: 11,
+    letterSpacing: 1,
+    color: '#FFFFFF', // WHITE like CertificationScreen labels
   },
   closeButton: {
-    paddingVertical: 8,
-    paddingHorizontal: 16,
-  },
-  closeText: {
-    color: '#3B82F6',
-    fontWeight: '600',
+    position: 'absolute',
+    top: 60,
+    right: 20,
+    width: 44,
+    height: 44,
+    alignItems: 'center',
+    justifyContent: 'center',
+    zIndex: 9999,
   },
   content: {
     flex: 1,
@@ -610,10 +622,9 @@ const styles = StyleSheet.create({
   matchCard: {
     flexDirection: 'row',
     padding: 16,
-    backgroundColor: 'rgba(255, 255, 255, 0.5)',
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: 'rgba(0, 0, 0, 0.08)',
+    backgroundColor: 'rgba(255, 255, 255, 0.15)', // CertificationScreen glass style
+    borderRadius: 12,
+    // No border - clean glass design like CertificationScreen
   },
   matchAvatar: {
     width: 56,
@@ -629,15 +640,16 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   matchName: {
-    fontSize: 16,
-    color: 'rgba(0, 0, 0, 0.85)',
+    fontSize: 15,
+    fontWeight: '600',
+    color: '#3A3A3A', // Charcoal like CertificationScreen itemLabel
     marginBottom: 4,
     textShadowColor: 'transparent',
   },
   matchBio: {
-    fontSize: 14,
-    color: 'rgba(0, 0, 0, 0.5)',
-    lineHeight: 20,
+    fontSize: 13,
+    color: 'rgba(255, 255, 255, 0.85)', // White text on glass
+    lineHeight: 19,
     textShadowColor: 'transparent',
   },
   matchScore: {
@@ -648,7 +660,7 @@ const styles = StyleSheet.create({
     textShadowColor: 'transparent',
   },
   matchCardPressed: {
-    backgroundColor: 'rgba(255, 255, 255, 0.7)',
+    backgroundColor: 'rgba(255, 255, 255, 0.25)',
     transform: [{ scale: 0.98 }],
   },
   chevron: {
@@ -734,43 +746,29 @@ const styles = StyleSheet.create({
     gap: 24,
   },
   actionButton: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
+    width: 72,
+    height: 72,
+    borderRadius: 36,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: 'rgba(255, 255, 255, 0.9)',
-    borderWidth: 2,
-    // No shadows - clean design
+    // No shadows - clean glass design
     elevation: 0,
   },
   actionButtonPressed: {
-    opacity: 0.7,
+    opacity: 0.8,
     transform: [{ scale: 0.95 }],
   },
   actionButtonDisabled: {
     opacity: 0.5,
   },
-  buttonTextDisabled: {
-    opacity: 0.5,
-  },
   passButton: {
-    borderColor: '#DC2626',
+    backgroundColor: 'rgba(255, 255, 255, 0.2)', // Subtle glass
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.3)',
   },
   likeButton: {
-    borderColor: '#10B981',
-  },
-  passButtonText: {
-    color: '#DC2626',
-    fontSize: 12,
-    fontWeight: '600',
-    marginTop: 2,
-  },
-  likeButtonText: {
-    color: '#10B981',
-    fontSize: 12,
-    fontWeight: '600',
-    marginTop: 2,
+    backgroundColor: '#E11D48', // PASSION pink filled
+    borderWidth: 0,
   },
   messageButton: {
     width: '100%',

@@ -27,7 +27,12 @@ import * as Location from 'expo-location';
 import { Typography } from '../ui/Typography';
 import { Checkbox } from '../ui/Checkbox';
 import { GlassButton } from '../ui/GlassButton';
-import { useResponsiveLayout } from '../../hooks/useResponsiveLayout';
+import {
+  sharedStyles,
+  LAYOUT,
+  TYPOGRAPHY,
+  COLORS,
+} from '../../constants/onboardingLayout';
 
 interface PermissionsScreenProps {
   onNext?: () => void;
@@ -50,7 +55,6 @@ export const PermissionsScreen: React.FC<PermissionsScreenProps> = ({
   onSecretBack,
   onSecretForward,
 }) => {
-  const layout = useResponsiveLayout();
   const [termsAccepted, setTermsAccepted] = useState(false);
   const [isRequesting, setIsRequesting] = useState(false);
   const [permissions, setPermissions] = useState<PermissionItem[]>([
@@ -219,12 +223,12 @@ export const PermissionsScreen: React.FC<PermissionsScreenProps> = ({
   };
 
   return (
-    <View style={styles.container}>
+    <View style={sharedStyles.container}>
       {/* Back button */}
       <Pressable
         onPress={handleSecretBack}
-        style={[styles.backButton, { top: layout.isSmallScreen ? 40 : 60 }]}
-        hitSlop={20}
+        style={sharedStyles.backButton}
+        hitSlop={LAYOUT.backArrow.hitSlop}
       >
         <Typography variant="headline" style={styles.backArrow}>
           ←
@@ -232,44 +236,21 @@ export const PermissionsScreen: React.FC<PermissionsScreenProps> = ({
       </Pressable>
 
       {/* Content */}
-      <View style={[
-        styles.content,
-        {
-          paddingTop: layout.isSmallScreen ? 100 : 140,
-          paddingHorizontal: layout.paddingHorizontal,
-          paddingBottom: layout.isSmallScreen ? 32 : 48,
-        }
-      ]}>
+      <View style={sharedStyles.content}>
         {/* Headline */}
-        <Typography variant="headline" style={[
-          styles.headline,
-          {
-            fontSize: layout.isSmallScreen ? 28 : 32,
-            lineHeight: layout.isSmallScreen ? 34 : 40,
-            marginBottom: layout.isSmallScreen ? 8 : 12,
-          }
-        ]}>
+        <Typography variant="headline" style={sharedStyles.headline}>
           Permissions
         </Typography>
 
         {/* Subtext */}
-        <Typography variant="body" style={[
-          styles.subtext,
-          {
-            fontSize: layout.bodyFontSize,
-            marginBottom: layout.isSmallScreen ? 20 : 32,
-          }
-        ]}>
+        <Typography variant="body" style={styles.subtext}>
           Abby needs a few things to help find your perfect match
         </Typography>
 
         {/* Permissions list */}
         <ScrollView
           style={styles.scrollView}
-          contentContainerStyle={[
-            styles.scrollContent,
-            { gap: layout.isSmallScreen ? 12 : 16 }
-          ]}
+          contentContainerStyle={styles.scrollContent}
           showsVerticalScrollIndicator={false}
         >
           {permissions.map((permission) => (
@@ -280,37 +261,25 @@ export const PermissionsScreen: React.FC<PermissionsScreenProps> = ({
               onChange={() => handlePermissionTap(permission.id)}
               label={permission.label}
               description={permission.description}
-              style={{
-                ...styles.permissionItem,
-                paddingVertical: layout.isSmallScreen ? 4 : 8
-              }}
+              style={styles.permissionItem}
             />
           ))}
 
           {/* Terms checkbox - user must accept */}
-          <View style={[
-            styles.termsContainer,
-            { marginTop: layout.isSmallScreen ? 12 : 16, paddingTop: layout.isSmallScreen ? 12 : 16 }
-          ]}>
+          <View style={styles.termsContainer}>
             <Checkbox
               checked={termsAccepted}
               onChange={setTermsAccepted}
               label="I agree to the Terms & Conditions"
               description="By continuing, you agree to our Terms of Service and Privacy Policy"
-              style={{
-                ...styles.permissionItem,
-                paddingVertical: layout.isSmallScreen ? 4 : 8
-              }}
+              style={styles.permissionItem}
             />
           </View>
         </ScrollView>
       </View>
 
       {/* Fixed footer with Continue button */}
-      <View style={[
-        styles.footer,
-        { bottom: layout.isSmallScreen ? 32 : 48, left: layout.paddingHorizontal, right: layout.paddingHorizontal }
-      ]}>
+      <View style={sharedStyles.footer}>
         <GlassButton
           onPress={handleNext}
           disabled={!termsAccepted || isRequesting}
@@ -323,18 +292,18 @@ export const PermissionsScreen: React.FC<PermissionsScreenProps> = ({
       {/* Secret navigation triggers */}
       <Pressable
         onPress={handleSecretBack}
-        style={styles.secretBackTrigger}
+        style={sharedStyles.secretBackTrigger}
         hitSlop={10}
       />
       <Pressable
         onPress={handleNext}
         disabled={!termsAccepted || isRequesting}
-        style={styles.secretMiddleTrigger}
+        style={sharedStyles.secretMiddleTrigger}
         hitSlop={10}
       />
       <Pressable
         onPress={handleSecretForward}
-        style={styles.secretForwardTrigger}
+        style={sharedStyles.secretForwardTrigger}
         hitSlop={10}
       />
     </View>
@@ -342,76 +311,32 @@ export const PermissionsScreen: React.FC<PermissionsScreenProps> = ({
 };
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-  backButton: {
-    position: 'absolute',
-    left: 24,
-    zIndex: 10,
-  },
   backArrow: {
-    fontSize: 32,
-    color: 'rgba(255, 255, 255, 0.95)',
-  },
-  content: {
-    flex: 1,
-  },
-  headline: {
-    fontWeight: '700',
-    color: 'rgba(255, 255, 255, 0.95)',
-    letterSpacing: -0.5,
+    fontSize: LAYOUT.backArrow.size,
+    color: COLORS.white[95],
   },
   subtext: {
-    color: 'rgba(255, 255, 255, 0.9)',
+    fontFamily: TYPOGRAPHY.body.fontFamily,
+    fontSize: TYPOGRAPHY.body.fontSize,
+    lineHeight: TYPOGRAPHY.body.lineHeight,
+    color: COLORS.white[85],
+    marginBottom: LAYOUT.spacing.xl,
   },
   scrollView: {
     flex: 1,
   },
   scrollContent: {
-    paddingBottom: 24,
+    paddingBottom: LAYOUT.spacing.large,
+    gap: LAYOUT.spacing.default,
   },
-  permissionItem: {},
+  permissionItem: {
+    paddingVertical: LAYOUT.spacing.small,
+  },
   termsContainer: {
+    marginTop: LAYOUT.spacing.default,
+    paddingTop: LAYOUT.spacing.default,
     borderTopWidth: 1,
-    borderTopColor: 'rgba(255, 255, 255, 0.1)',
-  },
-  footer: {
-    position: 'absolute',
-  },
-  secretBackTrigger: {
-    position: 'absolute',
-    top: 10,
-    left: 10,
-    width: 70,
-    height: 70,
-    zIndex: 9999,
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.2)',
-    borderRadius: 8,
-  },
-  secretMiddleTrigger: {
-    position: 'absolute',
-    top: 10,
-    left: '50%',
-    marginLeft: -35,
-    width: 70,
-    height: 70,
-    zIndex: 9999,
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.2)',
-    borderRadius: 8,
-  },
-  secretForwardTrigger: {
-    position: 'absolute',
-    top: 10,
-    right: 10,
-    width: 70,
-    height: 70,
-    zIndex: 9999,
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.2)',
-    borderRadius: 8,
+    borderTopColor: COLORS.white[10],
   },
 });
 

@@ -30,6 +30,7 @@ import { analyzeTextForVibe } from '../../services/EmotionVibeService';
 import { VibeColorTheme, VibeComplexity } from '../../types/vibe';
 import { SHEET_SNAP_POINTS, SHEET_DEFAULT_SNAP } from '../../constants/layout';
 import { useResponsiveLayout } from '../../hooks/useResponsiveLayout';
+import { sharedStyles, LAYOUT, TYPOGRAPHY, COLORS } from '../../constants/onboardingLayout';
 
 const { height: SCREEN_HEIGHT } = Dimensions.get('window');
 
@@ -376,8 +377,8 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     height: SCREEN_HEIGHT,
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
+    borderTopLeftRadius: LAYOUT.spacing.large - LAYOUT.spacing.micro, // 20
+    borderTopRightRadius: LAYOUT.spacing.large - LAYOUT.spacing.micro, // 20
     overflow: 'hidden',
     zIndex: 50,
     // No shadows - clean design
@@ -394,8 +395,8 @@ const styles = StyleSheet.create({
   },
 
   handleContainer: {
-    paddingTop: 12,
-    paddingBottom: 8,
+    paddingTop: LAYOUT.spacing.medium,
+    paddingBottom: LAYOUT.spacing.small,
     alignItems: 'center',
   },
   handle: {
@@ -411,10 +412,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'flex-start',
     paddingTop: 0,
-    paddingBottom: 12,
+    paddingBottom: LAYOUT.spacing.medium,
     marginTop: -15,
-    paddingHorizontal: 20,
-    gap: 8,
+    paddingHorizontal: LAYOUT.content.paddingHorizontal,
+    gap: LAYOUT.spacing.small,
   },
   statusDot: {
     width: 8,
@@ -422,28 +423,28 @@ const styles = StyleSheet.create({
     borderRadius: 4,
   },
   statusConnected: {
-    backgroundColor: '#10B981',
+    backgroundColor: COLORS.green.primary,
   },
   statusDisconnected: {
-    backgroundColor: '#EF4444',
+    backgroundColor: COLORS.red.primary,
   },
   statusMuted: {
-    backgroundColor: '#F59E0B',
+    backgroundColor: '#F59E0B', // Orange - not in shared colors yet
   },
   statusText: {
-    fontFamily: 'JetBrainsMono_400Regular',
-    fontSize: 12,
-    color: 'rgba(0, 0, 0, 0.5)',
+    fontFamily: TYPOGRAPHY.sectionLabel.fontFamily,
+    fontSize: TYPOGRAPHY.sectionLabel.fontSize,
+    color: 'rgba(0, 0, 0, 0.5)', // Darker for glass background
     textTransform: 'uppercase',
-    letterSpacing: 0.5,
+    letterSpacing: TYPOGRAPHY.sectionLabel.letterSpacing,
   },
 
   // Mute button - 44x44 for iOS HIG compliance
   muteButton: {
     marginLeft: 'auto',
-    width: 44,
-    height: 44,
-    borderRadius: 22,
+    width: LAYOUT.backArrow.touchTarget,
+    height: LAYOUT.backArrow.touchTarget,
+    borderRadius: LAYOUT.backArrow.touchTarget / 2,
     backgroundColor: 'transparent',
     borderWidth: 1,
     borderColor: 'rgba(128, 128, 128, 0.4)',
@@ -458,45 +459,45 @@ const styles = StyleSheet.create({
 
   contentContainer: {
     flex: 1,
-    paddingHorizontal: 20,
+    paddingHorizontal: LAYOUT.content.paddingHorizontal,
   },
 
   messagesContainer: {
     flex: 1,
   },
   messagesContent: {
-    paddingTop: 8,
-    paddingBottom: 20,
+    paddingTop: LAYOUT.spacing.small,
+    paddingBottom: LAYOUT.spacing.large,
   },
 
   chatInputContainer: {
     position: 'absolute',
-    bottom: 15,
+    bottom: LAYOUT.spacing.default,
     left: 6,
     right: 6,
     zIndex: 200,
     pointerEvents: 'box-none',
   },
   placeholderText: {
-    fontFamily: 'Merriweather_400Regular',
+    fontFamily: TYPOGRAPHY.body.fontFamily,
     fontSize: 18,
     lineHeight: 28,
-    color: 'rgba(0, 0, 0, 0.8)',
+    color: 'rgba(0, 0, 0, 0.8)', // Darker for glass background
     textAlign: 'center',
-    paddingVertical: 20,
+    paddingVertical: LAYOUT.spacing.large,
   },
   messageBubble: {
-    marginBottom: 16,
+    marginBottom: LAYOUT.spacing.default,
   },
   messageBubbleUser: {
-    marginBottom: 8,
-    marginTop: -4,
+    marginBottom: LAYOUT.spacing.small,
+    marginTop: -LAYOUT.spacing.micro,
   },
   messageText: {
-    fontFamily: 'Merriweather_400Regular',
+    fontFamily: TYPOGRAPHY.body.fontFamily,
     fontSize: 17,
-    lineHeight: 23,  // 17 * 1.35 ≈ 23 (15% more line height)
-    color: 'rgba(0, 0, 0, 0.85)',
+    lineHeight: 23,  // 17 * 1.35 ~ 23 (15% more line height)
+    color: 'rgba(0, 0, 0, 0.85)', // Darker for glass background
   },
   userMessageText: {
     color: 'rgba(0, 0, 0, 0.5)',
@@ -506,9 +507,9 @@ const styles = StyleSheet.create({
   endButton: {
     backgroundColor: 'rgba(0, 0, 0, 0.85)',
     borderRadius: 30,
-    paddingVertical: 16,
-    marginHorizontal: 4,
-    marginBottom: 40,
+    paddingVertical: LAYOUT.spacing.default,
+    marginHorizontal: LAYOUT.spacing.micro,
+    marginBottom: LAYOUT.spacing.xxl - LAYOUT.spacing.small, // 40
     alignItems: 'center',
   },
   endButtonPressed: {
@@ -516,46 +517,31 @@ const styles = StyleSheet.create({
     transform: [{ scale: 0.98 }],
   },
   buttonText: {
-    fontFamily: 'Merriweather_400Regular',
-    fontSize: 16,
-    color: '#FFFFFF',
-    fontWeight: '600',
+    fontFamily: TYPOGRAPHY.button.fontFamily,
+    fontSize: LAYOUT.spacing.default,
+    color: COLORS.white.full,
+    letterSpacing: TYPOGRAPHY.button.letterSpacing,
   },
 
-  // Secret navigation triggers
+  // Secret navigation triggers - use sharedStyles for positioning
+  // Note: sharedStyles.secretBackTrigger etc. are available but we add debug borders here
   secretBackTrigger: {
-    position: 'absolute',
-    top: 10,
-    left: 10,
-    width: 70,
-    height: 70,
-    zIndex: 9999,
+    ...sharedStyles.secretBackTrigger,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.5)',
-    borderRadius: 8,
+    borderColor: COLORS.white[50],
+    borderRadius: LAYOUT.spacing.small,
   },
   secretMiddleTrigger: {
-    position: 'absolute',
-    top: 10,
-    left: '50%',
-    marginLeft: -35,
-    width: 70,
-    height: 70,
-    zIndex: 9999,
+    ...sharedStyles.secretMiddleTrigger,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.5)',
-    borderRadius: 8,
+    borderColor: COLORS.white[50],
+    borderRadius: LAYOUT.spacing.small,
   },
   secretForwardTrigger: {
-    position: 'absolute',
-    top: 10,
-    right: 10,
-    width: 70,
-    height: 70,
-    zIndex: 9999,
+    ...sharedStyles.secretForwardTrigger,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.5)',
-    borderRadius: 8,
+    borderColor: COLORS.white[50],
+    borderRadius: LAYOUT.spacing.small,
   },
 });
 

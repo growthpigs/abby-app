@@ -16,6 +16,7 @@ import {
   Alert,
   ActivityIndicator,
   useWindowDimensions,
+  Text,
 } from 'react-native';
 import { BlurView } from 'expo-blur';
 import * as Haptics from 'expo-haptics';
@@ -26,6 +27,7 @@ import { TokenManager } from '../../services/TokenManager';
 import { secureFetchJSON } from '../../utils/secureFetch';
 import { API_CONFIG } from '../../config';
 import { useResponsiveLayout } from '../../hooks/useResponsiveLayout';
+import { sharedStyles, LAYOUT, TYPOGRAPHY, COLORS } from '../../constants/onboardingLayout';
 
 // Demo photos for when no auth token (demo mode)
 const DEMO_PHOTOS: PhotoItem[] = [
@@ -198,25 +200,31 @@ export const PhotosScreen: React.FC<PhotosScreenProps> = ({
   return (
     <View style={styles.container}>
       <BlurView intensity={80} tint="light" style={styles.blurContainer}>
-        {/* Header */}
-        <View style={[styles.header, { paddingTop: layout.paddingTop, paddingHorizontal: horizontalPadding }]}>
-          <Caption style={styles.headerTitle}>MY PHOTOS</Caption>
-          <Pressable onPress={onClose} style={styles.closeButton}>
-            <Body style={styles.closeText}>Done</Body>
-          </Pressable>
+        {/* Header with Headline */}
+        <View style={[styles.header, { paddingTop: LAYOUT.content.paddingTop, paddingHorizontal: LAYOUT.content.paddingHorizontal }]}>
+          <Text style={sharedStyles.headline}>My Photos</Text>
         </View>
 
+        {/* Close button - absolute positioned using shared design system */}
+        <Pressable
+          onPress={onClose}
+          style={sharedStyles.closeButton}
+          hitSlop={10}
+        >
+          <X size={24} stroke={COLORS.white[95]} />
+        </Pressable>
+
         {/* Photo Grid */}
-        <ScrollView style={styles.content} contentContainerStyle={[styles.contentContainer, { paddingVertical: layout.sectionGap + 4, paddingHorizontal: horizontalPadding }]}>
+        <ScrollView style={styles.content} contentContainerStyle={[styles.contentContainer, { paddingVertical: LAYOUT.spacing.large, paddingHorizontal: LAYOUT.content.paddingHorizontal }]}>
           {isLoading ? (
             <View style={styles.loadingState}>
-              <ActivityIndicator size="large" color="#3B82F6" />
+              <ActivityIndicator size="large" color="#E11D48" />
               <Body style={styles.loadingText}>Loading photos...</Body>
             </View>
           ) : error ? (
             <View style={styles.errorState}>
               <View style={styles.errorIcon}>
-                <AlertCircle size={48} stroke="#DC2626" />
+                <AlertCircle size={48} stroke={COLORS.red.primary} />
               </View>
               <Headline style={styles.errorTitle}>Unable to load photos</Headline>
               <Body style={styles.errorText}>{error}</Body>
@@ -226,14 +234,14 @@ export const PhotosScreen: React.FC<PhotosScreenProps> = ({
                 style={styles.retryButton}
               >
                 <View style={styles.retryContent}>
-                  <RefreshCw size={18} stroke="rgba(0, 0, 0, 0.7)" />
+                  <RefreshCw size={18} stroke={COLORS.charcoal.medium} />
                   <Body style={styles.retryText}>Try Again</Body>
                 </View>
               </GlassButton>
             </View>
           ) : (
             <>
-              <Caption style={[styles.helpText, { marginBottom: layout.sectionGap }]}>
+              <Caption style={[styles.helpText, { marginBottom: LAYOUT.spacing.large }]}>
                 Add up to {MAX_PHOTOS} photos. Tap to set as primary.
               </Caption>
 
@@ -259,7 +267,7 @@ export const PhotosScreen: React.FC<PhotosScreenProps> = ({
                       )}
                       {isDeleting === photo.id && (
                         <View style={styles.deletingOverlay}>
-                          <ActivityIndicator size="small" color="#fff" />
+                          <ActivityIndicator size="small" color={COLORS.white.full} />
                         </View>
                       )}
                     </Pressable>
@@ -268,7 +276,7 @@ export const PhotosScreen: React.FC<PhotosScreenProps> = ({
                       style={styles.deleteButton}
                       disabled={isDeleting === photo.id}
                     >
-                      <X size={14} stroke="#fff" />
+                      <X size={14} stroke={COLORS.white.full} />
                     </Pressable>
                   </View>
                 ))}
@@ -285,14 +293,14 @@ export const PhotosScreen: React.FC<PhotosScreenProps> = ({
                       pressed && styles.emptySlotPressed,
                     ]}
                   >
-                    <Plus size={layout.isSmallScreen ? 24 : 32} stroke="rgba(0, 0, 0, 0.3)" />
+                    <Plus size={layout.isSmallScreen ? 24 : 32} stroke={COLORS.white[30]} />
                   </Pressable>
                 ))}
               </View>
 
               {/* Tips */}
-              <View style={[styles.tips, { marginTop: layout.sectionGap * 2, padding: layout.isSmallScreen ? 12 : 16 }]}>
-                <Camera size={layout.isSmallScreen ? 16 : 18} stroke="rgba(0, 0, 0, 0.4)" />
+              <View style={[styles.tips, { marginTop: LAYOUT.spacing.xxl, padding: layout.isSmallScreen ? LAYOUT.spacing.medium : LAYOUT.spacing.default }]}>
+                <Camera size={layout.isSmallScreen ? 16 : 18} stroke={COLORS.white[50]} />
                 <Body style={[styles.tipsText, { fontSize: layout.bodyFontSize - 2 }]}>
                   Photos with good lighting and clear faces get more matches.
                 </Body>
@@ -317,33 +325,21 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingBottom: 16,
+    paddingBottom: LAYOUT.spacing.default,
     borderBottomWidth: 1,
-    borderBottomColor: 'rgba(0, 0, 0, 0.08)',
+    borderBottomColor: COLORS.white[10],
   },
-  headerTitle: {
-    fontSize: 12,
-    letterSpacing: 3,
-    color: 'rgba(0, 0, 0, 0.5)',
-  },
-  closeButton: {
-    paddingVertical: 8,
-    paddingHorizontal: 16,
-  },
-  closeText: {
-    color: '#3B82F6',
-    fontWeight: '600',
-  },
+  // closeButton removed - using sharedStyles.closeButton instead
   content: {
     flex: 1,
   },
   contentContainer: {
-    // paddingVertical and paddingHorizontal applied dynamically via layout
+    // paddingVertical and paddingHorizontal applied dynamically via LAYOUT constants
   },
   helpText: {
     textAlign: 'center',
-    color: 'rgba(0, 0, 0, 0.5)',
-    // marginBottom applied dynamically via layout.sectionGap
+    color: COLORS.white[50],
+    // marginBottom applied dynamically via LAYOUT.spacing.large
   },
   photoGrid: {
     flexDirection: 'row',
@@ -358,11 +354,11 @@ const styles = StyleSheet.create({
     // width and height applied dynamically based on screen width
     borderRadius: 12,
     overflow: 'hidden',
-    backgroundColor: 'rgba(0, 0, 0, 0.05)',
+    backgroundColor: COLORS.white[10],
   },
   photoItemPrimary: {
-    borderWidth: 3,
-    borderColor: '#3B82F6',
+    borderWidth: 2,
+    borderColor: '#E11D48', // PASSION pink - matches design system
   },
   photoItemPressed: {
     opacity: 0.8,
@@ -377,12 +373,12 @@ const styles = StyleSheet.create({
     bottom: 0,
     left: 0,
     right: 0,
-    backgroundColor: '#3B82F6',
-    paddingVertical: 4,
+    backgroundColor: '#E11D48', // PASSION pink
+    paddingVertical: LAYOUT.spacing.micro,
     alignItems: 'center',
   },
   primaryText: {
-    color: '#fff',
+    color: COLORS.white.full,
     fontSize: 9,
     letterSpacing: 1,
     fontWeight: '600',
@@ -400,27 +396,28 @@ const styles = StyleSheet.create({
     // No shadows - clean design
   },
   emptySlot: {
-    borderWidth: 2,
-    borderColor: 'rgba(0, 0, 0, 0.15)',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.25)', // Subtle white, cleaner look
     borderStyle: 'dashed',
     alignItems: 'center',
     justifyContent: 'center',
+    backgroundColor: 'rgba(255, 255, 255, 0.05)', // Subtle glass fill
   },
   emptySlotPressed: {
-    backgroundColor: 'rgba(0, 0, 0, 0.08)',
+    backgroundColor: COLORS.white[10],
   },
   tips: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
-    // marginTop and padding applied dynamically via layout
-    backgroundColor: 'rgba(0, 0, 0, 0.03)',
+    gap: LAYOUT.spacing.medium,
+    // marginTop and padding applied dynamically via LAYOUT constants
+    backgroundColor: COLORS.white[10],
     borderRadius: 12,
   },
   tipsText: {
     flex: 1,
     // fontSize applied dynamically via layout.bodyFontSize
-    color: 'rgba(0, 0, 0, 0.6)',
+    color: COLORS.white[70],
     lineHeight: 20,
   },
   // Loading state
@@ -428,26 +425,26 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 16,
+    gap: LAYOUT.spacing.default,
     paddingVertical: 60,
   },
   loadingText: {
-    fontSize: 15,
-    color: 'rgba(0, 0, 0, 0.5)',
+    fontSize: TYPOGRAPHY.body.fontSize,
+    color: COLORS.white[50],
   },
   // Error state
   errorState: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    paddingHorizontal: 32,
+    paddingHorizontal: LAYOUT.spacing.xl,
     paddingVertical: 40,
   },
   errorIcon: {
     width: 80,
     height: 80,
     borderRadius: 40,
-    backgroundColor: 'rgba(220, 38, 38, 0.1)',
+    backgroundColor: COLORS.red.background,
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: 20,
@@ -455,32 +452,32 @@ const styles = StyleSheet.create({
   errorTitle: {
     fontSize: 18,
     textAlign: 'center',
-    marginBottom: 8,
-    color: 'rgba(0, 0, 0, 0.85)',
+    marginBottom: LAYOUT.spacing.small,
+    color: COLORS.white[85],
   },
   errorText: {
-    fontSize: 14,
+    fontSize: TYPOGRAPHY.helpText.fontSize + 2,
     textAlign: 'center',
     lineHeight: 20,
-    color: 'rgba(0, 0, 0, 0.5)',
+    color: COLORS.white[50],
     marginBottom: 20,
   },
   retryButton: {
-    paddingHorizontal: 24,
+    paddingHorizontal: LAYOUT.spacing.large,
   },
   retryContent: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
+    gap: LAYOUT.spacing.small,
   },
   retryText: {
-    color: 'rgba(0, 0, 0, 0.7)',
+    color: COLORS.charcoal.medium,
     fontWeight: '500',
   },
   // Deleting overlay
   deletingOverlay: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    backgroundColor: COLORS.white[50],
     alignItems: 'center',
     justifyContent: 'center',
   },

@@ -10,6 +10,7 @@ import * as Haptics from 'expo-haptics';
 import { GlassSheet, GlassButton, Headline, Body, Caption } from '../ui';
 import { useDemoStore } from '../../store/useDemoStore';
 import { api } from '../../services/api';
+import { TokenManager } from '../../services/TokenManager';
 
 export interface PaymentScreenProps {
   onSecretBack?: () => void;
@@ -30,6 +31,20 @@ export const PaymentScreen: React.FC<PaymentScreenProps> = ({
     setError(null);
 
     try {
+      // Check if authenticated - use demo mode if not
+      const token = await TokenManager.getToken();
+      if (!token) {
+        if (__DEV__) {
+          console.log('[PaymentScreen] Demo mode - simulating payment success');
+        }
+        // Simulate payment processing delay
+        await new Promise(resolve => setTimeout(resolve, 1500));
+        // Payment succeeded - advance the flow
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+        advance();
+        return;
+      }
+
       // Call backend payment API
       const response = await api.createPayment({
         amount: 999, // $9.99 in cents
@@ -72,7 +87,7 @@ export const PaymentScreen: React.FC<PaymentScreenProps> = ({
 
   return (
     <View style={styles.container}>
-      <GlassSheet height={0.67}>
+      <GlassSheet height={0.75}>
         {/* Header */}
         <Caption style={styles.label}>UNLOCK PHOTO</Caption>
 
@@ -104,7 +119,7 @@ export const PaymentScreen: React.FC<PaymentScreenProps> = ({
             {isLoading ? (
               <ActivityIndicator size="small" color="rgba(0,0,0,0.6)" />
             ) : (
-              'Unlock Photo'
+              'Unlock Now'
             )}
           </GlassButton>
         </View>
@@ -141,9 +156,9 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginTop: 8,
     marginBottom: 24,
-    letterSpacing: 3,
+    letterSpacing: 1, // Reduced letter-spacing for JetBrains Mono
     fontSize: 12,
-    color: 'rgba(0, 0, 0, 0.5)',
+    color: '#FFFFFF', // White for JetBrains Mono labels
   },
   content: {
     alignItems: 'center',
@@ -152,32 +167,35 @@ const styles = StyleSheet.create({
   headline: {
     textAlign: 'center',
     marginBottom: 16,
-    color: 'rgba(0, 0, 0, 0.85)',
+    color: '#3A3A3A', // Charcoal gray
   },
   description: {
     textAlign: 'center',
-    color: 'rgba(0, 0, 0, 0.6)',
+    color: '#5A5A5A', // Charcoal gray
     lineHeight: 22,
     paddingHorizontal: 16,
   },
   priceSection: {
     alignItems: 'center',
-    paddingVertical: 24,
+    paddingVertical: 32, // Increased padding
     marginHorizontal: 16,
     borderTopWidth: 1,
     borderTopColor: 'rgba(0, 0, 0, 0.08)',
     borderBottomWidth: 1,
     borderBottomColor: 'rgba(0, 0, 0, 0.08)',
     marginBottom: 24,
+    overflow: 'visible', // Ensure price isn't clipped
   },
   price: {
     fontSize: 48,
-    color: 'rgba(0, 0, 0, 0.85)',
-    marginBottom: 4,
+    color: '#3A3A3A', // Charcoal gray
+    marginBottom: 8,
+    lineHeight: 56, // Ensure full height for price
   },
   priceNote: {
-    color: 'rgba(0, 0, 0, 0.4)',
-    fontSize: 13,
+    color: '#FFFFFF', // White for JetBrains Mono caption
+    fontSize: 12, // Match caption size
+    letterSpacing: 1, // Reduced letter-spacing
   },
   buttonContainer: {
     alignItems: 'center',

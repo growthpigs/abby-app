@@ -16,7 +16,7 @@ import {
 } from 'react-native';
 import { BlurView } from 'expo-blur';
 import * as Haptics from 'expo-haptics';
-import { User, Heart, Users, Cigarette, MapPin } from 'lucide-react-native';
+import { User, Heart, Users, Cigarette, MapPin, X } from 'lucide-react-native';
 import { Headline, Body, Caption } from '../ui/Typography';
 import { GlassButton } from '../ui/GlassButton';
 import { useOnboardingStore } from '../../store/useOnboardingStore';
@@ -24,6 +24,7 @@ import { TokenManager } from '../../services/TokenManager';
 import { secureFetchJSON } from '../../utils/secureFetch';
 import { API_CONFIG } from '../../config';
 import { useResponsiveLayout } from '../../hooks/useResponsiveLayout';
+import { sharedStyles, LAYOUT, TYPOGRAPHY, COLORS } from '../../constants/onboardingLayout';
 
 export interface ProfileScreenProps {
   onClose?: () => void;
@@ -171,12 +172,18 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
     <View style={styles.container}>
       <BlurView intensity={80} tint="light" style={styles.blurContainer}>
         {/* Header */}
-        <View style={[styles.header, { paddingTop: layout.paddingTop }]}>
-          <Caption style={[styles.headerTitle, { fontSize: layout.captionFontSize }]}>MY PROFILE</Caption>
-          <Pressable onPress={onClose} style={styles.closeButton}>
-            <Body style={styles.closeText}>Done</Body>
-          </Pressable>
+        <View style={[styles.header, { paddingTop: LAYOUT.backArrow.top }]}>
+          <Caption style={styles.headerTitle}>MY PROFILE</Caption>
         </View>
+
+        {/* Close button - absolute positioned using shared design system */}
+        <Pressable
+          onPress={onClose}
+          style={sharedStyles.closeButton}
+          hitSlop={10}
+        >
+          <X size={24} stroke={COLORS.white[95]} />
+        </Pressable>
 
         {/* Content */}
         <ScrollView
@@ -184,9 +191,9 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
           contentContainerStyle={[
             styles.content,
             {
-              paddingVertical: layout.sectionGap,
-              paddingHorizontal: layout.paddingHorizontal,
-              paddingBottom: layout.isSmallScreen ? 60 : 100,
+              paddingVertical: LAYOUT.spacing.large,
+              paddingHorizontal: LAYOUT.content.paddingHorizontal,
+              paddingBottom: LAYOUT.content.paddingBottom,
             },
           ]}
           showsVerticalScrollIndicator={false}
@@ -218,56 +225,56 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
           )}
 
           {/* Profile Sections */}
-          <Headline style={[styles.sectionHeading, { fontSize: layout.titleFontSize, marginTop: layout.sectionGap, marginBottom: layout.buttonMargin }]}>Basic Info</Headline>
+          <Headline style={[styles.sectionHeading, { fontSize: TYPOGRAPHY.headline.fontSize, marginTop: LAYOUT.spacing.large, marginBottom: LAYOUT.spacing.default }]}>Basic Info</Headline>
 
           <ProfileSection
-            icon={<User size={20} stroke="rgba(0, 0, 0, 0.6)" />}
+            icon={<User size={20} stroke={COLORS.white[70]} />}
             title="Full Name"
             value={store.firstName && store.familyName ? `${store.firstName} ${store.familyName}` : store.firstName || store.familyName || ''}
             onPress={() => startEditing('fullName', store.firstName || '')}
           />
 
           <ProfileSection
-            icon={<User size={20} stroke="rgba(0, 0, 0, 0.6)" />}
+            icon={<User size={20} stroke={COLORS.white[70]} />}
             title="Nickname"
             value={store.nickname}
             onPress={() => startEditing('nickname', store.nickname)}
           />
 
           <ProfileSection
-            icon={<User size={20} stroke="rgba(0, 0, 0, 0.6)" />}
+            icon={<User size={20} stroke={COLORS.white[70]} />}
             title="Gender"
             value={formatGender(store.gender)}
           />
 
-          <Headline style={[styles.sectionHeading, { fontSize: layout.titleFontSize, marginTop: layout.sectionGap, marginBottom: layout.buttonMargin }]}>Preferences</Headline>
+          <Headline style={[styles.sectionHeading, { fontSize: TYPOGRAPHY.headline.fontSize, marginTop: LAYOUT.spacing.large, marginBottom: LAYOUT.spacing.default }]}>Preferences</Headline>
 
           <ProfileSection
-            icon={<Heart size={20} stroke="rgba(0, 0, 0, 0.6)" />}
+            icon={<Heart size={20} stroke={COLORS.white[70]} />}
             title="Looking For"
             value={formatPreference(store.datingPreference)}
           />
 
           <ProfileSection
-            icon={<Users size={20} stroke="rgba(0, 0, 0, 0.6)" />}
+            icon={<Users size={20} stroke={COLORS.white[70]} />}
             title="Relationship Type"
             value={formatRelationship(store.relationshipType)}
           />
 
           <ProfileSection
-            icon={<Cigarette size={20} stroke="rgba(0, 0, 0, 0.6)" />}
+            icon={<Cigarette size={20} stroke={COLORS.white[70]} />}
             title="Smoking"
             value={formatSmoking(store.smokingMe, store.smokingPartner)}
           />
 
           <ProfileSection
-            icon={<MapPin size={20} stroke="rgba(0, 0, 0, 0.6)" />}
+            icon={<MapPin size={20} stroke={COLORS.white[70]} />}
             title="Location"
             value={formatLocation()}
           />
 
           {/* Save Button */}
-          <View style={[styles.saveContainer, { marginTop: layout.isSmallScreen ? 20 : 32 }]}>
+          <View style={[styles.saveContainer, { marginTop: LAYOUT.spacing.xl }]}>
             <GlassButton
               onPress={handleSave}
               disabled={isSaving}
@@ -294,25 +301,19 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    // paddingTop is set dynamically via layout.paddingTop
-    paddingBottom: 16,
-    paddingHorizontal: 20,
+    // paddingTop is set dynamically via LAYOUT.backArrow.top
+    paddingBottom: LAYOUT.spacing.default,
+    paddingHorizontal: LAYOUT.content.paddingHorizontal,
     borderBottomWidth: 1,
-    borderBottomColor: 'rgba(0, 0, 0, 0.08)',
+    borderBottomColor: COLORS.white[10],
   },
   headerTitle: {
-    fontSize: 12,
-    letterSpacing: 3,
-    color: 'rgba(0, 0, 0, 0.5)',
+    fontSize: TYPOGRAPHY.sectionLabel.fontSize,
+    letterSpacing: TYPOGRAPHY.sectionLabel.letterSpacing,
+    color: COLORS.white[50],
+    textTransform: 'uppercase',
   },
-  closeButton: {
-    paddingVertical: 8,
-    paddingHorizontal: 16,
-  },
-  closeText: {
-    color: '#3B82F6',
-    fontWeight: '600',
-  },
+  // closeButton removed - using sharedStyles.closeButton instead
   scrollView: {
     flex: 1,
   },
@@ -320,89 +321,89 @@ const styles = StyleSheet.create({
     // paddingVertical, paddingHorizontal, paddingBottom set dynamically via layout
   },
   sectionHeading: {
-    // fontSize, marginTop, marginBottom set dynamically via layout
-    color: 'rgba(0, 0, 0, 0.85)',
+    // fontSize, marginTop, marginBottom set dynamically via LAYOUT/TYPOGRAPHY constants
+    color: COLORS.white[85],
   },
   section: {
     flexDirection: 'row',
     alignItems: 'center',
-    padding: 16,
-    backgroundColor: 'rgba(255, 255, 255, 0.5)',
+    padding: LAYOUT.spacing.default,
+    backgroundColor: COLORS.white[10],
     borderRadius: 12,
-    marginBottom: 8,
+    marginBottom: LAYOUT.spacing.small,
     borderWidth: 1,
-    borderColor: 'rgba(0, 0, 0, 0.08)',
+    borderColor: COLORS.white[10],
   },
   sectionPressed: {
     opacity: 0.7,
-    backgroundColor: 'rgba(59, 130, 246, 0.08)',
+    backgroundColor: COLORS.blue.selected,
   },
   sectionIcon: {
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: 'rgba(0, 0, 0, 0.05)',
+    backgroundColor: COLORS.white[10],
     alignItems: 'center',
     justifyContent: 'center',
-    marginRight: 12,
+    marginRight: LAYOUT.spacing.medium,
   },
   sectionContent: {
     flex: 1,
   },
   sectionTitle: {
-    fontSize: 12,
-    color: 'rgba(0, 0, 0, 0.5)',
+    fontSize: TYPOGRAPHY.helpText.fontSize,
+    color: COLORS.white[50],
     marginBottom: 2,
   },
   sectionValue: {
-    fontSize: 16,
-    color: 'rgba(0, 0, 0, 0.85)',
+    fontSize: LAYOUT.spacing.default,
+    color: COLORS.white[85],
   },
   editIndicator: {
     fontSize: 14,
-    color: '#3B82F6',
+    color: COLORS.blue.primary,
     fontWeight: '500',
   },
   editModal: {
-    backgroundColor: 'rgba(255, 255, 255, 0.95)',
+    backgroundColor: COLORS.white[95],
     borderRadius: 16,
-    padding: 20,
-    marginBottom: 24,
+    padding: LAYOUT.spacing.large,
+    marginBottom: LAYOUT.spacing.large,
     borderWidth: 1,
-    borderColor: 'rgba(59, 130, 246, 0.3)',
+    borderColor: COLORS.blue.selected,
   },
   editInput: {
-    fontSize: 18,
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-    backgroundColor: 'rgba(0, 0, 0, 0.05)',
+    fontSize: TYPOGRAPHY.button.fontSize,
+    paddingVertical: LAYOUT.spacing.medium,
+    paddingHorizontal: LAYOUT.spacing.default,
+    backgroundColor: COLORS.white[10],
     borderRadius: 8,
-    marginBottom: 16,
-    color: 'rgba(0, 0, 0, 0.85)',
+    marginBottom: LAYOUT.spacing.default,
+    color: COLORS.charcoal.dark,
     letterSpacing: 0,
     textAlign: 'left',
   },
   editButtons: {
     flexDirection: 'row',
     justifyContent: 'flex-end',
-    gap: 12,
+    gap: LAYOUT.spacing.medium,
   },
   cancelButton: {
-    paddingVertical: 8,
-    paddingHorizontal: 16,
+    paddingVertical: LAYOUT.spacing.small,
+    paddingHorizontal: LAYOUT.spacing.default,
   },
   cancelText: {
-    color: 'rgba(0, 0, 0, 0.5)',
+    color: COLORS.charcoal.light,
     fontWeight: '500',
   },
   saveFieldButton: {
-    paddingVertical: 8,
-    paddingHorizontal: 16,
-    backgroundColor: '#3B82F6',
+    paddingVertical: LAYOUT.spacing.small,
+    paddingHorizontal: LAYOUT.spacing.default,
+    backgroundColor: COLORS.blue.primary,
     borderRadius: 8,
   },
   saveFieldText: {
-    color: 'white',
+    color: COLORS.white.full,
     fontWeight: '600',
   },
   saveContainer: {
