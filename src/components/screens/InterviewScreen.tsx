@@ -1,11 +1,10 @@
 /**
  * InterviewScreen - Question flow with vibe shifts
  *
- * UI Layout:
- * - Top: Empty space for shader/orb
- * - Bottom: Glass modal with question + Next button (extends to screen edge)
- *
- * Text uses white with subtle shadow for readability on all shader backgrounds.
+ * UI Layout (matches CoachIntroScreen):
+ * - Top: Shader/orb visible above modal
+ * - Middle: Draggable glass sheet at 50% with question
+ * - Bottom: Floating ChatInput for responses
  *
  * API Integration:
  * - When authenticated: Uses /v1/questions/* API via QuestionsService
@@ -13,40 +12,52 @@
  */
 
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { View, Text, StyleSheet, Pressable, Dimensions, ActivityIndicator } from 'react-native';
+import {
+  View,
+  Text,
+  StyleSheet,
+  Pressable,
+  Dimensions,
+  ActivityIndicator,
+  Animated,
+  PanResponder,
+} from 'react-native';
 import { BlurView } from 'expo-blur';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
-import Animated, { FadeIn, FadeOut } from 'react-native-reanimated';
+import AnimatedRN, { FadeIn, FadeOut } from 'react-native-reanimated';
 import { useDemoStore } from '../../store/useDemoStore';
 import { useVibeController } from '../../store/useVibeController';
 import { useResponsiveLayout } from '../../hooks/useResponsiveLayout';
 import { ALL_DATA_POINTS } from '../../data/questions-schema';
 import { isValidVibeTheme, VibeColorTheme } from '../../types/vibe';
 import { abbyTTS } from '../../services/AbbyTTSService';
-import { getShaderForVibe, DEFAULT_VIBE_SHADERS, VIBE_SHADER_GROUPS } from '../../constants/vibeShaderMap';
+import { getShaderForVibe, DEFAULT_VIBE_SHADERS } from '../../constants/vibeShaderMap';
 import { questionsService, type Question, type NextQuestionResponse } from '../../services/QuestionsService';
 import { TokenManager } from '../../services/TokenManager';
 import { type VibeShift } from '../../data/questions-schema';
 import { FEATURE_FLAGS } from '../../config';
 import { analyzeQuestionSentiment } from '../../utils/questionSentiment';
+import { ChatInput } from '../ui/ChatInput';
+
+const { height: SCREEN_HEIGHT } = Dimensions.get('window');
+
+// Sheet snap points - start at 50% (halfway)
+const SNAP_POINTS = [0.35, 0.50, 0.75, 0.9];
+const DEFAULT_SNAP = 0.50; // Start at halfway
 
 // Use the full 150 questions for demo/fallback mode
 const DEMO_QUESTIONS = ALL_DATA_POINTS;
 
 /**
  * Get emotionally-appropriate shader for a vibe theme
- * Selects from the vibe's shader group with variety based on index
  */
 const getShaderForVibeAndIndex = (
   theme: VibeColorTheme | null,
   vibeChangeCount: number
 ): number => {
   if (!theme) {
-    // Default to TRUST if no vibe specified
     return DEFAULT_VIBE_SHADERS.TRUST;
   }
-  // Cycle through the vibe's shader group based on how many times we've changed vibes
   return getShaderForVibe(theme, vibeChangeCount);
 };
 
@@ -78,7 +89,6 @@ export const InterviewScreen: React.FC<InterviewScreenProps> = ({
   const setColorTheme = useVibeController((state) => state.setColorTheme);
   const setComplexity = useVibeController((state) => state.setComplexity);
   const setAudioLevel = useVibeController((state) => state.setAudioLevel);
-  const insets = useSafeAreaInsets();
   const layout = useResponsiveLayout();
 
   // API state
@@ -104,6 +114,9 @@ export const InterviewScreen: React.FC<InterviewScreenProps> = ({
   const audioLevelRef = useRef(setAudioLevel);
   audioLevelRef.current = setAudioLevel;
 
+  // Animated value for bottom sheet position
+  const translateY = useRef(new Animated.Value(SCREEN_HEIGHT)).current;
+
   // Derive current question based on mode
   const currentQuestion: DisplayQuestion | null = isApiMode
     ? currentApiQuestion
@@ -120,6 +133,69 @@ export const InterviewScreen: React.FC<InterviewScreenProps> = ({
     ? `${progress.current}/${progress.total}`
     : `${currentDemoIndex + 1}/${DEMO_QUESTIONS.length}`;
 
+  // Find closest snap point
+  const findClosestSnapPoint = useCallback((position: number): number => {
+    const currentPercentage = 1 - position / SCREEN_HEIGHT;
+    let closest: number = SNAP_POINTS[0];
+    let minDistance = Math.abs(currentPercentage - closest);
+
+    for (const snap of SNAP_POINTS) {
+      const distance = Math.abs(currentPercentage - snap);
+      if (distance < minDistance) {
+        minDistance = distance;
+        closest = snap;
+      }
+    }
+
+    return SCREEN_HEIGHT * (1 - closest);
+  }, []);
+
+  // Pan responder for draggable header
+  const panResponder = useRef(
+    PanResponder.create({
+      onStartShouldSetPanResponder: () => true,
+      onMoveShouldSetPanResponder: (_, gestureState) => {
+        return Math.abs(gestureState.dy) > Math.abs(gestureState.dx);
+      },
+      onPanResponderGrant: () => {
+        translateY.setOffset((translateY as unknown as { _value: number })._value);
+        translateY.setValue(0);
+      },
+      onPanResponderMove: (_, gestureState) => {
+        const newY = gestureState.dy;
+        const offset = (translateY as unknown as { _offset: number })._offset;
+        const minY = SCREEN_HEIGHT * 0.1 - offset;
+        const maxY = SCREEN_HEIGHT - offset;
+
+        const constrainedY = Math.max(minY, Math.min(maxY, newY));
+        translateY.setValue(constrainedY);
+      },
+      onPanResponderRelease: (_, gestureState) => {
+        translateY.flattenOffset();
+        const currentY = (translateY as unknown as { _value: number })._value;
+        const velocity = gestureState.vy;
+
+        const snapY = findClosestSnapPoint(currentY + velocity * 100);
+        Animated.spring(translateY, {
+          toValue: snapY,
+          useNativeDriver: true,
+          damping: 50,
+          stiffness: 400,
+        }).start();
+      },
+    })
+  ).current;
+
+  // Animate sheet in on mount (to 50%)
+  useEffect(() => {
+    Animated.spring(translateY, {
+      toValue: SCREEN_HEIGHT * (1 - DEFAULT_SNAP),
+      useNativeDriver: true,
+      damping: 50,
+      stiffness: 400,
+    }).start();
+  }, []);
+
   // Initialize: Check auth and load first question
   useEffect(() => {
     let isMounted = true;
@@ -130,14 +206,12 @@ export const InterviewScreen: React.FC<InterviewScreenProps> = ({
 
       try {
         const token = await TokenManager.getToken();
-        if (!isMounted) return; // Prevent state updates after unmount
+        if (!isMounted) return;
 
         if (token) {
-          // Authenticated - use API
           if (__DEV__) console.log('[Interview] Authenticated, using API mode');
           setIsApiMode(true);
 
-          // Fetch first question inline to use isMounted check
           try {
             answerStartTime.current = Date.now();
             const response = await questionsService.getNextQuestion();
@@ -149,17 +223,15 @@ export const InterviewScreen: React.FC<InterviewScreenProps> = ({
           } catch (fetchError) {
             if (!isMounted) return;
             if (__DEV__) console.error('[Interview] Fetch error:', fetchError);
-            setIsApiMode(false); // Fallback to demo
+            setIsApiMode(false);
           }
         } else {
-          // Demo mode - use local questions
           if (__DEV__) console.log('[Interview] No token, using demo mode');
           setIsApiMode(false);
         }
       } catch (error) {
         if (!isMounted) return;
         if (__DEV__) console.error('[Interview] Init error:', error);
-        // Fallback to demo mode on error
         setIsApiMode(false);
       } finally {
         if (isMounted) setIsLoading(false);
@@ -171,8 +243,7 @@ export const InterviewScreen: React.FC<InterviewScreenProps> = ({
     return () => {
       isMounted = false;
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []); // Intentionally run once on mount
+  }, []);
 
   // Fetch next question from API
   const fetchNextQuestion = async () => {
@@ -189,16 +260,13 @@ export const InterviewScreen: React.FC<InterviewScreenProps> = ({
 
       if (__DEV__) {
         console.log('[Interview] API question:', response.question.text);
-        console.log('[Interview] Progress:', `${response.progress.current}/${response.progress.total}`);
       }
     } catch (error: unknown) {
       const errMsg = error instanceof Error ? error.message : 'Failed to load question';
       if (__DEV__) console.error('[Interview] Fetch error:', error);
       setApiError(errMsg);
 
-      // Fallback to demo mode on persistent errors
       if (!currentApiQuestion) {
-        if (__DEV__) console.log('[Interview] Falling back to demo mode');
         setIsApiMode(false);
       }
     } finally {
@@ -224,12 +292,10 @@ export const InterviewScreen: React.FC<InterviewScreenProps> = ({
       if (hasMore) {
         await fetchNextQuestion();
       } else {
-        // Interview complete
         advance();
       }
     } catch (error) {
       if (__DEV__) console.error('[Interview] Submit error:', error);
-      // Still advance even on error (don't block user)
       if (hasMore) {
         await fetchNextQuestion();
       } else {
@@ -241,21 +307,17 @@ export const InterviewScreen: React.FC<InterviewScreenProps> = ({
   // Submit answer (handles both API and demo mode)
   const submitAnswer = useCallback(
     async (answerValue: string) => {
-      // Guard against double-submission
       if (!currentQuestion || isSubmitting) return;
 
       setIsSubmitting(true);
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
 
       try {
-        // Add user response to conversation
         addMessage('user', answerValue);
 
         if (isApiMode) {
-          // API mode - submit to backend
           await submitApiAnswer(answerValue);
         } else {
-          // Demo mode - use local state
           answerQuestion({
             questionId: currentQuestion.id,
             value: answerValue,
@@ -272,8 +334,13 @@ export const InterviewScreen: React.FC<InterviewScreenProps> = ({
         setIsSubmitting(false);
       }
     },
-    [currentQuestion, isApiMode, isLastQuestion, isSubmitting, addMessage, answerQuestion, advance, nextQuestion, submitApiAnswer]
+    [currentQuestion, isApiMode, isLastQuestion, isSubmitting, addMessage, answerQuestion, advance, nextQuestion]
   );
+
+  // Handle sending message via ChatInput
+  const handleSendMessage = useCallback((text: string) => {
+    submitAnswer(text);
+  }, [submitAnswer]);
 
   // Secret navigation handlers
   const handleSecretBack = useCallback(() => {
@@ -286,14 +353,11 @@ export const InterviewScreen: React.FC<InterviewScreenProps> = ({
     onSecretForward?.();
   }, [onSecretForward]);
 
-  // Emotion-based texture selection: change shader when vibe changes
+  // Emotion-based texture selection
   useEffect(() => {
     if (onBackgroundChange) {
       const shaderId = getShaderForVibeAndIndex(currentVibe, vibeChangeCount);
       onBackgroundChange(shaderId);
-      if (__DEV__) {
-        console.log('[Interview] Shader →', shaderId, 'for vibe', currentVibe);
-      }
     }
   }, [currentVibe, vibeChangeCount, onBackgroundChange]);
 
@@ -303,33 +367,18 @@ export const InterviewScreen: React.FC<InterviewScreenProps> = ({
 
     setVoiceError(false);
 
-    // Determine vibe from manual vibe_shift OR sentiment analysis
     let newVibe: VibeColorTheme;
     let newShaderId: number | undefined;
 
     if (currentQuestion.vibe_shift && isValidVibeTheme(currentQuestion.vibe_shift)) {
-      // Manual vibe_shift takes precedence
       newVibe = currentQuestion.vibe_shift as VibeColorTheme;
     } else {
-      // No manual vibe_shift - use sentiment analysis
       const sentiment = analyzeQuestionSentiment(currentQuestion.question);
       newVibe = sentiment.theme;
       newShaderId = sentiment.shaderId;
-
-      // Set complexity based on sentiment intensity
       setComplexity(sentiment.complexity);
-
-      if (__DEV__) {
-        console.log('[Interview] Sentiment:', {
-          theme: sentiment.theme,
-          complexity: sentiment.complexity,
-          shaderId: sentiment.shaderId,
-          confidence: sentiment.confidence.toFixed(2),
-        });
-      }
     }
 
-    // Apply color theme
     setColorTheme(newVibe);
 
     if (newVibe !== currentVibe) {
@@ -337,14 +386,12 @@ export const InterviewScreen: React.FC<InterviewScreenProps> = ({
       setVibeChangeCount((prev) => prev + 1);
     }
 
-    // If sentiment provided a specific shader, apply it directly
     if (newShaderId !== undefined && onBackgroundChange) {
       onBackgroundChange(newShaderId);
     }
 
     addMessage('abby', currentQuestion.question);
 
-    // Only speak if voice feature is enabled (prevents keyboard blocking in simulator)
     if (FEATURE_FLAGS.VOICE_ENABLED) {
       abbyTTS
         .speak(currentQuestion.question, (level) => {
@@ -354,8 +401,6 @@ export const InterviewScreen: React.FC<InterviewScreenProps> = ({
           if (__DEV__) console.warn('[Interview] TTS error:', err);
           setVoiceError(true);
         });
-    } else if (__DEV__) {
-      console.log('[Interview] Voice disabled, skipping TTS');
     }
 
     return () => {
@@ -369,47 +414,9 @@ export const InterviewScreen: React.FC<InterviewScreenProps> = ({
   if (isLoading && !currentQuestion) {
     return (
       <View style={styles.container}>
-        <View style={styles.topSpacer} />
-        <View style={[styles.bottomModal, { bottom: -insets.bottom }]}>
-          <BlurView intensity={80} tint="light" style={styles.modalBlur}>
-            <View style={[styles.loadingContainer, { padding: layout.isSmallScreen ? 30 : 40 }]}>
-              <ActivityIndicator size="large" color="rgba(0, 0, 0, 0.6)" />
-              <Text style={[styles.loadingText, { fontSize: layout.bodyFontSize }]}>
-                Loading questions...
-              </Text>
-            </View>
-            <View style={{ height: layout.isSmallScreen ? 28 : 34 }} />
-          </BlurView>
-        </View>
-      </View>
-    );
-  }
-
-  // Error state (but still have a question to show)
-  if (apiError && !currentQuestion) {
-    return (
-      <View style={styles.container}>
-        <View style={styles.topSpacer} />
-        <View style={[styles.bottomModal, { bottom: -insets.bottom }]}>
-          <BlurView intensity={80} tint="light" style={styles.modalBlur}>
-            <View style={[styles.loadingContainer, { padding: layout.isSmallScreen ? 30 : 40 }]}>
-              <Text style={[styles.errorText, { fontSize: layout.bodyFontSize }]}>
-                Unable to load questions
-              </Text>
-              <Pressable
-                onPress={() => {
-                  setIsApiMode(false);
-                  setIsLoading(false);
-                }}
-                style={styles.retryButton}
-              >
-                <Text style={[styles.retryButtonText, { fontSize: layout.bodyFontSize - 2 }]}>
-                  Use Demo Mode
-                </Text>
-              </Pressable>
-            </View>
-            <View style={{ height: layout.isSmallScreen ? 28 : 34 }} />
-          </BlurView>
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color="rgba(255, 255, 255, 0.8)" />
+          <Text style={styles.loadingText}>Loading questions...</Text>
         </View>
       </View>
     );
@@ -422,223 +429,171 @@ export const InterviewScreen: React.FC<InterviewScreenProps> = ({
 
   return (
     <View style={styles.container}>
-      {/* Top: Empty space for shader background + orb */}
-      <View style={styles.topSpacer} />
+      {/* Backdrop */}
+      <View style={styles.backdrop} />
 
-      {/* Bottom: Glass modal with question + button - extends to screen edge */}
-      <View style={[styles.bottomModal, { bottom: -insets.bottom }]}>
-        <BlurView intensity={80} tint="light" style={styles.modalBlur}>
-          {/* Drag handle */}
-          <View style={[styles.handleContainer, { paddingVertical: layout.isSmallScreen ? 6 : 8 }]}>
-            <View style={styles.handle} />
+      {/* Bottom Sheet - animated & draggable */}
+      <Animated.View
+        style={[
+          styles.bottomSheet,
+          {
+            transform: [{ translateY }],
+          },
+        ]}
+      >
+        <BlurView intensity={80} tint="light" style={styles.blurContainer} pointerEvents="box-none">
+          {/* DRAGGABLE HEADER */}
+          <View {...panResponder.panHandlers} style={styles.draggableHeader}>
+            <View style={styles.handleContainer}>
+              <View style={styles.handle} />
+            </View>
           </View>
 
-          {/* Progress indicator */}
-          <Text
-            style={[
-              styles.progressText,
-              {
-                fontSize: layout.captionFontSize,
-                marginTop: layout.isSmallScreen ? 2 : 4,
-              },
-            ]}
-          >
-            {displayProgress}
-            {isApiMode && <Text style={styles.apiIndicator}> • API</Text>}
-          </Text>
+          {/* Progress indicator - top right corner */}
+          <View style={styles.progressContainer}>
+            <Text style={styles.progressText}>
+              {displayProgress}
+              {isApiMode && <Text style={styles.apiIndicator}> • API</Text>}
+            </Text>
+          </View>
 
-          {/* Question text */}
-          <Animated.View
+          {/* Question text - pushed up 20px */}
+          <AnimatedRN.View
             key={currentQuestion.id}
             entering={FadeIn.duration(300)}
             exiting={FadeOut.duration(200)}
-            style={[
-              styles.questionContainer,
-              {
-                paddingHorizontal: layout.paddingHorizontal,
-                paddingVertical: layout.isSmallScreen ? 14 : 20,
-              },
-            ]}
+            style={styles.questionContainer}
           >
             <Text
               style={[
                 styles.questionText,
                 {
-                  fontSize: layout.isSmallScreen ? 18 : 20,
-                  lineHeight: layout.isSmallScreen ? 26 : 30,
+                  fontSize: layout.isSmallScreen ? 21 : 23,
+                  lineHeight: layout.isSmallScreen ? 26 : 29,
                 },
               ]}
             >
               {currentQuestion.question}
             </Text>
-          </Animated.View>
+          </AnimatedRN.View>
 
           {/* Voice error indicator */}
           {voiceError && <Text style={styles.voiceErrorText}>🔇 Voice unavailable</Text>}
 
-          {/* API error banner (non-blocking) */}
+          {/* API error banner */}
           {apiError && (
             <Text style={styles.apiErrorText}>⚠️ Sync issue - answers saved locally</Text>
           )}
 
-          {/* Loading overlay when fetching next */}
+          {/* Loading overlay */}
           {isLoading && (
             <View style={styles.loadingOverlay}>
               <ActivityIndicator size="small" color="rgba(0, 0, 0, 0.4)" />
             </View>
           )}
-
-          {/* Yes/No buttons */}
-          {isLastQuestion ? (
-            <Pressable
-              onPress={() => submitAnswer('Yes')}
-              disabled={isLoading}
-              style={({ pressed }) => [
-                styles.nextButton,
-                {
-                  marginHorizontal: layout.paddingHorizontal,
-                  paddingVertical: layout.isSmallScreen ? 12 : 16,
-                },
-                pressed && styles.nextButtonPressed,
-                isLoading && styles.buttonDisabled,
-              ]}
-            >
-              <Text style={[styles.buttonText, { fontSize: layout.bodyFontSize }]}>
-                Find My Match
-              </Text>
-            </Pressable>
-          ) : (
-            <View
-              style={[
-                styles.buttonRow,
-                {
-                  marginHorizontal: layout.paddingHorizontal,
-                  gap: layout.buttonMargin,
-                },
-              ]}
-            >
-              <Pressable
-                onPress={() => submitAnswer('No')}
-                disabled={isLoading}
-                style={({ pressed }) => [
-                  styles.answerButton,
-                  styles.noButton,
-                  { paddingVertical: layout.isSmallScreen ? 12 : 16 },
-                  pressed && styles.answerButtonPressed,
-                  isLoading && styles.buttonDisabled,
-                ]}
-              >
-                <Text
-                  style={[
-                    styles.answerButtonText,
-                    styles.noButtonText,
-                    { fontSize: layout.bodyFontSize },
-                  ]}
-                >
-                  No
-                </Text>
-              </Pressable>
-              <Pressable
-                onPress={() => submitAnswer('Yes')}
-                disabled={isLoading}
-                style={({ pressed }) => [
-                  styles.answerButton,
-                  styles.yesButton,
-                  { paddingVertical: layout.isSmallScreen ? 12 : 16 },
-                  pressed && styles.answerButtonPressed,
-                  isLoading && styles.buttonDisabled,
-                ]}
-              >
-                <Text style={[styles.answerButtonText, { fontSize: layout.bodyFontSize }]}>
-                  Yes
-                </Text>
-              </Pressable>
-            </View>
-          )}
-
-          {/* Extra padding for home indicator */}
-          <View style={{ height: layout.isSmallScreen ? 28 : 34 }} />
         </BlurView>
+      </Animated.View>
+
+      {/* Chat input - FLOATING at screen bottom (outside sheet) */}
+      <View style={[styles.chatInputContainer, {
+        bottom: layout.isSmallScreen ? 24 : 34,
+        left: layout.paddingHorizontal,
+        right: layout.paddingHorizontal,
+      }]}>
+        <ChatInput
+          onSend={handleSendMessage}
+          disabled={isLoading || isSubmitting}
+          placeholder="Type your answer..."
+        />
       </View>
 
-      {/* Secret navigation triggers (all 70x70, invisible) */}
-      {/* Left = Back */}
+      {/* Secret navigation triggers */}
       <Pressable onPress={handleSecretBack} style={styles.secretBackTrigger} hitSlop={10} />
-      {/* Middle = Primary action (Submit Yes) */}
       <Pressable
         onPress={() => submitAnswer('Yes')}
         style={styles.secretMiddleTrigger}
         hitSlop={10}
       />
-      {/* Right = Forward */}
       <Pressable onPress={handleSecretForward} style={styles.secretForwardTrigger} hitSlop={10} />
     </View>
   );
 };
-
-const { height: SCREEN_HEIGHT } = Dimensions.get('window');
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
 
-  // Top spacer - takes remaining space
-  topSpacer: {
+  backdrop: {
+    ...StyleSheet.absoluteFillObject,
+  },
+
+  // Bottom sheet - full height, positioned via translateY
+  bottomSheet: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    height: SCREEN_HEIGHT,
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    overflow: 'hidden',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: -4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 8,
+    elevation: 10,
+  },
+
+  blurContainer: {
     flex: 1,
   },
 
-  // Bottom modal - positioned at absolute bottom, extends past safe area to screen edge
-  bottomModal: {
-    position: 'absolute',
-    bottom: -34, // Extend past safe area to reach actual screen bottom
-    left: 0,
-    right: 0,
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
-    overflow: 'hidden',
-  },
-  modalBlur: {
-    backgroundColor: 'rgba(255, 255, 255, 0.15)',
-    paddingTop: 8,
+  // Draggable header area
+  draggableHeader: {
+    paddingTop: 12,
   },
 
-  // Drag handle
   handleContainer: {
+    paddingBottom: 8,
     alignItems: 'center',
-    paddingVertical: 8,
   },
   handle: {
     width: 40,
     height: 5,
-    borderRadius: 2.5,
+    borderRadius: 3,
     backgroundColor: 'rgba(0, 0, 0, 0.2)',
   },
 
-  // Progress indicator
+  // Progress indicator - top right corner
+  progressContainer: {
+    position: 'absolute',
+    top: 16,
+    right: 20,
+    zIndex: 10,
+  },
   progressText: {
     fontFamily: 'JetBrainsMono_400Regular',
-    fontSize: 12,
+    fontSize: 11,
     color: 'rgba(0, 0, 0, 0.5)',
     textTransform: 'uppercase',
-    letterSpacing: 1,
-    textAlign: 'center',
-    marginTop: 4,
+    letterSpacing: 0.5,
   },
   apiIndicator: {
     color: 'rgba(59, 130, 246, 0.7)',
     fontSize: 10,
   },
 
-  // Question
+  // Question - pushed up 20px from center
   questionContainer: {
     paddingHorizontal: 24,
-    paddingVertical: 20,
+    paddingTop: 4,
+    paddingBottom: 20,
   },
   questionText: {
     fontFamily: 'Merriweather_400Regular',
-    fontSize: 20,
-    lineHeight: 30,
+    fontSize: 23,
+    lineHeight: 29,
     color: 'rgba(0, 0, 0, 0.85)',
     textAlign: 'center',
   },
@@ -659,98 +614,29 @@ const styles = StyleSheet.create({
 
   // Loading
   loadingContainer: {
-    padding: 40,
+    flex: 1,
+    justifyContent: 'center',
     alignItems: 'center',
     gap: 16,
   },
   loadingText: {
     fontFamily: 'Merriweather_400Regular',
     fontSize: 16,
-    color: 'rgba(0, 0, 0, 0.6)',
+    color: 'rgba(255, 255, 255, 0.8)',
   },
   loadingOverlay: {
     position: 'absolute',
-    top: 8,
-    right: 16,
-  },
-  errorText: {
-    fontFamily: 'Merriweather_400Regular',
-    fontSize: 16,
-    color: 'rgba(180, 0, 0, 0.8)',
-    textAlign: 'center',
-  },
-  retryButton: {
-    backgroundColor: 'rgba(0, 0, 0, 0.1)',
-    paddingHorizontal: 20,
-    paddingVertical: 10,
-    borderRadius: 20,
-  },
-  retryButtonText: {
-    fontFamily: 'Merriweather_400Regular',
-    fontSize: 14,
-    color: 'rgba(0, 0, 0, 0.7)',
+    top: 16,
+    left: 20,
   },
 
-  // Next button
-  nextButton: {
-    marginHorizontal: 24,
-    backgroundColor: 'rgba(0, 0, 0, 0.8)',
-    borderRadius: 30,
-    paddingVertical: 16,
-    alignItems: 'center',
-  },
-  nextButtonPressed: {
-    opacity: 0.8,
-    transform: [{ scale: 0.98 }],
-  },
-  buttonText: {
-    fontFamily: 'Merriweather_400Regular',
-    fontSize: 16,
-    color: '#FFFFFF',
-    fontWeight: '600',
-  },
-  buttonDisabled: {
-    opacity: 0.5,
-  },
-
-  // Yes/No button row
-  buttonRow: {
-    flexDirection: 'row',
-    marginHorizontal: 24,
-    gap: 12,
-  },
-  answerButton: {
-    flex: 1,
-    borderRadius: 30,
-    paddingVertical: 16,
-    alignItems: 'center',
-    borderWidth: 2,
-  },
-  noButton: {
-    backgroundColor: 'rgba(255, 255, 255, 0.3)',
-    borderColor: 'rgba(0, 0, 0, 0.2)',
-  },
-  noButtonText: {
-    color: 'rgba(0, 0, 0, 0.7)',
-  },
-  yesButton: {
-    backgroundColor: 'rgba(0, 0, 0, 0.8)',
-    borderColor: 'rgba(0, 0, 0, 0.8)',
-  },
-  answerButtonPressed: {
-    opacity: 0.8,
-    transform: [{ scale: 0.98 }],
-  },
-  answerButtonText: {
-    fontFamily: 'Merriweather_400Regular',
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#FFFFFF',
-  },
-
-  // Extra padding at bottom for home indicator
-  homeIndicatorPadding: {
-    height: 34,
+  // Chat input wrapper - FLOATING PILL at screen bottom
+  chatInputContainer: {
+    position: 'absolute',
+    bottom: 34,
+    left: 20,
+    right: 20,
+    zIndex: 200,
   },
 
   // Secret navigation triggers

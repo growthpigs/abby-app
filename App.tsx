@@ -28,7 +28,6 @@ import { AbbyOrb } from './src/components/layers/AbbyOrb';
 import { GlassFloor } from './src/components/ui/GlassFloor';
 import { HamburgerMenu } from './src/components/ui/HamburgerMenu';
 import { ErrorBoundary } from './src/components/ErrorBoundary';
-import { VibeDebugOverlay } from './src/components/dev/VibeDebugOverlay';
 
 import { useSettingsStore } from './src/store/useSettingsStore';
 import { AuthService } from './src/services/AuthService';
@@ -76,6 +75,7 @@ import {
   ProfileScreen,
   PhotosScreen,
   MatchesScreen,
+  CertificationScreen,
 } from './src/components/screens';
 
 // Auth flow states (matches Nathan's API: Login → Name → Email → Password → Verify)
@@ -190,7 +190,7 @@ function AppContent() {
   const [authError, setAuthError] = useState<string | null>(null);
 
   // Menu screen state (for hamburger menu navigation)
-  const [menuScreen, setMenuScreen] = useState<'none' | 'profile' | 'photos' | 'settings' | 'matches'>('none');
+  const [menuScreen, setMenuScreen] = useState<'none' | 'profile' | 'photos' | 'settings' | 'matches' | 'certification'>('none');
 
   // Demo state from store
   const demoState = useDemoState();
@@ -950,6 +950,9 @@ function AppContent() {
           onSettingsPress={() => {
             setMenuScreen('settings');
           }}
+          onCertificationPress={() => {
+            setMenuScreen('certification');
+          }}
           onLogoutPress={() => {
             // Logout and return to login screen
             AuthService.logout();
@@ -976,6 +979,14 @@ function AppContent() {
       {menuScreen === 'matches' && (
         <MatchesScreen
           onClose={() => setMenuScreen('none')}
+        />
+      )}
+
+      {/* Certification Screen Overlay (/v1/verification) */}
+      {menuScreen === 'certification' && (
+        <CertificationScreen
+          onComplete={() => setMenuScreen('none')}
+          onBack={() => setMenuScreen('none')}
         />
       )}
 
@@ -1062,9 +1073,6 @@ function AppContent() {
       <View style={styles.uiLayer}>
         {authState !== 'AUTHENTICATED' ? renderAuthScreen() : renderDemoScreen()}
       </View>
-
-      {/* Dev: Vibe Debug Overlay with shader switching */}
-      {__DEV__ && <VibeDebugOverlay vibeMatrixRef={vibeRef} />}
     </View>
   );
 }

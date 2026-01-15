@@ -22,7 +22,7 @@ import {
 } from 'react-native';
 import { BlurView } from 'expo-blur';
 import * as Haptics from 'expo-haptics';
-import { Pause, Play } from 'lucide-react-native';
+import { Pause, Play, ChevronRight } from 'lucide-react-native';
 import { useDemoStore } from '../../store/useDemoStore';
 import { useAbbyAgent } from '../../services/AbbyRealtimeService';
 import { useVibeController } from '../../store/useVibeController';
@@ -119,9 +119,9 @@ export const CoachIntroScreen = forwardRef<CoachIntroScreenRef, CoachIntroScreen
     },
     onDisconnect: () => {
       setAgentStatus('Ended');
-      // AUTO-ADVANCE: When conversation ends, transition to interview
-      if (__DEV__) console.log('[CoachIntro] 🚀 Disconnected, advancing to interview');
-      advance();
+      // NOTE: Don't auto-advance here - handleStartInterview handles navigation
+      // Auto-advancing here causes double-advance when Skip is clicked
+      if (__DEV__) console.log('[CoachIntro] Disconnected (no auto-advance)');
     },
     onError: (error) => {
       setAgentStatus(`Error: ${error.message}`);
@@ -405,6 +405,19 @@ export const CoachIntroScreen = forwardRef<CoachIntroScreenRef, CoachIntroScreen
         />
       </View>
 
+      {/* Visible Skip button - allows bypassing voice to test interview flow */}
+      <Pressable
+        onPress={handleStartInterview}
+        style={({ pressed }) => [
+          styles.skipButton,
+          pressed && styles.skipButtonPressed,
+        ]}
+        hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+      >
+        <Text style={styles.skipButtonText}>Skip</Text>
+        <ChevronRight size={16} stroke="rgba(255, 255, 255, 0.9)" />
+      </Pressable>
+
       {/* Secret navigation triggers (responsive size, invisible) */}
       {/* Left = Back */}
       <Pressable
@@ -598,6 +611,31 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#FFFFFF',
     fontWeight: '600',
+  },
+
+  // Skip button - visible in top-right
+  skipButton: {
+    position: 'absolute',
+    top: 60,
+    right: 20,
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0, 0, 0, 0.3)',
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 20,
+    gap: 4,
+    zIndex: 1000,
+  },
+  skipButtonPressed: {
+    opacity: 0.7,
+    transform: [{ scale: 0.95 }],
+  },
+  skipButtonText: {
+    fontFamily: 'Merriweather_400Regular',
+    fontSize: 14,
+    color: 'rgba(255, 255, 255, 0.9)',
+    fontWeight: '500',
   },
 
   // Secret navigation triggers

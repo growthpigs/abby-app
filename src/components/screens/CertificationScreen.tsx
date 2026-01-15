@@ -8,6 +8,7 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { View, StyleSheet, Pressable, ActivityIndicator } from 'react-native';
 import * as Haptics from 'expo-haptics';
+import { X } from 'lucide-react-native';
 import { GlassSheet, GlassButton, Headline, Body, Caption } from '../ui';
 import { api } from '../../services/api';
 import type { VerificationStatus, VerificationType } from '../../services/api/types';
@@ -204,19 +205,23 @@ export const CertificationScreen: React.FC<CertificationScreenProps> = ({
         </View>
       </GlassSheet>
 
-      {/* Back button */}
+      {/* Close button */}
       <Pressable
         onPress={handleBack}
-        style={styles.backButton}
+        style={styles.closeButton}
         hitSlop={10}
-      />
+      >
+        <X size={24} stroke="rgba(255, 255, 255, 0.9)" />
+      </Pressable>
     </View>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
+    ...StyleSheet.absoluteFillObject,
+    zIndex: 2000,
+    backgroundColor: 'rgba(0, 0, 0, 0.3)',
   },
   loadingContainer: {
     flex: 1,
@@ -327,12 +332,16 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     fontStyle: 'italic',
   },
-  backButton: {
+  closeButton: {
     position: 'absolute',
-    top: 10,
-    left: 10,
-    width: 70,
-    height: 70,
+    top: 60,
+    right: 20,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: 'rgba(0, 0, 0, 0.3)',
+    alignItems: 'center',
+    justifyContent: 'center',
     zIndex: 9999,
   },
 });

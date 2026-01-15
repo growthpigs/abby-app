@@ -22,7 +22,7 @@ import {
 } from 'react-native';
 import { BlurView } from 'expo-blur';
 import * as Haptics from 'expo-haptics';
-import { Menu, X, Camera, Heart, Settings, LogOut, User } from 'lucide-react-native';
+import { Menu, X, Camera, Heart, Settings, LogOut, User, ShieldCheck } from 'lucide-react-native';
 import { Body, Caption } from './Typography';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
@@ -32,6 +32,7 @@ export interface HamburgerMenuProps {
   onProfilePress?: () => void;
   onPhotosPress?: () => void;
   onMatchesPress?: () => void;
+  onCertificationPress?: () => void;
   onSettingsPress?: () => void;
   onLogoutPress?: () => void;
 }
@@ -40,6 +41,7 @@ export const HamburgerMenu: React.FC<HamburgerMenuProps> = ({
   onProfilePress,
   onPhotosPress,
   onMatchesPress,
+  onCertificationPress,
   onSettingsPress,
   onLogoutPress,
 }) => {
@@ -69,10 +71,11 @@ export const HamburgerMenu: React.FC<HamburgerMenuProps> = ({
 
   const handleMenuItemPress = useCallback((action?: () => void) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    closeMenu();
+    // Execute action immediately, then close menu
     if (action) {
-      setTimeout(action, 300);
+      action();
     }
+    closeMenu();
   }, [closeMenu]);
 
   return (
@@ -171,6 +174,18 @@ export const HamburgerMenu: React.FC<HamburgerMenuProps> = ({
                 <Body style={styles.menuItemText}>Settings</Body>
               </Pressable>
 
+              {/* Certification - /v1/verification */}
+              <Pressable
+                onPress={() => handleMenuItemPress(onCertificationPress)}
+                style={({ pressed }) => [
+                  styles.menuItem,
+                  pressed && styles.menuItemPressed,
+                ]}
+              >
+                <ShieldCheck size={22} stroke="rgba(0, 0, 0, 0.7)" />
+                <Body style={styles.menuItemText}>Certification</Body>
+              </Pressable>
+
               <View style={styles.divider} />
 
               {/* Log Out */}
@@ -258,15 +273,15 @@ const styles = StyleSheet.create({
   },
 
   menuItems: {
-    gap: 8,
+    gap: 4,
   },
   menuItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 16,
-    paddingVertical: 16,
+    gap: 14,
+    paddingVertical: 12,
     paddingHorizontal: 8,
-    borderRadius: 12,
+    borderRadius: 10,
   },
   menuItemPressed: {
     backgroundColor: 'rgba(0, 0, 0, 0.05)',

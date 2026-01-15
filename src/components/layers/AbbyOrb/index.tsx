@@ -66,8 +66,9 @@ export const AbbyOrb: React.FC<AbbyOrbProps> = ({ mode, onTap }) => {
   const shaderColors = useMemo(() => getShaderColors(colorTheme), [colorTheme]);
 
   // Calculate UV positions for each mode
+  // Orb moved up 40px toward Dynamic Island
   const centerModeY = useMemo(() => {
-    const screenY = screenHeight * 0.15 + ORB_SIZES.center.radius;
+    const screenY = screenHeight * 0.15 + ORB_SIZES.center.radius - 40;
     return screenToUV(screenY, screenWidth, screenHeight);
   }, [screenWidth, screenHeight]);
 
