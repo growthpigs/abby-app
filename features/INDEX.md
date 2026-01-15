@@ -143,14 +143,14 @@ All core MVP features are implemented. Remaining work is connecting demo mode to
 - Applied consistent PASSION palette (`#E11D48`) to all match flow screens
 - Redesigned Pass/Like buttons (icons only, glass/pink filled - no red/green borders)
 - Standardized glass card pattern (`rgba(255, 255, 255, 0.15)`, no borders)
-- Changed all match flow section labels to WHITE (#FFFFFF)
+- Changed all match flow section labels to GRAY (#5A5A5A) for readability on pale blur
 - Documented patterns in 4 living documents to prevent AI regression
 
 **Files modified:**
 - `PhotosScreen.tsx` - Primary badge → PASSION pink, empty slots → subtle white glass
-- `MatchesScreen.tsx` - Pass/Like buttons completely redesigned, cards → glass style
-- `MatchScreen.tsx` - Labels → WHITE, compatibility → PASSION pink
-- `RevealScreen.tsx` - Labels → WHITE, badges → PASSION pink
+- `MatchesScreen.tsx` - Pass/Like buttons completely redesigned, cards → glass style, labels → GRAY
+- `MatchScreen.tsx` - Labels → GRAY, compatibility → PASSION pink
+- `RevealScreen.tsx` - Labels → GRAY, badges → PASSION pink
 - `PaymentScreen.tsx` - Hidden secret nav trigger borders
 
 **Documentation updated (CRITICAL - prevents AI regression):**
@@ -161,7 +161,8 @@ All core MVP features are implemented. Remaining work is connecting demo mode to
 
 **Reference screen:** `CertificationScreen.tsx` is the GOLD STANDARD for glass styling.
 
-**Key Rule:** Never use green compatibility badges, red/green bordered buttons, or gray labels in match flow.
+**Key Rule:** Never use green compatibility badges, red/green bordered buttons, or WHITE labels on pale blur.
+**Color Rule:** Section labels use #5A5A5A (medium gray) for readability on pale blur backgrounds.
 
 **Commits:**
 - `bde257a` - feat(design): white text, Barlow buttons, standardized blur

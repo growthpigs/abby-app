@@ -510,14 +510,16 @@ likeButton: {
 ### Caption/Label Colors
 
 ```typescript
-// ALWAYS white for section labels in match flow
+// ALWAYS GRAY for section labels in match flow (readable on pale blur)
 sectionLabel: {
   fontFamily: 'JetBrainsMono_400Regular',
   fontSize: 11,
   letterSpacing: 1,
-  color: '#FFFFFF',        // WHITE - NOT gray!
+  color: '#5A5A5A',        // Medium GRAY - NOT white!
   textTransform: 'uppercase',
 }
+
+// ⚠️ DO NOT USE #FFFFFF - white is unreadable on pale blur backgrounds
 ```
 
 ### Compatibility Badge Pattern

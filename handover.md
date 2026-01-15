@@ -127,7 +127,7 @@ The match flow screens (Photos, Matches, Match, Reveal, Payment) now use a consi
 | Pattern | Style | DO NOT CHANGE |
 |---------|-------|---------------|
 | Glass cards | `rgba(255, 255, 255, 0.15)`, no border | `rgba(255, 255, 255, 0.5)` looks wrong |
-| Caption labels | WHITE (#FFFFFF), JetBrains Mono | NOT gray |
+| Caption labels | GRAY (#5A5A5A), JetBrains Mono | NOT white (unreadable on pale blur) |
 | Compatibility badges | PASSION pink (`#E11D48`), pink tint | NOT green |
 | Loading spinners | PASSION pink (#E11D48) | NOT blue |
 | Pass/Like buttons | Pass=glass, Like=pink filled | NOT red/green bordered |

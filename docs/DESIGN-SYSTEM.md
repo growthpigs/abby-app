@@ -437,10 +437,12 @@ photoHint: {
 ```
 Section Labels (CERTIFICATION, MATCH FOUND, YOUR MATCH, etc):
 ├── Font: JetBrains Mono
-├── Color: #FFFFFF  // ALWAYS white
+├── Color: #5A5A5A  // Medium GRAY for readability on pale blur
 ├── Size: 11px
 ├── Letter Spacing: 1px
 ├── Transform: UPPERCASE
+
+⚠️ NOTE: Do NOT use #FFFFFF (white) - it's unreadable on pale blur backgrounds
 ```
 
 ### Loading Indicators

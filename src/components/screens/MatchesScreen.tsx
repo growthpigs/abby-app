@@ -511,7 +511,7 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: 11,
     letterSpacing: 1,
-    color: '#FFFFFF', // WHITE like CertificationScreen labels
+    color: '#5A5A5A', // Medium GRAY for readability on pale blur
   },
   closeButton: {
     position: 'absolute',

@@ -196,7 +196,7 @@ const styles = StyleSheet.create({
     marginBottom: 20,
     letterSpacing: 1,
     fontSize: 11,
-    color: '#FFFFFF', // WHITE like CertificationScreen labels
+    color: '#5A5A5A', // Medium GRAY for readability on pale blur
   },
   photoContainer: {
     alignSelf: 'center',

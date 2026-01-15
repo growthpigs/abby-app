@@ -1038,33 +1038,70 @@ function AppContent() {
 
               const API_BASE = 'https://dev.api.myaimatchmaker.ai';
 
-              // Create form data for multipart upload
-              const formData = new FormData();
-              formData.append('file', {
-                uri: Platform.OS === 'ios' ? image.uri.replace('file://', '') : image.uri,
-                type: image.mimeType || 'image/jpeg',
-                name: image.fileName || `photo_${Date.now()}.jpg`,
-              } as unknown as Blob);
+              // Step 1: Get presigned upload URL from backend
+              const filename = image.fileName || `photo_${Date.now()}.jpg`;
+              const contentType = image.mimeType || 'image/jpeg';
 
-              const response = await fetch(`${API_BASE}/v1/photos`, {
+              if (__DEV__) console.log('[App] Getting presigned URL for:', filename);
+
+              const presignResponse = await fetch(`${API_BASE}/v1/photos/presign`, {
                 method: 'POST',
                 headers: {
                   'Authorization': `Bearer ${token}`,
-                  // Note: DO NOT set Content-Type for FormData
-                  // fetch() will set it automatically with proper boundary
+                  'Content-Type': 'application/json',
                 },
-                body: formData,
+                body: JSON.stringify({ filename, contentType }),
               });
 
-              if (!response.ok) {
-                const errorText = await response.text();
-                if (__DEV__) console.error('[App] Photo upload failed:', response.status, errorText);
-                Alert.alert('Upload Failed', `Could not upload photo: ${response.status}`);
+              if (!presignResponse.ok) {
+                const errorText = await presignResponse.text();
+                if (__DEV__) console.error('[App] Presign failed:', presignResponse.status, errorText);
+                Alert.alert('Upload Failed', `Could not get upload URL: ${presignResponse.status}`);
                 return;
               }
 
-              if (__DEV__) console.log('[App] Photo uploaded successfully');
-              Alert.alert('Success', 'Photo uploaded! Pull down to refresh.');
+              const presignData = await presignResponse.json();
+              const { uploadUrl, fileKey } = presignData;
+              if (__DEV__) console.log('[App] Got presigned URL, fileKey:', fileKey);
+
+              // Step 2: Upload file directly to S3 using presigned URL
+              const imageUri = Platform.OS === 'ios' ? image.uri.replace('file://', '') : image.uri;
+              const imageBlob = await fetch(imageUri).then(r => r.blob());
+
+              const s3Response = await fetch(uploadUrl, {
+                method: 'PUT',
+                headers: {
+                  'Content-Type': contentType,
+                },
+                body: imageBlob,
+              });
+
+              if (!s3Response.ok) {
+                if (__DEV__) console.error('[App] S3 upload failed:', s3Response.status);
+                Alert.alert('Upload Failed', 'Could not upload to storage');
+                return;
+              }
+              if (__DEV__) console.log('[App] S3 upload successful');
+
+              // Step 3: Register photo with backend
+              const registerResponse = await fetch(`${API_BASE}/v1/photos`, {
+                method: 'POST',
+                headers: {
+                  'Authorization': `Bearer ${token}`,
+                  'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ fileKey, isPrimary: false }),
+              });
+
+              if (!registerResponse.ok) {
+                const errorText = await registerResponse.text();
+                if (__DEV__) console.error('[App] Register failed:', registerResponse.status, errorText);
+                Alert.alert('Upload Failed', `Could not register photo: ${registerResponse.status}`);
+                return;
+              }
+
+              if (__DEV__) console.log('[App] Photo registered successfully');
+              Alert.alert('Success', 'Photo uploaded!');
 
               // Close and reopen to refresh
               setMenuScreen('none');
