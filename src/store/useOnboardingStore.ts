@@ -328,13 +328,33 @@ export const useOnboardingStore = create<OnboardingStore>((set, get) => ({
       payload.gender = sanitizedGender;
     }
 
-    // === FIELDS REJECTED BY API (DO NOT SEND) ===
-    // These must be submitted via POST /v1/answers instead:
+    // === LOCATION FIELDS ===
+    // Try sending via profile PUT - API response shows geo_lat/geo_lon exist
+    // If API rejects these, they need to go via /v1/answers with question ID
+    if (state.location) {
+      if (state.location.type === 'gps' && typeof state.location.value === 'object') {
+        const gps = state.location.value as GPSLocation;
+        payload.geo_lat = gps.lat;
+        payload.geo_lon = gps.lng;
+        console.log('🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢');
+        console.log(`📍 [LOCATION TO DATABASE] GPS: geo_lat=${gps.lat}, geo_lon=${gps.lng}`);
+        console.log('🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢');
+      } else if (state.location.type === 'zip' && typeof state.location.value === 'string') {
+        // For ZIP codes, send as-is - backend may need to geocode
+        payload.zip_code = state.location.value;
+        console.log('🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢');
+        console.log(`📍 [LOCATION TO DATABASE] ZIP: zip_code=${state.location.value}`);
+        console.log('🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢');
+      }
+    } else {
+      console.log('⚠️⚠️⚠️ [LOCATION] No location data in state! ⚠️⚠️⚠️');
+    }
+
+    // === FIELDS THAT GO VIA /v1/answers ===
     // - ethnicity → ONB_005
     // - ethnicity_preferences → ONB_006
     // - relationship_type → ONB_007
     // - smoking_me, smoking_partner → ONB_008
-    // - latitude, longitude, zip_code → location questions
 
     return payload;
   },

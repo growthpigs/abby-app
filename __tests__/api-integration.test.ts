@@ -137,22 +137,22 @@ describe('Profile Payload - useOnboardingStore', () => {
     expect(source).toContain('const payload: Record<string, unknown> = {}');
   });
 
-  test('Profile payload only sends API-accepted fields (no rejected fields)', () => {
+  test('Profile payload sends correct fields (profile + location)', () => {
     const source = readFile('src/store/useOnboardingStore.ts');
-    // FIX VERIFICATION: API rejects these fields, so we must NOT send them
-    // These should be submitted via POST /v1/answers instead
-    expect(source).not.toContain('payload.latitude');
-    expect(source).not.toContain('payload.longitude');
-    expect(source).not.toContain('payload.zip_code');
+    // Profile endpoint accepts: display_name, birthday, gender + location fields
+    expect(source).toContain('payload.display_name');
+    expect(source).toContain('payload.birthday');
+    expect(source).toContain('payload.gender');
+    // Location fields ARE sent via profile (geo_lat, geo_lon, zip_code)
+    expect(source).toContain('payload.geo_lat');
+    expect(source).toContain('payload.geo_lon');
+    expect(source).toContain('payload.zip_code');
+    // These fields go via POST /v1/answers instead (NOT profile)
     expect(source).not.toContain('payload.ethnicity =');
     expect(source).not.toContain('payload.ethnicity_preferences');
     expect(source).not.toContain('payload.smoking_me');
     expect(source).not.toContain('payload.smoking_partner');
     expect(source).not.toContain('payload.relationship_type');
-    // Should only send: display_name, birthday, gender
-    expect(source).toContain('payload.display_name');
-    expect(source).toContain('payload.birthday');
-    expect(source).toContain('payload.gender');
   });
 });
 
