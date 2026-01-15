@@ -1,13 +1,14 @@
 /**
- * Typography - Editorial luxury text components
+ * Typography - Clean, modern text components
  *
- * Mix traditional Serif headers with clean Sans-Serif data.
- * "The Voice of Abby" for headers, "The Data" for body.
+ * Font System:
+ * - Barlow: Body text (readable, modern sans-serif)
+ * - JetBrains Mono: Labels, headlines, captions (UPPERCASE, technical feel)
  *
  * Usage:
- *   <Headline>Match Found!</Headline>
- *   <Body>Coffee enthusiast, weekend hiker...</Body>
- *   <Caption>87% Compatible</Caption>
+ *   <Headline>MATCH FOUND</Headline>           // JetBrains Mono, uppercase
+ *   <Body>Coffee enthusiast, weekend hiker...</Body>  // Barlow, normal case
+ *   <Caption>87% COMPATIBLE</Caption>          // JetBrains Mono, uppercase
  */
 
 import React from 'react';
@@ -20,7 +21,7 @@ interface TypographyProps {
   numberOfLines?: number;
 }
 
-// Headers - The Voice of Abby (Serif feel, high contrast)
+// Headers - JetBrains Mono UPPERCASE (technical, bold)
 export const Headline: React.FC<TypographyProps> = ({ children, style, color }) => (
   <Text style={[styles.headline, color ? { color } : null, style]}>
     {children}
@@ -39,7 +40,7 @@ export const HeadlineSmall: React.FC<TypographyProps> = ({ children, style, colo
   </Text>
 );
 
-// Body - The Data (System Sans, clean)
+// Body - Barlow (clean, readable)
 export const Body: React.FC<TypographyProps> = ({ children, style, color, numberOfLines }) => (
   <Text style={[styles.body, color ? { color } : null, style]} numberOfLines={numberOfLines}>
     {children}
@@ -58,14 +59,14 @@ export const BodySmall: React.FC<TypographyProps> = ({ children, style, color })
   </Text>
 );
 
-// Caption - Small metadata
+// Caption - JetBrains Mono UPPERCASE (small labels)
 export const Caption: React.FC<TypographyProps> = ({ children, style, color }) => (
   <Text style={[styles.caption, color ? { color } : null, style]}>
     {children}
   </Text>
 );
 
-// Question - Interview questions (Serif, medium weight)
+// Question - Barlow (interview prompts - readable at larger size)
 export const Question: React.FC<TypographyProps> = ({ children, style, color }) => (
   <Text style={[styles.question, color ? { color } : null, style]}>
     {children}
@@ -73,28 +74,31 @@ export const Question: React.FC<TypographyProps> = ({ children, style, color }) 
 );
 
 const styles = StyleSheet.create({
-  // Headers - Editorial luxury feel
+  // Headers - JetBrains Mono UPPERCASE
   headline: {
-    fontWeight: '700',
+    fontFamily: 'JetBrainsMono_400Regular',
+    fontWeight: '400',
     lineHeight: 36,
-    letterSpacing: -0.5,
+    letterSpacing: 2,
     color: '#FFFFFF',
-    fontSize: 28,
-    textShadowColor: 'rgba(0, 0, 0, 0.5)',
-    textShadowOffset: { width: 0, height: 2 },
-    textShadowRadius: 4,
+    fontSize: 24,
+    textTransform: 'uppercase',
+    // No shadows - clean design
   },
   headlineLarge: {
-    fontSize: 36,
-    lineHeight: 44,
+    fontSize: 28,
+    lineHeight: 36,
+    letterSpacing: 3,
   },
   headlineSmall: {
-    fontSize: 22,
-    lineHeight: 28,
+    fontSize: 18,
+    lineHeight: 24,
+    letterSpacing: 1.5,
   },
 
-  // Body - Clean, readable
+  // Body - Barlow (clean, readable)
   body: {
+    fontFamily: 'Barlow_400Regular',
     fontWeight: '400',
     letterSpacing: 0.2,
     color: '#E5E5E5',
@@ -102,6 +106,7 @@ const styles = StyleSheet.create({
     lineHeight: 24,
   },
   bodyLarge: {
+    fontFamily: 'Barlow_500Medium',
     fontSize: 18,
     lineHeight: 28,
   },
@@ -110,26 +115,26 @@ const styles = StyleSheet.create({
     lineHeight: 20,
   },
 
-  // Caption - Metadata, progress
+  // Caption - JetBrains Mono UPPERCASE (metadata, labels)
   caption: {
-    fontSize: 12,
-    fontWeight: '500',
-    letterSpacing: 0.5,
+    fontFamily: 'JetBrainsMono_400Regular',
+    fontSize: 11,
+    fontWeight: '400',
+    letterSpacing: 2,
     color: 'rgba(255, 255, 255, 0.6)',
     textTransform: 'uppercase',
   },
 
-  // Question - Interview prompts
+  // Question - Barlow (interview prompts)
   question: {
-    fontSize: 24,
-    fontWeight: '600',
-    lineHeight: 32,
-    letterSpacing: -0.3,
+    fontFamily: 'Barlow_500Medium',
+    fontSize: 23,
+    fontWeight: '500',
+    lineHeight: 29, // 1.25x line height as requested
+    letterSpacing: 0,
     color: '#FFFFFF',
     textAlign: 'center',
-    textShadowColor: 'rgba(0, 0, 0, 0.4)',
-    textShadowOffset: { width: 0, height: 1 },
-    textShadowRadius: 3,
+    // No shadows - clean design
   },
 });
 

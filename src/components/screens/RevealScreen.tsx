@@ -209,11 +209,8 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
     borderWidth: 3,
     borderColor: 'rgba(225, 29, 72, 0.4)',
-    shadowColor: '#E11D48',
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.4,
-    shadowRadius: 16,
-    elevation: 10,
+    // No shadows - clean design
+    elevation: 0,
   },
   photoGradient: {
     flex: 1,

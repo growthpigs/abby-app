@@ -20,6 +20,11 @@ import {
   Merriweather_700Bold,
 } from '@expo-google-fonts/merriweather';
 import { JetBrainsMono_400Regular } from '@expo-google-fonts/jetbrains-mono';
+import {
+  Barlow_400Regular,
+  Barlow_500Medium,
+  Barlow_600SemiBold,
+} from '@expo-google-fonts/barlow';
 
 import { VibeMatrixAnimated, VibeMatrixAnimatedRef } from './src/components/layers/VibeMatrixAnimated';
 import { getAllShaders } from './src/shaders/factory/registryV2';
@@ -254,6 +259,9 @@ function AppContent() {
     Merriweather_400Regular,
     Merriweather_700Bold,
     JetBrainsMono_400Regular,
+    Barlow_400Regular,
+    Barlow_500Medium,
+    Barlow_600SemiBold,
   });
 
   // Load settings on mount

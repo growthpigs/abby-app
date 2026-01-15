@@ -114,11 +114,8 @@ export const LIQUID_GLASS = {
     borderWidth: 1,
     borderColor: 'rgba(255, 255, 255, 0.5)',
     backgroundColor: 'rgba(255, 255, 255, 0.08)',
-    shadowColor: 'rgba(255, 255, 255, 0.3)',
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 1,
-    shadowRadius: 8,
-    elevation: 4,
+    // No shadows - clean design
+    elevation: 0,
     overflow: 'hidden' as const,
   },
 
@@ -139,11 +136,8 @@ export const LIQUID_GLASS = {
     borderWidth: 1,
     borderColor: 'rgba(255, 255, 255, 0.4)',
     backgroundColor: 'rgba(255, 255, 255, 0.06)',
-    shadowColor: 'rgba(255, 255, 255, 0.2)',
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 1,
-    shadowRadius: 4,
-    elevation: 2,
+    // No shadows - clean design
+    elevation: 0,
     overflow: 'hidden' as const,
   },
 } as const;

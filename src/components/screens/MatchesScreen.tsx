@@ -741,11 +741,8 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     backgroundColor: 'rgba(255, 255, 255, 0.9)',
     borderWidth: 2,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
+    // No shadows - clean design
+    elevation: 0,
   },
   actionButtonPressed: {
     opacity: 0.7,

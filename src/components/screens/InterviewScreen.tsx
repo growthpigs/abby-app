@@ -538,11 +538,8 @@ const styles = StyleSheet.create({
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
     overflow: 'hidden',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: -4 },
-    shadowOpacity: 0.15,
-    shadowRadius: 8,
-    elevation: 10,
+    // No shadows - clean design
+    elevation: 0,
   },
 
   blurContainer: {

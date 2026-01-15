@@ -90,11 +90,8 @@ const styles = StyleSheet.create({
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
     overflow: 'hidden',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: -4 },
-    shadowOpacity: 0.15,
-    shadowRadius: 12,
-    elevation: 10,
+    // No shadows - clean design
+    elevation: 0,
   },
   blur: {
     flex: 1,

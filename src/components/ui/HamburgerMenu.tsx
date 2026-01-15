@@ -243,11 +243,8 @@ const styles = StyleSheet.create({
     left: 0,
     bottom: 0,
     width: MENU_WIDTH,
-    shadowColor: '#000',
-    shadowOffset: { width: 4, height: 0 },
-    shadowOpacity: 0.25,
-    shadowRadius: 10,
-    elevation: 10,
+    // No shadows - clean design
+    elevation: 0,
   },
   menuContent: {
     flex: 1,
