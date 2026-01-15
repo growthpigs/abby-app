@@ -1,20 +1,29 @@
 # ABBY - The Anti-Dating App
 
-> iOS React Native app for AI-powered matchmaking
+> iOS React Native app for AI-powered matchmaking with living shader backgrounds
 
 ## Quick Start
 
 ```bash
-# Clone and install
+# 1. Clone and install
 git clone git@github.com:growthpigs/abby-app.git
 cd abby-app
 npm install
 
-# Build and run on iOS (requires Xcode)
+# 2. Build and run on iOS (requires Xcode + iOS Simulator)
 npx expo run:ios
+
+# 3. Run tests
+npm test
 ```
 
-**Note:** This app requires a dev build (NOT Expo Go) because of native Skia shaders.
+**⚠️ Important:** This app requires a **dev build** (NOT Expo Go) because of native Skia shaders.
+
+### First Time Setup
+
+1. Open Xcode at least once to accept license
+2. Ensure iOS Simulator is installed (`xcode-select --install`)
+3. Run `npx expo run:ios` - first build takes 5-10 minutes
 
 ## Requirements
 

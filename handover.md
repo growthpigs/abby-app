@@ -176,6 +176,35 @@ npm test
 
 ---
 
+## API Data Flow (Verified 2026-01-15)
+
+Data flows to backend API have been verified working:
+
+### Profile Data → PUT /v1/profile/public
+| Field | Source Screen | Status |
+|-------|---------------|--------|
+| `display_name` | NameScreen | ✅ Verified |
+| `birthday` | DOBScreen | ✅ Verified |
+| `gender` | BasicsGenderScreen | ✅ Verified |
+| `geo_lat`, `geo_lon` | BasicsLocationScreen | ✅ Sent |
+| `zip_code` | BasicsLocationScreen | ✅ Sent |
+
+### Onboarding Answers → POST /v1/answers
+| Question ID | Data | Status |
+|-------------|------|--------|
+| ONB_004 | Dating Preference | ✅ Verified |
+| ONB_005 | Ethnicity | ✅ Verified |
+| ONB_006 | Ethnicity Preferences | ✅ Verified |
+| ONB_007 | Relationship Type | ✅ Verified |
+| ONB_008 | Smoking | ✅ Verified |
+
+### Interview Answers → POST /v1/answers
+Each answer submitted immediately after user responds.
+
+**All API writes verified working with Geraldo's backend dashboard on 2026-01-15.**
+
+---
+
 ## TL;DR for Geraldo
 
 1. **Voice doesn't work yet** - backend expects WebRTC, frontend sends HTTP
