@@ -4,6 +4,31 @@
 
 ---
 
+## 🔴 HOTSPOT MODE - PHYSICAL DEVICE BUILDS (READ FIRST!)
+
+**When Roderic is using iPhone hotspot (no WiFi):**
+
+The phone IS the network router - it CANNOT connect back to Metro bundler on Mac!
+
+**Error you'll see:** `No script URL provided. Make sure the packager is running`
+
+**SOLUTION - Create standalone build with embedded JS:**
+```bash
+# Option 1: EAS Build (cloud - takes ~15min)
+eas build --platform ios --profile preview
+
+# Option 2: Local archive build (faster, requires Xcode setup)
+npx expo run:ios --device --configuration Release
+```
+
+**Why dev builds fail on hotspot:**
+- Dev builds expect: Phone → Connect to Mac:8081 → Get JS bundle
+- On hotspot: Phone = Router → Can't connect to itself as client
+
+**When WiFi returns:** Use normal `npx expo run:ios --device` for faster iteration.
+
+---
+
 ## 🚀 QUICK START (Copy-Paste Ready)
 
 ```bash

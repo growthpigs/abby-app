@@ -187,18 +187,39 @@
 
 ---
 
-## Phase 8: Polish
+## Phase 8: Polish (🟡 IN PROGRESS)
 
 ### Tasks
 | Task | File | Status | Owner |
 |------|------|--------|-------|
 | 8.1 Accessibility | All screens | ⏳ | Chi |
 | 8.2 Error handling | All services | ⏳ | Chi |
+| 8.3 Match Flow UI Polish | 5 screens | ✅ DONE | Chi (2026-01-15) |
+
+### 8.3 Match Flow UI Polish (COMPLETE - 2026-01-15)
+Applied consistent PASSION palette + glass design to non-onboarding screens:
+
+| Screen | Changes |
+|--------|---------|
+| PhotosScreen | Primary badge → PASSION pink, empty slots → subtle white glass |
+| MatchesScreen | Pass/Like buttons redesigned (icons only, glass/pink), cards → glass style |
+| MatchScreen | Labels → WHITE, compatibility → PASSION pink, photo placeholder → pink tint |
+| RevealScreen | Labels → WHITE, badges → PASSION pink, View All → subtle white |
+| PaymentScreen | Hidden secret nav trigger borders |
+
+**Design System Documentation:**
+- `docs/DESIGN-SYSTEM.md` - Added "Match Flow Screens" section with all patterns
+- `HANDOVER.md` - Added "DO NOT CHANGE" quick reference table
+- Reference: `CertificationScreen.tsx` is the gold standard for glass styling
+
+**Key Learning:** EP-088 "File Existence Fallacy" - Runtime verification > static checks
 
 ### Acceptance Criteria
 - [ ] All touch targets 44x44 minimum
 - [ ] All buttons have accessibilityLabel
 - [ ] Errors display consistently
+- [x] Match flow screens use consistent PASSION palette (2026-01-15)
+- [x] Design patterns documented to prevent AI regression (2026-01-15)
 
 ---
 
