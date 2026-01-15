@@ -6,14 +6,14 @@
 
 ## Overview
 
-Comprehensive Jest test configuration for React Native/Expo project with ElevenLabs voice integration.
+Comprehensive Jest test configuration for React Native/Expo project.
 
 ## Problem Solved
 
 Gate 2 validation was failing due to:
 1. Jest couldn't parse React Native components (JSX syntax errors)
 2. Dynamic imports of React Native modules failing in Node.js environment
-3. Missing mocks for ElevenLabs, LiveKit, expo-blur, expo-haptics
+3. Missing mocks for LiveKit, expo-blur, expo-haptics
 4. Outdated test assertions after mute feature implementation
 
 ## Solution
@@ -31,7 +31,6 @@ module.exports = {
   moduleNameMapper: {
     '^react-native$': '<rootDir>/__mocks__/react-native.js',
     '^react$': '<rootDir>/__mocks__/react.js',
-    '^@elevenlabs/react-native$': '<rootDir>/__mocks__/@elevenlabs/react-native.js',
     '^@livekit/react-native$': '<rootDir>/__mocks__/@livekit/react-native.js',
     '^expo-blur$': '<rootDir>/__mocks__/expo-blur.js',
     '^expo-haptics$': '<rootDir>/__mocks__/expo-haptics.js',
@@ -50,10 +49,6 @@ module.exports = {
 **React Hooks Mock** (`__mocks__/react.js`):
 - useState, useEffect, useCallback, useRef, useMemo
 - All major React hooks for component testing
-
-**ElevenLabs Mock** (`__mocks__/@elevenlabs/react-native.js`):
-- ConversationProvider, useConversation hooks
-- Audio state management functions
 
 **LiveKit Mock** (`__mocks__/@livekit/react-native.js`):
 - AudioSession with iOS audio configuration methods
@@ -83,7 +78,6 @@ module.exports = {
 | `jest.config.js` | Added moduleNameMapper for all React Native modules |
 | `__mocks__/react-native.js` | Complete React Native platform mock |
 | `__mocks__/react.js` | React hooks mock for testing |
-| `__mocks__/@elevenlabs/react-native.js` | ElevenLabs SDK mock |
 | `__mocks__/@livekit/react-native.js` | LiveKit AudioSession mock |
 | `__mocks__/expo-blur.js` | expo-blur BlurView mock |
 | `__mocks__/expo-haptics.js` | expo-haptics mock with feedback styles |
@@ -124,7 +118,7 @@ module.exports = {
 ## Related Issues Resolved
 
 - **Jest + React Native + TypeScript**: Module resolution conflicts
-- **ElevenLabs Integration Testing**: SDK mocking for offline testing
+- **Voice Integration Testing**: SDK mocking for offline testing
 - **Expo Module Mocking**: Consistent mocking pattern for all Expo modules
 - **Release Validation**: Transition from runtime to static validation
 

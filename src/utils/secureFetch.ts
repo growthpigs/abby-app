@@ -25,10 +25,17 @@ const MAX_RESPONSE_SIZE = 10 * 1024 * 1024;
 // Retry configuration from central config
 const RETRY_CONFIG = API_CONFIG.RETRY;
 
-// HTTP status codes that should trigger a retry
+// HTTP status codes that should trigger a retry for idempotent methods (GET, HEAD, OPTIONS)
 const RETRYABLE_STATUS_CODES = new Set([408, 429, 500, 502, 503, 504]);
 
-export interface SecureFetchOptions extends RequestInit {
+// For non-idempotent methods (POST, PUT, PATCH, DELETE), only retry on codes where
+// we KNOW the server didn't process the request to avoid duplicate submissions
+const SAFE_RETRY_STATUS_CODES_NON_IDEMPOTENT = new Set([408, 429, 503]);
+
+// HTTP methods that are NOT safe to blindly retry (may cause duplicates)
+const NON_IDEMPOTENT_METHODS = new Set(['POST', 'PUT', 'PATCH', 'DELETE']);
+
+export interface SecureFetchOptions extends Omit<RequestInit, 'signal'> {
   /** Request timeout in milliseconds (default: 30000, max: 60000) */
   timeout?: number;
   /** Maximum response size in bytes (default: 10MB) */
@@ -39,6 +46,8 @@ export interface SecureFetchOptions extends RequestInit {
   noRetry?: boolean;
   /** Skip automatic token refresh on 401 (use for auth endpoints) */
   skipTokenRefresh?: boolean;
+  /** External AbortSignal for manual request cancellation (combined with timeout) */
+  signal?: AbortSignal;
 }
 
 /**
@@ -83,18 +92,32 @@ function getRetryDelay(attempt: number): number {
 
 /**
  * Check if an error/response should trigger a retry
+ * @param error - The error that occurred (if any)
+ * @param response - The response received (if any)
+ * @param method - The HTTP method used (default: GET)
  */
-function shouldRetry(error: unknown, response?: Response): boolean {
-  // Retry on network errors (AbortError from timeout, network failures)
+function shouldRetry(error: unknown, response?: Response, method: string = 'GET'): boolean {
+  const isNonIdempotent = NON_IDEMPOTENT_METHODS.has(method.toUpperCase());
+
+  // For network errors, still retry but be cautious with non-idempotent methods
+  // Only retry AbortError (timeout) as the request likely didn't reach server
   if (error instanceof Error) {
-    if (error.name === 'AbortError') return true;
+    if (error.name === 'AbortError') return true; // Timeout - request probably didn't complete
+    // For non-idempotent methods, don't retry other network errors as request may have been sent
+    if (isNonIdempotent) return false;
     if (error.message.includes('network') || error.message.includes('Network')) return true;
     if (error.message.includes('fetch')) return true;
   }
 
   // Retry on specific HTTP status codes
-  if (response && RETRYABLE_STATUS_CODES.has(response.status)) {
-    return true;
+  if (response) {
+    // For non-idempotent methods, use the restricted safe set
+    const allowedCodes = isNonIdempotent
+      ? SAFE_RETRY_STATUS_CODES_NON_IDEMPOTENT
+      : RETRYABLE_STATUS_CODES;
+    if (allowedCodes.has(response.status)) {
+      return true;
+    }
   }
 
   return false;
@@ -175,8 +198,12 @@ export async function secureFetch(
     maxResponseSize = MAX_RESPONSE_SIZE,
     maxRetries = RETRY_CONFIG.MAX_ATTEMPTS,
     noRetry = false,
+    signal: externalSignal,
     ...fetchOptions
   } = options;
+
+  // Extract HTTP method for retry logic (default to GET)
+  const httpMethod = (fetchOptions.method || 'GET').toUpperCase();
 
   // Enforce timeout limits
   const safeTimeout = Math.min(Math.max(timeout, 1000), MAX_TIMEOUT_MS);
@@ -184,11 +211,21 @@ export async function secureFetch(
   // Determine effective retry count
   const effectiveMaxRetries = noRetry ? 0 : maxRetries;
 
+  // Check if already aborted before starting
+  if (externalSignal?.aborted) {
+    throw sanitizeError(new DOMException('Aborted', 'AbortError'));
+  }
+
   let lastError: unknown = null;
   let lastResponse: Response | null = null;
 
   // Attempt request with retries
   for (let attempt = 0; attempt <= effectiveMaxRetries; attempt++) {
+    // Check external signal before retry wait
+    if (externalSignal?.aborted) {
+      throw sanitizeError(new DOMException('Aborted', 'AbortError'));
+    }
+
     // Wait before retry (skip on first attempt)
     if (attempt > 0) {
       const delay = getRetryDelay(attempt - 1);
@@ -200,6 +237,10 @@ export async function secureFetch(
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), safeTimeout);
 
+    // Forward external abort signal to our controller
+    const onExternalAbort = () => controller.abort();
+    externalSignal?.addEventListener('abort', onExternalAbort);
+
     try {
       const response = await fetch(url, {
         ...fetchOptions,
@@ -207,6 +248,7 @@ export async function secureFetch(
       });
 
       clearTimeout(timeoutId);
+      externalSignal?.removeEventListener('abort', onExternalAbort);
 
       // Check response size via Content-Length header
       const contentLength = response.headers.get('Content-Length');
@@ -217,8 +259,8 @@ export async function secureFetch(
         };
       }
 
-      // Check if we should retry this response
-      if (shouldRetry(null, response) && attempt < effectiveMaxRetries) {
+      // Check if we should retry this response (respects HTTP method idempotency)
+      if (shouldRetry(null, response, httpMethod) && attempt < effectiveMaxRetries) {
         lastResponse = response;
         lastError = null;
         continue; // Try again
@@ -227,6 +269,7 @@ export async function secureFetch(
       return response;
     } catch (error) {
       clearTimeout(timeoutId);
+      externalSignal?.removeEventListener('abort', onExternalAbort);
       lastError = error;
       lastResponse = null;
 
@@ -235,8 +278,8 @@ export async function secureFetch(
         throw error;
       }
 
-      // Check if we should retry this error
-      if (!shouldRetry(error) || attempt >= effectiveMaxRetries) {
+      // Check if we should retry this error (respects HTTP method idempotency)
+      if (!shouldRetry(error, undefined, httpMethod) || attempt >= effectiveMaxRetries) {
         throw sanitizeError(error);
       }
 

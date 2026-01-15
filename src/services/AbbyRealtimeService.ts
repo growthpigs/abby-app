@@ -83,6 +83,27 @@ export interface RealtimeMessageRequest {
   userId?: string;
 }
 
+/**
+ * Response from chat/message API - supports multiple backend formats
+ */
+interface ChatResponseData {
+  // Primary format from our backend
+  response?: string;
+  conversationId?: string;
+  // OpenAI chat completion format (if backend proxies)
+  choices?: Array<{
+    message?: {
+      content?: string;
+      role?: string;
+    };
+    index?: number;
+  }>;
+  // Direct content format
+  content?: string;
+  // Allow other fields
+  [key: string]: unknown;
+}
+
 export interface ConversationCallbacks {
   onAbbyResponse?: (text: string) => void;
   onUserTranscript?: (text: string) => void;
@@ -109,7 +130,58 @@ export class AbbyRealtimeService {
   private callbacks: ConversationCallbacks = {};
   private screenType: 'intro' | 'coach' = 'intro';
   // Conversation history for multi-turn chat context (OpenAI format)
+  // Limited to last MAX_HISTORY_SIZE messages to prevent memory growth
+  private static readonly MAX_HISTORY_SIZE = 50;
   private conversationHistory: Array<{ role: 'user' | 'assistant'; content: string }> = [];
+
+  /**
+   * Add message to history with size limit (sliding window)
+   */
+  private addToHistory(message: { role: 'user' | 'assistant'; content: string }): void {
+    this.conversationHistory.push(message);
+    // Trim oldest messages if exceeding limit, keeping pairs intact
+    while (this.conversationHistory.length > AbbyRealtimeService.MAX_HISTORY_SIZE) {
+      this.conversationHistory.shift();
+    }
+  }
+
+  /**
+   * Validate and extract session ID from various field names
+   * Returns null if no valid session ID is found
+   */
+  private extractSessionId(data: RawSessionResponseData): string | null {
+    // Try multiple field names that backends might use
+    const candidates = [
+      data.sessionId,
+      data.id,
+      data.session_id,
+      data.session,
+      data.uuid,
+    ];
+
+    for (const candidate of candidates) {
+      if (this.isValidSessionId(candidate)) {
+        return candidate;
+      }
+    }
+
+    return null;
+  }
+
+  /**
+   * Validate session ID format
+   * Accepts UUIDs, alphanumeric strings (3-128 chars), and hyphen-separated IDs
+   */
+  private isValidSessionId(id: unknown): id is string {
+    if (typeof id !== 'string' || id.length === 0) {
+      return false;
+    }
+
+    // Allow: alphanumeric, hyphens, underscores (3-128 characters)
+    // Covers UUIDs, short IDs, and various backend formats
+    const SESSION_ID_PATTERN = /^[a-zA-Z0-9_-]{3,128}$/;
+    return SESSION_ID_PATTERN.test(id);
+  }
 
   constructor(callbacks?: ConversationCallbacks, screenType: 'intro' | 'coach' = 'intro') {
     this.callbacks = callbacks || {};
@@ -202,12 +274,12 @@ export class AbbyRealtimeService {
         console.log('[AbbyRealtime] Available fields:', receivedFields);
       }
 
-      // Try multiple field names (sessionId, id, session_id, session, uuid, etc.)
-      this.sessionId = data.sessionId || data.id || data.session_id || data.session || data.uuid || null;
+      // Extract and validate session ID from various field names
+      this.sessionId = this.extractSessionId(data);
 
-      // CRITICAL: If no session ID found, report what fields we got and enter demo mode
+      // CRITICAL: If no valid session ID found, report what fields we got and enter demo mode
       if (!this.sessionId) {
-        if (__DEV__) console.error('[AbbyRealtime] No session ID found! Got fields:', receivedFields);
+        if (__DEV__) console.error('[AbbyRealtime] No valid session ID found! Got fields:', receivedFields);
         // Report to user what happened - this will show an Alert
         this.callbacks.onError?.(new Error(`Session created but no ID found. Fields: ${receivedFields}. Data: ${JSON.stringify(data).substring(0, 100)}`));
         return this.startDemoMode();
@@ -340,6 +412,20 @@ export class AbbyRealtimeService {
   }
 
   /**
+   * Sanitize user input before sending to API
+   * - Trims whitespace
+   * - Limits length to prevent abuse
+   * - Removes control characters
+   */
+  private sanitizeMessage(message: string): string {
+    const MAX_MESSAGE_LENGTH = 2000;
+    return message
+      .trim()
+      .slice(0, MAX_MESSAGE_LENGTH)
+      .replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g, ''); // Remove control chars except newline/tab
+  }
+
+  /**
    * Send a text message to Abby
    *
    * Uses POST /v1/abby/realtime/{session_id}/message endpoint.
@@ -347,13 +433,23 @@ export class AbbyRealtimeService {
    * This method sends text and attempts to parse response from HTTP.
    */
   async sendTextMessage(message: string): Promise<void> {
+    // Sanitize input
+    const sanitizedMessage = this.sanitizeMessage(message);
+    if (!sanitizedMessage) {
+      throw new Error('Message cannot be empty');
+    }
+
     // Demo mode - generate a simulated response
     if (this.isDemoModeState) {
-      if (__DEV__) console.warn('[AbbyRealtime] 🎭 DEMO MODE - Not sending to backend:', message);
+      if (__DEV__) console.warn('[AbbyRealtime] 🎭 DEMO MODE - Not sending to backend:', sanitizedMessage);
+
+      // Track user message in history for demo mode too
+      this.addToHistory({ role: 'user', content: sanitizedMessage });
 
       // Simulate typing delay - uses tracked timer for cleanup
       this.scheduleTimer(() => {
-        const demoResponse = this.generateDemoResponse(message);
+        const demoResponse = this.generateDemoResponse(sanitizedMessage);
+        this.addToHistory({ role: 'assistant', content: demoResponse });
         this.callbacks.onAbbyResponse?.(demoResponse);
         // IMPORTANT: Speak the response
         this.speakText(demoResponse).catch((err) => {
@@ -364,9 +460,12 @@ export class AbbyRealtimeService {
       return;
     }
 
+    // Add user message to history before API call
+    this.addToHistory({ role: 'user', content: sanitizedMessage });
+
     try {
       if (__DEV__) {
-        console.log('[AbbyRealtime] 💬 Sending message via realtime endpoint:', message);
+        console.log('[AbbyRealtime] 💬 Sending message via realtime endpoint:', sanitizedMessage);
         console.log('[AbbyRealtime] 🎭 isDemoMode:', this.isDemoModeState);
         console.log('[AbbyRealtime] 📍 sessionId:', this.sessionId);
       }
@@ -394,7 +493,7 @@ export class AbbyRealtimeService {
             'Authorization': `Bearer ${token}`,
           },
           body: JSON.stringify({
-            message: message,  // Just the message text
+            message: sanitizedMessage,  // Sanitized message text
           }),
           timeout: REQUEST_TIMEOUT_MS,
         }
@@ -415,7 +514,7 @@ export class AbbyRealtimeService {
         throw fetchError;
       }
 
-      const data = await response.json();
+      const data = await response.json() as ChatResponseData;
       if (__DEV__) console.log('[AbbyRealtime] ✅ Chat response:', JSON.stringify(data).substring(0, 300));
 
       // Extract Abby's response - API returns { response: string, conversationId: string }
@@ -424,8 +523,8 @@ export class AbbyRealtimeService {
       if (data.response) {
         // Expected format: { response: string, conversationId?: string }
         abbyResponse = data.response;
-        // Store conversationId for future messages
-        if (data.conversationId && !this.sessionId) {
+        // Store conversationId for future messages (validate format)
+        if (data.conversationId && !this.sessionId && this.isValidSessionId(data.conversationId)) {
           this.sessionId = data.conversationId;
         }
       } else if (data.choices?.[0]?.message?.content) {
@@ -438,7 +537,7 @@ export class AbbyRealtimeService {
 
       if (abbyResponse) {
         // Add assistant response to conversation history
-        this.conversationHistory.push({ role: 'assistant', content: abbyResponse });
+        this.addToHistory({ role: 'assistant', content: abbyResponse });
 
         this.callbacks.onAbbyResponse?.(abbyResponse);
         // IMPORTANT: Speak the response

@@ -363,7 +363,7 @@ src/components/layers/
 3. **Keep and suppress** - Document risk and monitor
 
 **Decision Required**: Is native speech recognition planned for ABBY?
-- Currently using ElevenLabs for voice
+- Currently using OpenAI Realtime API via client backend (WebRTC)
 - SpeechRecognition.ts is unimported
 
 ---
@@ -444,8 +444,8 @@ git commit -m "chore: remove unused dependencies and add missing jest types"
 
 The following areas require extreme caution:
 
-1. **ElevenLabs Integration** (`src/services/AbbyAgent.ts`)
-   - Just validated and working
+1. **Voice Integration** (`src/services/AbbyRealtimeService.ts`)
+   - Uses OpenAI Realtime API via client backend
    - Contains conversation state machine
 
 2. **useDraggableSheet Hook** (`src/hooks/useDraggableSheet.ts`)

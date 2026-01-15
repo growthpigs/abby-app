@@ -28,6 +28,14 @@ const API_BASE_URL = API_CONFIG.API_URL;
 // Request timeout for questions API (15 seconds)
 const REQUEST_TIMEOUT_MS = 15000;
 
+/**
+ * Options for cancellable API requests
+ */
+export interface RequestOptions {
+  /** AbortSignal for cancelling in-flight requests */
+  signal?: AbortSignal;
+}
+
 // ========================================
 // Types - Matches actual API response
 // ========================================
@@ -200,8 +208,9 @@ export class QuestionsService {
   /**
    * Get the next question to ask
    * The API determines the best question based on profile gaps and previous answers
+   * @param options - Optional request options including AbortSignal for cancellation
    */
-  async getNextQuestion(): Promise<NextQuestionResponse> {
+  async getNextQuestion(options?: RequestOptions): Promise<NextQuestionResponse> {
     try {
       if (__DEV__) console.log('[Questions] Fetching next question...');
 
@@ -215,6 +224,7 @@ export class QuestionsService {
           'Authorization': `Bearer ${token}`,
         },
         timeout: REQUEST_TIMEOUT_MS,
+        signal: options?.signal,
       });
 
       if (!response.ok) {
@@ -284,11 +294,16 @@ export class QuestionsService {
 
   /**
    * Submit an answer to a question
+   * @param questionId - The question ID to answer
+   * @param answer - The answer value
+   * @param responseTime - Optional response time in ms
+   * @param options - Optional request options including AbortSignal for cancellation
    */
   async submitAnswer(
     questionId: string,
     answer: string | number | string[],
-    responseTime?: number
+    responseTime?: number,
+    options?: RequestOptions
   ): Promise<SubmitAnswerResponse> {
     try {
       if (__DEV__) console.log('[Questions] Submitting answer for:', questionId);
@@ -311,6 +326,7 @@ export class QuestionsService {
           response_time: responseTime,  // Likely also snake_case
         }),
         timeout: REQUEST_TIMEOUT_MS,
+        signal: options?.signal,
       });
 
       if (!response.ok) {
@@ -339,10 +355,14 @@ export class QuestionsService {
   /**
    * Parse natural language answer to structured format
    * Useful for open-ended questions that need to map to specific options
+   * @param questionId - The question ID to parse against
+   * @param naturalLanguageAnswer - The natural language answer text
+   * @param options - Optional request options including AbortSignal for cancellation
    */
   async parseAnswer(
     questionId: string,
-    naturalLanguageAnswer: string
+    naturalLanguageAnswer: string,
+    options?: RequestOptions
   ): Promise<ParseAnswerResponse> {
     try {
       if (__DEV__) console.log('[Questions] Parsing answer:', naturalLanguageAnswer);
@@ -363,6 +383,7 @@ export class QuestionsService {
           natural_language_answer: naturalLanguageAnswer,
         }),
         timeout: REQUEST_TIMEOUT_MS,
+        signal: options?.signal,
       });
 
       if (!response.ok) {
@@ -393,8 +414,9 @@ export class QuestionsService {
 
   /**
    * Get all question categories
+   * @param options - Optional request options including AbortSignal for cancellation
    */
-  async getCategories(): Promise<Category[]> {
+  async getCategories(options?: RequestOptions): Promise<Category[]> {
     try {
       if (__DEV__) console.log('[Questions] Fetching categories...');
 
@@ -408,6 +430,7 @@ export class QuestionsService {
           'Authorization': `Bearer ${token}`,
         },
         timeout: REQUEST_TIMEOUT_MS,
+        signal: options?.signal,
       });
 
       if (!response.ok) {
@@ -435,8 +458,10 @@ export class QuestionsService {
 
   /**
    * Get questions by category
+   * @param categorySlug - The category slug to filter by
+   * @param options - Optional request options including AbortSignal for cancellation
    */
-  async getQuestionsByCategory(categorySlug: string): Promise<Question[]> {
+  async getQuestionsByCategory(categorySlug: string, options?: RequestOptions): Promise<Question[]> {
     try {
       if (__DEV__) console.log('[Questions] Fetching questions for:', categorySlug);
 
@@ -452,6 +477,7 @@ export class QuestionsService {
             'Authorization': `Bearer ${token}`,
           },
           timeout: REQUEST_TIMEOUT_MS,
+          signal: options?.signal,
         }
       );
 
@@ -481,8 +507,9 @@ export class QuestionsService {
   /**
    * Get user's profile gaps
    * Returns areas where more questions should be asked
+   * @param options - Optional request options including AbortSignal for cancellation
    */
-  async getProfileGaps(): Promise<ProfileGap[]> {
+  async getProfileGaps(options?: RequestOptions): Promise<ProfileGap[]> {
     try {
       if (__DEV__) console.log('[Questions] Fetching profile gaps...');
 
@@ -496,6 +523,7 @@ export class QuestionsService {
           'Authorization': `Bearer ${token}`,
         },
         timeout: REQUEST_TIMEOUT_MS,
+        signal: options?.signal,
       });
 
       if (!response.ok) {
@@ -523,8 +551,9 @@ export class QuestionsService {
 
   /**
    * Get all user's answers
+   * @param options - Optional request options including AbortSignal for cancellation
    */
-  async getUserAnswers(): Promise<Answer[]> {
+  async getUserAnswers(options?: RequestOptions): Promise<Answer[]> {
     try {
       if (__DEV__) console.log('[Questions] Fetching user answers...');
 
@@ -538,6 +567,7 @@ export class QuestionsService {
           'Authorization': `Bearer ${token}`,
         },
         timeout: REQUEST_TIMEOUT_MS,
+        signal: options?.signal,
       });
 
       if (!response.ok) {
@@ -571,8 +601,10 @@ export class QuestionsService {
 
   /**
    * Get a specific question by ID
+   * @param questionId - The question ID to retrieve
+   * @param options - Optional request options including AbortSignal for cancellation
    */
-  async getQuestionById(questionId: string): Promise<Question> {
+  async getQuestionById(questionId: string, options?: RequestOptions): Promise<Question> {
     try {
       if (__DEV__) console.log('[Questions] Fetching question:', questionId);
 
@@ -586,6 +618,7 @@ export class QuestionsService {
           'Authorization': `Bearer ${token}`,
         },
         timeout: REQUEST_TIMEOUT_MS,
+        signal: options?.signal,
       });
 
       if (!response.ok) {

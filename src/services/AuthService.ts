@@ -97,14 +97,44 @@ function mapCognitoError(error: Error & { code?: string }): AuthError {
  */
 function decodeJwtPayload(token: string): { exp?: number } | null {
   try {
+    // Validate basic structure
+    if (typeof token !== 'string' || token.length === 0) {
+      if (__DEV__) console.warn('[Auth] decodeJwtPayload: Invalid token (not a string or empty)');
+      return null;
+    }
+
     const parts = token.split('.');
-    if (parts.length !== 3) return null;
+    if (parts.length !== 3) {
+      if (__DEV__) console.warn('[Auth] decodeJwtPayload: Invalid JWT structure (expected 3 parts)');
+      return null;
+    }
+
     const payload = parts[1];
-    // Base64URL decode
-    const base64 = payload.replace(/-/g, '+').replace(/_/g, '/');
+    if (!payload || payload.length === 0) {
+      if (__DEV__) console.warn('[Auth] decodeJwtPayload: Empty payload section');
+      return null;
+    }
+
+    // Base64URL decode with proper padding
+    let base64 = payload.replace(/-/g, '+').replace(/_/g, '/');
+    // Add padding if needed (atob is strict about padding)
+    const paddingNeeded = (4 - (base64.length % 4)) % 4;
+    base64 += '='.repeat(paddingNeeded);
+
     const jsonPayload = atob(base64);
-    return JSON.parse(jsonPayload);
-  } catch {
+    const parsed = JSON.parse(jsonPayload);
+
+    // Validate parsed object has expected shape
+    if (typeof parsed !== 'object' || parsed === null) {
+      if (__DEV__) console.warn('[Auth] decodeJwtPayload: Payload is not an object');
+      return null;
+    }
+
+    return parsed;
+  } catch (error) {
+    if (__DEV__) {
+      console.warn('[Auth] decodeJwtPayload: Failed to decode token:', error instanceof Error ? error.message : 'unknown error');
+    }
     return null;
   }
 }

@@ -6,7 +6,7 @@
  * Only renders in __DEV__ mode.
  */
 
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import {
   View,
   TouchableOpacity,
@@ -17,8 +17,9 @@ import {
 } from 'react-native';
 import { useDemoStore, DemoState } from '../../store/useDemoStore';
 import { useVibeController } from '../../store/useVibeController';
-import { AppState } from '../../types/vibe';
+import { AppState, VibeColorTheme } from '../../types/vibe';
 import { getAllShaders, type ShaderEntry } from '../../shaders/factory/registryV2';
+import { VIBE_SHADER_GROUPS } from '../../constants/vibeShaderMap';
 import type { VibeMatrixAnimatedRef } from '../layers/VibeMatrixAnimated';
 
 const { height: SCREEN_HEIGHT } = Dimensions.get('window');
@@ -55,16 +56,80 @@ interface VibeDebugOverlayProps {
 // Get all 19 shader presets
 const SHADER_PRESETS = getAllShaders();
 
+// Vibe Test Cycle - showcases all 6 color themes with example questions
+const VIBE_TEST_CYCLE: {
+  theme: VibeColorTheme;
+  color: string;
+  emoji: string;
+  label: string;
+  example: string;
+}[] = [
+  { theme: 'TRUST', color: '#3B82F6', emoji: '🔵', label: 'TRUST', example: '"What\'s your favorite movie?"' },
+  { theme: 'DEEP', color: '#8B5CF6', emoji: '🟣', label: 'DEEP', example: '"What are you most afraid of?"' },
+  { theme: 'PASSION', color: '#E11D48', emoji: '🔴', label: 'PASSION', example: '"Tell me about love"' },
+  { theme: 'GROWTH', color: '#10B981', emoji: '🟢', label: 'GROWTH', example: '"What are your goals?"' },
+  { theme: 'CAUTION', color: '#F59E0B', emoji: '🟠', label: 'CAUTION', example: '"What\'s your dealbreaker?"' },
+  { theme: 'ALERT', color: '#6B7280', emoji: '⚫', label: 'ALERT', example: '"Have you felt unsafe?"' },
+];
+
 export const VibeDebugOverlay: React.FC<VibeDebugOverlayProps> = ({ vibeMatrixRef }) => {
   const [expanded, setExpanded] = useState(false);
   const [currentShaderId, setCurrentShaderId] = useState(0);
+  const [isTestCycling, setIsTestCycling] = useState(false);
+  const [cycleIndex, setCycleIndex] = useState(0);
   const goToState = useDemoStore((s) => s.goToState);
   const currentDemoState = useDemoStore((s) => s.currentState);
   const setFromAppState = useVibeController((s) => s.setFromAppState);
+  const setColorTheme = useVibeController((s) => s.setColorTheme);
+  const setComplexity = useVibeController((s) => s.setComplexity);
   const colorTheme = useVibeController((s) => s.colorTheme);
   const complexity = useVibeController((s) => s.complexity);
   const activeParty = useVibeController((s) => s.activeParty);
   const activeMode = useVibeController((s) => s.activeMode);
+
+  // Vibe Test Cycle - auto-advance through all themes
+  useEffect(() => {
+    if (!isTestCycling) return;
+
+    const currentVibe = VIBE_TEST_CYCLE[cycleIndex];
+
+    // Set color theme
+    setColorTheme(currentVibe.theme);
+
+    // Set complexity based on theme
+    const complexities = ['SMOOTHIE', 'FLOW', 'OCEAN', 'STORM', 'PAISLEY'] as const;
+    setComplexity(complexities[Math.min(cycleIndex, 4)]);
+
+    // Set shader from theme group
+    const shaderGroup = VIBE_SHADER_GROUPS[currentVibe.theme];
+    const shaderId = shaderGroup[cycleIndex % shaderGroup.length];
+    const shader = SHADER_PRESETS.find(s => s.id === shaderId);
+    if (shader && vibeMatrixRef?.current) {
+      vibeMatrixRef.current.setShader(shader.source);
+      setCurrentShaderId(shaderId);
+    }
+
+    // Auto-advance every 3 seconds
+    const timer = setTimeout(() => {
+      setCycleIndex((prev) => (prev + 1) % VIBE_TEST_CYCLE.length);
+    }, 3000);
+
+    return () => clearTimeout(timer);
+  }, [isTestCycling, cycleIndex, setColorTheme, setComplexity, vibeMatrixRef]);
+
+  // Stop cycle when panel closes
+  useEffect(() => {
+    if (!expanded) setIsTestCycling(false);
+  }, [expanded]);
+
+  const toggleTestCycle = useCallback(() => {
+    if (isTestCycling) {
+      setIsTestCycling(false);
+    } else {
+      setCycleIndex(0);
+      setIsTestCycling(true);
+    }
+  }, [isTestCycling]);
 
   // Switch shader preset
   const switchShader = (shader: ShaderEntry) => {
@@ -106,12 +171,57 @@ export const VibeDebugOverlay: React.FC<VibeDebugOverlayProps> = ({ vibeMatrixRe
         </Text>
       </View>
 
+      {/* VIBE TEST MODE - Big button at top */}
+      <TouchableOpacity
+        style={[
+          styles.testCycleButton,
+          isTestCycling && styles.testCycleButtonActive,
+        ]}
+        onPress={toggleTestCycle}
+      >
+        <Text style={styles.testCycleButtonText}>
+          {isTestCycling ? '⏹ STOP TEST' : '▶️ VIBE TEST MODE'}
+        </Text>
+        {isTestCycling && (
+          <Text style={styles.testCycleInfo}>
+            {VIBE_TEST_CYCLE[cycleIndex].emoji} {VIBE_TEST_CYCLE[cycleIndex].label}: {VIBE_TEST_CYCLE[cycleIndex].example}
+          </Text>
+        )}
+      </TouchableOpacity>
+
       {/* Scrollable content */}
       <ScrollView
         style={styles.scrollContent}
         contentContainerStyle={styles.scrollInner}
         showsVerticalScrollIndicator={false}
       >
+        {/* Color Theme Buttons (Quick Access) */}
+        <Text style={styles.sectionTitle}>COLOR THEMES (Sentiment)</Text>
+        <View style={styles.buttonRow}>
+          {VIBE_TEST_CYCLE.map((item, idx) => (
+            <TouchableOpacity
+              key={item.theme}
+              style={[
+                styles.themeButton,
+                { borderColor: item.color },
+                colorTheme === item.theme && { backgroundColor: item.color + '40' },
+              ]}
+              onPress={() => {
+                setColorTheme(item.theme);
+                const shaderGroup = VIBE_SHADER_GROUPS[item.theme];
+                const shader = SHADER_PRESETS.find(s => s.id === shaderGroup[0]);
+                if (shader && vibeMatrixRef?.current) {
+                  vibeMatrixRef.current.setShader(shader.source);
+                  setCurrentShaderId(shaderGroup[0]);
+                }
+              }}
+            >
+              <Text style={styles.themeEmoji}>{item.emoji}</Text>
+              <Text style={[styles.themeLabel, { color: item.color }]}>{item.label}</Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+
         {/* Demo States */}
         <Text style={styles.sectionTitle}>DEMO STATES</Text>
         <View style={styles.buttonRow}>
@@ -289,6 +399,49 @@ const styles = StyleSheet.create({
   },
   shaderName: {
     fontSize: 7,
+    marginTop: 2,
+  },
+  testCycleButton: {
+    backgroundColor: 'rgba(59, 130, 246, 0.2)',
+    borderWidth: 2,
+    borderColor: '#3B82F6',
+    borderRadius: 12,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    marginBottom: 12,
+    alignItems: 'center',
+  },
+  testCycleButtonActive: {
+    backgroundColor: 'rgba(16, 185, 129, 0.3)',
+    borderColor: '#10B981',
+  },
+  testCycleButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  testCycleInfo: {
+    color: 'rgba(255,255,255,0.8)',
+    fontSize: 12,
+    marginTop: 6,
+    fontStyle: 'italic',
+  },
+  themeButton: {
+    width: 52,
+    paddingVertical: 8,
+    borderRadius: 8,
+    borderWidth: 2,
+    marginRight: 6,
+    marginBottom: 6,
+    backgroundColor: 'rgba(255,255,255,0.05)',
+    alignItems: 'center',
+  },
+  themeEmoji: {
+    fontSize: 18,
+  },
+  themeLabel: {
+    fontSize: 8,
+    fontWeight: 'bold',
     marginTop: 2,
   },
 });

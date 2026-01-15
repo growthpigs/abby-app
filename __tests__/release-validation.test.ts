@@ -2,7 +2,7 @@
  * Release Validation Tests
  *
  * Static validation for release readiness:
- * 1. OpenAI Realtime Service (replaces ElevenLabs)
+ * 1. OpenAI Realtime Service (via client backend)
  * 2. TypeScript structure validation
  * 3. COACH_INTRO feature integration
  * 4. State machine consistency

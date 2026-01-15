@@ -89,7 +89,7 @@ export const CoachScreen = forwardRef<CoachScreenRef, CoachScreenProps>(
     };
   }, []);
 
-  // Initialize ElevenLabs Agent
+  // Initialize Abby conversation (OpenAI Realtime API)
   const { startConversation, endConversation, toggleMute, sendTextMessage, isSpeaking, isConnected, isMuted } = useAbbyAgent({
     enabled: true,
     onAbbyResponse: (text) => {

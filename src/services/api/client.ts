@@ -125,10 +125,27 @@ async function request<T>(endpoint: string, options: RequestOptions = {}): Promi
       );
     }
 
-    // Handle empty responses
+    // Handle empty/non-JSON responses (e.g., 204 No Content)
     const contentType = response.headers.get('content-type');
+    const contentLength = response.headers.get('content-length');
+
+    // Check if response has no body (204 No Content or empty)
+    if (response.status === 204 || contentLength === '0') {
+      if (__DEV__) console.log(`[API] Empty response (status: ${response.status})`);
+      // Return null for empty responses - caller should handle this case
+      return null as unknown as T;
+    }
+
+    // Non-JSON content type when JSON was expected
     if (!contentType || !contentType.includes('application/json')) {
-      return {} as T;
+      if (__DEV__) console.warn(`[API] Unexpected content-type: ${contentType}`);
+      // Still try to parse as JSON (some APIs don't set content-type correctly)
+      try {
+        return await response.json();
+      } catch {
+        // If parsing fails, return null
+        return null as unknown as T;
+      }
     }
 
     return await response.json();

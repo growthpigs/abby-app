@@ -2,7 +2,7 @@
  * AWS Cognito Configuration
  *
  * Client backend uses Cognito for authentication.
- * User Pool: us-east-1_l3JxaWpl5
+ * Configuration sourced from COGNITO_CONFIG (single source of truth)
  */
 
 import {
@@ -13,11 +13,12 @@ import {
   ISignUpResult,
   CognitoUserSession,
 } from 'amazon-cognito-identity-js';
+import { COGNITO_CONFIG } from '../config';
 
-// Cognito User Pool configuration (from client)
+// Cognito User Pool configuration (from config.ts - single source of truth)
 const poolData = {
-  UserPoolId: 'us-east-1_l3JxaWpl5',
-  ClientId: '2ljj7mif1k7jjc2ajiq676fhm1',
+  UserPoolId: COGNITO_CONFIG.USER_POOL_ID,
+  ClientId: COGNITO_CONFIG.CLIENT_ID,
 };
 
 // Create the user pool instance

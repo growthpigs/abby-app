@@ -52,7 +52,7 @@ Technology decisions for ABBY prioritize:
 
 | Layer | Technology | Version | Why |
 |-------|------------|---------|-----|
-| Voice SDK | @elevenlabs/react-native | 0.2.1 | Pre-built Abby agent, low latency |
+| Voice API | OpenAI Realtime API | - | Client backend WebRTC integration |
 | WebRTC | @livekit/react-native | 2.7.1 | Real-time audio streaming |
 | WebRTC Core | @livekit/react-native-webrtc | 125.0.7 | Native WebRTC implementation |
 | Audio Client | livekit-client | 2.9.5 | Audio session management |
@@ -60,13 +60,13 @@ Technology decisions for ABBY prioritize:
 ### Voice Architecture
 
 ```
-User speaks → LiveKit captures → ElevenLabs processes → Abby responds
-     ↓              ↓                    ↓                   ↓
-  Orb pulses    Stream audio      Agent generates       Play audio
-  "Listening"   to ElevenLabs     contextual reply      + animate orb
+User speaks → WebRTC captures → OpenAI Realtime → Abby responds
+     ↓              ↓                  ↓                ↓
+  Orb pulses    Stream audio     AI processes      Play audio
+  "Listening"   via WebRTC       + responds        + animate orb
 ```
 
-ElevenLabs agent is **pre-configured** with Abby's personality and question flow.
+Voice is handled by **client backend** at dev.api.myaimatchmaker.ai (OpenAI Realtime API).
 
 ---
 
@@ -169,7 +169,7 @@ export const mockApi = {
 
 | Service | Purpose | Integration |
 |---------|---------|-------------|
-| ElevenLabs | Conversational AI agent | SDK + pre-built agent |
+| OpenAI Realtime API | Conversational AI agent | Client backend WebRTC |
 | Apple Sign-In | Social auth | Expo AuthSession |
 | Google Sign-In | Social auth | Expo AuthSession |
 | Sentry | Error tracking | @sentry/react-native (V2) |
@@ -214,7 +214,7 @@ export const mockApi = {
 | Animation | Reanimated | Animated API | Worklet performance |
 | Shaders | Skia | React Native GL | Better RN integration |
 | State | Zustand | Redux | Simplicity, timeline |
-| Voice | ElevenLabs | Whisper + custom | Pre-built agent |
+| Voice | OpenAI Realtime | Whisper + custom | Client backend API |
 | Blur | expo-blur | react-native-blur | Expo managed |
 
 ---
@@ -232,7 +232,7 @@ src/
 ├── services/
 │   ├── api.ts            # API client
 │   ├── mockApi.ts        # MVP mocks
-│   └── voice.ts          # ElevenLabs integration
+│   └── AbbyRealtimeService.ts  # OpenAI Realtime API
 ├── shaders/
 │   └── vibeMatrix.glsl   # GLSL shader code
 ├── constants/

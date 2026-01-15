@@ -87,40 +87,28 @@ const finalAudioLevel = useDerivedValue(() => {
 - Latency: **3-5 seconds** (not suitable for real-time)
 - Cost: Cheap
 
-### Planned: ElevenLabs Flash v2.5
-- Latency: **~75ms** with streaming
-- Quality: Excellent + emotional expressiveness
-- Voice cloning: Can create unique "Abby" voice
-- Streaming: Yes - audio starts as it generates
+### Current: OpenAI Realtime API (via Client Backend)
+- Architecture: WebRTC connection to OpenAI Realtime API
+- Integration: Client backend at dev.api.myaimatchmaker.ai handles sessions
+- Streaming: Yes - real-time bidirectional audio
+- Quality: Excellent
 
-### TTS Provider Research
-
-| Provider | Latency | Quality | Best For |
-|----------|---------|---------|----------|
-| ElevenLabs Flash | ~75ms | Excellent | Voice agents (recommended) |
-| Cartesia Sonic-3 | ~50ms | Very good | Maximum speed |
-| OpenAI TTS | ~200ms | Excellent | Quality over speed |
-| Fal.ai Orpheus | ~3-5s | Great | Batch, not real-time |
-
-**Decision**: ElevenLabs for production (75ms still instant, better voice character)
+**Decision**: OpenAI Realtime API via client backend for production
 
 ---
 
-## Full Conversational Stack (Planned)
+## Voice Architecture (Current)
 
 ```
-User speaks → Whisper/Deepgram (STT)
-           → GPT-4/Claude + Mem0 (conversation + memory)
-           → ElevenLabs Flash (TTS with streaming)
-           → Real amplitude from audio stream → Shader
+User speaks → WebRTC to OpenAI Realtime API (via client backend)
+           → AI processes and responds in real-time
+           → Audio stream → Shader amplitude
 ```
 
 ### Components
-- **STT**: Whisper or Deepgram
-- **LLM**: GPT-4 or Claude for conversation
-- **Memory**: Mem0 for cross-session persistence
-- **TTS**: ElevenLabs with streaming
-- **Audio Analysis**: Real amplitude extraction for shader
+- **Voice**: OpenAI Realtime API (bidirectional)
+- **Backend**: dev.api.myaimatchmaker.ai handles sessions
+- **Audio Analysis**: Amplitude extraction for shader animation
 
 ---
 
@@ -158,28 +146,16 @@ User speaks → Whisper/Deepgram (STT)
 - Use `atan(y, x)` not `atan2`
 - Use integer division not `%` operator
 
-### ElevenLabs SDK v0.5.7 API change - text not showing (FIXED 2024-12-23)
-- **Issue**: Conversation text stopped appearing in modal after SDK upgrade
-- **Cause**: ElevenLabs SDK v0.5.7 changed `onMessage` callback API:
-  - Old: `{ message: { type: 'agent_response', agent_response_event: {...} } }`
-  - New: `{ message: "text string", source: "user" | "ai" }`
-- **Fix**: Updated `AbbyAgent.ts` onMessage handler to use new simplified API:
-  ```typescript
-  onMessage: ({ message, source }) => {
-    if (source === 'user') onUserTranscript(message);
-    else if (source === 'ai') onAbbyResponse(message);
-  }
-  ```
+### (LEGACY) ElevenLabs SDK API change (2024-12-23) - NO LONGER APPLICABLE
+> Note: This was fixed before migration to OpenAI Realtime API. Kept for historical reference only.
+> Voice now uses OpenAI Realtime API via client backend - see AbbyRealtimeService.ts
 
 ---
 
 ## Open Tasks
 
-- [ ] Switch TTS from Fal.ai to ElevenLabs
+- [x] Switch to OpenAI Realtime API (via client backend) - DONE
 - [ ] Implement streaming audio with real amplitude extraction
-- [ ] Add STT (Whisper/Deepgram) for user voice input
-- [ ] Connect LLM (GPT-4/Claude) for conversation
-- [ ] Integrate Mem0 for persistent memory
 - [ ] Create production AbbyOrb.tsx component
 - [ ] Test full stack with background shader
 
@@ -194,5 +170,5 @@ User speaks → Whisper/Deepgram (STT)
 | 2024-12-10 | Integrated Fal.ai Orpheus TTS (CC1) |
 | 2024-12-10 | Fixed Reanimated worklet pattern for audio→shader (CC1) |
 | 2024-12-10 | Added diaphragm breathing effect (CC1) |
-| 2024-12-10 | Researched TTS providers, decided ElevenLabs (CC1) |
+| 2024-12-10 | Researched TTS providers (later migrated to OpenAI Realtime) (CC1) |
 | 2024-12-10 | Documented full conversational stack plan (CC1) |

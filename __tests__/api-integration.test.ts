@@ -33,7 +33,8 @@ describe('QuestionsService API Integration', () => {
 
   test('QuestionsService has getNextQuestion method', () => {
     const source = readFile('src/services/QuestionsService.ts');
-    expect(source).toContain('async getNextQuestion()');
+    // Method accepts optional RequestOptions for AbortSignal support
+    expect(source).toContain('async getNextQuestion(options?: RequestOptions)');
     expect(source).toContain('/questions/next');
   });
 
@@ -88,6 +89,15 @@ describe('QuestionsService API Integration', () => {
   test('QuestionsService exports singleton instance', () => {
     const source = readFile('src/services/QuestionsService.ts');
     expect(source).toContain('export const questionsService = new QuestionsService()');
+  });
+
+  test('QuestionsService supports AbortSignal for request cancellation', () => {
+    const source = readFile('src/services/QuestionsService.ts');
+    // RequestOptions interface with AbortSignal support
+    expect(source).toContain('export interface RequestOptions');
+    expect(source).toContain('signal?: AbortSignal');
+    // Methods pass signal to secureFetch
+    expect(source).toContain('signal: options?.signal');
   });
 });
 

@@ -177,7 +177,7 @@ ABBY is a high-end matchmaking app where users interact with an AI entity (Abby)
 
 ### Dependencies
 
-- ElevenLabs agent (already built)
+- OpenAI Realtime API (client backend integration)
 - Existing codebase (shaders in progress)
 - Supabase (V2 - mocked for MVP)
 
@@ -405,7 +405,7 @@ const DEFAULT_SNAP = 0.55;  // 55% - enough room for conversation
 EXPO_PUBLIC_VOICE_ENABLED=false
 ```
 
-**WHY:** When `EXPO_PUBLIC_VOICE_ENABLED=true`, the ElevenLabs/voice audio subsystem
+**WHY:** When `EXPO_PUBLIC_VOICE_ENABLED=true`, the voice audio subsystem
 initializes and intercepts keyboard input events in iOS Simulator. This causes:
 - Hardware keyboard input to be blocked
 - User cannot type in text fields

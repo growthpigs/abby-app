@@ -247,15 +247,18 @@ All core MVP features are implemented. Remaining work is connecting demo mode to
 
 ## Legacy/Deprecated Files (Do Not Use)
 
-The following files are legacy documentation and should NOT be referenced. Use the `-spec.md` versions instead.
+> **Note:** Historical changelog entries below reference "ElevenLabs" - this was the original voice plan.
+> Voice now uses **OpenAI Realtime API** via client backend. See `voice-integration-spec.md`.
 
-| File | Replaced By | Notes |
-|------|-------------|-------|
-| `abbyorb.md` | `abbyorb-spec.md` | Old Dec 2024, mentions Fal.ai TTS |
-| `vibematrix.md` | `vibematrix-spec.md` | Old Dec 2024, outdated shader count |
-| `abbyagent.md` | `voice-integration-spec.md` | Old Dec 2024, mentions ElevenLabs |
-| `abby-agent.md` | `voice-integration-spec.md` | Design doc, now superseded |
-| `cognito-auth.md` | `onboarding-auth-spec.md` | Old implementation notes |
+The following files are legacy documentation and should NOT be referenced.
+
+| File | Status | Notes |
+|------|--------|-------|
+| `abbyorb-spec.md` | DELETED | Had 22 ElevenLabs refs, superseded |
+| `abbyagent.md` | DELETED | Legacy ElevenLabs agent doc |
+| `abby-agent.md` | Deprecated | Design doc, superseded by AbbyRealtimeService |
+| `vibematrix.md` | Deprecated | Use `vibematrix-spec.md` instead |
+| `cognito-auth.md` | Deprecated | Use `onboarding-auth-spec.md` instead |
 
 **Files to Keep:**
 - All `*-spec.md` files (current specifications)

@@ -30,16 +30,6 @@ import { HamburgerMenu } from './src/components/ui/HamburgerMenu';
 import { ErrorBoundary } from './src/components/ErrorBoundary';
 import { VibeDebugOverlay } from './src/components/dev/VibeDebugOverlay';
 
-// Conditional ElevenLabsProvider - only load if native modules available
-let ElevenLabsProvider: React.ComponentType<{ children: React.ReactNode }> | null = null;
-try {
-  const elevenlabs = require('@elevenlabs/react-native');
-  ElevenLabsProvider = elevenlabs.ElevenLabsProvider;
-} catch (e) {
-  if (__DEV__) {
-    console.warn('[App] ElevenLabsProvider not available - voice features disabled');
-  }
-}
 import { useSettingsStore } from './src/store/useSettingsStore';
 import { AuthService } from './src/services/AuthService';
 import { TokenManager } from './src/services/TokenManager';
@@ -1080,16 +1070,10 @@ function AppContent() {
 }
 
 export default function App() {
-  // Wrap with ElevenLabsProvider if available (native build)
-  const content = <AppContent />;
-  const wrappedContent = ElevenLabsProvider ? (
-    <ElevenLabsProvider>{content}</ElevenLabsProvider>
-  ) : content;
-
   return (
     <SafeAreaProvider initialMetrics={initialWindowMetrics ?? fallbackMetrics}>
       <ErrorBoundary>
-        {wrappedContent}
+        <AppContent />
       </ErrorBoundary>
     </SafeAreaProvider>
   );

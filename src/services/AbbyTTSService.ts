@@ -2,7 +2,6 @@
  * AbbyTTSService - Text-to-Speech Integration
  *
  * Handles text-to-speech for Abby using the client's backend TTS endpoint.
- * Replaces ElevenLabs TTS with client's API.
  *
  * API Endpoint:
  * - POST /v1/abby/tts - Convert text to speech audio
@@ -176,6 +175,12 @@ class AbbyTTSService {
    */
   private startAudioLevelSimulation(): void {
     if (!this.audioLevelCallback) return;
+
+    // Clear any existing interval to prevent memory leak
+    if (this.audioLevelInterval) {
+      clearInterval(this.audioLevelInterval);
+      this.audioLevelInterval = null;
+    }
 
     let phase = 0;
     this.audioLevelInterval = setInterval(() => {
