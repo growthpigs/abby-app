@@ -5,7 +5,7 @@
  * Uses same overlay pattern as SettingsScreen.
  */
 
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import {
   View,
   StyleSheet,
@@ -13,6 +13,7 @@ import {
   ScrollView,
   TextInput,
   Alert,
+  ActivityIndicator,
 } from 'react-native';
 import { BlurView } from 'expo-blur';
 import * as Haptics from 'expo-haptics';
@@ -25,6 +26,8 @@ import { secureFetchJSON } from '../../utils/secureFetch';
 import { API_CONFIG } from '../../config';
 import { useResponsiveLayout } from '../../hooks/useResponsiveLayout';
 import { sharedStyles, LAYOUT, TYPOGRAPHY, COLORS } from '../../constants/onboardingLayout';
+import { api } from '../../services/api';
+import { ONBOARDING_QUESTION_IDS } from '../../constants/onboardingQuestions';
 
 export interface ProfileScreenProps {
   onClose?: () => void;
@@ -70,10 +73,87 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
   const store = useOnboardingStore();
   const layout = useResponsiveLayout();
   const [isSaving, setIsSaving] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
 
   // Local state for editing
   const [editingField, setEditingField] = useState<string | null>(null);
   const [editValue, setEditValue] = useState('');
+
+  // Fetch user data from API on mount
+  useEffect(() => {
+    const fetchUserData = async () => {
+      try {
+        if (__DEV__) console.log('[ProfileScreen] Fetching user data from API...');
+
+        // Fetch profile data from /me endpoint
+        const profile = await api.getMe();
+        if (profile) {
+          if (profile.firstName) store.setFirstName(profile.firstName);
+          if (profile.displayName) store.setNickname(profile.displayName);
+          if (profile.gender) store.setGender(profile.gender);
+          if (profile.dateOfBirth) {
+            store.setDateOfBirth(new Date(profile.dateOfBirth));
+          }
+          if (profile.location) {
+            store.setLocation({
+              type: 'gps',
+              value: {
+                lat: profile.location.latitude,
+                lng: profile.location.longitude,
+              },
+            });
+          }
+          if (__DEV__) console.log('[ProfileScreen] Profile loaded:', profile.displayName);
+        }
+
+        // Fetch answers from /answers endpoint
+        const answers = await api.getAnswers();
+        if (answers && answers.length > 0) {
+          if (__DEV__) console.log('[ProfileScreen] Got', answers.length, 'answers from API');
+
+          answers.forEach((answer) => {
+            const value = answer.answer?.selected || answer.answer?.text;
+            if (!value) return;
+
+            switch (answer.questionId) {
+              case ONBOARDING_QUESTION_IDS.DATING_PREFERENCE:
+                store.setDatingPreference(Array.isArray(value) ? value[0] : value);
+                break;
+              case ONBOARDING_QUESTION_IDS.ETHNICITY:
+                store.setEthnicity(Array.isArray(value) ? value[0] : value);
+                break;
+              case ONBOARDING_QUESTION_IDS.ETHNICITY_PREFERENCES:
+                if (Array.isArray(value)) {
+                  store.setEthnicityPreferences(value);
+                }
+                break;
+              case ONBOARDING_QUESTION_IDS.RELATIONSHIP_TYPE:
+                store.setRelationshipType(Array.isArray(value) ? value[0] : value);
+                break;
+              case ONBOARDING_QUESTION_IDS.SMOKING:
+                // Smoking answer is stored as JSON string
+                try {
+                  const smokingData = typeof value === 'string' ? JSON.parse(value) : value;
+                  if (smokingData.user) store.setSmokingMe(smokingData.user);
+                  if (smokingData.partner_preference) store.setSmokingPartner(smokingData.partner_preference);
+                } catch {
+                  // If not JSON, treat as simple value
+                  if (typeof value === 'string') store.setSmokingMe(value);
+                }
+                break;
+            }
+          });
+        }
+      } catch (error) {
+        if (__DEV__) console.error('[ProfileScreen] Failed to fetch user data:', error);
+        // Don't show error alert - just show whatever local data exists
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchUserData();
+  }, []);
 
   const handleSave = useCallback(async () => {
     setIsSaving(true);
@@ -198,6 +278,14 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
           ]}
           showsVerticalScrollIndicator={false}
         >
+          {/* Loading State */}
+          {isLoading ? (
+            <View style={styles.loadingContainer}>
+              <ActivityIndicator size="large" color={COLORS.blue.primary} />
+              <Body style={styles.loadingText}>Loading your profile...</Body>
+            </View>
+          ) : (
+            <>
           {/* Edit Modal */}
           {editingField && (
             <View style={styles.editModal}>
@@ -283,6 +371,8 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
               {isSaving ? 'Saving...' : 'Save Changes'}
             </GlassButton>
           </View>
+            </>
+          )}
         </ScrollView>
       </BlurView>
     </View>
@@ -408,6 +498,17 @@ const styles = StyleSheet.create({
   },
   saveContainer: {
     // marginTop set dynamically via layout
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingVertical: LAYOUT.spacing.xl * 2,
+  },
+  loadingText: {
+    marginTop: LAYOUT.spacing.medium,
+    color: '#5A5A5A',
+    fontSize: TYPOGRAPHY.body.fontSize,
   },
 });
 
