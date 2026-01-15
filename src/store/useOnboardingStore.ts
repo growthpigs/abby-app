@@ -15,6 +15,7 @@ import { create } from 'zustand';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { questionsService } from '../services/QuestionsService';
 import { ONBOARDING_QUESTION_IDS } from '../constants/onboardingQuestions';
+import { getApiService } from '../services/api';
 
 // Storage key and version
 const ONBOARDING_KEY = '@abby/onboarding';
@@ -411,14 +412,21 @@ export const useOnboardingStore = create<OnboardingStore>((set, get) => ({
       });
     }
 
-    // ONB_008: Smoking (combine smokingMe and smokingPartner)
-    // The API expects a single answer, so we'll send smokingMe
-    if (state.smokingMe?.trim()) {
+    // ONB_008: Smoking (combine smokingMe AND smokingPartner)
+    // Send both values as JSON so backend has complete picture
+    if (state.smokingMe?.trim() || state.smokingPartner?.trim()) {
+      const smokingAnswer = JSON.stringify({
+        user: state.smokingMe?.trim() || 'not_specified',
+        partner_preference: state.smokingPartner?.trim() || 'not_specified',
+      });
       answers.push({
         questionId: ONBOARDING_QUESTION_IDS.SMOKING,
-        answer: state.smokingMe.trim(),
-        label: 'SMOKING PREFERENCE',
+        answer: smokingAnswer,
+        label: 'SMOKING (YOU + PARTNER)',
       });
+      console.log('🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢');
+      console.log(`🚬 [SMOKING TO DATABASE] user=${state.smokingMe}, partner_pref=${state.smokingPartner}`);
+      console.log('🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢');
     }
 
     // DEMO LOGGING: Show ALL data being submitted
@@ -444,6 +452,27 @@ export const useOnboardingStore = create<OnboardingStore>((set, get) => ({
         errors.push(`Failed to submit ${ans.label}: ${errMsg}`);
         if (__DEV__) {
           console.error(`[Onboarding] Failed to submit ${ans.label}:`, error);
+        }
+      }
+    }
+
+    // === SUBMIT AGE RANGE via /v1/profile/private ===
+    // Age preferences go to private settings (not public profile or answers)
+    if (state.ageRangeMin && state.ageRangeMax) {
+      try {
+        const apiService = getApiService();
+        await apiService.updatePrivateSettings({
+          ageMin: state.ageRangeMin,
+          ageMax: state.ageRangeMax,
+        });
+        console.log('🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢');
+        console.log(`📅 [AGE RANGE TO DATABASE] ageMin=${state.ageRangeMin}, ageMax=${state.ageRangeMax}`);
+        console.log('🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢');
+      } catch (error) {
+        const errMsg = error instanceof Error ? error.message : String(error);
+        errors.push(`Failed to submit age preferences: ${errMsg}`);
+        if (__DEV__) {
+          console.error('[Onboarding] Failed to submit age preferences:', error);
         }
       }
     }
