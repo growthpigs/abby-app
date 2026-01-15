@@ -311,9 +311,10 @@ describe('State Transitions', () => {
   test('INTERVIEW → SEARCHING (last question)', () => {
     const source = readFile('src/components/screens/InterviewScreen.tsx');
 
+    // Refactored: ChatInput handles all answers, advances on last question
     expect(source).toContain('isLastQuestion');
     expect(source).toContain('advance()');
-    expect(source).toContain('Find My Match');
+    expect(source).toContain('if (isLastQuestion)');
   });
 
   test('SEARCHING → MATCH (timer or auto)', () => {

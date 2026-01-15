@@ -143,10 +143,10 @@ describe('InterviewScreen Questions Integration', () => {
   test('InterviewScreen handles last question properly', () => {
     const source = readFile('src/components/screens/InterviewScreen.tsx');
 
-    // Refactored: Uses currentDemoIndex and supports both demo and API modes
+    // Refactored: Uses ChatInput for all answers, advances on last question
     expect(source).toContain('isLastQuestion');
-    expect(source).toContain('{isLastQuestion ? (');
-    expect(source).toContain('Find My Match');
+    expect(source).toContain('if (isLastQuestion)');
+    expect(source).toContain('advance()');
   });
 });
 
