@@ -610,13 +610,9 @@ function AppContent() {
       if (token && Object.keys(profilePayload).length > 0) {
         const API_BASE = 'https://dev.api.myaimatchmaker.ai';
 
-        // PROOF OF API CONNECTION - Log everything
-        console.log('══════════════════════════════════════════════════════');
-        console.log('🔥 SENDING TO BACKEND API:');
-        console.log('URL:', `${API_BASE}/v1/profile/public`);
-        console.log('METHOD:', 'PUT');
-        console.log('PAYLOAD:', JSON.stringify(profilePayload, null, 2));
-        console.log('══════════════════════════════════════════════════════');
+        if (__DEV__) {
+          console.log('[App] Submitting profile to API:', Object.keys(profilePayload).join(', '));
+        }
 
         const response = await secureFetchJSON(`${API_BASE}/v1/profile/public`, {
           method: 'PUT',
@@ -627,11 +623,9 @@ function AppContent() {
           body: JSON.stringify(profilePayload),
         });
 
-        // PROOF OF API RESPONSE
-        console.log('══════════════════════════════════════════════════════');
-        console.log('✅ BACKEND API RESPONSE:');
-        console.log('RESPONSE:', JSON.stringify(response, null, 2));
-        console.log('══════════════════════════════════════════════════════');
+        if (__DEV__) {
+          console.log('[App] Profile saved successfully');
+        }
       }
     } catch (error: unknown) {
       // Show error to user - don't silently fail
@@ -653,17 +647,15 @@ function AppContent() {
     // Submit onboarding answers via POST /v1/answers (data not accepted by profile API)
     // This includes: dating preference, ethnicity, relationship type, smoking
     try {
-      console.log('══════════════════════════════════════════════════════');
-      console.log('🔥 SUBMITTING ONBOARDING ANSWERS TO /v1/answers:');
-
       const answersResult = await useOnboardingStore.getState().submitOnboardingAnswers();
 
-      if (answersResult.success) {
-        console.log('✅ ALL ONBOARDING ANSWERS SUBMITTED SUCCESSFULLY');
-      } else {
-        console.log('⚠️ SOME ANSWERS FAILED:', answersResult.errors);
+      if (__DEV__) {
+        if (answersResult.success) {
+          console.log('[App] All onboarding answers submitted successfully');
+        } else {
+          console.log('[App] Some answers failed:', answersResult.errors);
+        }
       }
-      console.log('══════════════════════════════════════════════════════');
     } catch (error: unknown) {
       // Log but don't block - answers can be re-submitted later
       if (__DEV__) {
@@ -1089,7 +1081,8 @@ function AppContent() {
               }
               if (__DEV__) console.log('[App] S3 upload successful');
 
-              // Step 3: Register photo with backend (snake_case)
+              // Step 3: Register photo with backend (snake_case per API docs)
+              // API expects: photo_id (the S3 key), is_primary, order_index
               const registerResponse = await fetch(`${API_BASE}/v1/photos`, {
                 method: 'POST',
                 headers: {
@@ -1097,8 +1090,9 @@ function AppContent() {
                   'Content-Type': 'application/json',
                 },
                 body: JSON.stringify({
-                  file_key: fileKey,
-                  is_primary: false
+                  photo_id: fileKey,      // S3 file key from presign
+                  is_primary: false,
+                  order_index: 0          // First photo slot
                 }),
               });
 

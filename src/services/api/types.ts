@@ -245,9 +245,9 @@ export interface PresignedUploadResponse {
 }
 
 export interface RegisterPhotoRequest {
-  fileKey: string;
-  isPrimary: boolean;
-  order: number;
+  photo_id: string;      // S3 file key returned from presign
+  is_primary: boolean;
+  order_index: number;
 }
 
 // ============================================================

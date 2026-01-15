@@ -338,21 +338,17 @@ export const useOnboardingStore = create<OnboardingStore>((set, get) => ({
         payload.geo_lat = gps.lat;
         payload.geo_lon = gps.lng;
         if (__DEV__) {
-          console.log('🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢');
-          console.log(`📍 [LOCATION TO DATABASE] GPS: geo_lat=${gps.lat}, geo_lon=${gps.lng}`);
-          console.log('🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢');
+          console.log(`[Onboarding] 📍 Location GPS: lat=${gps.lat}, lon=${gps.lng}`);
         }
       } else if (state.location.type === 'zip' && typeof state.location.value === 'string') {
         // For ZIP codes, send as-is - backend may need to geocode
         payload.zip_code = state.location.value;
         if (__DEV__) {
-          console.log('🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢');
-          console.log(`📍 [LOCATION TO DATABASE] ZIP: zip_code=${state.location.value}`);
-          console.log('🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢');
+          console.log(`[Onboarding] 📍 Location ZIP: ${state.location.value}`);
         }
       }
     } else if (__DEV__) {
-      console.log('⚠️⚠️⚠️ [LOCATION] No location data in state! ⚠️⚠️⚠️');
+      console.log('[Onboarding] ⚠️ No location data in state');
     }
 
     // === FIELDS THAT GO VIA /v1/answers ===
@@ -429,23 +425,16 @@ export const useOnboardingStore = create<OnboardingStore>((set, get) => ({
         label: 'SMOKING (YOU + PARTNER)',
       });
       if (__DEV__) {
-        console.log('🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢');
-        console.log(`🚬 [SMOKING TO DATABASE] user=${state.smokingMe}, partner_pref=${state.smokingPartner}`);
-        console.log('🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢');
+        console.log(`[Onboarding] 🚬 Smoking: user=${state.smokingMe}, partner_pref=${state.smokingPartner}`);
       }
     }
 
-    // DEMO LOGGING: Show ALL data being submitted
+    // Log all answers being submitted
     if (__DEV__) {
-      console.log(`\n`);
-      console.log(`🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢`);
-      console.log(`📋 [ONBOARDING DATA TO DATABASE]`);
-      console.log(`🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢`);
+      console.log(`[Onboarding] Submitting ${answers.length} answers to API`);
       answers.forEach((ans) => {
         console.log(`  • ${ans.label}: ${JSON.stringify(ans.answer)}`);
       });
-      console.log(`Total answers to submit: ${answers.length}`);
-      console.log(`🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢\n`);
     }
 
     // Submit each answer
@@ -471,9 +460,7 @@ export const useOnboardingStore = create<OnboardingStore>((set, get) => ({
           age_max: state.ageRangeMax,
         });
         if (__DEV__) {
-          console.log('🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢');
-          console.log(`📅 [AGE RANGE TO DATABASE] age_min=${state.ageRangeMin}, age_max=${state.ageRangeMax}`);
-          console.log('🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢');
+          console.log(`[Onboarding] 📅 Age range: ${state.ageRangeMin}-${state.ageRangeMax}`);
         }
       } catch (error) {
         const errMsg = error instanceof Error ? error.message : String(error);

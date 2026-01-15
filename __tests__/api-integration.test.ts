@@ -190,10 +190,13 @@ describe('Photo Upload - App.tsx', () => {
 
   test('Photo upload uses snake_case for API fields', () => {
     const source = readFile('App.tsx');
+    // Presign request uses snake_case
     expect(source).toContain('file_name: filename');
     expect(source).toContain('content_type: contentType');
-    expect(source).toContain('file_key: fileKey');
+    // Register request uses snake_case per API docs
+    expect(source).toContain('photo_id: fileKey');
     expect(source).toContain('is_primary: false');
+    expect(source).toContain('order_index: 0');
   });
 
   test('Photo upload uses Authorization header with Bearer token', () => {

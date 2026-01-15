@@ -418,9 +418,9 @@ export const MockApiService: IApiService = {
     await delay(300);
     const photo: Photo = {
       id: generateId('photo'),
-      url: `https://mock.cdn.com/${request.fileKey}`,
-      isPrimary: request.isPrimary,
-      order: request.order,
+      url: `https://mock.cdn.com/${request.photo_id}`,
+      isPrimary: request.is_primary,
+      order: request.order_index,
     };
     MOCK_USER_PROFILE.photos.push(photo);
     return photo;
