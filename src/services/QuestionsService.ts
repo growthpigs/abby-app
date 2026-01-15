@@ -177,10 +177,12 @@ export class QuestionsService {
     const mappedType = typeMap[apiType];
     if (!mappedType) {
       // Log unknown type for debugging - helps detect API changes early
-      console.warn(
-        `[QuestionsService] Unknown question type from API: "${apiType}". ` +
-        `Defaulting to 'open_ended'. Consider adding to typeMap if intentional.`
-      );
+      if (__DEV__) {
+        console.warn(
+          `[QuestionsService] Unknown question type from API: "${apiType}". ` +
+          `Defaulting to 'open_ended'. Consider adding to typeMap if intentional.`
+        );
+      }
       return 'open_ended';
     }
     return mappedType;
@@ -249,13 +251,13 @@ export class QuestionsService {
       const parsedTotal = parseInt(apiData.total_questions, 10);
       const parsedAnswered = parseInt(apiData.answered_questions, 10);
 
-      if (isNaN(parsedTotal)) {
+      if (isNaN(parsedTotal) && __DEV__) {
         console.warn(
           `[QuestionsService] Invalid total_questions from API: "${apiData.total_questions}". ` +
           'Expected numeric string. Defaulting to 0.'
         );
       }
-      if (isNaN(parsedAnswered)) {
+      if (isNaN(parsedAnswered) && __DEV__) {
         console.warn(
           `[QuestionsService] Invalid answered_questions from API: "${apiData.answered_questions}". ` +
           'Expected numeric string. Defaulting to 0.'

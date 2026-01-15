@@ -14,6 +14,7 @@ import {
   StyleSheet,
   ScrollView,
   Dimensions,
+  Pressable,
 } from 'react-native';
 import { useDemoStore, DemoState } from '../../store/useDemoStore';
 import { useVibeController } from '../../store/useVibeController';
@@ -21,6 +22,8 @@ import { AppState, VibeColorTheme } from '../../types/vibe';
 import { getAllShaders, type ShaderEntry } from '../../shaders/factory/registryV2';
 import { VIBE_SHADER_GROUPS } from '../../constants/vibeShaderMap';
 import type { VibeMatrixAnimatedRef } from '../layers/VibeMatrixAnimated';
+import { ALL_DATA_POINTS, type DataPoint } from '../../data/questions-schema';
+import { analyzeQuestionSentiment } from '../../utils/questionSentiment';
 
 const { height: SCREEN_HEIGHT } = Dimensions.get('window');
 
@@ -72,11 +75,26 @@ const VIBE_TEST_CYCLE: {
   { theme: 'ALERT', color: '#6B7280', emoji: '⚫', label: 'ALERT', example: '"Have you felt unsafe?"' },
 ];
 
+// Color map for vibes
+const VIBE_COLORS: Record<VibeColorTheme, string> = {
+  TRUST: '#3B82F6',
+  DEEP: '#8B5CF6',
+  PASSION: '#E11D48',
+  GROWTH: '#10B981',
+  CAUTION: '#F59E0B',
+  ALERT: '#6B7280',
+};
+
 export const VibeDebugOverlay: React.FC<VibeDebugOverlayProps> = ({ vibeMatrixRef }) => {
   const [expanded, setExpanded] = useState(false);
   const [currentShaderId, setCurrentShaderId] = useState(0);
   const [isTestCycling, setIsTestCycling] = useState(false);
   const [cycleIndex, setCycleIndex] = useState(0);
+
+  // Question Cycle Mode state
+  const [isQuestionMode, setIsQuestionMode] = useState(false);
+  const [questionIndex, setQuestionIndex] = useState(0);
+
   const goToState = useDemoStore((s) => s.goToState);
   const currentDemoState = useDemoStore((s) => s.currentState);
   const setFromAppState = useVibeController((s) => s.setFromAppState);
@@ -122,6 +140,68 @@ export const VibeDebugOverlay: React.FC<VibeDebugOverlayProps> = ({ vibeMatrixRe
     if (!expanded) setIsTestCycling(false);
   }, [expanded]);
 
+  // Question Cycle Mode - trigger vibe when question changes
+  const triggerQuestionVibe = useCallback((question: DataPoint) => {
+    // Get vibe from vibe_shift (manual) or sentiment analysis
+    let theme: VibeColorTheme;
+    let complexity: 'SMOOTHIE' | 'FLOW' | 'OCEAN' | 'STORM' | 'PAISLEY';
+
+    if (question.vibe_shift) {
+      // Use manual vibe_shift
+      theme = question.vibe_shift;
+      // Complexity based on priority
+      complexity = question.priority === 'P0' ? 'STORM' :
+                   question.priority === 'P1' ? 'OCEAN' :
+                   question.priority === 'P2' ? 'FLOW' : 'SMOOTHIE';
+    } else {
+      // Use sentiment analysis
+      const sentiment = analyzeQuestionSentiment(question.question);
+      theme = sentiment.theme;
+      complexity = sentiment.complexity;
+    }
+
+    // Set vibe
+    setColorTheme(theme);
+    setComplexity(complexity);
+
+    // Set shader from theme group
+    const shaderGroup = VIBE_SHADER_GROUPS[theme];
+    const shaderId = shaderGroup[questionIndex % shaderGroup.length];
+    const shader = SHADER_PRESETS.find(s => s.id === shaderId);
+    if (shader && vibeMatrixRef?.current) {
+      vibeMatrixRef.current.setShader(shader.source);
+      setCurrentShaderId(shaderId);
+    }
+  }, [questionIndex, setColorTheme, setComplexity, vibeMatrixRef]);
+
+  // Navigate to previous question
+  const handlePrevQuestion = useCallback(() => {
+    setQuestionIndex((prev) => {
+      const newIndex = prev > 0 ? prev - 1 : ALL_DATA_POINTS.length - 1;
+      const question = ALL_DATA_POINTS[newIndex];
+      setTimeout(() => triggerQuestionVibe(question), 0);
+      return newIndex;
+    });
+  }, [triggerQuestionVibe]);
+
+  // Navigate to next question
+  const handleNextQuestion = useCallback(() => {
+    setQuestionIndex((prev) => {
+      const newIndex = prev < ALL_DATA_POINTS.length - 1 ? prev + 1 : 0;
+      const question = ALL_DATA_POINTS[newIndex];
+      setTimeout(() => triggerQuestionVibe(question), 0);
+      return newIndex;
+    });
+  }, [triggerQuestionVibe]);
+
+  // Start question mode and trigger first question
+  const startQuestionMode = useCallback(() => {
+    setIsQuestionMode(true);
+    setExpanded(false); // Hide the debug panel
+    const question = ALL_DATA_POINTS[questionIndex];
+    triggerQuestionVibe(question);
+  }, [questionIndex, triggerQuestionVibe]);
+
   const toggleTestCycle = useCallback(() => {
     if (isTestCycling) {
       setIsTestCycling(false);
@@ -140,6 +220,65 @@ export const VibeDebugOverlay: React.FC<VibeDebugOverlayProps> = ({ vibeMatrixRe
   };
 
   if (!__DEV__) return null;
+
+  // Question Cycle Mode - Full screen overlay for video recording
+  if (isQuestionMode) {
+    const currentQuestion = ALL_DATA_POINTS[questionIndex];
+    const vibeTheme = currentQuestion.vibe_shift || analyzeQuestionSentiment(currentQuestion.question).theme;
+    const vibeColor = VIBE_COLORS[vibeTheme];
+
+    return (
+      <View style={styles.questionModeContainer}>
+        {/* Question counter and vibe indicator */}
+        <View style={styles.questionHeader}>
+          <View style={[styles.vibeIndicator, { backgroundColor: vibeColor }]} />
+          <Text style={styles.questionCounter}>
+            Q{questionIndex + 1} / {ALL_DATA_POINTS.length}
+          </Text>
+          <Text style={[styles.vibeLabel, { color: vibeColor }]}>{vibeTheme}</Text>
+        </View>
+
+        {/* Category badge */}
+        <View style={styles.categoryBadge}>
+          <Text style={styles.categoryText}>{currentQuestion.category.replace(/_/g, ' ').toUpperCase()}</Text>
+          <Text style={styles.priorityText}>Priority: {currentQuestion.priority}</Text>
+        </View>
+
+        {/* Question text - LARGE for video */}
+        <View style={styles.questionTextContainer}>
+          <Text style={styles.questionText}>"{currentQuestion.question}"</Text>
+        </View>
+
+        {/* Navigation buttons - BIG and obvious for video */}
+        <View style={styles.questionNavRow}>
+          <Pressable style={styles.navButton} onPress={handlePrevQuestion}>
+            <Text style={styles.navButtonText}>◀ PREV</Text>
+          </Pressable>
+
+          <Pressable
+            style={styles.exitButton}
+            onPress={() => setIsQuestionMode(false)}
+          >
+            <Text style={styles.exitButtonText}>✕</Text>
+          </Pressable>
+
+          <Pressable style={styles.navButton} onPress={handleNextQuestion}>
+            <Text style={styles.navButtonText}>NEXT ▶</Text>
+          </Pressable>
+        </View>
+
+        {/* Hidden corner triggers for tap-based navigation */}
+        <Pressable
+          style={styles.cornerTriggerLeft}
+          onPress={handlePrevQuestion}
+        />
+        <Pressable
+          style={styles.cornerTriggerRight}
+          onPress={handleNextQuestion}
+        />
+      </View>
+    );
+  }
 
   if (!expanded) {
     // Collapsed: Just show floating button
@@ -170,6 +309,15 @@ export const VibeDebugOverlay: React.FC<VibeDebugOverlayProps> = ({ vibeMatrixRe
           {colorTheme} / {complexity} | {activeParty}→{activeMode}
         </Text>
       </View>
+
+      {/* QUESTION CYCLE MODE - Main feature for video proof */}
+      <TouchableOpacity
+        style={styles.questionModeButton}
+        onPress={startQuestionMode}
+      >
+        <Text style={styles.questionModeButtonText}>📝 QUESTION CYCLE ({ALL_DATA_POINTS.length})</Text>
+        <Text style={styles.questionModeButtonSub}>Tap to cycle through ALL questions + vibes</Text>
+      </TouchableOpacity>
 
       {/* VIBE TEST MODE - Big button at top */}
       <TouchableOpacity
@@ -443,6 +591,146 @@ const styles = StyleSheet.create({
     fontSize: 8,
     fontWeight: 'bold',
     marginTop: 2,
+  },
+
+  // Question Cycle Mode styles
+  questionModeButton: {
+    backgroundColor: 'rgba(225, 29, 72, 0.2)',
+    borderWidth: 2,
+    borderColor: '#E11D48',
+    borderRadius: 12,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    marginBottom: 8,
+    alignItems: 'center',
+  },
+  questionModeButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  questionModeButtonSub: {
+    color: 'rgba(255,255,255,0.6)',
+    fontSize: 11,
+    marginTop: 4,
+  },
+
+  // Full-screen Question Mode overlay
+  questionModeContainer: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(0,0,0,0.85)',
+    zIndex: 10000,
+    padding: 20,
+    justifyContent: 'space-between',
+  },
+  questionHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingTop: 60,
+    gap: 12,
+  },
+  vibeIndicator: {
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+  },
+  questionCounter: {
+    color: '#fff',
+    fontSize: 18,
+    fontWeight: 'bold',
+    fontFamily: 'monospace',
+  },
+  vibeLabel: {
+    fontSize: 14,
+    fontWeight: 'bold',
+    textTransform: 'uppercase',
+    letterSpacing: 1,
+  },
+  categoryBadge: {
+    flexDirection: 'row',
+    gap: 12,
+    alignItems: 'center',
+    marginTop: 20,
+  },
+  categoryText: {
+    color: 'rgba(255,255,255,0.5)',
+    fontSize: 12,
+    fontWeight: '600',
+    letterSpacing: 1,
+  },
+  priorityText: {
+    color: 'rgba(255,255,255,0.4)',
+    fontSize: 11,
+    fontFamily: 'monospace',
+  },
+  questionTextContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    paddingHorizontal: 10,
+  },
+  questionText: {
+    color: '#fff',
+    fontSize: 28,
+    fontWeight: '300',
+    lineHeight: 42,
+    textAlign: 'center',
+    fontStyle: 'italic',
+  },
+  questionNavRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingBottom: 40,
+    gap: 20,
+  },
+  navButton: {
+    backgroundColor: 'rgba(255,255,255,0.15)',
+    paddingVertical: 16,
+    paddingHorizontal: 32,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.3)',
+  },
+  navButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  exitButton: {
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    backgroundColor: 'rgba(255,255,255,0.1)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.3)',
+  },
+  exitButtonText: {
+    color: '#fff',
+    fontSize: 24,
+  },
+
+  // Hidden corner triggers for tap navigation
+  cornerTriggerLeft: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    width: 100,
+    height: 150,
+    // backgroundColor: 'rgba(255,0,0,0.2)', // Uncomment to debug
+  },
+  cornerTriggerRight: {
+    position: 'absolute',
+    top: 0,
+    right: 0,
+    width: 100,
+    height: 150,
+    // backgroundColor: 'rgba(0,255,0,0.2)', // Uncomment to debug
   },
 });
 
