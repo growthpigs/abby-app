@@ -54,7 +54,9 @@ const detectVibeFromText = (text: string): VibeColorTheme | null => {
   return null;
 };
 
-const { height: SCREEN_HEIGHT } = Dimensions.get('window');
+// Get screen height - use fallback if Dimensions returns 0 (can happen on first load)
+const windowHeight = Dimensions.get('window').height;
+const SCREEN_HEIGHT = windowHeight > 0 ? windowHeight : 852; // iPhone 14 Pro default
 
 // Use centralized constants - SINGLE SOURCE OF TRUTH
 const SNAP_POINTS = SHEET_SNAP_POINTS;
@@ -209,12 +211,22 @@ export const CoachIntroScreen = forwardRef<CoachIntroScreenRef, CoachIntroScreen
 
   // Animate sheet in on mount
   useEffect(() => {
-    Animated.spring(translateY, {
-      toValue: SCREEN_HEIGHT * (1 - DEFAULT_SNAP),
-      useNativeDriver: true,
-      damping: 50,
-      stiffness: 400,
-    }).start();
+    if (__DEV__) console.log('[CoachIntro] 🎬 Animation useEffect fired. SCREEN_HEIGHT:', SCREEN_HEIGHT, 'DEFAULT_SNAP:', DEFAULT_SNAP, 'toValue:', SCREEN_HEIGHT * (1 - DEFAULT_SNAP));
+
+    // Small delay ensures component is fully mounted before animation starts
+    const timer = setTimeout(() => {
+      if (__DEV__) console.log('[CoachIntro] 🎬 Starting spring animation now');
+      Animated.spring(translateY, {
+        toValue: SCREEN_HEIGHT * (1 - DEFAULT_SNAP),
+        useNativeDriver: true,
+        damping: 50,
+        stiffness: 400,
+      }).start(({ finished }) => {
+        if (__DEV__) console.log('[CoachIntro] 🎬 Animation finished:', finished, 'translateY should now be:', SCREEN_HEIGHT * (1 - DEFAULT_SNAP));
+      });
+    }, 100);
+
+    return () => clearTimeout(timer);
   }, []);
 
   // Auto-start conversation when screen mounts

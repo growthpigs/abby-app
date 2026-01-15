@@ -1044,13 +1044,17 @@ function AppContent() {
 
               if (__DEV__) console.log('[App] Getting presigned URL for:', filename);
 
+              // Backend uses snake_case field names
               const presignResponse = await fetch(`${API_BASE}/v1/photos/presign`, {
                 method: 'POST',
                 headers: {
                   'Authorization': `Bearer ${token}`,
                   'Content-Type': 'application/json',
                 },
-                body: JSON.stringify({ filename, contentType }),
+                body: JSON.stringify({
+                  file_name: filename,
+                  content_type: contentType
+                }),
               });
 
               if (!presignResponse.ok) {
@@ -1061,7 +1065,9 @@ function AppContent() {
               }
 
               const presignData = await presignResponse.json();
-              const { uploadUrl, fileKey } = presignData;
+              // Backend returns snake_case: upload_url, file_key
+              const uploadUrl = presignData.upload_url || presignData.uploadUrl;
+              const fileKey = presignData.file_key || presignData.fileKey;
               if (__DEV__) console.log('[App] Got presigned URL, fileKey:', fileKey);
 
               // Step 2: Upload file directly to S3 using presigned URL
@@ -1083,14 +1089,17 @@ function AppContent() {
               }
               if (__DEV__) console.log('[App] S3 upload successful');
 
-              // Step 3: Register photo with backend
+              // Step 3: Register photo with backend (snake_case)
               const registerResponse = await fetch(`${API_BASE}/v1/photos`, {
                 method: 'POST',
                 headers: {
                   'Authorization': `Bearer ${token}`,
                   'Content-Type': 'application/json',
                 },
-                body: JSON.stringify({ fileKey, isPrimary: false }),
+                body: JSON.stringify({
+                  file_key: fileKey,
+                  is_primary: false
+                }),
               });
 
               if (!registerResponse.ok) {
