@@ -353,13 +353,14 @@ export const useOnboardingStore = create<OnboardingStore>((set, get) => ({
     let successCount = 0;
 
     // Build answers array - only include non-null values
-    const answers: Array<{ questionId: string; answer: string | string[] }> = [];
+    const answers: Array<{ questionId: string; answer: string | string[]; label: string }> = [];
 
     // ONB_004: Dating Preference
     if (state.datingPreference?.trim()) {
       answers.push({
         questionId: ONBOARDING_QUESTION_IDS.DATING_PREFERENCE,
         answer: state.datingPreference.trim(),
+        label: 'WHO YOU WANT TO DATE',
       });
     }
 
@@ -368,6 +369,7 @@ export const useOnboardingStore = create<OnboardingStore>((set, get) => ({
       answers.push({
         questionId: ONBOARDING_QUESTION_IDS.ETHNICITY,
         answer: state.ethnicity.trim(),
+        label: 'YOUR ETHNICITY',
       });
     }
 
@@ -376,6 +378,7 @@ export const useOnboardingStore = create<OnboardingStore>((set, get) => ({
       answers.push({
         questionId: ONBOARDING_QUESTION_IDS.ETHNICITY_PREFERENCES,
         answer: state.ethnicityPreferences,
+        label: 'ETHNICITY PREFERENCES',
       });
     }
 
@@ -384,6 +387,7 @@ export const useOnboardingStore = create<OnboardingStore>((set, get) => ({
       answers.push({
         questionId: ONBOARDING_QUESTION_IDS.RELATIONSHIP_TYPE,
         answer: state.relationshipType.trim(),
+        label: 'RELATIONSHIP TYPE',
       });
     }
 
@@ -393,7 +397,21 @@ export const useOnboardingStore = create<OnboardingStore>((set, get) => ({
       answers.push({
         questionId: ONBOARDING_QUESTION_IDS.SMOKING,
         answer: state.smokingMe.trim(),
+        label: 'SMOKING PREFERENCE',
       });
+    }
+
+    // DEMO LOGGING: Show ALL data being submitted
+    if (__DEV__) {
+      console.log(`\n`);
+      console.log(`🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢`);
+      console.log(`📋 [ONBOARDING DATA TO DATABASE]`);
+      console.log(`🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢`);
+      answers.forEach((ans) => {
+        console.log(`  • ${ans.label}: ${JSON.stringify(ans.answer)}`);
+      });
+      console.log(`Total answers to submit: ${answers.length}`);
+      console.log(`🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢\n`);
     }
 
     // Submit each answer
@@ -401,20 +419,17 @@ export const useOnboardingStore = create<OnboardingStore>((set, get) => ({
       try {
         await questionsService.submitAnswer(ans.questionId, ans.answer);
         successCount++;
-        if (__DEV__) {
-          console.log(`[Onboarding] Submitted answer for ${ans.questionId}`);
-        }
       } catch (error) {
         const errMsg = error instanceof Error ? error.message : String(error);
-        errors.push(`Failed to submit ${ans.questionId}: ${errMsg}`);
+        errors.push(`Failed to submit ${ans.label}: ${errMsg}`);
         if (__DEV__) {
-          console.error(`[Onboarding] Failed to submit ${ans.questionId}:`, error);
+          console.error(`[Onboarding] Failed to submit ${ans.label}:`, error);
         }
       }
     }
 
     if (__DEV__) {
-      console.log(`[Onboarding] Submitted ${successCount}/${answers.length} answers`);
+      console.log(`✅ [ONBOARDING COMPLETE] Submitted ${successCount}/${answers.length} answers to database`);
     }
 
     return {

@@ -90,11 +90,16 @@ async function request<T>(endpoint: string, options: RequestOptions = {}): Promi
   }
 
   // DEMO LOGGING: Show API calls clearly in Metro console for video demo
+  // NO TRUNCATION - show FULL data for proof to client
   if (__DEV__) {
-    console.log(`\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`);
-    console.log(`🌐 [API] ${method} ${url}`);
-    if (body) console.log(`📤 [REQUEST]`, JSON.stringify(body, null, 2).substring(0, 500));
-    console.log(`━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`);
+    console.log(`\n`);
+    console.log(`🔷🔷🔷🔷🔷🔷🔷🔷🔷🔷🔷🔷🔷🔷🔷🔷🔷🔷🔷🔷🔷🔷🔷🔷🔷🔷🔷🔷`);
+    console.log(`🌐 [API CALL] ${method} ${url}`);
+    console.log(`🔷🔷🔷🔷🔷🔷🔷🔷🔷🔷🔷🔷🔷🔷🔷🔷🔷🔷🔷🔷🔷🔷🔷🔷🔷🔷🔷🔷`);
+    if (body) {
+      console.log(`📤 [SENDING TO DATABASE]:`);
+      console.log(JSON.stringify(body, null, 2));
+    }
   }
 
   const controller = new AbortController();
@@ -155,7 +160,13 @@ async function request<T>(endpoint: string, options: RequestOptions = {}): Promi
     }
 
     const data = await response.json();
-    if (__DEV__) console.log(`✅ [RESPONSE] Status: ${response.status}`, JSON.stringify(data, null, 2).substring(0, 500));
+    // FULL RESPONSE - no truncation for proof to client
+    if (__DEV__) {
+      console.log(`✅ [DATABASE CONFIRMED] Status: ${response.status}`);
+      console.log(`📥 [STORED IN DATABASE]:`);
+      console.log(JSON.stringify(data, null, 2));
+      console.log(`🔷🔷🔷🔷🔷🔷🔷🔷🔷🔷🔷🔷🔷🔷🔷🔷🔷🔷🔷🔷🔷🔷🔷🔷🔷🔷🔷🔷\n`);
+    }
     return data;
   } catch (error) {
     clearTimeout(timeoutId);

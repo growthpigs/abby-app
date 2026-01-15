@@ -182,7 +182,7 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
           style={sharedStyles.closeButton}
           hitSlop={10}
         >
-          <X size={24} stroke={COLORS.white[95]} />
+          <X size={24} stroke={COLORS.charcoal.medium} />
         </Pressable>
 
         {/* Content */}

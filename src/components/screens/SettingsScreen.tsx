@@ -137,7 +137,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
           style={sharedStyles.closeButton}
           hitSlop={LAYOUT.backArrow.hitSlop}
         >
-          <X size={24} stroke={COLORS.white[95]} />
+          <X size={24} stroke={COLORS.charcoal.medium} />
         </Pressable>
 
         {/* Content */}

@@ -308,7 +308,22 @@ export class QuestionsService {
     options?: RequestOptions
   ): Promise<SubmitAnswerResponse> {
     try {
-      if (__DEV__) console.log('[Questions] Submitting answer for:', questionId);
+      // DEMO LOGGING: Show FULL answer data for proof to client
+      const requestBody = {
+        question_id: questionId,
+        answer,
+        response_time: responseTime,
+      };
+
+      if (__DEV__) {
+        console.log(`\n`);
+        console.log(`💜💜💜💜💜💜💜💜💜💜💜💜💜💜💜💜💜💜💜💜💜💜💜💜💜💜💜💜`);
+        console.log(`📝 [SUBMITTING ANSWER TO DATABASE]`);
+        console.log(`💜💜💜💜💜💜💜💜💜💜💜💜💜💜💜💜💜💜💜💜💜💜💜💜💜💜💜💜`);
+        console.log(`Question ID: ${questionId}`);
+        console.log(`Answer Value: ${JSON.stringify(answer)}`);
+        console.log(`Full Payload:`, JSON.stringify(requestBody, null, 2));
+      }
 
       const token = await TokenManager.getToken();
       if (!token) {
@@ -322,11 +337,7 @@ export class QuestionsService {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`,
         },
-        body: JSON.stringify({
-          question_id: questionId,  // API uses snake_case
-          answer,
-          response_time: responseTime,  // Likely also snake_case
-        }),
+        body: JSON.stringify(requestBody),
         timeout: REQUEST_TIMEOUT_MS,
         signal: options?.signal,
       });
@@ -342,7 +353,11 @@ export class QuestionsService {
 
       const data: SubmitAnswerResponse = await response.json();
 
-      if (__DEV__) console.log('[Questions] Answer submitted:', data.answerId);
+      if (__DEV__) {
+        console.log(`✅ [ANSWER SAVED TO DATABASE]`);
+        console.log(`Response:`, JSON.stringify(data, null, 2));
+        console.log(`💜💜💜💜💜💜💜💜💜💜💜💜💜💜💜💜💜💜💜💜💜💜💜💜💜💜💜💜\n`);
+      }
 
       return data;
     } catch (error) {

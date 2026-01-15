@@ -293,14 +293,14 @@ export const PhotosScreen: React.FC<PhotosScreenProps> = ({
                       pressed && styles.emptySlotPressed,
                     ]}
                   >
-                    <Plus size={layout.isSmallScreen ? 24 : 32} stroke={COLORS.white[30]} />
+                    <Plus size={layout.isSmallScreen ? 24 : 32} stroke={COLORS.charcoal.light} />
                   </Pressable>
                 ))}
               </View>
 
               {/* Tips */}
               <View style={[styles.tips, { marginTop: LAYOUT.spacing.xxl, padding: layout.isSmallScreen ? LAYOUT.spacing.medium : LAYOUT.spacing.default }]}>
-                <Camera size={layout.isSmallScreen ? 16 : 18} stroke={COLORS.white[50]} />
+                <Camera size={layout.isSmallScreen ? 16 : 18} stroke={COLORS.charcoal.light} />
                 <Body style={[styles.tipsText, { fontSize: layout.bodyFontSize - 2 }]}>
                   Photos with good lighting and clear faces get more matches.
                 </Body>
@@ -338,7 +338,7 @@ const styles = StyleSheet.create({
   },
   helpText: {
     textAlign: 'center',
-    color: COLORS.white[50],
+    color: COLORS.charcoal.light,
     // marginBottom applied dynamically via LAYOUT.spacing.large
   },
   photoGrid: {
@@ -397,11 +397,11 @@ const styles = StyleSheet.create({
   },
   emptySlot: {
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.25)', // Subtle white, cleaner look
+    borderColor: 'rgba(100, 100, 100, 0.3)', // Charcoal border for contrast on light blur
     borderStyle: 'dashed',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: 'rgba(255, 255, 255, 0.05)', // Subtle glass fill
+    backgroundColor: 'rgba(150, 150, 150, 0.1)', // Subtle gray fill for visibility
   },
   emptySlotPressed: {
     backgroundColor: COLORS.white[10],
@@ -411,13 +411,13 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: LAYOUT.spacing.medium,
     // marginTop and padding applied dynamically via LAYOUT constants
-    backgroundColor: COLORS.white[10],
+    backgroundColor: 'rgba(100, 100, 100, 0.1)', // Charcoal tint for visibility on light blur
     borderRadius: 12,
   },
   tipsText: {
     flex: 1,
     // fontSize applied dynamically via layout.bodyFontSize
-    color: COLORS.white[70],
+    color: COLORS.charcoal.medium,
     lineHeight: 20,
   },
   // Loading state
@@ -430,7 +430,7 @@ const styles = StyleSheet.create({
   },
   loadingText: {
     fontSize: TYPOGRAPHY.body.fontSize,
-    color: COLORS.white[50],
+    color: COLORS.charcoal.light,
   },
   // Error state
   errorState: {
@@ -453,13 +453,13 @@ const styles = StyleSheet.create({
     fontSize: 18,
     textAlign: 'center',
     marginBottom: LAYOUT.spacing.small,
-    color: COLORS.white[85],
+    color: COLORS.charcoal.dark,
   },
   errorText: {
     fontSize: TYPOGRAPHY.helpText.fontSize + 2,
     textAlign: 'center',
     lineHeight: 20,
-    color: COLORS.white[50],
+    color: COLORS.charcoal.light,
     marginBottom: 20,
   },
   retryButton: {

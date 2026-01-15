@@ -309,7 +309,7 @@ export const MatchesScreen: React.FC<MatchesScreenProps> = ({
             style={styles.closeButton}
             hitSlop={10}
           >
-            <X size={24} stroke="rgba(255, 255, 255, 0.9)" />
+            <X size={24} stroke="rgba(90, 90, 90, 0.9)" />
           </Pressable>
 
           {/* Detail Content */}
@@ -400,7 +400,7 @@ export const MatchesScreen: React.FC<MatchesScreenProps> = ({
           style={styles.closeButton}
           hitSlop={10}
         >
-          <X size={24} stroke="rgba(255, 255, 255, 0.9)" />
+          <X size={24} stroke="rgba(90, 90, 90, 0.9)" />
         </Pressable>
 
         {/* Content */}
@@ -648,7 +648,7 @@ const styles = StyleSheet.create({
   },
   matchBio: {
     fontSize: 13,
-    color: 'rgba(255, 255, 255, 0.85)', // White text on glass
+    color: 'rgba(90, 90, 90, 0.85)', // Charcoal text for contrast on light blur
     lineHeight: 19,
     textShadowColor: 'transparent',
   },
