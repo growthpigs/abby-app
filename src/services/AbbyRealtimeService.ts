@@ -356,19 +356,27 @@ export class AbbyRealtimeService {
     //   Response: { response: string, conversationId: string, suggestedActions?: string[] }
 
     try {
-      if (__DEV__) console.log('[AbbyRealtime] 💬 Sending message via /v1/chat:', message);
+      // Per Geraldo: Use /v1/abby/realtime/{session_id}/message, NOT /v1/chat
+      console.log('[AbbyRealtime] 💬 Sending message via realtime endpoint:', message);
+      console.log('[AbbyRealtime] 🎭 isDemoMode:', this.isDemoModeState);
+      console.log('[AbbyRealtime] 📍 sessionId:', this.sessionId);
 
       const token = await TokenManager.getToken();
       if (!token) {
         throw new Error('Not authenticated');
       }
 
-      // Add user message to conversation history for multi-turn context
-      this.conversationHistory.push({ role: 'user', content: message });
+      // Must have a session first
+      if (!this.sessionId) {
+        throw new Error('No session - call startConversation() first');
+      }
 
-      // Use POST /v1/chat with OpenAI format (per Swagger docs, NOT types.ts which is outdated)
+      const endpoint = `${API_BASE_URL}/abby/realtime/${this.sessionId}/message`;
+      console.log('[AbbyRealtime] 📍 Full URL:', endpoint);
+
+      // Use POST /v1/abby/realtime/{session_id}/message
       const response = await secureFetch(
-        `${API_BASE_URL}/chat`,
+        endpoint,
         {
           method: 'POST',
           headers: {
@@ -376,10 +384,7 @@ export class AbbyRealtimeService {
             'Authorization': `Bearer ${token}`,
           },
           body: JSON.stringify({
-            // OpenAI chat completion format - send FULL conversation history
-            messages: this.conversationHistory,
-            model: 'gpt-4o',
-            use_abby_fallback: true,  // Enable Abby persona
+            message: message,  // Just the message text
           }),
           timeout: REQUEST_TIMEOUT_MS,
         }
@@ -387,11 +392,10 @@ export class AbbyRealtimeService {
 
       if (!response.ok) {
         const errorText = await response.text().catch(() => 'no response body');
-        if (__DEV__) {
-          console.error('[AbbyRealtime] Chat API failed');
-          console.error('[AbbyRealtime]   Status:', response.status);
-          console.error('[AbbyRealtime]   Response:', errorText.substring(0, 200));
-        }
+        // ALWAYS log errors for debugging - remove after fixing
+        console.error('[AbbyRealtime] ❌ Chat API failed');
+        console.error('[AbbyRealtime]   Status:', response.status);
+        console.error('[AbbyRealtime]   Full response:', errorText);
         const fetchError: SecureFetchError = {
           code: `HTTP_${response.status}`,
           message: `HTTP ${response.status}: ${errorText.substring(0, 150)}`,

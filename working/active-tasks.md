@@ -8,6 +8,17 @@
 
 ## IMMEDIATE PRIORITY - ALL FIXED ✅
 
+### 0. Text Chat API Fix - COMPLETED ✅ (2026-01-14)
+- [x] **Root Cause:** Using wrong endpoint (`/abby/realtime/{session_id}/message` only INJECTS into WebRTC)
+- [x] **Discovery:** Verified via Claude in Chrome + Swagger docs that responses flow through WebRTC, not HTTP
+- [x] **Fix Applied:** Changed `sendTextMessage()` to use `POST /v1/chat` with `use_abby_fallback: true`
+- [x] **Code:** `src/services/AbbyRealtimeService.ts:sendTextMessage()` now uses chat endpoint
+- [x] **PAI Documentation Phase:**
+  - EP-085 added to `~/.claude/troubleshooting/error-patterns.md` (API Endpoint Contract Verification)
+  - API Chat Endpoint Verification section added to `docs/06-reference/RUNBOOK.md`
+  - Lesson committed to mem0 (API endpoint verification rule)
+- [x] **Key Learning:** "Injection" endpoints return acknowledgments; responses flow elsewhere (WebRTC/WebSocket)
+
 ### 1. Session Persistence - FIXED (commit 4ee62d56)
 - [x] **File:** `App.tsx:247-273`
 - [x] **Fix Applied:** App.tsx now calls `AuthService.isAuthenticated()` on startup

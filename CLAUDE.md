@@ -430,3 +430,52 @@ initializes and intercepts keyboard input events in iOS Simulator. This causes:
 - **TestFlight:** Used for client demos
 - **Battery Optimization:** Low Power Mode - replace shaders with static images when battery < 20%
 - **Token Lifetime:** ID tokens expire faster than access tokens (watch for refresh logic)
+
+---
+
+## Recent Session Work (2026-01-15)
+
+### TTS Audio Investigation & WebRTC Discovery
+
+**Problem:** TTS audio not playing when Abby speaks. HTTP 500 errors on message endpoint.
+
+**Investigation Results:**
+- ✅ TTS Fix Plan implemented in `AbbyRealtimeService.ts` (uses `AbbyTTSService`)
+- ✅ Frontend code is correct
+- ❌ HTTP endpoints don't support direct text chat
+
+**Root Cause:** Nathan's backend uses WebRTC architecture:
+```
+1. POST /v1/abby/realtime/session → get client_secret
+2. Connect DIRECTLY to OpenAI Realtime API via WebRTC using client_secret
+3. Messages flow through WebRTC data channels, NOT HTTP endpoints
+```
+
+**Resolution:** Geraldo (backend developer) taking over WebRTC integration. He just needs frontend files.
+
+### Backend Architecture (CRITICAL)
+
+| Endpoint | Purpose | Status |
+|----------|---------|--------|
+| `POST /v1/abby/realtime/session` | Create session, get client_secret | ✅ Works |
+| `POST /v1/abby/realtime/{id}/message` | INJECT text into WebRTC session | ⚠️ Not for HTTP chat |
+| `POST /v1/abby/session/{id}/end` | End session | ✅ Works |
+| WebRTC + client_secret | Direct OpenAI Realtime API | ⏳ Geraldo handling |
+
+### Files Modified (2026-01-15)
+
+| File | Change |
+|------|--------|
+| `AbbyRealtimeService.ts` | TTS integration via AbbyTTSService (lines 571-601) |
+| `RUNBOOK.md` | Added hotspot network instructions |
+| `.claude/active-tasks.md` | Updated blocker: Geraldo WebRTC |
+| `.claude/GLOBAL-HANDOVER.md` | Session context update |
+
+### Current Blocker
+
+**Waiting on Geraldo** to complete:
+- RTCPeerConnection to OpenAI Realtime API
+- Data channel routing for messages/transcripts
+- Integration with frontend hooks
+
+**GitHub:** Code pushed to `growthpigs/abby-app` branch `test-jan2-animation`

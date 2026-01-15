@@ -6,6 +6,28 @@
 
 ---
 
+## ⚠️ TEMPORARY: Network Setup (Until Friday 2026-01-17)
+
+**No home internet** - Mac is connected via iPhone Personal Hotspot.
+
+### Physical Device Testing
+```bash
+# 1. Ensure iPhone hotspot is ON and Mac is connected
+# 2. Mac IP will be 172.20.10.x (typical hotspot range)
+
+# 3. Kill any existing Metro
+lsof -ti :8081 | xargs kill -9 2>/dev/null
+
+# 4. Start Metro with correct host binding
+REACT_NATIVE_PACKAGER_HOSTNAME=172.20.10.13 npx expo start --port 8081 --dev-client --lan
+
+# 5. On phone: Shake to open dev menu → Reload
+```
+
+**Remove this section after Friday when internet is restored.**
+
+---
+
 ## ✅ VIBEMATRIX ANIMATION - FIXED (2026-01-13)
 
 ```
@@ -587,6 +609,52 @@ grep -A10 "interface MatchCandidate" src/components/screens/MatchesScreen.tsx
 | Interface exists | `grep "interface"` | curl API, compare fields |
 | Fetch present | `grep "secureFetch"` | Verify response parsing |
 | Types compile | `npx tsc --noEmit` | App displays real data |
+
+---
+
+### API Chat Endpoint Verification (2026-01-14)
+
+**Critical Finding:** The `/abby/realtime/{session_id}/message` endpoint only INJECTS text into WebRTC sessions. For text-only chat, use `POST /v1/chat` with `use_abby_fallback: true`.
+
+```bash
+# 1. Verify /v1/chat endpoint exists
+curl -s -X POST https://dev.api.myaimatchmaker.ai/v1/chat \
+  -H "Content-Type: application/json" \
+  -d '{}' 2>&1 | head -c 200
+# Expected: 401 (needs auth) or 422 (validation error)
+# BAD: 404 (endpoint missing)
+
+# 2. Test chat with authentication
+TOKEN="<jwt_from_login>"
+curl -s -X POST https://dev.api.myaimatchmaker.ai/v1/chat \
+  -H "Authorization: Bearer $TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "messages": [{"role": "user", "content": "Hello Abby!"}],
+    "model": "gpt-4o",
+    "use_abby_fallback": true
+  }' | jq '.choices[0].message.content'
+# Expected: Abby's response text
+
+# 3. Verify Swagger docs show correct contract
+open https://dev.api.myaimatchmaker.ai/docs#/Chat/chatWithAbby
+# Check: Request body has "use_abby_fallback" parameter
+# Check: Response shows OpenAI chat completion format
+
+# 4. Verify code uses correct endpoint
+grep -n "API_BASE_URL.*chat" src/services/AbbyRealtimeService.ts
+# Expected: Line ~350 shows `/chat` endpoint
+```
+
+**API Endpoint Quick Reference:**
+| Endpoint | Purpose | Returns Response Via |
+|----------|---------|---------------------|
+| `POST /v1/abby/realtime/session` | Create voice session | HTTP (client_secret) |
+| `POST /v1/abby/realtime/{id}/message` | **INJECT** text into WebRTC | WebRTC/WebSocket |
+| `POST /v1/chat` + `use_abby_fallback: true` | **Text chat** | HTTP (direct) |
+
+**Lesson Learned (2026-01-14):**
+> The `/abby/realtime/{session_id}/message` endpoint returns `{message_id, injected: true}` which means "injection successful" - NOT "here's the response". For text-only conversations, use `/v1/chat`.
 
 ---
 
