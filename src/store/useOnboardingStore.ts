@@ -337,17 +337,21 @@ export const useOnboardingStore = create<OnboardingStore>((set, get) => ({
         const gps = state.location.value as GPSLocation;
         payload.geo_lat = gps.lat;
         payload.geo_lon = gps.lng;
-        console.log('🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢');
-        console.log(`📍 [LOCATION TO DATABASE] GPS: geo_lat=${gps.lat}, geo_lon=${gps.lng}`);
-        console.log('🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢');
+        if (__DEV__) {
+          console.log('🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢');
+          console.log(`📍 [LOCATION TO DATABASE] GPS: geo_lat=${gps.lat}, geo_lon=${gps.lng}`);
+          console.log('🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢');
+        }
       } else if (state.location.type === 'zip' && typeof state.location.value === 'string') {
         // For ZIP codes, send as-is - backend may need to geocode
         payload.zip_code = state.location.value;
-        console.log('🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢');
-        console.log(`📍 [LOCATION TO DATABASE] ZIP: zip_code=${state.location.value}`);
-        console.log('🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢');
+        if (__DEV__) {
+          console.log('🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢');
+          console.log(`📍 [LOCATION TO DATABASE] ZIP: zip_code=${state.location.value}`);
+          console.log('🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢');
+        }
       }
-    } else {
+    } else if (__DEV__) {
       console.log('⚠️⚠️⚠️ [LOCATION] No location data in state! ⚠️⚠️⚠️');
     }
 
@@ -424,9 +428,11 @@ export const useOnboardingStore = create<OnboardingStore>((set, get) => ({
         answer: smokingAnswer,
         label: 'SMOKING (YOU + PARTNER)',
       });
-      console.log('🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢');
-      console.log(`🚬 [SMOKING TO DATABASE] user=${state.smokingMe}, partner_pref=${state.smokingPartner}`);
-      console.log('🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢');
+      if (__DEV__) {
+        console.log('🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢');
+        console.log(`🚬 [SMOKING TO DATABASE] user=${state.smokingMe}, partner_pref=${state.smokingPartner}`);
+        console.log('🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢');
+      }
     }
 
     // DEMO LOGGING: Show ALL data being submitted
@@ -464,9 +470,11 @@ export const useOnboardingStore = create<OnboardingStore>((set, get) => ({
           ageMin: state.ageRangeMin,
           ageMax: state.ageRangeMax,
         });
-        console.log('🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢');
-        console.log(`📅 [AGE RANGE TO DATABASE] ageMin=${state.ageRangeMin}, ageMax=${state.ageRangeMax}`);
-        console.log('🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢');
+        if (__DEV__) {
+          console.log('🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢');
+          console.log(`📅 [AGE RANGE TO DATABASE] ageMin=${state.ageRangeMin}, ageMax=${state.ageRangeMax}`);
+          console.log('🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢');
+        }
       } catch (error) {
         const errMsg = error instanceof Error ? error.message : String(error);
         errors.push(`Failed to submit age preferences: ${errMsg}`);
