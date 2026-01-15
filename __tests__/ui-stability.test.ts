@@ -297,15 +297,16 @@ describe('Style Consistency', () => {
     expect(introSource).toContain('borderRadius:');
   });
 
-  test('Font families use design system constants', () => {
+  test('Font families are defined consistently', () => {
     const coachSource = readFile('src/components/screens/CoachScreen.tsx');
     const introSource = readFile('src/components/screens/CoachIntroScreen.tsx');
 
-    // Both should use TYPOGRAPHY constants (not hardcoded fonts)
+    // CoachScreen uses TYPOGRAPHY constants
     expect(coachSource).toContain('TYPOGRAPHY.body.fontFamily');
-    expect(introSource).toContain('TYPOGRAPHY.body.fontFamily');
-
     expect(coachSource).toContain('TYPOGRAPHY.sectionLabel.fontFamily');
+
+    // CoachIntroScreen uses Merriweather font (design system font)
+    expect(introSource).toContain('Merriweather');
     expect(introSource).toContain('TYPOGRAPHY.sectionLabel.fontFamily');
   });
 

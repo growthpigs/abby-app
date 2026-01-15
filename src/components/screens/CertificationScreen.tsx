@@ -380,13 +380,13 @@ const styles = StyleSheet.create({
   },
   closeButton: {
     position: 'absolute',
-    top: 60,
-    right: 20,
-    width: 44,
-    height: 44,
+    top: 85, // Below secret triggers (end at y:80)
+    right: 16,
+    width: 54,
+    height: 54,
     alignItems: 'center',
     justifyContent: 'center',
-    zIndex: 9999,
+    zIndex: 10000, // Above secret triggers
   },
 });
 
