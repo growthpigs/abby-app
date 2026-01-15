@@ -128,8 +128,8 @@ export const HamburgerMenu: React.FC<HamburgerMenuProps> = ({
               </Pressable>
             </View>
 
-            {/* Menu Items */}
-            <View style={styles.menuItems}>
+            {/* Menu Items - pointerEvents box-none allows touches to pass through container */}
+            <View style={styles.menuItems} pointerEvents="box-none">
               {/* My Profile - /v1/me */}
               <Pressable
                 onPress={() => handleMenuItemPress(onProfilePress)}
@@ -137,6 +137,7 @@ export const HamburgerMenu: React.FC<HamburgerMenuProps> = ({
                   styles.menuItem,
                   pressed && styles.menuItemPressed,
                 ]}
+                hitSlop={{ top: 8, bottom: 8, left: 12, right: 12 }}
               >
                 <User size={22} stroke="#FFFFFF" />
                 <Body style={styles.menuItemText}>My Profile</Body>
@@ -149,6 +150,7 @@ export const HamburgerMenu: React.FC<HamburgerMenuProps> = ({
                   styles.menuItem,
                   pressed && styles.menuItemPressed,
                 ]}
+                hitSlop={{ top: 8, bottom: 8, left: 12, right: 12 }}
               >
                 <Camera size={22} stroke="#FFFFFF" />
                 <Body style={styles.menuItemText}>My Photos</Body>
@@ -161,6 +163,7 @@ export const HamburgerMenu: React.FC<HamburgerMenuProps> = ({
                   styles.menuItem,
                   pressed && styles.menuItemPressed,
                 ]}
+                hitSlop={{ top: 8, bottom: 8, left: 12, right: 12 }}
               >
                 <Heart size={22} stroke="#FFFFFF" />
                 <Body style={styles.menuItemText}>Interested in You</Body>
@@ -173,6 +176,7 @@ export const HamburgerMenu: React.FC<HamburgerMenuProps> = ({
                   styles.menuItem,
                   pressed && styles.menuItemPressed,
                 ]}
+                hitSlop={{ top: 8, bottom: 8, left: 12, right: 12 }}
               >
                 <Settings size={22} stroke="#FFFFFF" />
                 <Body style={styles.menuItemText}>Settings</Body>
@@ -185,6 +189,7 @@ export const HamburgerMenu: React.FC<HamburgerMenuProps> = ({
                   styles.menuItem,
                   pressed && styles.menuItemPressed,
                 ]}
+                hitSlop={{ top: 8, bottom: 8, left: 12, right: 12 }}
               >
                 <ShieldCheck size={22} stroke="#FFFFFF" />
                 <Body style={styles.menuItemText}>Certification</Body>
@@ -199,6 +204,7 @@ export const HamburgerMenu: React.FC<HamburgerMenuProps> = ({
                   styles.menuItem,
                   pressed && styles.menuItemPressed,
                 ]}
+                hitSlop={{ top: 8, bottom: 8, left: 12, right: 12 }}
               >
                 <LogOut size={22} stroke="rgba(239, 68, 68, 0.8)" />
                 <Body style={[styles.menuItemText, styles.logoutText]}>
@@ -274,15 +280,16 @@ const styles = StyleSheet.create({
   },
 
   menuItems: {
-    gap: 4,
+    gap: 2, // Reduced gap since items have more padding now
   },
   menuItem: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 14,
-    paddingVertical: 12,
-    paddingHorizontal: 8,
+    paddingVertical: 16, // Increased for better touch target (was 12)
+    paddingHorizontal: 12, // Increased for better touch target (was 8)
     borderRadius: 10,
+    minHeight: 52, // Ensure minimum 52px touch target
   },
   menuItemPressed: {
     backgroundColor: 'rgba(0, 0, 0, 0.05)',
