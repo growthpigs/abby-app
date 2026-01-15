@@ -6,6 +6,21 @@
 
 ---
 
+## ⚠️ STATUS UPDATE (2026-01-15 Evening)
+
+**Brent asked us to test Abby chat APIs** - Geraldo indicated they should be working.
+
+**Test Result:** Still getting HTTP 500 on `/v1/abby/realtime/{id}/message`
+
+**Awaiting clarification:** This morning (09:12) Geraldo said "yes, don't worry yourself with Abby connection" - implying he would handle WebRTC. Need to confirm if:
+1. His changes haven't deployed yet
+2. We misunderstood the division of work
+3. Frontend needs additional implementation
+
+See `docs/06-reference/RUNBOOK.md` → "Partner Communications Log" for full conversation history.
+
+---
+
 ## What's Complete
 
 | Feature | Status | Notes |

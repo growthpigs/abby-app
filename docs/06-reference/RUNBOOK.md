@@ -1573,3 +1573,56 @@ grep -rni "elevenlabs" . --include="*.ts" --include="*.tsx" --include="*.md" | w
 ---
 
 *Last Updated: 2026-01-15*
+
+---
+
+### UI Touch/Z-Index Verification (2026-01-15)
+
+**CRITICAL:** Static code review CANNOT detect touch handling bugs. ALWAYS test on device/simulator.
+
+**Problem Context:**
+- HamburgerMenu items required double-tap
+- Logout button opened Profile instead of logging out
+- Root causes: render order, missing pointerEvents, stale state
+
+**Verification Commands:**
+
+```bash
+# 1. Check render order (last rendered = on top in React Native)
+grep -n "<HamburgerMenu\|<View.*uiLayer\|<View.*container" App.tsx | sort -t: -k1 -n
+# HamburgerMenu line number should be HIGHEST (rendered last)
+
+# 2. Check pointerEvents on container Views
+grep -n "pointerEvents" App.tsx src/components/ui/HamburgerMenu.tsx
+# Should see: pointerEvents="box-none" on containers
+
+# 3. Check logout handler has complete state cleanup
+grep -A5 "onLogoutPress" App.tsx
+# Should include:
+#   - AuthService.logout()
+#   - setAuthState('LOGIN')
+#   - setMenuScreen('none')  ← CRITICAL
+
+# 4. RUNTIME TEST (MANDATORY - no shortcuts!)
+npx expo run:ios
+# Then test:
+# □ Hamburger button: single tap opens menu
+# □ Each menu item: single tap works
+# □ Logout: returns to login screen (not profile)
+# □ Profile: opens profile screen
+# □ Settings: opens settings screen
+```
+
+**Key Rules:**
+- **Render order > z-index:** In React Native, z-index only works among siblings
+- **Later siblings render on top:** Component order in JSX determines visual stacking
+- **pointerEvents="box-none":** Required on containers to pass touches to children
+- **State cleanup:** Navigation handlers must clear ALL related state
+
+**If double-tap required again, CHECK:**
+1. Render order in JSX (HamburgerMenu must be LAST)
+2. pointerEvents on parent containers
+3. BlurView touch interception (iOS issue)
+4. State variables not being cleared
+
+---

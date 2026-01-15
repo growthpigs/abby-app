@@ -1,7 +1,7 @@
 # ABBY Active Tasks
 
-**Last Updated:** 2026-01-15 (Evening)
-**Branch:** `main` (merged from `test-jan2-animation`)
+**Last Updated:** 2026-01-15 (Night)
+**Branch:** `main`
 **Technical Debt Score:** 10/10 ✅ ACHIEVED
 **Tests:** 485/485 passing
 
@@ -27,6 +27,23 @@
 ---
 
 ## COMPLETED THIS SESSION (2026-01-15)
+
+### HamburgerMenu Z-Index & Touch Fix - COMPLETED ✅ (2026-01-15 Night)
+- [x] **Issue:** Menu items required double-tap, logout opened Profile instead of logging out
+- [x] **Root Cause 1:** HamburgerMenu rendered BEFORE uiLayer (render order > z-index in RN)
+- [x] **Root Cause 2:** uiLayer missing `pointerEvents="box-none"` (blocked touches)
+- [x] **Root Cause 3:** Logout handler missing `setMenuScreen('none')` (stale state)
+- [x] **Fixes Applied:**
+  - Moved HamburgerMenu to render AFTER uiLayer in App.tsx
+  - Added `pointerEvents="box-none"` to uiLayer and menuItems container
+  - Added `setMenuScreen('none')` to logout handler
+  - Added debug logging to logout
+- [x] **Commit:** `5f52114` - fix(menu): fix z-index and touch handling for hamburger menu
+- [x] **PAI Documentation Phase:**
+  - EP-089 added to `~/.claude/troubleshooting/error-patterns.md` (UI Z-Index/Touch Handling Fallacy)
+  - UI Touch Verification section added to `docs/06-reference/RUNBOOK.md`
+  - Lesson committed to mem0 (render order > z-index rule)
+- [x] **Key Learning:** React Native z-index only works among siblings. Render order in JSX determines stacking. ALWAYS test by tapping on device.
 
 ### Production Fixes Stress Test - VERIFIED ✅
 - [x] **10 production fixes** validated at code level (grep + read)
