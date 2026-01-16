@@ -935,39 +935,63 @@ function AppContent() {
         </View>
       )}
 
-      {/* Settings Screen Overlay (Input Mode only per settings-spec.md) */}
+      {/* Layer 2: UI (auth or demo screens) */}
+      <View style={styles.uiLayer} pointerEvents="box-none">
+        {authState !== 'AUTHENTICATED' ? renderAuthScreen() : renderDemoScreen()}
+      </View>
+
+      {/*
+        MENU SCREENS - MUST render AFTER uiLayer for correct touch handling!
+        React Native touch system respects RENDER ORDER, not just z-index.
+        These screens have z-index 2000, uiLayer has z-index 20.
+        But rendering after ensures touches hit these first.
+      */}
       {menuScreen === 'settings' && (
         <SettingsScreen
-          onClose={() => setMenuScreen('none')}
+          onClose={() => {
+            if (__DEV__) console.log('[App] Settings closing');
+            setMenuScreen('none');
+          }}
         />
       )}
 
-      {/* Profile Screen Overlay (/v1/me) */}
       {menuScreen === 'profile' && (
         <ProfileScreen
-          onClose={() => setMenuScreen('none')}
+          onClose={() => {
+            if (__DEV__) console.log('[App] Profile closing');
+            setMenuScreen('none');
+          }}
         />
       )}
 
-      {/* Matches Screen Overlay (/v1/matches/candidates) */}
       {menuScreen === 'matches' && (
         <MatchesScreen
-          onClose={() => setMenuScreen('none')}
+          onClose={() => {
+            if (__DEV__) console.log('[App] Matches closing');
+            setMenuScreen('none');
+          }}
         />
       )}
 
-      {/* Certification Screen Overlay (/v1/verification) */}
       {menuScreen === 'certification' && (
         <CertificationScreen
-          onComplete={() => setMenuScreen('none')}
-          onBack={() => setMenuScreen('none')}
+          onComplete={() => {
+            if (__DEV__) console.log('[App] Certification complete');
+            setMenuScreen('none');
+          }}
+          onBack={() => {
+            if (__DEV__) console.log('[App] Certification back');
+            setMenuScreen('none');
+          }}
         />
       )}
 
-      {/* Photos Screen Overlay */}
       {menuScreen === 'photos' && (
         <PhotosScreen
-          onClose={() => setMenuScreen('none')}
+          onClose={() => {
+            if (__DEV__) console.log('[App] Photos closing');
+            setMenuScreen('none');
+          }}
           onAddPhoto={async () => {
             if (__DEV__) console.log('[App] Add photo pressed');
 
@@ -1098,35 +1122,34 @@ function AppContent() {
         />
       )}
 
-      {/* Layer 2: UI (auth or demo screens) */}
-      <View style={styles.uiLayer} pointerEvents="box-none">
-        {authState !== 'AUTHENTICATED' ? renderAuthScreen() : renderDemoScreen()}
-      </View>
-
-      {/* Hamburger Menu - MUST be rendered LAST (after uiLayer) for correct z-index */}
+      {/* Hamburger Menu - MUST be rendered LAST for correct z-index */}
       {authState === 'AUTHENTICATED' && (
         <HamburgerMenu
           onProfilePress={() => {
+            if (__DEV__) console.log('[App] 📱 Menu: PROFILE pressed');
             setMenuScreen('profile');
           }}
           onPhotosPress={() => {
+            if (__DEV__) console.log('[App] 📷 Menu: PHOTOS pressed');
             setMenuScreen('photos');
           }}
           onMatchesPress={() => {
+            if (__DEV__) console.log('[App] 💕 Menu: MATCHES pressed');
             setMenuScreen('matches');
           }}
           onSettingsPress={() => {
+            if (__DEV__) console.log('[App] ⚙️ Menu: SETTINGS pressed');
             setMenuScreen('settings');
           }}
           onCertificationPress={() => {
+            if (__DEV__) console.log('[App] 🛡️ Menu: CERTIFICATION pressed');
             setMenuScreen('certification');
           }}
           onLogoutPress={() => {
-            // Logout and return to login screen
-            if (__DEV__) console.log('[App] Logout pressed');
+            if (__DEV__) console.log('[App] 🚪 Menu: LOGOUT pressed');
             AuthService.logout();
             setAuthState('LOGIN');
-            setMenuScreen('none'); // Clear any open menu screen
+            setMenuScreen('none');
           }}
         />
       )}

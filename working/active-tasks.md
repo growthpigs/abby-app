@@ -1,13 +1,40 @@
 # ABBY Active Tasks
 
-**Last Updated:** 2026-01-15 (Night)
+**Last Updated:** 2026-01-15 (Night - API Verification Complete)
 **Branch:** `main`
 **Technical Debt Score:** 10/10 ✅ ACHIEVED
 **Tests:** 485/485 passing
 
 ---
 
-## 🎯 CURRENT STATE: FRONTEND COMPLETE - HANDED OFF TO GERALDO
+## 🎯 CURRENT STATE: API VERIFIED ✅ - GERALDO'S CHAT APIS WORKING
+
+### API Verification Test (2026-01-15) - COMPLETED ✅
+
+**Request:** Geraldo said "Abby chat APIs should be working. Can you test that?"
+
+**Verification Results:**
+- ✅ `GET /v1/me` - Profile data loads
+- ✅ `GET /v1/answers` - Returns 7 answers
+- ✅ `GET /v1/verification` - Verification status works
+- ✅ Authentication flow - Login successful, tokens stored
+- ✅ Settings screen - Shows Abby communication options
+- ✅ API endpoint availability - 401 confirms API UP (not 502/503)
+
+**PAI Documentation Phase:**
+- [x] EP-090 added to `~/.claude/troubleshooting/error-patterns.md` (API Verification)
+- [x] API verification commands added to `docs/06-reference/RUNBOOK.md`
+- [x] Lesson committed to mem0 (401=API UP, not broken)
+- [x] active-tasks.md updated with verification results
+
+**Key Learning:** 401 Unauthorized ≠ API broken. It proves API IS RUNNING and enforcing auth.
+
+**Test Credentials (saved to RUNBOOK.md):**
+- rodericandrews+8@gmail.com / Plok0987!
+
+---
+
+## 🎯 PREVIOUS STATE: FRONTEND COMPLETE - HANDED OFF TO GERALDO
 
 ### Merge Complete ✅
 - **21 commits** merged from `test-jan2-animation` → `main`

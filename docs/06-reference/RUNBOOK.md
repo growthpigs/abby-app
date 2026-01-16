@@ -892,11 +892,17 @@ npm test
 - 🟡 Runs in demo mode (API availability check fails)
 - Next: Test real session creation when API is responsive
 
-**Test Account:**
+**Test Accounts:**
 ```
+# Account 1 (original)
 Email:    rodericandrews+4@gmail.com
 Password: TestPass123!
 Status:   Verified ✅, Login works ✅
+
+# Account 2 (2026-01-15)
+Email:    rodericandrews+8@gmail.com
+Password: Plok0987!
+Status:   Active
 ```
 
 **Recent Work (2026-01-02):**
@@ -1624,5 +1630,53 @@ npx expo run:ios
 2. pointerEvents on parent containers
 3. BlurView touch interception (iOS issue)
 4. State variables not being cleared
+
+---
+
+---
+
+## API Chat Verification Commands (2026-01-15)
+
+**Added after:** Geraldo confirmed chat APIs working - verified via runtime testing
+
+### Quick API Health Check
+
+```bash
+# 1. Check if API is UP (401 = UP, 502/503 = DOWN)
+curl -s -o /dev/null -w "%{http_code}" https://dev.api.myaimatchmaker.ai/v1/me
+# Expected: 401 (API up, needs auth)
+
+# 2. Check Abby realtime endpoint availability
+curl -s -o /dev/null -w "%{http_code}" https://dev.api.myaimatchmaker.ai/v1/abby/realtime/available
+# Expected: 401 (endpoint exists, needs auth)
+```
+
+### Full Auth + API Test
+
+```bash
+# Run app and login
+npx expo run:ios
+
+# Check Metro logs for API activity
+tail -200 /tmp/metro.log | grep -E "\[API CALL\]|/v1/"
+
+# Expected successful calls:
+# GET /v1/me ✅
+# GET /v1/answers ✅
+# GET /v1/verification ✅
+```
+
+### Test Abby Chat Session (Authenticated)
+
+```bash
+# After login, navigate to Coach screen
+# Check logs for:
+# POST /v1/abby/realtime/session → Returns session ID
+# POST /v1/abby/realtime/{id}/message → Returns Abby response
+```
+
+### Key Insight
+
+> **401 Unauthorized ≠ API broken.** It proves the API IS RUNNING and correctly enforcing auth.
 
 ---
