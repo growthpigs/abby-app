@@ -390,7 +390,7 @@ export const MatchesScreen: React.FC<MatchesScreenProps> = ({
     <View style={styles.container}>
       <BlurView intensity={80} tint="light" style={styles.blurContainer}>
         {/* Header */}
-        <View style={[styles.header, { paddingTop: 40 }]}>
+        <View style={[styles.header, { paddingTop: 100 }]}>
           <Caption style={styles.headerTitle}>INTERESTED IN YOU</Caption>
         </View>
 

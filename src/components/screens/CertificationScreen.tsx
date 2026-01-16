@@ -273,7 +273,7 @@ const styles = StyleSheet.create({
   },
   label: {
     textAlign: 'center',
-    marginTop: 40,
+    marginTop: 100,
     marginBottom: 8,
     letterSpacing: 1,
     fontSize: 11,

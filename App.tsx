@@ -10,6 +10,7 @@
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { StyleSheet, View, ActivityIndicator, Alert, Platform } from 'react-native';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import * as ImagePicker from 'expo-image-picker';
 import { SafeAreaProvider, initialWindowMetrics } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
@@ -1159,11 +1160,13 @@ function AppContent() {
 
 export default function App() {
   return (
-    <SafeAreaProvider initialMetrics={initialWindowMetrics ?? fallbackMetrics}>
-      <ErrorBoundary>
-        <AppContent />
-      </ErrorBoundary>
-    </SafeAreaProvider>
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <SafeAreaProvider initialMetrics={initialWindowMetrics ?? fallbackMetrics}>
+        <ErrorBoundary>
+          <AppContent />
+        </ErrorBoundary>
+      </SafeAreaProvider>
+    </GestureHandlerRootView>
   );
 }
 

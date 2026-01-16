@@ -1,25 +1,28 @@
 /**
  * HamburgerMenu - Subtle overlay menu for app navigation
  *
- * FIXED: Removed Modal to fix iOS touch handling issues.
- * Uses absolutely positioned View instead - menu items are in normal flow.
+ * FIXES APPLIED (2026-01-16):
+ * 1. REMOVED BlurView - iOS native blur intercepts touches even with pointerEvents
+ * 2. Using solid semi-transparent background instead
+ * 3. Menu items use TouchableOpacity for reliable iOS touch handling
+ * 4. Backdrop only covers area OUTSIDE menu panel
  */
 
 import React, { useState, useCallback } from 'react';
 import {
   View,
   StyleSheet,
-  Pressable,
+  TouchableOpacity,
+  TouchableWithoutFeedback,
   Animated,
   Dimensions,
-  TouchableWithoutFeedback,
 } from 'react-native';
-import { BlurView } from 'expo-blur';
+// BlurView REMOVED - causes touch interception on iOS
 import * as Haptics from 'expo-haptics';
 import { Menu, X, Camera, Heart, Settings, LogOut, User, ShieldCheck } from 'lucide-react-native';
 import { Body, Caption } from './Typography';
 
-const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
+const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const MENU_WIDTH = SCREEN_WIDTH * 0.75;
 
 export interface HamburgerMenuProps {
@@ -85,7 +88,7 @@ export const HamburgerMenu: React.FC<HamburgerMenuProps> = ({
     setIsOpen(false);
     slideAnim.setValue(-MENU_WIDTH);
     fadeAnim.setValue(0);
-    // Execute action
+    // Execute action immediately
     if (action) {
       if (__DEV__) console.log(`[HamburgerMenu] ➡️ Calling action for: ${actionName}`);
       action();
@@ -95,21 +98,19 @@ export const HamburgerMenu: React.FC<HamburgerMenuProps> = ({
   return (
     <>
       {/* Hamburger Icon Button - always visible */}
-      <Pressable
+      <TouchableOpacity
         onPress={openMenu}
-        style={({ pressed }) => [
-          styles.hamburgerButton,
-          pressed && styles.hamburgerButtonPressed,
-        ]}
+        style={styles.hamburgerButton}
+        activeOpacity={0.7}
         hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
       >
         <Menu size={28} stroke="rgba(255, 255, 255, 0.95)" strokeWidth={3} />
-      </Pressable>
+      </TouchableOpacity>
 
-      {/* Overlay - NO MODAL, just absolutely positioned Views */}
+      {/* Overlay - NO MODAL */}
       {isOpen && (
-        <View style={styles.overlay}>
-          {/* Backdrop - TouchableWithoutFeedback for reliable tap */}
+        <View style={styles.overlay} pointerEvents="box-none">
+          {/* Backdrop - ONLY covers area outside menu (right side) */}
           <TouchableWithoutFeedback onPress={closeMenu}>
             <Animated.View
               style={[
@@ -126,80 +127,88 @@ export const HamburgerMenu: React.FC<HamburgerMenuProps> = ({
               { transform: [{ translateX: slideAnim }] },
             ]}
           >
-            <BlurView intensity={80} tint="light" style={styles.menuContent}>
+            {/* Solid background instead of BlurView - BlurView intercepts touches on iOS */}
+            <View style={styles.menuContent}>
               {/* Header */}
               <View style={styles.menuHeader}>
                 <Caption style={styles.menuTitle}>MENU</Caption>
-                <Pressable
+                <TouchableOpacity
                   onPress={closeMenu}
                   style={styles.closeButton}
+                  activeOpacity={0.7}
                   hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
                 >
-                  <X size={20} stroke="rgba(0, 0, 0, 0.6)" />
-                </Pressable>
+                  <X size={20} stroke="rgba(255, 255, 255, 0.6)" />
+                </TouchableOpacity>
               </View>
 
-              {/* Menu Items - normal flow, NOT absolute positioned */}
+              {/* Menu Items */}
               <View style={styles.menuItems}>
                 {/* My Profile */}
-                <Pressable
+                <TouchableOpacity
                   onPress={() => handleMenuItemPress('Profile', onProfilePress)}
-                  style={({ pressed }) => [styles.menuItem, pressed && styles.menuItemPressed]}
+                  style={styles.menuItem}
+                  activeOpacity={0.7}
                 >
                   <User size={22} stroke="#FFFFFF" />
                   <Body style={styles.menuItemText}>My Profile</Body>
-                </Pressable>
+                </TouchableOpacity>
 
                 {/* My Photos */}
-                <Pressable
+                <TouchableOpacity
                   onPress={() => handleMenuItemPress('Photos', onPhotosPress)}
-                  style={({ pressed }) => [styles.menuItem, pressed && styles.menuItemPressed]}
+                  style={styles.menuItem}
+                  activeOpacity={0.7}
                 >
                   <Camera size={22} stroke="#FFFFFF" />
                   <Body style={styles.menuItemText}>My Photos</Body>
-                </Pressable>
+                </TouchableOpacity>
 
                 {/* Matches */}
-                <Pressable
+                <TouchableOpacity
                   onPress={() => handleMenuItemPress('Matches', onMatchesPress)}
-                  style={({ pressed }) => [styles.menuItem, pressed && styles.menuItemPressed]}
+                  style={styles.menuItem}
+                  activeOpacity={0.7}
                 >
                   <Heart size={22} stroke="#FFFFFF" />
                   <Body style={styles.menuItemText}>Interested in You</Body>
-                </Pressable>
+                </TouchableOpacity>
 
                 {/* Settings */}
-                <Pressable
+                <TouchableOpacity
                   onPress={() => handleMenuItemPress('Settings', onSettingsPress)}
-                  style={({ pressed }) => [styles.menuItem, pressed && styles.menuItemPressed]}
+                  style={styles.menuItem}
+                  activeOpacity={0.7}
                 >
                   <Settings size={22} stroke="#FFFFFF" />
                   <Body style={styles.menuItemText}>Settings</Body>
-                </Pressable>
+                </TouchableOpacity>
 
                 {/* Certification */}
-                <Pressable
+                <TouchableOpacity
                   onPress={() => handleMenuItemPress('Certification', onCertificationPress)}
-                  style={({ pressed }) => [styles.menuItem, pressed && styles.menuItemPressed]}
+                  style={styles.menuItem}
+                  activeOpacity={0.7}
                 >
                   <ShieldCheck size={22} stroke="#FFFFFF" />
                   <Body style={styles.menuItemText}>Certification</Body>
-                </Pressable>
+                </TouchableOpacity>
 
                 <View style={styles.divider} />
 
                 {/* Log Out */}
-                <Pressable
+                <TouchableOpacity
                   onPress={() => handleMenuItemPress('Logout', onLogoutPress)}
-                  style={({ pressed }) => [styles.menuItem, pressed && styles.menuItemPressed]}
+                  style={styles.menuItem}
+                  activeOpacity={0.7}
                 >
                   <LogOut size={22} stroke="rgba(250, 128, 114, 0.9)" />
                   <Body style={[styles.menuItemText, styles.logoutText]}>
                     Log Out
                   </Body>
-                </Pressable>
+                </TouchableOpacity>
               </View>
-            </BlurView>
+            </View>
           </Animated.View>
         </View>
       )}
@@ -218,25 +227,22 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     zIndex: 10001,
   },
-  hamburgerButtonPressed: {
-    opacity: 0.7,
-    transform: [{ scale: 0.95 }],
-  },
 
-  // Full-screen overlay container (replaces Modal)
+  // Full-screen overlay container
   overlay: {
     position: 'absolute',
     top: 0,
     left: 0,
     right: 0,
     bottom: 0,
-    zIndex: 20000, // Above everything
+    zIndex: 20000,
   },
 
+  // Backdrop ONLY covers the right side (outside menu)
   backdrop: {
     position: 'absolute',
     top: 0,
-    left: 0,
+    left: MENU_WIDTH, // Start AFTER menu panel
     right: 0,
     bottom: 0,
     backgroundColor: 'rgba(0, 0, 0, 0.4)',
@@ -254,6 +260,7 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingTop: 70,
     paddingHorizontal: 24,
+    backgroundColor: 'rgba(30, 30, 40, 0.95)', // Solid dark background - no blur
   },
 
   menuHeader: {
@@ -263,12 +270,12 @@ const styles = StyleSheet.create({
     marginBottom: 32,
     paddingBottom: 16,
     borderBottomWidth: 1,
-    borderBottomColor: 'rgba(0, 0, 0, 0.08)',
+    borderBottomColor: 'rgba(255, 255, 255, 0.15)',
   },
   menuTitle: {
     fontSize: 12,
     letterSpacing: 3,
-    color: 'rgba(0, 0, 0, 0.5)',
+    color: 'rgba(255, 255, 255, 0.5)', // Light text for dark background
   },
   closeButton: {
     width: 32,
@@ -277,7 +284,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
 
-  // Menu items in NORMAL FLOW (not absolute) - key fix!
   menuItems: {
     gap: 8,
   },
@@ -290,10 +296,6 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     minHeight: 52,
   },
-  menuItemPressed: {
-    backgroundColor: 'rgba(255, 255, 255, 0.15)',
-    opacity: 0.8,
-  },
   menuItemText: {
     fontSize: 17,
     color: '#FFFFFF',
@@ -304,7 +306,7 @@ const styles = StyleSheet.create({
 
   divider: {
     height: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.08)',
+    backgroundColor: 'rgba(255, 255, 255, 0.15)',
     marginVertical: 8,
   },
 });
