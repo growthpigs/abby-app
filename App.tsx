@@ -1156,13 +1156,16 @@ function AppContent() {
             // 1. Clear auth tokens
             AuthService.logout();
 
-            // 2. Set auth state FIRST (before reset!) so DEMO_VIBES guard catches it
-            setAuthState('LOGIN');
-            setMenuScreen('none');
+            // 2. Set vibe to DEEP FIRST (immediate, no race condition)
+            useVibeController.getState().reset();
 
-            // 3. NOW reset - DEMO_VIBES won't fire because authState is already LOGIN
-            reset();  // Demo store → back to COACH_INTRO
-            useVibeController.getState().reset();  // Vibe → DEEP/SMOOTHIE
+            // 3. Then update React state
+            setMenuScreen('none');
+            setAuthState('LOGIN');
+
+            // NOTE: Don't call reset() here! It triggers DEMO_VIBES effect
+            // which overwrites DEEP with GROWTH. Demo state will reset naturally
+            // when user logs in again.
 
             if (__DEV__) console.log('[App] 🚪 LOGOUT: Complete → LOGIN screen');
           }}
