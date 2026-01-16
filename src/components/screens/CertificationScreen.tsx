@@ -69,10 +69,10 @@ export const CertificationScreen: React.FC<CertificationScreenProps> = ({
         console.log('[CertificationScreen] Status:', result);
       }
     } catch (err) {
+      // Expected in demo mode - no token available
       if (__DEV__) {
-        console.error('[CertificationScreen] Failed to fetch status:', err);
+        console.log('[CertificationScreen] Using demo data (no API token)');
       }
-      // Fallback to demo data on error
       setStatus(DEMO_VERIFICATION_STATUS);
     } finally {
       setIsLoading(false);
@@ -273,7 +273,7 @@ const styles = StyleSheet.create({
   },
   label: {
     textAlign: 'center',
-    marginTop: 33,
+    marginTop: 40,
     marginBottom: 8,
     letterSpacing: 1,
     fontSize: 11,

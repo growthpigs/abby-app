@@ -16,7 +16,6 @@ import {
   Alert,
   ActivityIndicator,
   useWindowDimensions,
-  Text,
 } from 'react-native';
 import { BlurView } from 'expo-blur';
 import * as Haptics from 'expo-haptics';
@@ -200,9 +199,9 @@ export const PhotosScreen: React.FC<PhotosScreenProps> = ({
   return (
     <View style={styles.container}>
       <BlurView intensity={80} tint="light" style={styles.blurContainer}>
-        {/* Header with Headline */}
-        <View style={[styles.header, { paddingTop: LAYOUT.content.paddingTop, paddingHorizontal: LAYOUT.content.paddingHorizontal }]}>
-          <Text style={sharedStyles.headline}>My Photos</Text>
+        {/* Header with label */}
+        <View style={[styles.header, { paddingTop: 40, paddingHorizontal: LAYOUT.content.paddingHorizontal }]}>
+          <Caption style={styles.headerTitle}>MY PHOTOS</Caption>
         </View>
 
         {/* Close button - absolute positioned using shared design system */}
@@ -328,6 +327,11 @@ const styles = StyleSheet.create({
     paddingBottom: LAYOUT.spacing.default,
     borderBottomWidth: 1,
     borderBottomColor: COLORS.white[10],
+  },
+  headerTitle: {
+    fontSize: 11,
+    letterSpacing: 1,
+    color: '#6A6A6A', // Mid-gray - matches CertificationScreen
   },
   // closeButton removed - using sharedStyles.closeButton instead
   content: {

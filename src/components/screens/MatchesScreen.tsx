@@ -390,7 +390,7 @@ export const MatchesScreen: React.FC<MatchesScreenProps> = ({
     <View style={styles.container}>
       <BlurView intensity={80} tint="light" style={styles.blurContainer}>
         {/* Header */}
-        <View style={styles.header}>
+        <View style={[styles.header, { paddingTop: 40 }]}>
           <Caption style={styles.headerTitle}>INTERESTED IN YOU</Caption>
         </View>
 
@@ -502,7 +502,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingTop: 60,
+    // paddingTop set inline to 40 for Dynamic Island clearance
     paddingBottom: 16,
     paddingHorizontal: 20,
     borderBottomWidth: 1,

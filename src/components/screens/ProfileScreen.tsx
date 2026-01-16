@@ -145,8 +145,9 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
           });
         }
       } catch (error) {
-        if (__DEV__) console.error('[ProfileScreen] Failed to fetch user data:', error);
-        // Don't show error alert - just show whatever local data exists
+        // Expected in demo mode - no token available
+        // Screen will show local onboarding data instead
+        if (__DEV__) console.log('[ProfileScreen] Using local data (no API token - demo mode)');
       } finally {
         setIsLoading(false);
       }
@@ -252,7 +253,7 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
     <View style={styles.container}>
       <BlurView intensity={80} tint="light" style={styles.blurContainer}>
         {/* Header */}
-        <View style={[styles.header, { paddingTop: LAYOUT.backArrow.top }]}>
+        <View style={[styles.header, { paddingTop: 40 }]}>
           <Caption style={styles.headerTitle}>MY PROFILE</Caption>
         </View>
 
