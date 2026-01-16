@@ -273,11 +273,11 @@ const styles = StyleSheet.create({
   },
   label: {
     textAlign: 'center',
-    marginTop: 100,
+    marginTop: 60, // Match other menu screens
     marginBottom: 8,
     letterSpacing: 1,
     fontSize: 11,
-    color: '#6A6A6A', // Mid-gray - better contrast on light backgrounds
+    color: '#6A6A6A',
   },
   headline: {
     textAlign: 'center',

@@ -1151,6 +1151,8 @@ function AppContent() {
             AuthService.logout();
             setAuthState('LOGIN');
             setMenuScreen('none');
+            // Reset vibe to DEEP (purple) for login screen
+            vibeRef.current?.setVibeAndComplexity('DEEP', 'SMOOTHIE');
           }}
         />
       )}
