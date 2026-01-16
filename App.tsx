@@ -1151,14 +1151,20 @@ function AppContent() {
             setMenuScreen('certification');
           }}
           onLogoutPress={() => {
-            if (__DEV__) console.log('[App] 🚪 Menu: LOGOUT pressed');
+            if (__DEV__) console.log('[App] 🚪 LOGOUT: Starting clean logout...');
+
+            // 1. Clear auth tokens
             AuthService.logout();
-            // CRITICAL: Hard reset to mirror fresh app start
-            // This clears all stale vibe state from authenticated session
-            useVibeController.getState().reset();
-            setAuthState('LOGIN');
+
+            // 2. Reset ALL app state to fresh start
+            reset();  // Demo store → back to COACH_INTRO
+            useVibeController.getState().reset();  // Vibe → DEEP/SMOOTHIE
+
+            // 3. Close menu and go to login
             setMenuScreen('none');
-            if (__DEV__) console.log('[App] 🚪 Vibe reset to DEEP/SMOOTHIE (fresh app state)');
+            setAuthState('LOGIN');
+
+            if (__DEV__) console.log('[App] 🚪 LOGOUT: Complete → LOGIN screen');
           }}
         />
       )}
