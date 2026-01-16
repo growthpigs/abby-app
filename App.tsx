@@ -1156,13 +1156,13 @@ function AppContent() {
             // 1. Clear auth tokens
             AuthService.logout();
 
-            // 2. Reset ALL app state to fresh start
+            // 2. Set auth state FIRST (before reset!) so DEMO_VIBES guard catches it
+            setAuthState('LOGIN');
+            setMenuScreen('none');
+
+            // 3. NOW reset - DEMO_VIBES won't fire because authState is already LOGIN
             reset();  // Demo store → back to COACH_INTRO
             useVibeController.getState().reset();  // Vibe → DEEP/SMOOTHIE
-
-            // 3. Close menu and go to login
-            setMenuScreen('none');
-            setAuthState('LOGIN');
 
             if (__DEV__) console.log('[App] 🚪 LOGOUT: Complete → LOGIN screen');
           }}
