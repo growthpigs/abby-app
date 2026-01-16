@@ -33,6 +33,7 @@ import {
   getThemeFromCoverage,
   ORB_ENERGY_MAP,
 } from '../constants/colors';
+import { DEFAULT_VIBE } from '../constants/vibeDefaults';
 
 // ============================================
 // State Interface
@@ -83,6 +84,9 @@ interface VibeControllerActions {
     complexity: VibeComplexity,
     orbEnergy: OrbEnergy
   ) => void;
+
+  // === Reset ===
+  reset: () => void;
 }
 
 type VibeControllerStore = VibeControllerState & VibeControllerActions;
@@ -196,9 +200,9 @@ const APP_STATE_VIBES: Record<AppState, {
 // ============================================
 
 export const useVibeController = create<VibeControllerStore>((set, get) => {
-  // Initial state
-  const initialTheme: VibeColorTheme = 'TRUST';
-  const initialComplexity: VibeComplexity = 'SMOOTHIE';
+  // Initial state from single source of truth
+  const initialTheme = DEFAULT_VIBE.theme;
+  const initialComplexity = DEFAULT_VIBE.complexity;
   const initialConfig = buildShaderConfig(initialTheme, initialComplexity);
 
   return {
@@ -319,6 +323,26 @@ export const useVibeController = create<VibeControllerStore>((set, get) => {
         complexity,
         orbEnergy,
         ...config,
+      });
+    },
+
+    // === Reset ===
+    reset: () => {
+      // Use single source of truth - matches vibeDefaults.ts
+      const initialTheme = DEFAULT_VIBE.theme;
+      const initialComplexity = DEFAULT_VIBE.complexity;
+      const initialConfig = buildShaderConfig(initialTheme, initialComplexity);
+
+      set({
+        activeParty: 'ABBY',
+        activeMode: 'SPEAKING',
+        colorTheme: initialTheme,
+        complexity: initialComplexity,
+        orbEnergy: 'CALM',
+        audioLevel: 0,
+        ...initialConfig,
+        coveragePercent: 0,
+        isSpeakingPulseActive: false,
       });
     },
   };

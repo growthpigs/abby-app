@@ -1657,6 +1657,81 @@ npx expo run:ios
 
 ---
 
+## VibeMatrix Synchronization Verification (2026-01-16)
+
+**Problem Solved:** State initialization mismatch between store and animated component caused brown/amber LOGIN screen instead of purple (DEEP theme).
+
+**Root Cause:** Store initialized to TRUST (blue), component to DEEP (purple), causing race condition.
+
+**Fix:** Single source of truth constant at `src/constants/vibeDefaults.ts`
+
+### Verification Commands (RUNTIME - NOT STATIC)
+
+```bash
+# 1. VERIFY SINGLE SOURCE OF TRUTH EXISTS
+cat src/constants/vibeDefaults.ts
+# Expected output:
+# export const DEFAULT_VIBE = {
+#   theme: 'DEEP' as VibeColorTheme,
+#   complexity: 'SMOOTHIE' as VibeComplexity,
+# } as const;
+
+# 2. VERIFY ALL FILES IMPORT THE CONSTANT
+grep -n "DEFAULT_VIBE" src/store/useVibeController.ts
+# Expected: Line 36 - import statement, Line 204-206 - usage in initialization
+
+grep -n "DEFAULT_VIBE" App.tsx
+# Expected: Line 48 - import statement, Line 923-924 - usage in <VibeMatrixAnimated>
+
+# 3. VERIFY NO HARDCODED DUPLICATES (should be 0)
+grep -rn "'DEEP'" src/store/useVibeController.ts | grep -v DEFAULT_VIBE
+# Expected: Empty (all DEEP references should be via constant)
+
+# 4. RUNTIME VERIFICATION (REQUIRED - FILE CHECKS PROVE NOTHING)
+npx expo run:ios
+
+# 5. WATCH LOGS FOR CORRECT VIBE SEQUENCE
+# Expected on fresh launch:
+#   [App] Setting vibe for LOGIN → DEEP SMOOTHIE
+#   [VibeController] → Shader: DEEP SMOOTHIE
+
+# 6. VISUAL VERIFICATION
+# □ LOGIN screen background is PURPLE (not brown/amber)
+# □ After logout, background returns to PURPLE
+# □ Menu overlays DON'T change background color
+
+# 7. LOGOUT FLOW VERIFICATION
+# Navigate to: CoachIntro → Menu → Logout
+# Expected logs:
+#   [App] 🚪 Menu: LOGOUT pressed
+#   [VibeController] → Shader: DEEP SMOOTHIE
+#   [App] Setting vibe for LOGIN → DEEP SMOOTHIE
+# Expected visual: Purple background, no flicker
+```
+
+### Pre-Flight Checklist (Before Claiming VibeMatrix "Fixed")
+
+| Check | Command | Expected |
+|-------|---------|----------|
+| Constant exists | `cat src/constants/vibeDefaults.ts` | DEEP/SMOOTHIE values |
+| Store uses constant | `grep DEFAULT_VIBE src/store/useVibeController.ts` | 3+ matches |
+| App uses constant | `grep DEFAULT_VIBE App.tsx` | 2+ matches |
+| No hardcoded values | `grep -rn "'DEEP'" src/store/ \| grep -v DEFAULT_VIBE` | Empty |
+| App builds | `npx expo run:ios` | Build Succeeded |
+| Login is purple | Visual check | Purple background |
+| Logout returns to purple | Test logout flow | Purple, no flicker |
+| Menu doesn't change vibe | Open Settings/Photos | Background unchanged |
+
+### Key Lesson
+
+> **"File existence doesn't mean values match. Two files can have 'initialTheme' with DIFFERENT values. Always verify the actual values, preferably via shared constant."**
+
+**Related:**
+- EP-092 in `~/.claude/troubleshooting/error-patterns.md`
+- `src/constants/vibeDefaults.ts` - Single source of truth
+
+---
+
 ## API Chat Verification Commands (2026-01-15)
 
 **Added after:** Geraldo confirmed chat APIs working - verified via runtime testing

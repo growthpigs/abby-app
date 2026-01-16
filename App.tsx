@@ -45,6 +45,7 @@ import { useOnboardingStore } from './src/store/useOnboardingStore';
 import { OrbMode } from './src/types/orb';
 import { VibeColorTheme, VibeComplexity } from './src/types/vibe';
 import { useVibeController } from './src/store/useVibeController';
+import { DEFAULT_VIBE } from './src/constants/vibeDefaults';
 import { Z_INDEX } from './src/constants/layout';
 import { CoachScreenRef } from './src/components/screens/CoachScreen';
 import { CoachIntroScreenRef } from './src/components/screens/CoachIntroScreen';
@@ -281,17 +282,17 @@ function AppContent() {
             if (__DEV__) console.log('[App] Existing session found, restoring authenticated state');
             setAuthState('AUTHENTICATED');
             reset(); // Reset demo state for fresh start
-            vibeRef.current?.setVibe('TRUST');
+            // Vibe set by DEMO_VIBES effect when demoState changes to COACH_INTRO
           } else {
             if (__DEV__) console.log('[App] No valid session, going to login');
             setAuthState('LOGIN');
-            vibeRef.current?.setVibe('DEEP');
+            // Vibe set by AUTH_VIBES effect when authState changes to LOGIN
           }
         } catch (error) {
           // Auth check failed - default to login
           if (__DEV__) console.log('[App] Auth check failed, going to login:', error);
           setAuthState('LOGIN');
-          vibeRef.current?.setVibe('DEEP');
+          // Vibe set by AUTH_VIBES effect when authState changes to LOGIN
         }
       }
     };
@@ -299,24 +300,26 @@ function AppContent() {
   }, [fontsLoaded, settingsLoaded, authState, reset]);
 
   // Apply vibe on auth state change
+  // FIXED: Use store, not direct ref - prevents desync
   useEffect(() => {
     if (authState === 'LOADING' || authState === 'AUTHENTICATED') return;
 
     const vibe = AUTH_VIBES[authState];
     if (vibe) {
-      console.log('[App] Setting vibe for', authState, '→', vibe.theme, vibe.complexity);
-      vibeRef.current?.setVibeAndComplexity(vibe.theme, vibe.complexity);
+      if (__DEV__) console.log('[App] Setting vibe for', authState, '→', vibe.theme, vibe.complexity);
+      useVibeController.getState().setFullVibe('ABBY', 'SPEAKING', vibe.theme, vibe.complexity, 'CALM');
     }
   }, [authState]);
 
   // Apply vibe on demo state change
+  // FIXED: Use store, not direct ref - prevents desync
   useEffect(() => {
     if (authState !== 'AUTHENTICATED') return;
 
     const vibe = DEMO_VIBES[demoState];
     if (vibe) {
       console.log('[App] Setting vibe for', demoState, '→', vibe.theme, vibe.complexity);
-      vibeRef.current?.setVibeAndComplexity(vibe.theme, vibe.complexity);
+      useVibeController.getState().setFullVibe('ABBY', 'SPEAKING', vibe.theme, vibe.complexity, 'CALM');
     }
   }, [authState, demoState]);
 
@@ -370,7 +373,7 @@ function AppContent() {
         if (nextState === 'AUTHENTICATED') {
           // Initialize demo state
           reset();
-          vibeRef.current?.setVibe('TRUST');
+          // Vibe set by DEMO_VIBES effect when demoState changes to COACH_INTRO
         }
       }
     } else {
@@ -451,7 +454,7 @@ function AppContent() {
       // Go directly to authenticated (skip onboarding for existing users)
       setAuthState('AUTHENTICATED');
       reset(); // Reset demo state
-      vibeRef.current?.setVibe('TRUST');
+      // Vibe set by DEMO_VIBES effect when demoState changes to COACH_INTRO
     } catch (error: unknown) {
       const authError = error as { message?: string; code?: string };
       const errorMsg = authError?.message || (error instanceof Error ? error.message : 'Sign in failed');
@@ -667,7 +670,7 @@ function AppContent() {
     // All onboarding complete - go to main app
     setAuthState('AUTHENTICATED');
     reset(); // Reset demo state
-    vibeRef.current?.setVibe('TRUST');
+    // Vibe set by DEMO_VIBES effect when demoState changes to COACH_INTRO
   };
 
   // DEMO FLOW - shader changes during interview/coach
@@ -678,8 +681,9 @@ function AppContent() {
   }, []);
 
   // Dynamic vibe changes (for CoachScreen emotion-based transitions)
+  // CRITICAL: Use store for single source of truth - subscription forwards to shader
   const handleVibeChange = useCallback((theme: VibeColorTheme, complexity: VibeComplexity) => {
-    vibeRef.current?.setVibeAndComplexity(theme, complexity);
+    useVibeController.getState().setFullVibe('ABBY', 'SPEAKING', theme, complexity, 'CALM');
   }, []);
 
   // Render auth screens
@@ -707,7 +711,7 @@ function AppContent() {
                 if (__DEV__) console.log('[App] Sign-in successful');
                 setAuthState('AUTHENTICATED');
                 reset();
-                vibeRef.current?.setVibe('TRUST');
+                // Vibe set by DEMO_VIBES effect when demoState changes to COACH_INTRO
               } catch (error: unknown) {
                 const authErr = error as { message?: string; code?: string };
                 const errorMsg = authErr?.message || (error instanceof Error ? error.message : 'Sign in failed');
@@ -916,8 +920,8 @@ function AppContent() {
         ) : (
           <VibeMatrixAnimated
             ref={vibeRef}
-            initialTheme="DEEP"
-            initialComplexity="FLOW"
+            initialTheme={DEFAULT_VIBE.theme}
+            initialComplexity={DEFAULT_VIBE.complexity}
           />
         )}
       </View>
@@ -1149,14 +1153,12 @@ function AppContent() {
           onLogoutPress={() => {
             if (__DEV__) console.log('[App] 🚪 Menu: LOGOUT pressed');
             AuthService.logout();
+            // CRITICAL: Hard reset to mirror fresh app start
+            // This clears all stale vibe state from authenticated session
+            useVibeController.getState().reset();
             setAuthState('LOGIN');
             setMenuScreen('none');
-            // Reset vibe to DEEP (purple) for login screen
-            // CRITICAL: Use setFullVibe for ATOMIC update - this prevents the race condition
-            // where separate setColorTheme/setComplexity calls trigger the subscription
-            // with intermediate states (e.g., DEEP theme but old OCEAN complexity)
-            useVibeController.getState().setFullVibe('ABBY', 'SPEAKING', 'DEEP', 'SMOOTHIE', 'CALM');
-            // The subscription will forward this to vibeRef automatically
+            if (__DEV__) console.log('[App] 🚪 Vibe reset to DEEP/SMOOTHIE (fresh app state)');
           }}
         />
       )}

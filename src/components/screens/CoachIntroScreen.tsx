@@ -79,6 +79,7 @@ export const CoachIntroScreen = forwardRef<CoachIntroScreenRef, CoachIntroScreen
     onSecretForward,
   }, ref) => {
   const scrollRef = useRef<ScrollView>(null);
+  const isMountedRef = useRef(true);
   const layout = useResponsiveLayout();
 
   const messages = useDemoStore((state) => state.messages);
@@ -93,10 +94,20 @@ export const CoachIntroScreen = forwardRef<CoachIntroScreenRef, CoachIntroScreen
   // Animated value for bottom sheet position
   const translateY = useRef(new Animated.Value(SCREEN_HEIGHT)).current;
 
+  // Cleanup on unmount - prevents stale callbacks from changing vibes
+  useEffect(() => {
+    return () => {
+      isMountedRef.current = false;
+    };
+  }, []);
+
   // Initialize Abby Agent
   const { startConversation, endConversation, toggleMute, isSpeaking, isConnected, isMuted, isDemoMode, sendTextMessage } = useAbbyAgent({
     enabled: true,
     onAbbyResponse: (text) => {
+      // Guard: Don't update state after unmount (prevents post-logout vibe changes)
+      if (!isMountedRef.current) return;
+
       addMessage('abby', text);
 
       // Trigger color change based on conversation content
