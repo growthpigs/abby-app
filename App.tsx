@@ -1152,7 +1152,11 @@ function AppContent() {
             setAuthState('LOGIN');
             setMenuScreen('none');
             // Reset vibe to DEEP (purple) for login screen
-            vibeRef.current?.setVibeAndComplexity('DEEP', 'SMOOTHIE');
+            // CRITICAL: Use setFullVibe for ATOMIC update - this prevents the race condition
+            // where separate setColorTheme/setComplexity calls trigger the subscription
+            // with intermediate states (e.g., DEEP theme but old OCEAN complexity)
+            useVibeController.getState().setFullVibe('ABBY', 'SPEAKING', 'DEEP', 'SMOOTHIE', 'CALM');
+            // The subscription will forward this to vibeRef automatically
           }}
         />
       )}

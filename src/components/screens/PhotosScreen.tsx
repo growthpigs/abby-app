@@ -70,7 +70,7 @@ export const PhotosScreen: React.FC<PhotosScreenProps> = ({
   const { width: screenWidth } = useWindowDimensions();
 
   const photoGap = layout.isSmallScreen ? 8 : 12;
-  const horizontalPadding = 24;
+  const horizontalPadding = 12;
   const photoWidth = Math.floor((screenWidth - (horizontalPadding * 2) - (photoGap * 2)) / 3);
   const photoHeight = Math.floor(photoWidth * 1.3);
 
@@ -321,7 +321,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   scrollContent: {
-    paddingHorizontal: 24,
+    paddingHorizontal: 12,
     paddingBottom: 40,
   },
   helpText: {

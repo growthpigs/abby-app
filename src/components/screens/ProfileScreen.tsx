@@ -391,7 +391,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   scrollContent: {
-    paddingHorizontal: 24,
+    paddingHorizontal: 12,
     paddingBottom: 120,
   },
   sectionHeading: {
@@ -404,11 +404,11 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     padding: LAYOUT.spacing.default,
-    backgroundColor: COLORS.white[10],
+    backgroundColor: 'rgba(255, 255, 255, 0.25)',
     borderRadius: 12,
     marginBottom: LAYOUT.spacing.small,
     borderWidth: 1,
-    borderColor: COLORS.white[10],
+    borderColor: 'rgba(255, 255, 255, 0.1)',
   },
   sectionPressed: {
     opacity: 0.7,

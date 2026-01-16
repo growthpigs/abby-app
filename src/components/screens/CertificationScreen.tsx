@@ -293,7 +293,7 @@ const styles = StyleSheet.create({
     color: '#5A5A5A', // Charcoal gray
     lineHeight: 21,
     fontSize: 14,
-    paddingHorizontal: 16,
+    paddingHorizontal: 12,
     marginBottom: 24,
   },
   errorText: {
@@ -303,17 +303,18 @@ const styles = StyleSheet.create({
     fontSize: 13, // Reduced 1pt
   },
   itemsContainer: {
-    paddingHorizontal: 16,
+    paddingHorizontal: 12,
     gap: 12,
   },
   verificationItem: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    backgroundColor: 'rgba(255, 255, 255, 0.15)',
+    backgroundColor: 'rgba(255, 255, 255, 0.25)',
     borderRadius: 12,
     padding: 15,
-    // No border - clean design
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.1)',
   },
   verificationItemVerified: {
     backgroundColor: 'rgba(16, 185, 129, 0.15)',
@@ -373,7 +374,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginTop: 'auto',
     paddingBottom: 32,
-    paddingHorizontal: 16,
+    paddingHorizontal: 12,
   },
   incompleteText: {
     color: '#5A5A5A', // Charcoal gray - better contrast

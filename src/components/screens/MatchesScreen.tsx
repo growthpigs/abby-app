@@ -336,7 +336,7 @@ export const MatchesScreen: React.FC<MatchesScreenProps> = ({
             {/* Match Score */}
             {selectedMatch.compatibilityScore !== undefined && (
               <View style={styles.detailScoreBadge}>
-                <Heart size={16} stroke="#E11D48" fill="#E11D48" />
+                <Heart size={16} stroke="#10B981" fill="#10B981" />
                 <Body style={styles.detailScoreText}>
                   {Math.round(selectedMatch.compatibilityScore * 100)}% compatibility
                 </Body>
@@ -516,7 +516,7 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     flexGrow: 1,
-    paddingHorizontal: 24,
+    paddingHorizontal: 12,
     paddingBottom: 40,
   },
   // Close button - same vertical position as hamburger menu (top: 12)
@@ -631,9 +631,10 @@ const styles = StyleSheet.create({
   matchCard: {
     flexDirection: 'row',
     padding: 16,
-    backgroundColor: 'rgba(255, 255, 255, 0.15)', // CertificationScreen glass style
+    backgroundColor: 'rgba(255, 255, 255, 0.25)',
     borderRadius: 12,
-    // No border - clean glass design like CertificationScreen
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.1)',
   },
   matchAvatar: {
     width: 56,
@@ -663,7 +664,7 @@ const styles = StyleSheet.create({
   },
   matchScore: {
     fontSize: 12,
-    color: '#E11D48',
+    color: '#10B981', // Green - positive match indicator
     fontWeight: '600',
     marginTop: 4,
     textShadowColor: 'transparent',
@@ -718,7 +719,7 @@ const styles = StyleSheet.create({
   detailScoreBadge: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'rgba(225, 29, 72, 0.1)',
+    backgroundColor: 'rgba(16, 185, 129, 0.1)', // Green tint
     paddingVertical: 8,
     paddingHorizontal: 16,
     borderRadius: 20,
@@ -726,7 +727,7 @@ const styles = StyleSheet.create({
     marginBottom: 32,
   },
   detailScoreText: {
-    color: '#E11D48',
+    color: '#10B981', // Green - positive match indicator
     fontWeight: '600',
     fontSize: 14,
     textShadowColor: 'transparent',

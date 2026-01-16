@@ -248,7 +248,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   scrollContent: {
-    paddingHorizontal: 24,
+    paddingHorizontal: 12,
     paddingBottom: 40,
   },
   questionText: {
@@ -259,11 +259,11 @@ const styles = StyleSheet.create({
   modeOption: {
     flexDirection: 'row',
     alignItems: 'center',
-    padding: LAYOUT.spacing.default,
-    backgroundColor: COLORS.white[50],
+    padding: LAYOUT.spacing.medium,
+    backgroundColor: 'rgba(255, 255, 255, 0.25)',
     borderRadius: LAYOUT.spacing.default,
     borderWidth: 2,
-    borderColor: COLORS.white[10],
+    borderColor: 'rgba(255, 255, 255, 0.1)',
     gap: LAYOUT.spacing.medium,
   },
   modeOptionSelected: {
