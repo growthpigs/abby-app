@@ -5,11 +5,11 @@
  * Calls backend /v1/verification API.
  */
 
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState, useCallback, useRef } from 'react';
 import { View, StyleSheet, Pressable, ActivityIndicator } from 'react-native';
 import * as Haptics from 'expo-haptics';
 import { X } from 'lucide-react-native';
-import { GlassSheet, GlassButton, Headline, Body, Caption } from '../ui';
+import { GlassSheet, GlassSheetRef, GlassButton, Headline, Body, Caption } from '../ui';
 import { api } from '../../services/api';
 import { TokenManager } from '../../services/TokenManager';
 import type { VerificationStatus, VerificationType } from '../../services/api/types';
@@ -38,6 +38,7 @@ export const CertificationScreen: React.FC<CertificationScreenProps> = ({
   onComplete,
   onBack,
 }) => {
+  const sheetRef = useRef<GlassSheetRef>(null);
   const [status, setStatus] = useState<VerificationStatus | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [verifyingType, setVerifyingType] = useState<VerificationType | null>(null);
@@ -121,7 +122,9 @@ export const CertificationScreen: React.FC<CertificationScreenProps> = ({
 
   const handleBack = useCallback(() => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    onBack?.();
+    sheetRef.current?.close(() => {
+      onBack?.();
+    });
   }, [onBack]);
 
   const handleComplete = useCallback(() => {
@@ -166,7 +169,7 @@ export const CertificationScreen: React.FC<CertificationScreenProps> = ({
   if (isLoading && !status) {
     return (
       <View style={styles.container}>
-        <GlassSheet height={1}>
+        <GlassSheet ref={sheetRef} height={1}>
           <View style={styles.loadingContainer}>
             <ActivityIndicator size="large" color="#5A5A5A" />
             <Body style={styles.loadingText}>Loading verification status...</Body>
@@ -178,7 +181,7 @@ export const CertificationScreen: React.FC<CertificationScreenProps> = ({
 
   return (
     <View style={styles.container}>
-      <GlassSheet height={1}>
+      <GlassSheet ref={sheetRef} height={1}>
         {/* Header */}
         <Caption style={styles.label}>CERTIFICATION</Caption>
         <Headline style={styles.headline}>Verify Your Identity</Headline>

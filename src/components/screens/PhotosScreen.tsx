@@ -5,7 +5,7 @@
  * Uses GlassSheet for animated bottom-to-top entry (matches CertificationScreen)
  */
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import {
   View,
   StyleSheet,
@@ -18,7 +18,7 @@ import {
 } from 'react-native';
 import * as Haptics from 'expo-haptics';
 import { Plus, X, Camera, AlertCircle, RefreshCw } from 'lucide-react-native';
-import { GlassSheet } from '../ui/GlassSheet';
+import { GlassSheet, GlassSheetRef } from '../ui/GlassSheet';
 import { Body, Caption, Headline } from '../ui/Typography';
 import { GlassButton } from '../ui/GlassButton';
 import { TokenManager } from '../../services/TokenManager';
@@ -61,6 +61,7 @@ export const PhotosScreen: React.FC<PhotosScreenProps> = ({
   onClose,
   onAddPhoto,
 }) => {
+  const sheetRef = useRef<GlassSheetRef>(null);
   const [photos, setPhotos] = useState<PhotoItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -181,14 +182,16 @@ export const PhotosScreen: React.FC<PhotosScreenProps> = ({
 
   const handleClose = useCallback(() => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    onClose?.();
+    sheetRef.current?.close(() => {
+      onClose?.();
+    });
   }, [onClose]);
 
   const emptySlots = MAX_PHOTOS - photos.length;
 
   return (
     <View style={styles.container}>
-      <GlassSheet height={1}>
+      <GlassSheet ref={sheetRef} height={1}>
         {/* Header - centered label like CertificationScreen */}
         <Caption style={styles.label}>MY PHOTOS</Caption>
 

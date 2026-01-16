@@ -5,7 +5,7 @@
  * Shows loading, empty, and error states appropriately.
  */
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import {
   View,
   StyleSheet,
@@ -18,7 +18,7 @@ import {
 import * as Haptics from 'expo-haptics';
 import { Heart, AlertCircle, RefreshCw, ChevronLeft, ChevronRight, MessageCircle, X, Check } from 'lucide-react-native';
 import { Headline, Body, Caption } from '../ui/Typography';
-import { GlassSheet } from '../ui/GlassSheet';
+import { GlassSheet, GlassSheetRef } from '../ui/GlassSheet';
 import { GlassButton } from '../ui/GlassButton';
 import { checkIsDemoMode } from '../../hooks/useIsDemoMode';
 import { secureFetchJSON } from '../../utils/secureFetch';
@@ -139,6 +139,7 @@ export interface MatchesScreenProps {
 export const MatchesScreen: React.FC<MatchesScreenProps> = ({
   onClose,
 }) => {
+  const sheetRef = useRef<GlassSheetRef>(null);
   const [matches, setMatches] = useState<MatchCandidate[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -293,14 +294,16 @@ export const MatchesScreen: React.FC<MatchesScreenProps> = ({
 
   const handleClose = useCallback(() => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    onClose?.();
+    sheetRef.current?.close(() => {
+      onClose?.();
+    });
   }, [onClose]);
 
   // Detail View
   if (selectedMatch) {
     return (
       <View style={styles.container}>
-        <GlassSheet height={1}>
+        <GlassSheet ref={sheetRef} height={1}>
           {/* Detail Header */}
           <View style={styles.detailHeader}>
             <Pressable onPress={handleBackToList} style={styles.backButton}>
@@ -394,7 +397,7 @@ export const MatchesScreen: React.FC<MatchesScreenProps> = ({
   // List View
   return (
     <View style={styles.container}>
-      <GlassSheet height={1}>
+      <GlassSheet ref={sheetRef} height={1}>
         {/* Header - centered label like CertificationScreen */}
         <Caption style={styles.label}>INTERESTED IN YOU</Caption>
 

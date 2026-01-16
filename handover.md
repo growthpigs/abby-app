@@ -234,101 +234,78 @@ Each answer submitted immediately after user responds.
 
 These values were carefully calibrated to fix double-tap issues. **DO NOT MODIFY.**
 
-### GestureHandlerRootView (CRITICAL - 2026-01-16)
-The app MUST be wrapped in `GestureHandlerRootView` at the root level for iOS gesture handlers to work correctly:
-```typescript
-// App.tsx:1161-1170
-export default function App() {
-  return (
-    <GestureHandlerRootView style={{ flex: 1 }}>  // CRITICAL!
-      <SafeAreaProvider ...>
-        <ErrorBoundary>
-          <AppContent />
-        </ErrorBoundary>
-      </SafeAreaProvider>
-    </GestureHandlerRootView>
-  );
-}
+---
+
+### 🔴 THE DOUBLE-TAP BUG (ROOT CAUSE - SOLVED 2026-01-16)
+
+**Symptom:** Menu items require double-tap. First tap does visual change, second tap fires action.
+
+**Root Cause:** `useNativeDriver: true` + `TouchableOpacity` = touch coordinate mismatch
+
+```
+useNativeDriver: true  → Animation runs on GPU/native thread
+TouchableOpacity       → Uses JS-level touch responders
+                       → JS calculates hit zones from STATIC layout
+                       → First tap hits STALE coordinates
+                       → Second tap works after animation completes
 ```
 
-### BlurView Touch Fix (CRITICAL - 2026-01-16)
-BlurView on iOS intercepts touches before children receive them. Fix:
+**THE FIX:**
 ```typescript
-// src/components/ui/HamburgerMenu.tsx:131-136
-<BlurView
-  intensity={80}
-  tint="light"
-  style={styles.menuContent}
-  pointerEvents="box-none"  // CRITICAL: Lets touches pass to children
->
+// HamburgerMenu.tsx - ALL Animated calls must use:
+useNativeDriver: false  // CRITICAL: Allows JS touch responders to track position
 ```
 
-### Backdrop Positioning (CRITICAL - 2026-01-16)
-Backdrop must NOT overlap the menu panel - only cover the area outside:
+**Why PanResponder works but TouchableOpacity doesn't:**
+- PanResponder uses native gesture recognition (tracks native animations)
+- TouchableOpacity uses JS-level responder (doesn't track native animations)
+
+**THINGS THAT DON'T FIX IT:**
+- ❌ Removing BlurView
+- ❌ Changing pointerEvents
+- ❌ Adding GestureHandlerRootView
+- ❌ Changing z-index
+- ❌ Moving backdrop positioning
+
+---
+
+### Other Touch Rules
+
+### GestureHandlerRootView
+The app is wrapped in `GestureHandlerRootView` at root level (App.tsx).
+
+### No BlurView in Menus
+BlurView on iOS intercepts touches. Use solid backgrounds instead.
+
+### Backdrop Positioning
+Backdrop must NOT overlap the menu panel:
 ```typescript
-// src/components/ui/HamburgerMenu.tsx:247-254
 backdrop: {
-  position: 'absolute',
-  top: 0,
-  left: MENU_WIDTH,  // CRITICAL: Start AFTER menu panel
-  right: 0,
-  bottom: 0,
-  backgroundColor: 'rgba(0, 0, 0, 0.4)',
-},
+  left: MENU_WIDTH,  // Start AFTER menu panel
+}
 ```
 
 ### Secret Navigation Triggers
-The app has invisible 70x70 triggers at top corners for demo navigation:
+Invisible 70x70 triggers at top corners for demo navigation:
 - **Position:** `top: 10, left/right: 10, size: 70x70`
 - **Z-Index:** `9999`
-- **End Point:** `y: 80` (top: 10 + height: 70)
+- **End Point:** `y: 80`
 
 ### Hamburger Menu Button
-Must be ABOVE secret triggers to work on first tap:
 ```typescript
-// src/components/ui/HamburgerMenu.tsx:226-234
 hamburgerButton: {
-  top: 12,
-  left: 16,
-  width: 54,
-  height: 54,
-  zIndex: 10001,  // CRITICAL: Above 9999
+  zIndex: 10001,  // Above secret triggers (9999)
 }
 ```
 
-### X Close Buttons (All Overlay Screens)
-Must be BELOW secret trigger zone to avoid overlap:
+### X Close Buttons
 ```typescript
-// src/constants/onboardingLayout.ts:266-275
 closeButton: {
-  top: 85,     // CRITICAL: Below y:80 (end of triggers)
-  right: 16,
-  width: 54,
-  height: 54,
-  zIndex: 10000,  // CRITICAL: Above 9999
+  top: 85,     // Below trigger zone (ends at y:80)
+  zIndex: 10000,
 }
 ```
 
-### Menu Items (TouchableOpacity, not Pressable)
-Using TouchableOpacity for more reliable iOS touch handling:
-```typescript
-// src/components/ui/HamburgerMenu.tsx:153-160
-<TouchableOpacity
-  onPress={() => handleMenuItemPress('Profile', onProfilePress)}
-  style={styles.menuItem}  // Static style - no re-render
-  activeOpacity={0.7}
->
-```
+---
 
-### Why These Values Matter
-| Value | Reason |
-|-------|--------|
-| `GestureHandlerRootView` | Required for react-native-gesture-handler on iOS |
-| `BlurView pointerEvents="box-none"` | Allows touches to pass through to menu items |
-| `backdrop left: MENU_WIDTH` | Prevents backdrop from intercepting menu touches |
-| `TouchableOpacity` | More reliable touch handling than Pressable on iOS |
-| `zIndex: 10001` | Hamburger must beat secret triggers (9999) |
-| `top: 85` | Close buttons must be below trigger zone (ends at y:80) |
-| `minHeight: 52` | iOS recommends 44px minimum, 52px is safe |
-
-**If taps require double-tap again, someone broke these values.**
+**If double-tap bug returns: CHECK `useNativeDriver` FIRST. Must be `false` for animated containers with TouchableOpacity children.**

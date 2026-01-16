@@ -1582,54 +1582,76 @@ grep -rni "elevenlabs" . --include="*.ts" --include="*.tsx" --include="*.md" | w
 
 ---
 
-### UI Touch/Z-Index Verification (2026-01-15)
+### UI Touch/Z-Index Verification (2026-01-16)
 
 **CRITICAL:** Static code review CANNOT detect touch handling bugs. ALWAYS test on device/simulator.
 
-**Problem Context:**
-- HamburgerMenu items required double-tap
-- Logout button opened Profile instead of logging out
-- Root causes: render order, missing pointerEvents, stale state
+---
+
+#### 🔴 THE DOUBLE-TAP BUG (ROOT CAUSE - SOLVED 2026-01-16)
+
+**Symptom:** Menu items require double-tap. First tap does visual change, second tap fires action.
+
+**Root Cause:** `useNativeDriver: true` + `TouchableOpacity` = touch coordinate mismatch
+
+```
+useNativeDriver: true  → Animation runs on GPU/native thread
+TouchableOpacity       → Uses JS-level touch responders
+                       → JS calculates hit zones from STATIC layout
+                       → First tap hits STALE coordinates (where element WAS)
+                       → Second tap works after animation completes
+```
+
+**THE FIX:**
+```typescript
+// HamburgerMenu.tsx - ALL Animated calls must use:
+Animated.spring(slideAnim, {
+  toValue: 0,
+  useNativeDriver: false,  // CRITICAL: Must be false for TouchableOpacity to work
+}).start();
+```
+
+**THINGS THAT DON'T FIX IT:**
+- ❌ Removing BlurView (different issue)
+- ❌ Changing pointerEvents (doesn't affect native animations)
+- ❌ Adding GestureHandlerRootView (already there)
+- ❌ Changing z-index (not the problem)
+- ❌ Moving backdrop positioning (not the problem)
+
+---
+
+#### Other Touch Rules
 
 **Verification Commands:**
 
 ```bash
-# 1. Check render order (last rendered = on top in React Native)
-grep -n "<HamburgerMenu\|<View.*uiLayer\|<View.*container" App.tsx | sort -t: -k1 -n
-# HamburgerMenu line number should be HIGHEST (rendered last)
+# 1. CHECK useNativeDriver FIRST (the actual fix)
+grep "useNativeDriver" src/components/ui/HamburgerMenu.tsx
+# MUST be: useNativeDriver: false
 
-# 2. Check pointerEvents on container Views
-grep -n "pointerEvents" App.tsx src/components/ui/HamburgerMenu.tsx
-# Should see: pointerEvents="box-none" on containers
+# 2. Check render order (HamburgerMenu must be LAST)
+grep -n "<HamburgerMenu" App.tsx
+# Should be highest line number in render
 
 # 3. Check logout handler has complete state cleanup
 grep -A5 "onLogoutPress" App.tsx
-# Should include:
-#   - AuthService.logout()
-#   - setAuthState('LOGIN')
-#   - setMenuScreen('none')  ← CRITICAL
 
-# 4. RUNTIME TEST (MANDATORY - no shortcuts!)
+# 4. RUNTIME TEST (MANDATORY)
 npx expo run:ios
-# Then test:
-# □ Hamburger button: single tap opens menu
 # □ Each menu item: single tap works
-# □ Logout: returns to login screen (not profile)
-# □ Profile: opens profile screen
-# □ Settings: opens settings screen
 ```
 
 **Key Rules:**
-- **Render order > z-index:** In React Native, z-index only works among siblings
-- **Later siblings render on top:** Component order in JSX determines visual stacking
-- **pointerEvents="box-none":** Required on containers to pass touches to children
+- **useNativeDriver: false** for animated containers with TouchableOpacity
+- **Render order > z-index:** Later siblings render on top
+- **No BlurView in menus:** iOS native layer intercepts touches
 - **State cleanup:** Navigation handlers must clear ALL related state
 
-**If double-tap required again, CHECK:**
-1. Render order in JSX (HamburgerMenu must be LAST)
-2. pointerEvents on parent containers
-3. BlurView touch interception (iOS issue)
-4. State variables not being cleared
+**If double-tap returns, CHECK IN THIS ORDER:**
+1. ✅ useNativeDriver setting (MOST LIKELY CAUSE)
+2. Render order in JSX
+3. BlurView presence
+4. pointerEvents settings
 
 ---
 

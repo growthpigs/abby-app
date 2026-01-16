@@ -1,15 +1,18 @@
 /**
  * HamburgerMenu - Slide-out navigation menu
  *
- * CRITICAL: DO NOT USE BlurView or full-screen backdrops that overlap menu items.
- * iOS touch system has known issues with these patterns.
+ * CRITICAL TOUCH FIXES (2026-01-16):
+ * 1. useNativeDriver: false - JS touch responders don't track native animations
+ * 2. NO BlurView - iOS native layer intercepts touches
+ * 3. Full-screen backdrop with menu panel rendered on top
  *
- * Architecture:
- * 1. Hamburger button (always visible, zIndex 10001)
- * 2. When open:
- *    - Backdrop covers RIGHT side only (not menu area)
- *    - Menu panel slides from left (no blur, solid background)
- *    - Menu items are TouchableOpacity for reliable touch
+ * ROOT CAUSE OF DOUBLE-TAP BUG:
+ * - useNativeDriver: true runs animation on GPU thread
+ * - TouchableOpacity uses JS-level touch responders
+ * - JS calculates hit zones from STATIC layout, not animated position
+ * - Result: First tap hits stale coordinates, second tap works
+ *
+ * FIX: useNativeDriver: false (animation runs on JS thread, touch zones update)
  */
 
 import React, { useState, useCallback } from 'react';
@@ -54,14 +57,14 @@ export const HamburgerMenu: React.FC<HamburgerMenuProps> = ({
     Animated.parallel([
       Animated.spring(slideAnim, {
         toValue: 0,
-        useNativeDriver: true,
+        useNativeDriver: false, // CRITICAL: Must be false for TouchableOpacity to track animated position
         tension: 65,
         friction: 11,
       }),
       Animated.timing(fadeAnim, {
         toValue: 1,
         duration: 200,
-        useNativeDriver: true,
+        useNativeDriver: false, // CRITICAL: Must be false for TouchableOpacity to track animated position
       }),
     ]).start();
   }, [slideAnim, fadeAnim]);
@@ -71,12 +74,12 @@ export const HamburgerMenu: React.FC<HamburgerMenuProps> = ({
       Animated.timing(slideAnim, {
         toValue: -MENU_WIDTH,
         duration: 250,
-        useNativeDriver: true,
+        useNativeDriver: false, // CRITICAL: Must be false for TouchableOpacity to track animated position
       }),
       Animated.timing(fadeAnim, {
         toValue: 0,
         duration: 200,
-        useNativeDriver: true,
+        useNativeDriver: false, // CRITICAL: Must be false for TouchableOpacity to track animated position
       }),
     ]).start(() => {
       setIsOpen(false);
@@ -116,8 +119,7 @@ export const HamburgerMenu: React.FC<HamburgerMenuProps> = ({
   // Menu is open - render full overlay
   return (
     <View style={styles.overlay} pointerEvents="box-none">
-      {/* Backdrop - ONLY covers RIGHT side of screen (outside menu) */}
-      {/* This prevents backdrop from intercepting menu item touches */}
+      {/* Full-screen dark backdrop - tap to close */}
       <TouchableOpacity
         style={styles.backdrop}
         activeOpacity={1}
@@ -231,11 +233,11 @@ const styles = StyleSheet.create({
     zIndex: 20000,
   },
 
-  // CRITICAL: Backdrop only covers RIGHT side (not menu area)
+  // Full-screen backdrop - menu panel renders on top
   backdrop: {
     position: 'absolute',
     top: 0,
-    left: MENU_WIDTH, // <-- START AFTER menu panel ends
+    left: 0,
     right: 0,
     bottom: 0,
   },
