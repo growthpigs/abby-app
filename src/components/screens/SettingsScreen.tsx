@@ -9,7 +9,7 @@
  * Uses GlassSheet for animated bottom-to-top entry (matches CertificationScreen)
  */
 
-import React, { useCallback } from 'react';
+import React, { useCallback, useRef } from 'react';
 import {
   View,
   StyleSheet,
@@ -20,7 +20,7 @@ import {
 import * as Haptics from 'expo-haptics';
 import { Mic, MessageSquare, Trash2, X } from 'lucide-react-native';
 import { AuthService } from '../../services/AuthService';
-import { GlassSheet } from '../ui/GlassSheet';
+import { GlassSheet, GlassSheetRef } from '../ui/GlassSheet';
 import { Headline, Body, Caption } from '../ui/Typography';
 import { useSettingsStore, InputMode } from '../../store/useSettingsStore';
 import { useResponsiveLayout } from '../../hooks/useResponsiveLayout';
@@ -80,6 +80,7 @@ const InputModeOption: React.FC<InputModeOptionProps> = ({
 export const SettingsScreen: React.FC<SettingsScreenProps> = ({
   onClose,
 }) => {
+  const sheetRef = useRef<GlassSheetRef>(null);
   const inputMode = useSettingsStore((state) => state.inputMode);
   const setInputMode = useSettingsStore((state) => state.setInputMode);
   const layout = useResponsiveLayout();
@@ -126,12 +127,15 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
 
   const handleClose = useCallback(() => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    onClose?.();
+    // Animate sheet closed, then call onClose
+    sheetRef.current?.close(() => {
+      onClose?.();
+    });
   }, [onClose]);
 
   return (
     <View style={styles.container}>
-      <GlassSheet height={1}>
+      <GlassSheet ref={sheetRef} height={1}>
         {/* Header - centered label like CertificationScreen */}
         <Caption style={styles.label}>SETTINGS</Caption>
 

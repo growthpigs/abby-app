@@ -4,17 +4,28 @@
  * Non-draggable version for display screens (Match, Payment, Reveal).
  * Uses BlurView for the frosted glass effect.
  *
+ * Supports animated close via ref:
+ *   const sheetRef = useRef<GlassSheetRef>(null);
+ *   sheetRef.current?.close(() => onClose());
+ *
  * Usage:
- *   <GlassSheet height={0.6}>
+ *   <GlassSheet ref={sheetRef} height={0.6}>
  *     <Text>Content here</Text>
  *   </GlassSheet>
  */
 
-import React, { useEffect, useRef, ReactNode } from 'react';
+import React, { useEffect, useRef, ReactNode, forwardRef, useImperativeHandle } from 'react';
 import { View, StyleSheet, Dimensions, Animated } from 'react-native';
 import { BlurView } from 'expo-blur';
 
 const { height: SCREEN_HEIGHT } = Dimensions.get('window');
+
+export interface GlassSheetRef {
+  /**
+   * Animate the sheet closed, then call the callback
+   */
+  close: (onComplete?: () => void) => void;
+}
 
 interface GlassSheetProps {
   children: ReactNode;
@@ -35,16 +46,31 @@ interface GlassSheetProps {
   showHandle?: boolean;
 }
 
-export const GlassSheet: React.FC<GlassSheetProps> = ({
+export const GlassSheet = forwardRef<GlassSheetRef, GlassSheetProps>(({
   children,
   height = 0.6,
   animateIn = true,
   showHandle = true,
-}) => {
+}, ref) => {
   const translateY = useRef(new Animated.Value(SCREEN_HEIGHT)).current;
   // Clamp height to valid range (10% - 100% of screen)
   const clampedHeight = Math.max(0.1, Math.min(1.0, height));
   const sheetHeight = SCREEN_HEIGHT * clampedHeight;
+
+  // Expose close method via ref
+  useImperativeHandle(ref, () => ({
+    close: (onComplete?: () => void) => {
+      Animated.spring(translateY, {
+        toValue: SCREEN_HEIGHT, // Animate back down off screen
+        useNativeDriver: true,
+        damping: 50,
+        stiffness: 400,
+      }).start(() => {
+        // Call completion callback after animation finishes
+        onComplete?.();
+      });
+    },
+  }), [translateY]);
 
   useEffect(() => {
     if (animateIn) {
@@ -79,7 +105,10 @@ export const GlassSheet: React.FC<GlassSheetProps> = ({
       </BlurView>
     </Animated.View>
   );
-};
+});
+
+// Display name for debugging
+GlassSheet.displayName = 'GlassSheet';
 
 const styles = StyleSheet.create({
   sheet: {

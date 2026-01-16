@@ -7,6 +7,7 @@
 export { GlassCard } from './GlassCard';
 export { GlassButton } from './GlassButton';
 export { GlassSheet } from './GlassSheet';
+export type { GlassSheetRef } from './GlassSheet';
 export { GlassFloor } from './GlassFloor';
 export {
   Headline,

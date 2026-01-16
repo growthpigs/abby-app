@@ -5,7 +5,7 @@
  * Uses GlassSheet for animated bottom-to-top entry (matches CertificationScreen)
  */
 
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState, useCallback, useEffect, useRef } from 'react';
 import {
   View,
   StyleSheet,
@@ -17,7 +17,7 @@ import {
 } from 'react-native';
 import * as Haptics from 'expo-haptics';
 import { User, Heart, Users, Cigarette, MapPin, X } from 'lucide-react-native';
-import { GlassSheet } from '../ui/GlassSheet';
+import { GlassSheet, GlassSheetRef } from '../ui/GlassSheet';
 import { Headline, Body, Caption } from '../ui/Typography';
 import { GlassButton } from '../ui/GlassButton';
 import { useOnboardingStore } from '../../store/useOnboardingStore';
@@ -69,6 +69,7 @@ const ProfileSection: React.FC<ProfileSectionProps> = ({
 export const ProfileScreen: React.FC<ProfileScreenProps> = ({
   onClose,
 }) => {
+  const sheetRef = useRef<GlassSheetRef>(null);
   const store = useOnboardingStore();
   const [isSaving, setIsSaving] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
@@ -205,7 +206,10 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
 
   const handleClose = useCallback(() => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    onClose?.();
+    // Animate sheet closed, then call onClose
+    sheetRef.current?.close(() => {
+      onClose?.();
+    });
   }, [onClose]);
 
   // Format display values
@@ -250,7 +254,7 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
 
   return (
     <View style={styles.container}>
-      <GlassSheet height={1}>
+      <GlassSheet ref={sheetRef} height={1}>
         {/* Header - centered label like CertificationScreen */}
         <Caption style={styles.label}>MY PROFILE</Caption>
 
