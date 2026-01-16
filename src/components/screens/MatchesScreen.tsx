@@ -15,9 +15,10 @@ import {
   RefreshControl,
   Image,
 } from 'react-native';
-import { BlurView } from 'expo-blur';
+import * as Haptics from 'expo-haptics';
 import { Heart, AlertCircle, RefreshCw, ChevronLeft, ChevronRight, MessageCircle, X, Check } from 'lucide-react-native';
 import { Headline, Body, Caption } from '../ui/Typography';
+import { GlassSheet } from '../ui/GlassSheet';
 import { GlassButton } from '../ui/GlassButton';
 import { checkIsDemoMode } from '../../hooks/useIsDemoMode';
 import { secureFetchJSON } from '../../utils/secureFetch';
@@ -290,27 +291,23 @@ export const MatchesScreen: React.FC<MatchesScreenProps> = ({
 
   const hasMatches = matches.length > 0;
 
+  const handleClose = useCallback(() => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    onClose?.();
+  }, [onClose]);
+
   // Detail View
   if (selectedMatch) {
     return (
       <View style={styles.container}>
-        <BlurView intensity={80} tint="light" style={styles.blurContainer}>
+        <GlassSheet height={1}>
           {/* Detail Header */}
-          <View style={styles.header}>
+          <View style={styles.detailHeader}>
             <Pressable onPress={handleBackToList} style={styles.backButton}>
               <ChevronLeft size={24} stroke="rgba(0, 0, 0, 0.7)" />
               <Body style={styles.backText}>Back</Body>
             </Pressable>
           </View>
-
-          {/* Close button - absolute positioned */}
-          <Pressable
-            onPress={onClose}
-            style={styles.closeButton}
-            hitSlop={10}
-          >
-            <X size={24} stroke="rgba(90, 90, 90, 0.9)" />
-          </Pressable>
 
           {/* Detail Content */}
           <ScrollView style={styles.content} contentContainerStyle={styles.detailContainer}>
@@ -380,7 +377,16 @@ export const MatchesScreen: React.FC<MatchesScreenProps> = ({
               </Pressable>
             </View>
           </ScrollView>
-        </BlurView>
+        </GlassSheet>
+
+        {/* Close button - OUTSIDE GlassSheet, same vertical position as hamburger */}
+        <Pressable
+          onPress={handleClose}
+          style={styles.closeButton}
+          hitSlop={10}
+        >
+          <X size={24} stroke="rgba(255, 255, 255, 0.95)" />
+        </Pressable>
       </View>
     );
   }
@@ -388,25 +394,15 @@ export const MatchesScreen: React.FC<MatchesScreenProps> = ({
   // List View
   return (
     <View style={styles.container}>
-      <BlurView intensity={80} tint="light" style={styles.blurContainer}>
-        {/* Header */}
-        <View style={[styles.header, { paddingTop: 100 }]}>
-          <Caption style={styles.headerTitle}>INTERESTED IN YOU</Caption>
-        </View>
-
-        {/* Close button - absolute positioned */}
-        <Pressable
-          onPress={onClose}
-          style={styles.closeButton}
-          hitSlop={10}
-        >
-          <X size={24} stroke="rgba(90, 90, 90, 0.9)" />
-        </Pressable>
+      <GlassSheet height={1}>
+        {/* Header - centered label like CertificationScreen */}
+        <Caption style={styles.label}>INTERESTED IN YOU</Caption>
 
         {/* Content */}
         <ScrollView
-          style={styles.content}
-          contentContainerStyle={styles.contentContainer}
+          style={styles.scrollView}
+          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={false}
           refreshControl={
             <RefreshControl
               refreshing={refreshing}
@@ -485,7 +481,16 @@ export const MatchesScreen: React.FC<MatchesScreenProps> = ({
             </View>
           )}
         </ScrollView>
-      </BlurView>
+      </GlassSheet>
+
+      {/* Close button - OUTSIDE GlassSheet, same vertical position as hamburger */}
+      <Pressable
+        onPress={handleClose}
+        style={styles.closeButton}
+        hitSlop={10}
+      >
+        <X size={24} stroke="rgba(255, 255, 255, 0.95)" />
+      </Pressable>
     </View>
   );
 };
@@ -495,41 +500,42 @@ const styles = StyleSheet.create({
     ...StyleSheet.absoluteFillObject,
     zIndex: 2000,
   },
-  blurContainer: {
+  label: {
+    textAlign: 'center',
+    marginTop: 60,
+    marginBottom: 8,
+    letterSpacing: 1,
+    fontSize: 11,
+    color: '#6A6A6A',
+  },
+  scrollView: {
     flex: 1,
   },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    // paddingTop set inline to 40 for Dynamic Island clearance
-    paddingBottom: 16,
-    paddingHorizontal: 20,
-    borderBottomWidth: 1,
-    borderBottomColor: 'rgba(0, 0, 0, 0.08)',
+  scrollContent: {
+    flexGrow: 1,
+    paddingHorizontal: 24,
+    paddingBottom: 40,
   },
-  headerTitle: {
-    fontSize: 11,
-    letterSpacing: 1,
-    color: '#5A5A5A', // Medium GRAY for readability on pale blur
-  },
+  // Close button - same vertical position as hamburger menu (top: 12)
   closeButton: {
     position: 'absolute',
-    top: 85, // Below secret triggers (end at y:80)
+    top: 12,
     right: 16,
     width: 54,
     height: 54,
     alignItems: 'center',
     justifyContent: 'center',
-    zIndex: 10000, // Above secret triggers
+    zIndex: 10000,
   },
   content: {
     flex: 1,
   },
-  contentContainer: {
-    flexGrow: 1,
-    paddingVertical: 24,
+  detailHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingTop: 80, // Below hamburger menu (top: 12 + height: 54 = 66, plus margin)
     paddingHorizontal: 20,
+    paddingBottom: 16,
   },
   emptyState: {
     flex: 1,

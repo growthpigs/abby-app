@@ -378,15 +378,16 @@ const styles = StyleSheet.create({
     fontStyle: 'italic',
     fontSize: 14,
   },
+  // Close button - same vertical position as hamburger menu (top: 12)
   closeButton: {
     position: 'absolute',
-    top: 85, // Below secret triggers (end at y:80)
+    top: 12,
     right: 16,
     width: 54,
     height: 54,
     alignItems: 'center',
     justifyContent: 'center',
-    zIndex: 10000, // Above secret triggers
+    zIndex: 10000,
   },
 });
 

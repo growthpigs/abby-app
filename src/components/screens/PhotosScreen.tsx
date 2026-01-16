@@ -2,8 +2,7 @@
  * PhotosScreen - Manage profile photos
  *
  * Glass-styled photo gallery accessible from hamburger menu.
- * Users can view, add, reorder, and delete photos.
- * Integrates with /v1/photos API for persistence.
+ * Uses GlassSheet for animated bottom-to-top entry (matches CertificationScreen)
  */
 
 import React, { useState, useEffect, useCallback } from 'react';
@@ -17,16 +16,16 @@ import {
   ActivityIndicator,
   useWindowDimensions,
 } from 'react-native';
-import { BlurView } from 'expo-blur';
 import * as Haptics from 'expo-haptics';
 import { Plus, X, Camera, AlertCircle, RefreshCw } from 'lucide-react-native';
+import { GlassSheet } from '../ui/GlassSheet';
 import { Body, Caption, Headline } from '../ui/Typography';
 import { GlassButton } from '../ui/GlassButton';
 import { TokenManager } from '../../services/TokenManager';
 import { secureFetchJSON } from '../../utils/secureFetch';
 import { API_CONFIG } from '../../config';
 import { useResponsiveLayout } from '../../hooks/useResponsiveLayout';
-import { sharedStyles, LAYOUT, TYPOGRAPHY, COLORS } from '../../constants/onboardingLayout';
+import { LAYOUT, TYPOGRAPHY, COLORS } from '../../constants/onboardingLayout';
 
 // Demo photos for when no auth token (demo mode)
 const DEMO_PHOTOS: PhotoItem[] = [
@@ -69,12 +68,10 @@ export const PhotosScreen: React.FC<PhotosScreenProps> = ({
   const layout = useResponsiveLayout();
   const { width: screenWidth } = useWindowDimensions();
 
-  // Calculate responsive photo dimensions based on screen width
-  // 3 photos per row with gaps and horizontal padding
   const photoGap = layout.isSmallScreen ? 8 : 12;
-  const horizontalPadding = layout.paddingHorizontal;
+  const horizontalPadding = 24;
   const photoWidth = Math.floor((screenWidth - (horizontalPadding * 2) - (photoGap * 2)) / 3);
-  const photoHeight = Math.floor(photoWidth * 1.3); // Maintain 1:1.3 aspect ratio
+  const photoHeight = Math.floor(photoWidth * 1.3);
 
   const fetchPhotos = useCallback(async () => {
     try {
@@ -82,7 +79,6 @@ export const PhotosScreen: React.FC<PhotosScreenProps> = ({
       const token = await TokenManager.getToken();
 
       if (!token) {
-        // Demo mode - show mock photos
         if (__DEV__) console.log('[PhotosScreen] No token - using demo data');
         setPhotos(DEMO_PHOTOS);
         setIsLoading(false);
@@ -102,10 +98,7 @@ export const PhotosScreen: React.FC<PhotosScreenProps> = ({
 
       setPhotos(response.photos || []);
     } catch (err) {
-      if (__DEV__) {
-        if (__DEV__) console.log('[PhotosScreen] Fetch error:', err);
-      }
-      // Gracefully handle - start with empty photos
+      if (__DEV__) console.log('[PhotosScreen] Fetch error:', err);
       setPhotos([]);
     } finally {
       setIsLoading(false);
@@ -148,13 +141,9 @@ export const PhotosScreen: React.FC<PhotosScreenProps> = ({
                   },
                 });
               }
-              // Remove from local state
               setPhotos((prev) => prev.filter((p) => p.id !== id));
             } catch (err) {
-              if (__DEV__) {
-                if (__DEV__) console.log('[PhotosScreen] Delete error:', err);
-              }
-              // Remove from local state anyway for better UX
+              if (__DEV__) console.log('[PhotosScreen] Delete error:', err);
               setPhotos((prev) => prev.filter((p) => p.id !== id));
             } finally {
               setIsDeleting(null);
@@ -168,7 +157,6 @@ export const PhotosScreen: React.FC<PhotosScreenProps> = ({
   const handleSetPrimary = useCallback(async (id: string) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
 
-    // Optimistic update
     setPhotos((prev) =>
       prev.map((p) => ({
         ...p,
@@ -187,34 +175,29 @@ export const PhotosScreen: React.FC<PhotosScreenProps> = ({
         });
       }
     } catch (err) {
-      if (__DEV__) {
-        if (__DEV__) console.log('[PhotosScreen] Set primary error:', err);
-      }
-      // Keep optimistic update - API might not be ready
+      if (__DEV__) console.log('[PhotosScreen] Set primary error:', err);
     }
   }, []);
+
+  const handleClose = useCallback(() => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    onClose?.();
+  }, [onClose]);
 
   const emptySlots = MAX_PHOTOS - photos.length;
 
   return (
     <View style={styles.container}>
-      <BlurView intensity={80} tint="light" style={styles.blurContainer}>
-        {/* Header with label */}
-        <View style={[styles.header, { paddingTop: 100, paddingHorizontal: LAYOUT.content.paddingHorizontal }]}>
-          <Caption style={styles.headerTitle}>MY PHOTOS</Caption>
-        </View>
-
-        {/* Close button - absolute positioned using shared design system */}
-        <Pressable
-          onPress={onClose}
-          style={sharedStyles.closeButton}
-          hitSlop={10}
-        >
-          <X size={24} stroke={COLORS.charcoal.medium} />
-        </Pressable>
+      <GlassSheet height={1}>
+        {/* Header - centered label like CertificationScreen */}
+        <Caption style={styles.label}>MY PHOTOS</Caption>
 
         {/* Photo Grid */}
-        <ScrollView style={styles.content} contentContainerStyle={[styles.contentContainer, { paddingVertical: LAYOUT.spacing.large, paddingHorizontal: LAYOUT.content.paddingHorizontal }]}>
+        <ScrollView
+          style={styles.scrollView}
+          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={false}
+        >
           {isLoading ? (
             <View style={styles.loadingState}>
               <ActivityIndicator size="large" color="#E11D48" />
@@ -240,12 +223,11 @@ export const PhotosScreen: React.FC<PhotosScreenProps> = ({
             </View>
           ) : (
             <>
-              <Caption style={[styles.helpText, { marginBottom: LAYOUT.spacing.large }]}>
+              <Caption style={styles.helpText}>
                 Add up to {MAX_PHOTOS} photos. Tap to set as primary.
               </Caption>
 
               <View style={[styles.photoGrid, { gap: photoGap }]}>
-                {/* Existing Photos */}
                 {photos.map((photo) => (
                   <View key={photo.id} style={styles.photoWrapper}>
                     <Pressable
@@ -280,7 +262,6 @@ export const PhotosScreen: React.FC<PhotosScreenProps> = ({
                   </View>
                 ))}
 
-                {/* Empty Slots */}
                 {Array.from({ length: emptySlots }).map((_, index) => (
                   <Pressable
                     key={`empty-${index}`}
@@ -297,17 +278,25 @@ export const PhotosScreen: React.FC<PhotosScreenProps> = ({
                 ))}
               </View>
 
-              {/* Tips */}
-              <View style={[styles.tips, { marginTop: LAYOUT.spacing.xxl, padding: layout.isSmallScreen ? LAYOUT.spacing.medium : LAYOUT.spacing.default }]}>
+              <View style={styles.tips}>
                 <Camera size={layout.isSmallScreen ? 16 : 18} stroke={COLORS.charcoal.light} />
-                <Body style={[styles.tipsText, { fontSize: layout.bodyFontSize - 2 }]}>
+                <Body style={styles.tipsText}>
                   Photos with good lighting and clear faces get more matches.
                 </Body>
               </View>
             </>
           )}
         </ScrollView>
-      </BlurView>
+      </GlassSheet>
+
+      {/* Close button - OUTSIDE GlassSheet, same vertical position as hamburger */}
+      <Pressable
+        onPress={handleClose}
+        style={styles.closeButton}
+        hitSlop={10}
+      >
+        <X size={24} stroke="rgba(255, 255, 255, 0.95)" />
+      </Pressable>
     </View>
   );
 };
@@ -317,52 +306,42 @@ const styles = StyleSheet.create({
     ...StyleSheet.absoluteFillObject,
     zIndex: 2000,
   },
-  blurContainer: {
-    flex: 1,
-  },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingBottom: LAYOUT.spacing.default,
-    borderBottomWidth: 1,
-    borderBottomColor: COLORS.white[10],
-  },
-  headerTitle: {
-    fontSize: 11,
+  label: {
+    textAlign: 'center',
+    marginTop: 60,
+    marginBottom: 8,
     letterSpacing: 1,
-    color: '#6A6A6A', // Mid-gray - matches CertificationScreen
+    fontSize: 11,
+    color: '#6A6A6A',
   },
-  // closeButton removed - using sharedStyles.closeButton instead
-  content: {
+  scrollView: {
     flex: 1,
   },
-  contentContainer: {
-    // paddingVertical and paddingHorizontal applied dynamically via LAYOUT constants
+  scrollContent: {
+    paddingHorizontal: 24,
+    paddingBottom: 40,
   },
   helpText: {
     textAlign: 'center',
     color: COLORS.charcoal.light,
-    // marginBottom applied dynamically via LAYOUT.spacing.large
+    marginBottom: LAYOUT.spacing.large,
   },
   photoGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    // gap applied dynamically via photoGap
     justifyContent: 'flex-start',
   },
   photoWrapper: {
     position: 'relative',
   },
   photoItem: {
-    // width and height applied dynamically based on screen width
     borderRadius: 12,
     overflow: 'hidden',
     backgroundColor: COLORS.white[10],
   },
   photoItemPrimary: {
     borderWidth: 2,
-    borderColor: '#E11D48', // PASSION pink - matches design system
+    borderColor: '#E11D48',
   },
   photoItemPressed: {
     opacity: 0.8,
@@ -377,7 +356,7 @@ const styles = StyleSheet.create({
     bottom: 0,
     left: 0,
     right: 0,
-    backgroundColor: '#E11D48', // PASSION pink
+    backgroundColor: '#E11D48',
     paddingVertical: LAYOUT.spacing.micro,
     alignItems: 'center',
   },
@@ -397,15 +376,14 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(239, 68, 68, 0.9)',
     alignItems: 'center',
     justifyContent: 'center',
-    // No shadows - clean design
   },
   emptySlot: {
     borderWidth: 1,
-    borderColor: 'rgba(100, 100, 100, 0.3)', // Charcoal border for contrast on light blur
+    borderColor: 'rgba(100, 100, 100, 0.3)',
     borderStyle: 'dashed',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: 'rgba(150, 150, 150, 0.1)', // Subtle gray fill for visibility
+    backgroundColor: 'rgba(150, 150, 150, 0.1)',
   },
   emptySlotPressed: {
     backgroundColor: COLORS.white[10],
@@ -414,17 +392,17 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: LAYOUT.spacing.medium,
-    // marginTop and padding applied dynamically via LAYOUT constants
-    backgroundColor: 'rgba(100, 100, 100, 0.1)', // Charcoal tint for visibility on light blur
+    marginTop: LAYOUT.spacing.xxl,
+    padding: LAYOUT.spacing.default,
+    backgroundColor: 'rgba(100, 100, 100, 0.1)',
     borderRadius: 12,
   },
   tipsText: {
     flex: 1,
-    // fontSize applied dynamically via layout.bodyFontSize
+    fontSize: 14,
     color: COLORS.charcoal.medium,
     lineHeight: 20,
   },
-  // Loading state
   loadingState: {
     flex: 1,
     alignItems: 'center',
@@ -436,7 +414,6 @@ const styles = StyleSheet.create({
     fontSize: TYPOGRAPHY.body.fontSize,
     color: COLORS.charcoal.light,
   },
-  // Error state
   errorState: {
     flex: 1,
     alignItems: 'center',
@@ -478,12 +455,22 @@ const styles = StyleSheet.create({
     color: COLORS.charcoal.medium,
     fontWeight: '500',
   },
-  // Deleting overlay
   deletingOverlay: {
     ...StyleSheet.absoluteFillObject,
     backgroundColor: COLORS.white[50],
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  // Close button - same vertical position as hamburger menu (top: 12)
+  closeButton: {
+    position: 'absolute',
+    top: 12,
+    right: 16,
+    width: 54,
+    height: 54,
+    alignItems: 'center',
+    justifyContent: 'center',
+    zIndex: 10000,
   },
 });
 

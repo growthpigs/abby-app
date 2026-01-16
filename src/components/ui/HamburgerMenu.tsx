@@ -1,11 +1,15 @@
 /**
- * HamburgerMenu - Subtle overlay menu for app navigation
+ * HamburgerMenu - Slide-out navigation menu
  *
- * FIXES APPLIED (2026-01-16):
- * 1. REMOVED BlurView - iOS native blur intercepts touches even with pointerEvents
- * 2. Using solid semi-transparent background instead
- * 3. Menu items use TouchableOpacity for reliable iOS touch handling
- * 4. Backdrop only covers area OUTSIDE menu panel
+ * CRITICAL: DO NOT USE BlurView or full-screen backdrops that overlap menu items.
+ * iOS touch system has known issues with these patterns.
+ *
+ * Architecture:
+ * 1. Hamburger button (always visible, zIndex 10001)
+ * 2. When open:
+ *    - Backdrop covers RIGHT side only (not menu area)
+ *    - Menu panel slides from left (no blur, solid background)
+ *    - Menu items are TouchableOpacity for reliable touch
  */
 
 import React, { useState, useCallback } from 'react';
@@ -13,11 +17,9 @@ import {
   View,
   StyleSheet,
   TouchableOpacity,
-  TouchableWithoutFeedback,
   Animated,
   Dimensions,
 } from 'react-native';
-// BlurView REMOVED - causes touch interception on iOS
 import * as Haptics from 'expo-haptics';
 import { Menu, X, Camera, Heart, Settings, LogOut, User, ShieldCheck } from 'lucide-react-native';
 import { Body, Caption } from './Typography';
@@ -84,20 +86,22 @@ export const HamburgerMenu: React.FC<HamburgerMenuProps> = ({
   const handleMenuItemPress = useCallback((actionName: string, action?: () => void) => {
     if (__DEV__) console.log(`[HamburgerMenu] 👆 Item pressed: ${actionName}`);
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    // Close menu first
+
+    // Close menu immediately (no animation to prevent race conditions)
     setIsOpen(false);
     slideAnim.setValue(-MENU_WIDTH);
     fadeAnim.setValue(0);
-    // Execute action immediately
+
+    // Execute action
     if (action) {
       if (__DEV__) console.log(`[HamburgerMenu] ➡️ Calling action for: ${actionName}`);
       action();
     }
   }, [slideAnim, fadeAnim]);
 
-  return (
-    <>
-      {/* Hamburger Icon Button - always visible */}
+  if (!isOpen) {
+    // Only render hamburger button when menu is closed
+    return (
       <TouchableOpacity
         onPress={openMenu}
         style={styles.hamburgerButton}
@@ -106,113 +110,103 @@ export const HamburgerMenu: React.FC<HamburgerMenuProps> = ({
       >
         <Menu size={28} stroke="rgba(255, 255, 255, 0.95)" strokeWidth={3} />
       </TouchableOpacity>
+    );
+  }
 
-      {/* Overlay - NO MODAL */}
-      {isOpen && (
-        <View style={styles.overlay} pointerEvents="box-none">
-          {/* Backdrop - ONLY covers area outside menu (right side) */}
-          <TouchableWithoutFeedback onPress={closeMenu}>
-            <Animated.View
-              style={[
-                styles.backdrop,
-                { opacity: fadeAnim }
-              ]}
-            />
-          </TouchableWithoutFeedback>
+  // Menu is open - render full overlay
+  return (
+    <View style={styles.overlay} pointerEvents="box-none">
+      {/* Backdrop - ONLY covers RIGHT side of screen (outside menu) */}
+      {/* This prevents backdrop from intercepting menu item touches */}
+      <TouchableOpacity
+        style={styles.backdrop}
+        activeOpacity={1}
+        onPress={closeMenu}
+      >
+        <Animated.View
+          style={[styles.backdropInner, { opacity: fadeAnim }]}
+        />
+      </TouchableOpacity>
 
-          {/* Menu Panel - slides in from left */}
-          <Animated.View
-            style={[
-              styles.menuPanel,
-              { transform: [{ translateX: slideAnim }] },
-            ]}
-          >
-            {/* Solid background instead of BlurView - BlurView intercepts touches on iOS */}
-            <View style={styles.menuContent}>
-              {/* Header */}
-              <View style={styles.menuHeader}>
-                <Caption style={styles.menuTitle}>MENU</Caption>
-                <TouchableOpacity
-                  onPress={closeMenu}
-                  style={styles.closeButton}
-                  activeOpacity={0.7}
-                  hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-                >
-                  <X size={20} stroke="rgba(255, 255, 255, 0.6)" />
-                </TouchableOpacity>
-              </View>
+      {/* Menu Panel - LEFT side of screen */}
+      <Animated.View
+        style={[styles.menuPanel, { transform: [{ translateX: slideAnim }] }]}
+      >
+        <View style={styles.menuContent}>
+          {/* Header */}
+          <View style={styles.menuHeader}>
+            <Caption style={styles.menuTitle}>MENU</Caption>
+            <TouchableOpacity
+              onPress={closeMenu}
+              style={styles.closeButton}
+              activeOpacity={0.7}
+              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+            >
+              <X size={20} stroke="rgba(255, 255, 255, 0.6)" />
+            </TouchableOpacity>
+          </View>
 
-              {/* Menu Items */}
-              <View style={styles.menuItems}>
-                {/* My Profile */}
-                <TouchableOpacity
-                  onPress={() => handleMenuItemPress('Profile', onProfilePress)}
-                  style={styles.menuItem}
-                  activeOpacity={0.7}
-                >
-                  <User size={22} stroke="#FFFFFF" />
-                  <Body style={styles.menuItemText}>My Profile</Body>
-                </TouchableOpacity>
+          {/* Menu Items */}
+          <View style={styles.menuItems}>
+            <TouchableOpacity
+              onPress={() => handleMenuItemPress('Profile', onProfilePress)}
+              style={styles.menuItem}
+              activeOpacity={0.7}
+            >
+              <User size={22} stroke="#FFFFFF" />
+              <Body style={styles.menuItemText}>My Profile</Body>
+            </TouchableOpacity>
 
-                {/* My Photos */}
-                <TouchableOpacity
-                  onPress={() => handleMenuItemPress('Photos', onPhotosPress)}
-                  style={styles.menuItem}
-                  activeOpacity={0.7}
-                >
-                  <Camera size={22} stroke="#FFFFFF" />
-                  <Body style={styles.menuItemText}>My Photos</Body>
-                </TouchableOpacity>
+            <TouchableOpacity
+              onPress={() => handleMenuItemPress('Photos', onPhotosPress)}
+              style={styles.menuItem}
+              activeOpacity={0.7}
+            >
+              <Camera size={22} stroke="#FFFFFF" />
+              <Body style={styles.menuItemText}>My Photos</Body>
+            </TouchableOpacity>
 
-                {/* Matches */}
-                <TouchableOpacity
-                  onPress={() => handleMenuItemPress('Matches', onMatchesPress)}
-                  style={styles.menuItem}
-                  activeOpacity={0.7}
-                >
-                  <Heart size={22} stroke="#FFFFFF" />
-                  <Body style={styles.menuItemText}>Interested in You</Body>
-                </TouchableOpacity>
+            <TouchableOpacity
+              onPress={() => handleMenuItemPress('Matches', onMatchesPress)}
+              style={styles.menuItem}
+              activeOpacity={0.7}
+            >
+              <Heart size={22} stroke="#FFFFFF" />
+              <Body style={styles.menuItemText}>Interested in You</Body>
+            </TouchableOpacity>
 
-                {/* Settings */}
-                <TouchableOpacity
-                  onPress={() => handleMenuItemPress('Settings', onSettingsPress)}
-                  style={styles.menuItem}
-                  activeOpacity={0.7}
-                >
-                  <Settings size={22} stroke="#FFFFFF" />
-                  <Body style={styles.menuItemText}>Settings</Body>
-                </TouchableOpacity>
+            <TouchableOpacity
+              onPress={() => handleMenuItemPress('Settings', onSettingsPress)}
+              style={styles.menuItem}
+              activeOpacity={0.7}
+            >
+              <Settings size={22} stroke="#FFFFFF" />
+              <Body style={styles.menuItemText}>Settings</Body>
+            </TouchableOpacity>
 
-                {/* Certification */}
-                <TouchableOpacity
-                  onPress={() => handleMenuItemPress('Certification', onCertificationPress)}
-                  style={styles.menuItem}
-                  activeOpacity={0.7}
-                >
-                  <ShieldCheck size={22} stroke="#FFFFFF" />
-                  <Body style={styles.menuItemText}>Certification</Body>
-                </TouchableOpacity>
+            <TouchableOpacity
+              onPress={() => handleMenuItemPress('Certification', onCertificationPress)}
+              style={styles.menuItem}
+              activeOpacity={0.7}
+            >
+              <ShieldCheck size={22} stroke="#FFFFFF" />
+              <Body style={styles.menuItemText}>Certification</Body>
+            </TouchableOpacity>
 
-                <View style={styles.divider} />
+            <View style={styles.divider} />
 
-                {/* Log Out */}
-                <TouchableOpacity
-                  onPress={() => handleMenuItemPress('Logout', onLogoutPress)}
-                  style={styles.menuItem}
-                  activeOpacity={0.7}
-                >
-                  <LogOut size={22} stroke="rgba(250, 128, 114, 0.9)" />
-                  <Body style={[styles.menuItemText, styles.logoutText]}>
-                    Log Out
-                  </Body>
-                </TouchableOpacity>
-              </View>
-            </View>
-          </Animated.View>
+            <TouchableOpacity
+              onPress={() => handleMenuItemPress('Logout', onLogoutPress)}
+              style={styles.menuItem}
+              activeOpacity={0.7}
+            >
+              <LogOut size={22} stroke="rgba(250, 128, 114, 0.9)" />
+              <Body style={[styles.menuItemText, styles.logoutText]}>Log Out</Body>
+            </TouchableOpacity>
+          </View>
         </View>
-      )}
-    </>
+      </Animated.View>
+    </View>
   );
 };
 
@@ -228,7 +222,6 @@ const styles = StyleSheet.create({
     zIndex: 10001,
   },
 
-  // Full-screen overlay container
   overlay: {
     position: 'absolute',
     top: 0,
@@ -238,13 +231,17 @@ const styles = StyleSheet.create({
     zIndex: 20000,
   },
 
-  // Backdrop ONLY covers the right side (outside menu)
+  // CRITICAL: Backdrop only covers RIGHT side (not menu area)
   backdrop: {
     position: 'absolute',
     top: 0,
-    left: MENU_WIDTH, // Start AFTER menu panel
+    left: MENU_WIDTH, // <-- START AFTER menu panel ends
     right: 0,
     bottom: 0,
+  },
+
+  backdropInner: {
+    flex: 1,
     backgroundColor: 'rgba(0, 0, 0, 0.4)',
   },
 
@@ -260,7 +257,7 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingTop: 70,
     paddingHorizontal: 24,
-    backgroundColor: 'rgba(30, 30, 40, 0.95)', // Solid dark background - no blur
+    backgroundColor: 'rgba(30, 30, 40, 0.95)',
   },
 
   menuHeader: {
@@ -272,11 +269,13 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: 'rgba(255, 255, 255, 0.15)',
   },
+
   menuTitle: {
     fontSize: 12,
     letterSpacing: 3,
-    color: 'rgba(255, 255, 255, 0.5)', // Light text for dark background
+    color: 'rgba(255, 255, 255, 0.5)',
   },
+
   closeButton: {
     width: 32,
     height: 32,
@@ -287,6 +286,7 @@ const styles = StyleSheet.create({
   menuItems: {
     gap: 8,
   },
+
   menuItem: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -296,10 +296,12 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     minHeight: 52,
   },
+
   menuItemText: {
     fontSize: 17,
     color: '#FFFFFF',
   },
+
   logoutText: {
     color: 'rgba(250, 128, 114, 0.9)',
   },

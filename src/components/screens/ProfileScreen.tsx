@@ -2,7 +2,7 @@
  * ProfileScreen - Edit Profile Overlay
  *
  * Allows users to view and edit their profile data after onboarding.
- * Uses same overlay pattern as SettingsScreen.
+ * Uses GlassSheet for animated bottom-to-top entry (matches CertificationScreen)
  */
 
 import React, { useState, useCallback, useEffect } from 'react';
@@ -15,17 +15,16 @@ import {
   Alert,
   ActivityIndicator,
 } from 'react-native';
-import { BlurView } from 'expo-blur';
 import * as Haptics from 'expo-haptics';
 import { User, Heart, Users, Cigarette, MapPin, X } from 'lucide-react-native';
+import { GlassSheet } from '../ui/GlassSheet';
 import { Headline, Body, Caption } from '../ui/Typography';
 import { GlassButton } from '../ui/GlassButton';
 import { useOnboardingStore } from '../../store/useOnboardingStore';
 import { TokenManager } from '../../services/TokenManager';
 import { secureFetchJSON } from '../../utils/secureFetch';
 import { API_CONFIG } from '../../config';
-import { useResponsiveLayout } from '../../hooks/useResponsiveLayout';
-import { sharedStyles, LAYOUT, TYPOGRAPHY, COLORS } from '../../constants/onboardingLayout';
+import { LAYOUT, TYPOGRAPHY, COLORS } from '../../constants/onboardingLayout';
 import { api } from '../../services/api';
 import { ONBOARDING_QUESTION_IDS } from '../../constants/onboardingQuestions';
 
@@ -71,7 +70,6 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
   onClose,
 }) => {
   const store = useOnboardingStore();
-  const layout = useResponsiveLayout();
   const [isSaving, setIsSaving] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -131,13 +129,11 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
                 store.setRelationshipType(Array.isArray(value) ? value[0] : value);
                 break;
               case ONBOARDING_QUESTION_IDS.SMOKING:
-                // Smoking answer is stored as JSON string
                 try {
                   const smokingData = typeof value === 'string' ? JSON.parse(value) : value;
                   if (smokingData.user) store.setSmokingMe(smokingData.user);
                   if (smokingData.partner_preference) store.setSmokingPartner(smokingData.partner_preference);
                 } catch {
-                  // If not JSON, treat as simple value
                   if (typeof value === 'string') store.setSmokingMe(value);
                 }
                 break;
@@ -145,8 +141,6 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
           });
         }
       } catch (error) {
-        // Expected in demo mode - no token available
-        // Screen will show local onboarding data instead
         if (__DEV__) console.log('[ProfileScreen] Using local data (no API token - demo mode)');
       } finally {
         setIsLoading(false);
@@ -209,6 +203,11 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
     setEditValue('');
   };
 
+  const handleClose = useCallback(() => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    onClose?.();
+  }, [onClose]);
+
   // Format display values
   const formatGender = (gender: string | null) => {
     if (!gender) return null;
@@ -251,32 +250,14 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
 
   return (
     <View style={styles.container}>
-      <BlurView intensity={80} tint="light" style={styles.blurContainer}>
-        {/* Header */}
-        <View style={[styles.header, { paddingTop: 100 }]}>
-          <Caption style={styles.headerTitle}>MY PROFILE</Caption>
-        </View>
-
-        {/* Close button - absolute positioned using shared design system */}
-        <Pressable
-          onPress={onClose}
-          style={sharedStyles.closeButton}
-          hitSlop={10}
-        >
-          <X size={24} stroke={COLORS.charcoal.medium} />
-        </Pressable>
+      <GlassSheet height={1}>
+        {/* Header - centered label like CertificationScreen */}
+        <Caption style={styles.label}>MY PROFILE</Caption>
 
         {/* Content */}
         <ScrollView
           style={styles.scrollView}
-          contentContainerStyle={[
-            styles.content,
-            {
-              paddingVertical: LAYOUT.spacing.large,
-              paddingHorizontal: LAYOUT.content.paddingHorizontal,
-              paddingBottom: LAYOUT.content.paddingBottom,
-            },
-          ]}
+          contentContainerStyle={styles.scrollContent}
           showsVerticalScrollIndicator={false}
         >
           {/* Loading State */}
@@ -287,95 +268,104 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
             </View>
           ) : (
             <>
-          {/* Edit Modal */}
-          {editingField && (
-            <View style={styles.editModal}>
-              <TextInput
-                style={styles.editInput}
-                value={editValue}
-                onChangeText={setEditValue}
-                autoFocus
-                placeholder={`Enter ${editingField}`}
-                placeholderTextColor="rgba(0, 0, 0, 0.4)"
-                maxLength={100}
+              {/* Edit Modal */}
+              {editingField && (
+                <View style={styles.editModal}>
+                  <TextInput
+                    style={styles.editInput}
+                    value={editValue}
+                    onChangeText={setEditValue}
+                    autoFocus
+                    placeholder={`Enter ${editingField}`}
+                    placeholderTextColor="rgba(0, 0, 0, 0.4)"
+                    maxLength={100}
+                  />
+                  <View style={styles.editButtons}>
+                    <Pressable
+                      onPress={() => setEditingField(null)}
+                      style={styles.cancelButton}
+                    >
+                      <Body style={styles.cancelText}>Cancel</Body>
+                    </Pressable>
+                    <Pressable onPress={saveField} style={styles.saveFieldButton}>
+                      <Body style={styles.saveFieldText}>Save</Body>
+                    </Pressable>
+                  </View>
+                </View>
+              )}
+
+              {/* Profile Sections */}
+              <Headline style={styles.sectionHeading}>Basic Info</Headline>
+
+              <ProfileSection
+                icon={<User size={20} stroke="#5A5A5A" />}
+                title="Full Name"
+                value={store.firstName && store.familyName ? `${store.firstName} ${store.familyName}` : store.firstName || store.familyName || ''}
+                onPress={() => startEditing('fullName', store.firstName || '')}
               />
-              <View style={styles.editButtons}>
-                <Pressable
-                  onPress={() => setEditingField(null)}
-                  style={styles.cancelButton}
+
+              <ProfileSection
+                icon={<User size={20} stroke="#5A5A5A" />}
+                title="Nickname"
+                value={store.nickname}
+                onPress={() => startEditing('nickname', store.nickname)}
+              />
+
+              <ProfileSection
+                icon={<User size={20} stroke="#5A5A5A" />}
+                title="Gender"
+                value={formatGender(store.gender)}
+              />
+
+              <Headline style={styles.sectionHeading}>Preferences</Headline>
+
+              <ProfileSection
+                icon={<Heart size={20} stroke="#5A5A5A" />}
+                title="Looking For"
+                value={formatPreference(store.datingPreference)}
+              />
+
+              <ProfileSection
+                icon={<Users size={20} stroke="#5A5A5A" />}
+                title="Relationship Type"
+                value={formatRelationship(store.relationshipType)}
+              />
+
+              <ProfileSection
+                icon={<Cigarette size={20} stroke="#5A5A5A" />}
+                title="Smoking"
+                value={formatSmoking(store.smokingMe, store.smokingPartner)}
+              />
+
+              <ProfileSection
+                icon={<MapPin size={20} stroke="#5A5A5A" />}
+                title="Location"
+                value={formatLocation()}
+              />
+
+              {/* Save Button */}
+              <View style={styles.saveContainer}>
+                <GlassButton
+                  onPress={handleSave}
+                  disabled={isSaving}
+                  variant="primary"
                 >
-                  <Body style={styles.cancelText}>Cancel</Body>
-                </Pressable>
-                <Pressable onPress={saveField} style={styles.saveFieldButton}>
-                  <Body style={styles.saveFieldText}>Save</Body>
-                </Pressable>
+                  {isSaving ? 'Saving...' : 'Save Changes'}
+                </GlassButton>
               </View>
-            </View>
-          )}
-
-          {/* Profile Sections */}
-          <Headline style={[styles.sectionHeading, { fontSize: TYPOGRAPHY.headline.fontSize, marginTop: LAYOUT.spacing.large, marginBottom: LAYOUT.spacing.default }]}>Basic Info</Headline>
-
-          <ProfileSection
-            icon={<User size={20} stroke="#5A5A5A" />}
-            title="Full Name"
-            value={store.firstName && store.familyName ? `${store.firstName} ${store.familyName}` : store.firstName || store.familyName || ''}
-            onPress={() => startEditing('fullName', store.firstName || '')}
-          />
-
-          <ProfileSection
-            icon={<User size={20} stroke="#5A5A5A" />}
-            title="Nickname"
-            value={store.nickname}
-            onPress={() => startEditing('nickname', store.nickname)}
-          />
-
-          <ProfileSection
-            icon={<User size={20} stroke="#5A5A5A" />}
-            title="Gender"
-            value={formatGender(store.gender)}
-          />
-
-          <Headline style={[styles.sectionHeading, { fontSize: TYPOGRAPHY.headline.fontSize, marginTop: LAYOUT.spacing.large, marginBottom: LAYOUT.spacing.default }]}>Preferences</Headline>
-
-          <ProfileSection
-            icon={<Heart size={20} stroke="#5A5A5A" />}
-            title="Looking For"
-            value={formatPreference(store.datingPreference)}
-          />
-
-          <ProfileSection
-            icon={<Users size={20} stroke="#5A5A5A" />}
-            title="Relationship Type"
-            value={formatRelationship(store.relationshipType)}
-          />
-
-          <ProfileSection
-            icon={<Cigarette size={20} stroke="#5A5A5A" />}
-            title="Smoking"
-            value={formatSmoking(store.smokingMe, store.smokingPartner)}
-          />
-
-          <ProfileSection
-            icon={<MapPin size={20} stroke="#5A5A5A" />}
-            title="Location"
-            value={formatLocation()}
-          />
-
-          {/* Save Button */}
-          <View style={[styles.saveContainer, { marginTop: LAYOUT.spacing.xl }]}>
-            <GlassButton
-              onPress={handleSave}
-              disabled={isSaving}
-              variant="primary"
-            >
-              {isSaving ? 'Saving...' : 'Save Changes'}
-            </GlassButton>
-          </View>
             </>
           )}
         </ScrollView>
-      </BlurView>
+      </GlassSheet>
+
+      {/* Close button - OUTSIDE GlassSheet, same vertical position as hamburger */}
+      <Pressable
+        onPress={handleClose}
+        style={styles.closeButton}
+        hitSlop={10}
+      >
+        <X size={24} stroke="rgba(255, 255, 255, 0.95)" />
+      </Pressable>
     </View>
   );
 };
@@ -385,35 +375,26 @@ const styles = StyleSheet.create({
     ...StyleSheet.absoluteFillObject,
     zIndex: 2000,
   },
-  blurContainer: {
-    flex: 1,
+  label: {
+    textAlign: 'center',
+    marginTop: 60,
+    marginBottom: 8,
+    letterSpacing: 1,
+    fontSize: 11,
+    color: '#6A6A6A',
   },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    // paddingTop is set dynamically via LAYOUT.backArrow.top
-    paddingBottom: LAYOUT.spacing.default,
-    paddingHorizontal: LAYOUT.content.paddingHorizontal,
-    borderBottomWidth: 1,
-    borderBottomColor: COLORS.white[10],
-  },
-  headerTitle: {
-    fontSize: TYPOGRAPHY.sectionLabel.fontSize,
-    letterSpacing: TYPOGRAPHY.sectionLabel.letterSpacing,
-    color: '#5A5A5A', // Medium GRAY for readability on pale blur
-    textTransform: 'uppercase',
-  },
-  // closeButton removed - using sharedStyles.closeButton instead
   scrollView: {
     flex: 1,
   },
-  content: {
-    // paddingVertical, paddingHorizontal, paddingBottom set dynamically via layout
+  scrollContent: {
+    paddingHorizontal: 24,
+    paddingBottom: 120,
   },
   sectionHeading: {
-    // fontSize, marginTop, marginBottom set dynamically via LAYOUT/TYPOGRAPHY constants
-    color: '#3A3A3A', // Dark GRAY for headings on pale blur
+    fontSize: TYPOGRAPHY.headline.fontSize,
+    marginTop: LAYOUT.spacing.large,
+    marginBottom: LAYOUT.spacing.default,
+    color: '#3A3A3A',
   },
   section: {
     flexDirection: 'row',
@@ -443,12 +424,12 @@ const styles = StyleSheet.create({
   },
   sectionTitle: {
     fontSize: TYPOGRAPHY.helpText.fontSize,
-    color: '#5A5A5A', // Medium GRAY for labels on pale blur
+    color: '#5A5A5A',
     marginBottom: 2,
   },
   sectionValue: {
     fontSize: LAYOUT.spacing.default,
-    color: '#3A3A3A', // Dark GRAY for values on pale blur
+    color: '#3A3A3A',
   },
   editIndicator: {
     fontSize: 14,
@@ -471,8 +452,6 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     marginBottom: LAYOUT.spacing.default,
     color: COLORS.charcoal.dark,
-    letterSpacing: 0,
-    textAlign: 'left',
   },
   editButtons: {
     flexDirection: 'row',
@@ -498,7 +477,7 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   saveContainer: {
-    // marginTop set dynamically via layout
+    marginTop: LAYOUT.spacing.xl,
   },
   loadingContainer: {
     flex: 1,
@@ -510,6 +489,17 @@ const styles = StyleSheet.create({
     marginTop: LAYOUT.spacing.medium,
     color: '#5A5A5A',
     fontSize: TYPOGRAPHY.body.fontSize,
+  },
+  // Close button - same vertical position as hamburger menu (top: 12)
+  closeButton: {
+    position: 'absolute',
+    top: 12,
+    right: 16,
+    width: 54,
+    height: 54,
+    alignItems: 'center',
+    justifyContent: 'center',
+    zIndex: 10000,
   },
 });
 

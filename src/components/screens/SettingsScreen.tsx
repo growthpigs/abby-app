@@ -5,6 +5,8 @@
  * V2 will add notifications, voice customization, privacy, accessibility.
  *
  * 3 modes: voice only, text only, voice+text (default)
+ *
+ * Uses GlassSheet for animated bottom-to-top entry (matches CertificationScreen)
  */
 
 import React, { useCallback } from 'react';
@@ -13,15 +15,16 @@ import {
   StyleSheet,
   Pressable,
   Alert,
+  ScrollView,
 } from 'react-native';
-import { BlurView } from 'expo-blur';
 import * as Haptics from 'expo-haptics';
 import { Mic, MessageSquare, Trash2, X } from 'lucide-react-native';
 import { AuthService } from '../../services/AuthService';
+import { GlassSheet } from '../ui/GlassSheet';
 import { Headline, Body, Caption } from '../ui/Typography';
 import { useSettingsStore, InputMode } from '../../store/useSettingsStore';
 import { useResponsiveLayout } from '../../hooks/useResponsiveLayout';
-import { sharedStyles, LAYOUT, TYPOGRAPHY, COLORS } from '../../constants/onboardingLayout';
+import { LAYOUT, TYPOGRAPHY, COLORS } from '../../constants/onboardingLayout';
 
 export interface SettingsScreenProps {
   onClose?: () => void;
@@ -100,16 +103,14 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
           style: 'destructive',
           onPress: async () => {
             try {
-              // TODO: Call DELETE /v1/profile when API endpoint is available
-              // For now, just logout to clear local data
               if (__DEV__) {
-                if (__DEV__) console.log('[Settings] User requested data deletion');
+                console.log('[Settings] User requested data deletion');
               }
               await AuthService.logout();
               onClose?.();
             } catch (error) {
               if (__DEV__) {
-                if (__DEV__) console.error('[Settings] Error during data deletion:', error);
+                console.error('[Settings] Error during data deletion:', error);
               }
               Alert.alert(
                 'Error',
@@ -123,31 +124,22 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
     );
   }, [onClose]);
 
+  const handleClose = useCallback(() => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    onClose?.();
+  }, [onClose]);
+
   return (
     <View style={styles.container}>
-      <BlurView intensity={80} tint="light" style={styles.blurContainer}>
-        {/* Header */}
-        <View style={[styles.header, { paddingTop: 100 }]}>
-          <Caption style={styles.headerTitle}>SETTINGS</Caption>
-        </View>
+      <GlassSheet height={1}>
+        {/* Header - centered label like CertificationScreen */}
+        <Caption style={styles.label}>SETTINGS</Caption>
 
-        {/* Close button - absolute positioned using shared design system */}
-        <Pressable
-          onPress={onClose}
-          style={sharedStyles.closeButton}
-          hitSlop={LAYOUT.backArrow.hitSlop}
+        <ScrollView
+          style={styles.scrollView}
+          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={false}
         >
-          <X size={24} stroke={COLORS.charcoal.medium} />
-        </Pressable>
-
-        {/* Content */}
-        <View style={[
-          styles.content,
-          {
-            paddingVertical: layout.isSmallScreen ? LAYOUT.spacing.large : LAYOUT.spacing.xl,
-            paddingHorizontal: LAYOUT.content.paddingHorizontal,
-          },
-        ]}>
           <Headline style={[
             styles.questionText,
             {
@@ -220,8 +212,17 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
               This permanently removes your account and all data
             </Caption>
           </View>
-        </View>
-      </BlurView>
+        </ScrollView>
+      </GlassSheet>
+
+      {/* Close button - OUTSIDE GlassSheet, same vertical position as hamburger */}
+      <Pressable
+        onPress={handleClose}
+        style={styles.closeButton}
+        hitSlop={10}
+      >
+        <X size={24} stroke="rgba(255, 255, 255, 0.95)" />
+      </Pressable>
     </View>
   );
 };
@@ -231,26 +232,20 @@ const styles = StyleSheet.create({
     ...StyleSheet.absoluteFillObject,
     zIndex: 2000,
   },
-  blurContainer: {
+  label: {
+    textAlign: 'center',
+    marginTop: 60, // Space below GlassSheet handle
+    marginBottom: 8,
+    letterSpacing: 1,
+    fontSize: 11,
+    color: '#6A6A6A',
+  },
+  scrollView: {
     flex: 1,
   },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingBottom: LAYOUT.spacing.default,
-    paddingHorizontal: LAYOUT.content.paddingHorizontal - 4, // 20px
-    borderBottomWidth: 1,
-    borderBottomColor: 'rgba(0, 0, 0, 0.08)',
-  },
-  headerTitle: {
-    fontSize: TYPOGRAPHY.sectionLabel.fontSize,
-    letterSpacing: 3,
-    color: COLORS.charcoal.light,
-  },
-  // closeButton now uses sharedStyles.closeButton from onboardingLayout
-  content: {
-    flex: 1,
+  scrollContent: {
+    paddingHorizontal: 24,
+    paddingBottom: 40,
   },
   questionText: {
     textAlign: 'center',
@@ -353,6 +348,17 @@ const styles = StyleSheet.create({
     marginTop: LAYOUT.spacing.medium,
     color: COLORS.charcoal.light,
     fontSize: 11,
+  },
+  // Close button - same vertical position as hamburger menu (top: 12)
+  closeButton: {
+    position: 'absolute',
+    top: 12,
+    right: 16,
+    width: 54,
+    height: 54,
+    alignItems: 'center',
+    justifyContent: 'center',
+    zIndex: 10000,
   },
 });
 
